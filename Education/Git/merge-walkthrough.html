@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git Merge — Walkthrough &amp; Mental Model</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --surface: #16213e;
+            --surface2: #0f3460;
+            --accent: #e94560;
+            --accent2: #533483;
+            --text: #eee;
+            --text-muted: #aab;
+            --success: #4ecca3;
+            --warning: #f0a500;
+            --info: #569cd6;
+            --code-bg: #0d1117;
+            --border: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            padding: 2rem;
+            max-width: 920px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 2.5rem;
+            font-size: 1.05rem;
+        }
+
+        h2 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin: 2.5rem 0 1rem 0;
+            padding-bottom: 0.3rem;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        h3 {
+            color: var(--success);
+            font-size: 1.2rem;
+            margin: 1.8rem 0 0.8rem 0;
+        }
+
+        h4 {
+            color: var(--warning);
+            font-size: 1.05rem;
+            margin: 1.2rem 0 0.5rem 0;
+        }
+
+        p { margin-bottom: 1rem; }
+        ul, ol { margin: 0.5rem 0 1rem 1.5rem; }
+        li { margin-bottom: 0.4rem; }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.2rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-size: 0.88rem;
+            line-height: 1.5;
+        }
+
+        code {
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9rem;
+        }
+
+        p code, li code, td code {
+            background: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            color: #ffd479;
+        }
+
+        .callout {
+            border-radius: 8px;
+            padding: 1.2rem 1.5rem;
+            margin: 1.5rem 0;
+            border-left: 4px solid;
+        }
+
+        .callout p:last-child { margin-bottom: 0; }
+
+        .callout-metaphor {
+            background: rgba(83, 52, 131, 0.2);
+            border-color: var(--accent2);
+        }
+        .callout-metaphor::before {
+            content: "Metaphor";
+            display: block; font-weight: bold; color: var(--accent2);
+            margin-bottom: 0.3rem; font-size: 0.85rem;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        .callout-confusion {
+            background: rgba(240, 165, 0, 0.1);
+            border-color: var(--warning);
+        }
+        .callout-confusion::before {
+            content: "The Confusion";
+            display: block; font-weight: bold; color: var(--warning);
+            margin-bottom: 0.3rem; font-size: 0.85rem;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        .callout-rule {
+            background: rgba(233, 69, 96, 0.1);
+            border-color: var(--accent);
+        }
+        .callout-rule::before {
+            content: "Rule";
+            display: block; font-weight: bold; color: var(--accent);
+            margin-bottom: 0.3rem; font-size: 0.85rem;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        .callout-tldr {
+            background: rgba(86, 156, 214, 0.15);
+            border-color: var(--info);
+        }
+        .callout-tldr::before {
+            content: "TL;DR";
+            display: block; font-weight: bold; color: var(--info);
+            margin-bottom: 0.3rem; font-size: 0.85rem;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        .callout-safety {
+            background: rgba(78, 204, 163, 0.1);
+            border-color: var(--success);
+        }
+        .callout-safety::before {
+            content: "Safety Net";
+            display: block; font-weight: bold; color: var(--success);
+            margin-bottom: 0.3rem; font-size: 0.85rem;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        .step {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--info);
+            border-radius: 8px;
+            padding: 1.2rem 1.5rem;
+            margin: 1.2rem 0;
+        }
+
+        .step h3 {
+            margin-top: 0;
+            color: var(--info);
+        }
+
+        .expected {
+            color: var(--text-muted);
+            font-style: italic;
+            font-size: 0.92rem;
+            margin: 0.5rem 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.92rem;
+        }
+
+        th, td {
+            padding: 0.7rem 1rem;
+            border: 1px solid var(--border);
+            text-align: left;
+        }
+
+        th {
+            background: var(--surface2);
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        td {
+            background: var(--surface);
+        }
+
+        .toc {
+            background: var(--surface);
+            border-left: 4px solid var(--accent);
+            padding: 1.2rem 1.5rem;
+            margin: 2rem 0;
+            border-radius: 8px;
+        }
+
+        .toc h3 {
+            margin-top: 0;
+            color: var(--accent);
+        }
+
+        .toc ol { margin: 0.5rem 0 0 1.5rem; }
+        .toc a { color: var(--info); text-decoration: none; }
+        .toc a:hover { text-decoration: underline; }
+
+        .branch-line { color: var(--success); }
+        .commit-hash { color: var(--warning); }
+        .marker { color: var(--accent); font-weight: bold; }
+
+        .footer {
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Git Merge — Walkthrough &amp; Mental Model</h1>
+<p class="subtitle">From "I've only ever worked on master" to confidently merging two feature branches</p>
+
+<div class="toc">
+    <h3>What's in this guide</h3>
+    <ol>
+        <li><a href="#confusion">The big confusion: clones vs worktrees</a></li>
+        <li><a href="#branches">What a branch actually is</a></li>
+        <li><a href="#clones">Clones — the everyday case</a></li>
+        <li><a href="#worktrees">Worktrees — the special case (and the rule)</a></li>
+        <li><a href="#local-remote">Local vs remote</a></li>
+        <li><a href="#ff-vs-merge">Fast-forward vs merge-commit (with diagrams)</a></li>
+        <li><a href="#conflicts">Merge conflicts — anatomy and resolution</a></li>
+        <li><a href="#walkthrough">The walkthrough — step by step</a></li>
+        <li><a href="#recovery">Recovery / safety net</a></li>
+        <li><a href="#cheatsheet">Cheat sheet</a></li>
+    </ol>
+</div>
+
+<h2 id="confusion">1. The big confusion: clones vs worktrees</h2>
+
+<div class="callout callout-confusion">
+    <p>"You said a branch can only be checked out in one worktree at a time — but everyone on my team works on master. That can't be right."</p>
+    <p>You're right that it can't be right — because the rule applies to <strong>worktrees</strong>, not to <strong>clones</strong>. These are two different things that look superficially similar. Let's separate them.</p>
+</div>
+
+<h3>A clone is one developer's independent copy of the repo</h3>
+
+<p>When Alice does <code>git clone &lt;url&gt;</code> on her laptop, she gets a complete, self-contained copy of the repo — the whole history, every branch, every commit. It has its own <code>.git/</code> folder. It is independent. When Bob does the same on his laptop, he gets a separate independent copy. They are unrelated copies that happen to have started from the same source.</p>
+
+<pre><span class="branch-line">Alice's laptop                Bob's laptop                  Server (origin)</span>
+<span class="branch-line">─────────────                 ─────────────                 ──────────────</span>
+C:/repo/                      D:/work/repo/                 git.example.com/repo.git
+ ├ .git/  ← her own            ├ .git/  ← his own            ├ .git/  ← bare
+ └ files/                      └ files/                      └ files/
+   master ✓                      master ✓                      master ✓
+
+           Each is a SEPARATE clone with its OWN .git/ folder.
+           They each have master checked out — totally fine.
+           They sync with the server via <span class="marker">git pull</span> / <span class="marker">git push</span>.
+</pre>
+
+<p>This is what your team does. Each developer has their own clone. Each clone has master checked out. No rule violated.</p>
+
+<h3>A worktree is a SECOND folder linked to the SAME clone</h3>
+
+<p>A "worktree" is a specific Git feature you opt into by running <code>git worktree add &lt;path&gt; &lt;branch&gt;</code>. It creates a new folder that shows the files for a chosen branch, but it shares the same <code>.git/</code> database as the original folder.</p>
+
+<pre><span class="branch-line">YOUR machine right now</span>
+<span class="branch-line">──────────────────────</span>
+
+C:/repos/aginternal/AgileInCloud/         ← worktree 1: feature/prj-0001-...
+                  \
+                   shares ONE .git/
+                  /
+C:/repos/aginternal/aginternal-notif/     ← worktree 2: perf/prj-0006-...
+
+These two folders are <span class="marker">ONE clone</span> presenting <span class="marker">TWO branches</span> simultaneously.
+They share the SAME .git/ between them.
+
+The rule: WITHIN this single clone, the same branch can't be
+checked out in both folders at the same time.
+
+If <span class="marker">master</span> is showing in folder 1, and you try <code>git checkout master</code> in folder 2,
+Git refuses with:
+  <span class="marker">fatal: 'master' is already checked out at 'C:/repos/aginternal/AgileInCloud/'</span>
+
+Why? Because if both folders showed master, you'd commit in folder 1
+and folder 2 would be out of sync with itself — which file is "really" master?
+</pre>
+
+<div class="callout callout-tldr">
+    <p>Your team's setup uses <strong>clones</strong> — one per developer, no rule applies. The rule only kicks in when one developer (you, right now) has <strong>multiple worktrees off the same clone</strong>. The other Claude that worked on the notifications branch was in a worktree off your clone.</p>
+</div>
+
+<h2 id="branches">2. What a branch actually is</h2>
+
+<div class="callout callout-metaphor">
+    <p>A branch is not a copy of your code. It's a sticky note with a name, stuck to a specific commit. When you commit, the sticky note moves forward to the new commit. When you switch branches, the files on your disk swap to match wherever <em>that</em> sticky note is currently pointing.</p>
+</div>
+
+<pre>
+   <span class="commit-hash">A</span> ── <span class="commit-hash">B</span> ── <span class="commit-hash">C</span>           ← <span class="branch-line">master</span> sticky note is here
+              \
+               <span class="commit-hash">D</span> ── <span class="commit-hash">E</span>      ← <span class="branch-line">feature/prj-0001</span> sticky note is here
+</pre>
+
+<p>Each letter is a commit (a snapshot of all files at one point in time). The lines show which commit comes from which. The branch names are tiny pointers — they cost almost nothing.</p>
+
+<p>When you run <code>git checkout feature/prj-0001</code>, Git moves the special pointer called <code>HEAD</code> to that branch and rewrites the files on your disk to match commit <code>E</code>. Your code looks different, not because Git copied anything, but because your "current view" pointer moved.</p>
+
+<h2 id="clones">3. Clones — the everyday case</h2>
+
+<p>A <strong>clone</strong> is a complete independent copy of a Git repo. <code>git clone &lt;url&gt;</code> creates one. Everyone on your team has at least one. They are how distributed development works.</p>
+
+<table>
+    <tr><th>Property</th><th>Meaning</th></tr>
+    <tr><td>Has its own <code>.git/</code></td><td>Yes — full history database, independent of every other clone</td></tr>
+    <tr><td>Knows about other clones</td><td>Only via <code>git remote</code> URLs (e.g. <code>origin</code>)</td></tr>
+    <tr><td>Can have any branch checked out</td><td>Yes, including the same branch as another clone</td></tr>
+    <tr><td>Syncs how</td><td><code>git fetch</code>, <code>git pull</code>, <code>git push</code></td></tr>
+</table>
+
+<h2 id="worktrees">4. Worktrees — the special case</h2>
+
+<p>A <strong>worktree</strong> is a feature for power users. You opt in with <code>git worktree add &lt;path&gt; &lt;branch&gt;</code>. It creates a new folder where the chosen branch is checked out, but the underlying database is shared with your original folder.</p>
+
+<table>
+    <tr><th>Property</th><th>Meaning</th></tr>
+    <tr><td>Has its own <code>.git/</code></td><td>No — it shares the parent's <code>.git/</code></td></tr>
+    <tr><td>Why use them</td><td>Run two branches in parallel without constantly switching</td></tr>
+    <tr><td>The rule</td><td>Each branch can be checked out in at most one worktree at a time</td></tr>
+    <tr><td>List them</td><td><code>git worktree list</code></td></tr>
+    <tr><td>Remove one</td><td><code>git worktree remove &lt;path&gt;</code></td></tr>
+</table>
+
+<div class="callout callout-rule">
+    <p>The "one branch per worktree" rule applies only inside a single clone. Two different clones can both have master checked out. Two worktrees off the same clone cannot both have master checked out.</p>
+</div>
+
+<h2 id="local-remote">5. Local vs remote</h2>
+
+<div class="callout callout-metaphor">
+    <p>Think of Git as a distributed network of independent diaries. Each diary is complete on its own. There is no "the database" living in the cloud — there are just lots of diaries, and you sync them with each other on demand.</p>
+</div>
+
+<pre><span class="branch-line">YOUR LAPTOP</span>                          <span class="branch-line">SERVER (origin)</span>
+<span class="branch-line">─────────────────────────</span>            <span class="branch-line">─────────────────────────</span>
+.git/                                .git/  (bare repo)
+
+<span class="branch-line">master</span>          <span class="commit-hash">A ─ B ─ C</span>          <span class="branch-line">master</span>          <span class="commit-hash">A ─ B ─ C ─ D</span>
+                                                              ↑
+                                                              someone pushed
+                                                              this yesterday
+
+<span class="branch-line">origin/master</span>   <span class="commit-hash">A ─ B ─ C</span>          (this is your laptop's
+                                      <em>cached idea</em> of where the
+                                      server's master pointer was
+                                      last time you fetched —
+                                      currently <strong>stale</strong>)
+</pre>
+
+<h3>The three sync commands</h3>
+
+<table>
+    <tr><th>Command</th><th>What it does</th><th>Read-only?</th></tr>
+    <tr><td><code>git fetch</code></td><td>Phone the server. "Show me your branches." Updates your local cache (<code>origin/master</code>). Does NOT touch your local <code>master</code>.</td><td>Yes</td></tr>
+    <tr><td><code>git pull</code></td><td><code>git fetch</code>, then merge <code>origin/master</code> into your local <code>master</code>. Two operations in one.</td><td>No — modifies local master</td></tr>
+    <tr><td><code>git push</code></td><td>Upload your local commits to the server.</td><td>No — modifies the server</td></tr>
+</table>
+
+<p>So when I say "bring local master up to remote master", I mean: take the new commits the server has, copy them onto your laptop, and slide your local <code>master</code> pointer forward.</p>
+
+<h2 id="ff-vs-merge">6. Fast-forward vs merge-commit</h2>
+
+<p>When you ask Git to merge <code>feature</code> into <code>master</code>, Git looks at the history and asks: "Did anything new happen on master since feature branched off?"</p>
+
+<h3>Case A — Master hasn't moved (fast-forward is possible)</h3>
+
+<pre><span class="branch-line">Before:</span>          ↓ <span class="branch-line">master</span>
+   <span class="commit-hash">A ─ B ─ C</span>
+            \
+             <span class="commit-hash">D ─ E</span>
+                  ↑ <span class="branch-line">feature</span>
+
+<span class="branch-line">After</span> <code>git merge feature</code> (fast-forward — Git's default when possible):
+
+   <span class="commit-hash">A ─ B ─ C ─ D ─ E</span>
+                    ↑ <span class="branch-line">master</span> AND <span class="branch-line">feature</span> both point here
+</pre>
+
+<p>The <code>master</code> sticky note just slides forward to where <code>feature</code> is. <strong>No new commit is created.</strong> History is a flat line.</p>
+
+<h3>Case B — You forced a real merge (with <code>--no-ff</code>)</h3>
+
+<pre><span class="branch-line">Before:</span> same as above
+
+<span class="branch-line">After</span> <code>git merge --no-ff feature</code>:
+
+   <span class="commit-hash">A ─ B ─ C ─────────── M</span>     ← <span class="branch-line">master</span>
+            \              /
+             <span class="commit-hash">D ─ E ────</span>'         ← <span class="branch-line">feature</span> still points at E
+</pre>
+
+<p>Git creates a brand new commit <code>M</code> whose two parents are <code>C</code> (old master) and <code>E</code> (feature tip). It's called a <strong>merge commit</strong>. Visually, history shows the bubble where the feature joined.</p>
+
+<h3>Why does this distinction matter?</h3>
+
+<table>
+    <tr><th></th><th>Fast-forward</th><th>Merge commit (<code>--no-ff</code>)</th></tr>
+    <tr><td>Creates new commit?</td><td>No</td><td>Yes</td></tr>
+    <tr><td>History shape</td><td>Flat line</td><td>Bubble — clear "feature landed here" mark</td></tr>
+    <tr><td>Easy to revert the whole feature</td><td>No — feature commits are now indistinguishable from regular commits</td><td>Yes — <code>git revert -m 1 M</code> undoes the bubble</td></tr>
+    <tr><td>Best for</td><td>Trivial updates, syncing local with remote</td><td>Feature branches</td></tr>
+</table>
+
+<h3>What the flags actually mean</h3>
+
+<table>
+    <tr><th>Flag</th><th>Meaning</th></tr>
+    <tr><td><code>--ff-only</code></td><td>"Only allow this merge if it's a fast-forward. If a real merge would be needed, refuse and stop." Used as a safety belt on <code>git pull</code> — catches surprise divergence between local and server.</td></tr>
+    <tr><td><code>--no-ff</code></td><td>"Even if a fast-forward is possible, force a merge commit anyway." Used on feature merges so the branch is clearly visible in history.</td></tr>
+    <tr><td>(neither)</td><td>Git picks. Defaults to fast-forward if possible, otherwise three-way merge. Fine for most cases but less explicit.</td></tr>
+</table>
+
+<h2 id="conflicts">7. Merge conflicts</h2>
+
+<p>A merge conflict happens when <strong>both branches modified the same lines of the same file</strong>. Git can't pick automatically because both edits are reasonable. It pauses and asks you.</p>
+
+<h3>What you'll see in the terminal</h3>
+
+<pre>Auto-merging Services/Foo.cs
+<span class="marker">CONFLICT (content): Merge conflict in Services/Foo.cs</span>
+Automatic merge failed; fix conflicts and then commit the result.
+</pre>
+
+<h3>What you'll see in the file</h3>
+
+<p>Open the conflicted file. Git wrote <strong>both options</strong> into it with marker lines:</p>
+
+<pre>public void DoStuff()
+{
+<span class="marker">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</span>
+    var timeout = 30;        // ← what's on master right now
+<span class="marker">=======</span>
+    var timeout = 60;        // ← what feature branch wants
+<span class="marker">&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature/prj-0001</span>
+}
+</pre>
+
+<h3>How to resolve it</h3>
+
+<ol>
+    <li><strong>Edit the file.</strong> Pick one version, pick a hybrid, write something new — whatever's correct for the code.</li>
+    <li><strong>Remove ALL the marker lines</strong> (<code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code>, <code>=======</code>, <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code>). The file should look like normal code again.</li>
+    <li><code>git add Services/Foo.cs</code> — this tells Git "this file is resolved".</li>
+    <li>Repeat for any other conflicted files. Use <code>git status</code> to see what's still in conflict — they show as <code>both modified</code>.</li>
+    <li>When all conflicts are resolved, run <code>git commit</code>. Git pre-fills a merge commit message; save and close the editor.</li>
+</ol>
+
+<div class="callout callout-safety">
+    <p>If you panic mid-conflict and want to bail entirely: <code>git merge --abort</code>. It restores your repo to the exact state it was in before you started the merge. Nothing lost.</p>
+</div>
+
+<h2 id="walkthrough">8. The walkthrough — step by step</h2>
+
+<div class="callout callout-tldr">
+    <p>You're going to merge two feature branches into <code>master</code>. After each step you'll see what to expect. If your output differs, stop and check before continuing. We plant a backup tag in step 3 so any mistake is one command to undo.</p>
+</div>
+
+<div class="step">
+    <h3>Step 0 — Check where you are</h3>
+    <pre>git status</pre>
+    <p class="expected">Expected output:</p>
+    <pre>On branch feature/prj-0001-t-0010-phase-1a
+nothing to commit, working tree clean</pre>
+    <p>The two things to verify:</p>
+    <ul>
+        <li>Branch line confirms which branch you're on (any feature branch is fine for now).</li>
+        <li>"working tree clean" — no uncommitted edits hanging around.</li>
+    </ul>
+    <p>If you see <code>Changes not staged for commit:</code> instead, <strong>stop</strong>. We need to commit, stash, or discard those changes first.</p>
+</div>
+
+<div class="step">
+    <h3>Step 1 — Switch to master</h3>
+    <pre>git checkout master</pre>
+    <p class="expected">Expected output:</p>
+    <pre>Switched to branch 'master'
+Your branch is up to date with 'origin/master'.</pre>
+    <p>or possibly:</p>
+    <pre>Switched to branch 'master'
+Your branch is behind 'origin/master' by 3 commits, and can be fast-forwarded.</pre>
+    <p>The first line is what matters. If you see <code>error: 'master' is already checked out at '&lt;path&gt;'</code>, that's the worktree rule biting — master is currently in the sibling worktree folder. We'd need to switch that worktree off master first. Tell me if it happens.</p>
+    <p><strong>What changed on disk:</strong> the files in your working folder are now master's version, not your feature branch's. Your IDE might refresh.</p>
+</div>
+
+<div class="step">
+    <h3>Step 2 — Pull the latest from the server</h3>
+    <pre>git pull --ff-only origin master</pre>
+    <p class="expected">Expected output (one of):</p>
+    <pre>Already up to date.</pre>
+    <p>or:</p>
+    <pre>Updating abc1234..def5678
+Fast-forward
+ SomeFile.cs | 5 +++++
+ 1 file changed, 5 insertions(+)</pre>
+    <p>If you see <code>fatal: Not possible to fast-forward, aborting.</code> — that means the server has commits that conflict with your local master. <strong>Stop and ask</strong>. We'd need to investigate before continuing.</p>
+</div>
+
+<div class="step">
+    <h3>Step 3 — Plant a safety tag</h3>
+    <pre>git tag pre-merge-backup</pre>
+    <p class="expected">Expected output: nothing. (Git is silent on success.)</p>
+    <p>You just stuck a label called <code>pre-merge-backup</code> on the current commit. If anything goes sideways in the next steps, <code>git reset --hard pre-merge-backup</code> jumps you back here.</p>
+    <p>Verify the tag exists:</p>
+    <pre>git tag --list</pre>
+    <p>You should see <code>pre-merge-backup</code> somewhere in the output.</p>
+</div>
+
+<div class="step">
+    <h3>Step 4 — Merge the notifications branch</h3>
+    <pre>git merge --no-ff perf/prj-0006-t-0008-notifications</pre>
+    <p>Git opens an editor (Notepad, VS Code, or possibly Vim) with a pre-filled commit message:</p>
+    <pre>Merge branch 'perf/prj-0006-t-0008-notifications'</pre>
+    <p>You can edit the message or leave it. To finish:</p>
+    <ul>
+        <li><strong>Notepad</strong> — Ctrl+S, close window.</li>
+        <li><strong>VS Code</strong> — Ctrl+S, close the tab.</li>
+        <li><strong>Vim</strong> (if it opened) — type <code>:wq</code> and press Enter.</li>
+    </ul>
+    <p class="expected">Expected output after editor closes:</p>
+    <pre>Merge made by the 'ort' strategy.
+ 25 files changed, NNN insertions(+), MM deletions(-)
+ ...list of files...</pre>
+</div>
+
+<div class="step">
+    <h3>Step 5 — Merge the CRM branch</h3>
+    <pre>git merge --no-ff feature/prj-0001-t-0010-phase-1a</pre>
+    <p>Same dance as step 4. Editor opens, save and close.</p>
+    <p class="expected">Expected output: similar to step 4 but with the larger CRM file list (~140 files).</p>
+</div>
+
+<div class="step">
+    <h3>Step 6 — Visualize what happened</h3>
+    <pre>git log --graph --oneline -20</pre>
+    <p class="expected">Expected output (yours will have different hashes):</p>
+    <pre>*   <span class="commit-hash">abc1234</span> (HEAD -> master) Merge branch 'feature/prj-0001-t-0010-phase-1a'
+|\
+| * 0292374 fix(crm): UI review for deferred-routing...
+| * 38d7f9f docs(crm): forensic audit script...
+| * ...
+*   <span class="commit-hash">def5678</span> Merge branch 'perf/prj-0006-t-0008-notifications'
+|\
+| * 375c732 feat: Replace per-check-in validator pings...
+| * ...
+* old123 (origin/master) ...previous master commit...</pre>
+    <p>Two <code>Merge branch</code> commits with <code>|\</code> below them — those are the bubbles forced by <code>--no-ff</code>. Press <code>q</code> to quit the log view.</p>
+</div>
+
+<div class="step">
+    <h3>Step 7 — Sanity check (build + test)</h3>
+    <pre>dotnet build</pre>
+    <p>Should end with <code>Build succeeded</code> and <code>0 Error(s)</code>.</p>
+    <pre>dotnet test --nologo -v quiet --no-build</pre>
+    <p>Should end with <code>Passed!</code> and a green count.</p>
+    <p>If either fails, <strong>stop</strong>. We can <code>git reset --hard pre-merge-backup</code> to undo the entire merge — that's exactly why we planted the tag.</p>
+</div>
+
+<div class="step">
+    <h3>Step 8 — Push to the server (only when you're satisfied)</h3>
+    <pre>git push origin master</pre>
+    <p class="expected">Expected output:</p>
+    <pre>Enumerating objects: ..., done.
+...
+To https://...
+   def5678..abc1234  master -> master</pre>
+    <p>Until this command succeeds, everything is local — only your laptop knows. Once pushed, it's on the server and your colleagues will see it on their next pull.</p>
+    <div class="callout callout-rule">
+        <p>Don't push until you've actually run the app and tested the new features end-to-end. The build + test pass is necessary but not sufficient — there's UI behaviour that automated tests can't verify.</p>
+    </div>
+</div>
+
+<h2 id="recovery">9. Recovery — the safety net</h2>
+
+<table>
+    <tr><th>Situation</th><th>Command</th><th>What it does</th></tr>
+    <tr><td>Merge in progress, conflicts you don't want to deal with</td><td><code>git merge --abort</code></td><td>Restores everything to pre-merge state. Like Ctrl-Z for the in-progress merge.</td></tr>
+    <tr><td>Merge committed but you want to undo</td><td><code>git reset --hard pre-merge-backup</code></td><td>Jumps back to the tag we planted in Step 3. Local only — safe before push.</td></tr>
+    <tr><td>You can't remember what happened</td><td><code>git reflog</code></td><td>Shows every position your <code>HEAD</code> has been at, in order. Find the line you want, then <code>git reset --hard HEAD@{N}</code> where N is the index.</td></tr>
+    <tr><td>Pushed something bad and want to undo on the server</td><td><code>git revert &lt;commit&gt;</code></td><td>Creates a NEW commit that undoes the bad one. Safe to push. Use this instead of <code>reset --hard</code> after pushing.</td></tr>
+</table>
+
+<div class="callout callout-safety">
+    <p><code>git reflog</code> is your real superpower. Git remembers every move <code>HEAD</code> made for ~90 days, even branches you "deleted" or commits you thought were lost. As long as you haven't run <code>git gc</code> manually, you can almost always recover.</p>
+</div>
+
+<h2 id="cheatsheet">10. Cheat sheet</h2>
+
+<table>
+    <tr><th>I want to...</th><th>Command</th></tr>
+    <tr><td>See where I am</td><td><code>git status</code></td></tr>
+    <tr><td>See history as a graph</td><td><code>git log --graph --oneline -20</code></td></tr>
+    <tr><td>List worktrees</td><td><code>git worktree list</code></td></tr>
+    <tr><td>List branches (local)</td><td><code>git branch</code></td></tr>
+    <tr><td>List branches (including remote-tracked)</td><td><code>git branch -a</code></td></tr>
+    <tr><td>Switch to a branch</td><td><code>git checkout &lt;branch&gt;</code></td></tr>
+    <tr><td>Update local with server</td><td><code>git pull --ff-only origin &lt;branch&gt;</code></td></tr>
+    <tr><td>Plant a recovery tag</td><td><code>git tag &lt;name&gt;</code></td></tr>
+    <tr><td>Merge a feature branch (preserve bubble)</td><td><code>git merge --no-ff &lt;branch&gt;</code></td></tr>
+    <tr><td>Bail out of in-progress merge</td><td><code>git merge --abort</code></td></tr>
+    <tr><td>Undo a finished merge (local only)</td><td><code>git reset --hard &lt;tag-or-commit&gt;</code></td></tr>
+    <tr><td>Undo a pushed commit safely</td><td><code>git revert &lt;commit&gt;</code></td></tr>
+    <tr><td>Push to server</td><td><code>git push origin &lt;branch&gt;</code></td></tr>
+    <tr><td>See every recent HEAD position</td><td><code>git reflog</code></td></tr>
+</table>
+
+<div class="footer">
+    <p>Generated for AgileInCloud · PRJ-0001-T-0010 deferred-routing rework merge</p>
+</div>
+
+</body>
+</html>

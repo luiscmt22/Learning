@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>06-Blazor-JS-Interop-Static-Events</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 12-JavaScript</div>
+  <h1>06-Blazor-JS-Interop-Static-Events</h1>
+  <div class="meta">Source: <code>Education/06-Blazor-JS-Interop-Static-Events.md</code> &middot; <a href="06-Blazor-JS-Interop-Static-Events.md">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<h1 id="blazor-js-interop-static-events-vs-instance-isolated-callbacks">Blazor JS Interop: Static Events vs Instance-Isolated Callbacks</h1>
+<blockquote><strong>Level</strong>: Advanced<br><strong>Topic</strong>: Blazor Server + JavaScript Interop Race Conditions</blockquote>
+<h2 id="the-problem">The Problem</h2>
+<p>When Blazor components need to receive callbacks from JavaScript, a common pattern is using static events:</p>
+<pre><code class="lang-csharp"><span class="cmt">// Static helper class</span>
+<span class="kw">public</span> <span class="kw">static</span> <span class="kw">class</span> <span class="type">MyHelper</span>
+{
+    <span class="kw">public</span> <span class="kw">static</span> <span class="kw">event</span> <span class="type">Action</span>&lt;<span class="kw">string</span>&gt;? <span class="type">OnDataReceived</span>;
+
+    [<span class="type">JSInvokable</span>]
+    <span class="kw">public</span> <span class="kw">static</span> <span class="kw">void</span> <span class="type">NotifyDataReceived</span>(<span class="kw">string</span> data)
+    {
+        <span class="type">OnDataReceived</span>?.<span class="type">Invoke</span>(data);
+    }
+}</code></pre>
+<pre><code class="lang-javascript">// JavaScript
+DotNet.invokeMethodAsync(&#x27;MyApp&#x27;, &#x27;NotifyDataReceived&#x27;, data);</code></pre>
+<p><strong>This works perfectly when only ONE component is active.</strong> But when multiple component instances exist simultaneously (e.g., two kiosks, two browser tabs), <strong>all subscribers receive all events</strong>.</p>
+<h2 id="the-bug-data-leakage-between-concurrent-users">The Bug: Data Leakage Between Concurrent Users</h2>
+<h3 id="scenario">Scenario</h3>
+<p>Two facial recognition kiosks running simultaneously:</p>
+<div class="diagram-box"><pre>Kiosk A (Component Instance #1)
+├── Subscribes to: FacialRecognitionHelper.OnFacialIdentifyComplete
+└── User Alice approaches and scans face
+
+Kiosk B (Component Instance #2)
+├── Subscribes to: FacialRecognitionHelper.OnFacialIdentifyComplete (SAME EVENT!)
+└── User Bob approaches and scans face</pre></div>
+<h3 id="timeline-of-bug">Timeline of Bug</h3>
+<pre><code class="lang-text">T0: Alice&#x27;s face detected    → JS calls NotifyFacialIdentifyComplete(aliceDescriptor)
+T1: Static event broadcasts to ALL subscribers
+T2: BOTH Kiosk A and Kiosk B receive Alice&#x27;s descriptor
+T3: Both kiosks call IdentifyUserForAttendanceAsync(aliceDescriptor)
+T4: Both kiosks display &quot;Welcome, Alice!&quot; (BOB SEES ALICE&#x27;S DATA!)
+
+T5: Bob&#x27;s face detected     → JS calls NotifyFacialIdentifyComplete(bobDescriptor)
+T6: BOTH kiosks receive Bob&#x27;s descriptor
+T7: BOTH kiosks now show &quot;Welcome, Bob!&quot; (ALICE&#x27;S SCREEN CHANGES!)</code></pre>
+<h3 id="diagram-broadcast-problem">Diagram: Broadcast Problem</h3>
+<div class="diagram-box"><pre>┌─────────────────────────────────────────────────────────────────────┐
+│                        JAVASCRIPT (face-api.js)                      │
+│                                                                       │
+│  Face Detected → DotNet.invokeMethodAsync(&#x27;NotifyFacialIdentify&#x27;)   │
+└──────────────────────────────┬────────────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                    STATIC HELPER (C#)                                │
+│                                                                       │
+│  [JSInvokable]                                                       │
+│  public static void NotifyFacialIdentifyComplete(string descriptor)  │
+│  {                                                                   │
+│      OnFacialIdentifyComplete?.Invoke(descriptor);  // BROADCASTS!  │
+│  }                                                                   │
+└──────────────────────────────┬────────────────────────────────────────┘
+                               │
+              ┌────────────────┴────────────────┐
+              │                                  │
+              ▼                                  ▼
+┌─────────────────────────┐      ┌─────────────────────────┐
+│      KIOSK A            │      │      KIOSK B            │
+│  OnIdentifyComplete()   │      │  OnIdentifyComplete()   │
+│  _employee = Alice      │      │  _employee = Alice (!)  │
+│                         │      │  (Should be Bob!)       │
+└─────────────────────────┘      └─────────────────────────┘</pre></div>
+<h2 id="the-solution-instance-isolated-callbacks">The Solution: Instance-Isolated Callbacks</h2>
+<p>Instead of broadcasting to all subscribers, route events to the specific component instance that initiated the action.</p>
+<h3 id="pattern-overview">Pattern Overview</h3>
+<pre><code class="lang-text">1. Component generates unique instanceId (Guid)
+2. Component registers its callback with the helper using instanceId
+3. Component passes instanceId to JavaScript when starting capture
+4. JavaScript includes instanceId when calling back to .NET
+5. Helper routes callback ONLY to the registered instance
+6. Component unregisters in Dispose()</code></pre>
+<h3 id="implementation">Implementation</h3>
+<h4 id="1-static-helper-with-instance-registry">1. Static Helper with Instance Registry</h4>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">static</span> <span class="kw">class</span> <span class="type">FacialRecognitionHelper</span>
+{
+    <span class="cmt">// Instance-specific callbacks (thread-safe)</span>
+    <span class="kw">private</span> <span class="kw">static</span> <span class="kw">readonly</span> <span class="type">ConcurrentDictionary</span>&lt;<span class="kw">string</span>, <span class="type">Action</span>&lt;<span class="kw">string</span>&gt;&gt; _identifyCallbacks = <span class="kw">new</span>();
+
+    <span class="cmt">// Register instance callback</span>
+    <span class="kw">public</span> <span class="kw">static</span> <span class="kw">void</span> <span class="type">RegisterInstance</span>(<span class="kw">string</span> instanceId, <span class="type">Action</span>&lt;<span class="kw">string</span>&gt; onIdentify)
+    {
+        _identifyCallbacks[instanceId] = onIdentify;
+    }
+
+    <span class="cmt">// Unregister on dispose</span>
+    <span class="kw">public</span> <span class="kw">static</span> <span class="kw">void</span> <span class="type">UnregisterInstance</span>(<span class="kw">string</span> instanceId)
+    {
+        _identifyCallbacks.<span class="type">TryRemove</span>(instanceId, <span class="kw">out</span> _);
+    }
+
+    <span class="cmt">// Instance-specific callback (NEW - routes to specific instance)</span>
+    [<span class="type">JSInvokable</span>]
+    <span class="kw">public</span> <span class="kw">static</span> <span class="kw">void</span> <span class="type">NotifyFacialIdentifyCompleteForInstance</span>(<span class="kw">string</span> instanceId, <span class="kw">string</span> descriptor)
+    {
+        <span class="kw">if</span> (_identifyCallbacks.<span class="type">TryGetValue</span>(instanceId, <span class="kw">out</span> <span class="kw">var</span> callback))
+        {
+            callback.<span class="type">Invoke</span>(descriptor);
+        }
+    }
+}</code></pre>
+<h4 id="2-component-with-instance-id">2. Component with Instance ID</h4>
+<pre><code class="lang-csharp">@code {
+    <span class="kw">private</span> <span class="kw">readonly</span> <span class="kw">string</span> _instanceId = <span class="type">Guid</span>.<span class="type">NewGuid</span>().<span class="type">ToString</span>();
+
+    <span class="kw">protected</span> <span class="kw">override</span> <span class="kw">void</span> <span class="type">OnInitialized</span>()
+    {
+        <span class="cmt">// Register this instance&#x27;s callback</span>
+        <span class="type">FacialRecognitionHelper</span>.<span class="type">RegisterInstance</span>(_instanceId, <span class="type">HandleIdentifyComplete</span>);
+    }
+
+    <span class="kw">private</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">StartCapture</span>()
+    {
+        <span class="cmt">// Pass instanceId to JavaScript</span>
+        <span class="kw">await</span> <span class="type">JS</span>.<span class="type">InvokeVoidAsync</span>(<span class="str">&quot;facialRecognition.startIdentify&quot;</span>,
+            _videoElementId, _canvasContainerId, _instanceId);
+    }
+
+    <span class="kw">public</span> <span class="kw">void</span> <span class="type">Dispose</span>()
+    {
+        <span class="type">FacialRecognitionHelper</span>.<span class="type">UnregisterInstance</span>(_instanceId);
+    }
+}</code></pre>
+<h4 id="3-javascript-with-instance-routing">3. JavaScript with Instance Routing</h4>
+<pre><code class="lang-javascript">let currentInstanceId = null;
+
+async function startFacialAttendance(videoElementId, canvasContainerId, mode, instanceId) {
+    currentInstanceId = instanceId;
+
+    // ... face detection code ...
+
+    // When face is detected, call back with instanceId
+    if (currentInstanceId) {
+        await DotNet.invokeMethodAsync(&#x27;HRModule&#x27;,
+            &#x27;NotifyFacialIdentifyCompleteForInstance&#x27;,
+            currentInstanceId,
+            descriptorJson);
+    }
+}</code></pre>
+<h3 id="diagram-instance-isolated-solution">Diagram: Instance-Isolated Solution</h3>
+<div class="diagram-box"><pre>┌─────────────────────────────────────────────────────────────────────┐
+│                        JAVASCRIPT (face-api.js)                      │
+│                                                                       │
+│  startIdentify(videoId, canvasId, instanceId=&quot;abc-123&quot;)             │
+│  ↓                                                                   │
+│  Face Detected → NotifyFacialIdentifyCompleteForInstance(           │
+│                      &quot;abc-123&quot;,    ← Instance ID                     │
+│                      descriptor)                                      │
+└──────────────────────────────┬────────────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                    STATIC HELPER (C#)                                │
+│                                                                       │
+│  _identifyCallbacks = {                                              │
+│      &quot;abc-123&quot;: KioskA.HandleIdentify,                               │
+│      &quot;def-456&quot;: KioskB.HandleIdentify                                │
+│  }                                                                   │
+│                                                                       │
+│  NotifyFacialIdentifyCompleteForInstance(&quot;abc-123&quot;, descriptor)      │
+│  → Routes ONLY to Kiosk A&#x27;s callback                                 │
+└──────────────────────────────┬────────────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────┐      ┌─────────────────────────┐
+│      KIOSK A            │      │      KIOSK B            │
+│  instanceId = &quot;abc-123&quot; │      │  instanceId = &quot;def-456&quot; │
+│  HandleIdentify() ✓     │      │  (not called)          │
+│  _employee = Alice      │      │  _employee = Bob        │
+└─────────────────────────┘      └─────────────────────────┘</pre></div>
+<h2 id="when-to-use-each-pattern">When to Use Each Pattern</h2>
+<h3 id="static-events-broadcast-ok-when">Static Events (Broadcast) - OK When:</h3>
+<ul>
+<li>Only ONE component instance will ever exist</li>
+<li>All components should receive all events (rare)</li>
+<li>The callback is truly global (app-level notifications)</li>
+</ul>
+<h3 id="instance-isolated-callbacks-required-when">Instance-Isolated Callbacks - Required When:</h3>
+<ul>
+<li>Multiple component instances may be active simultaneously</li>
+<li>Each instance should only receive its own events</li>
+<li>User data must be isolated between sessions</li>
+<li>Security/privacy is important</li>
+</ul>
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ol>
+<li><strong>Static events are shared</strong> - All subscribers receive all events</li>
+<li><strong>Instance IDs provide isolation</strong> - Each component gets only its events</li>
+<li><strong>ConcurrentDictionary is thread-safe</strong> - Multiple registrations are safe</li>
+<li><strong>Always unregister in Dispose()</strong> - Prevent memory leaks</li>
+<li><strong>JavaScript must track the instanceId</strong> - Pass it through the entire flow</li>
+</ol>
+<h2 id="related-files">Related Files</h2>
+<ul>
+<li><a href="../../Services/FacialRecognition/FacialRecognitionHelper.cs" target="_blank">FacialRecognitionHelper.cs</a></li>
+<li><a href="../../Pages/HR/Attendances/Facial/Components/FacialAttendanceComponent.razor" target="_blank">FacialAttendanceComponent.razor</a></li>
+<li><a href="../../wwwroot/js/face/script.js" target="_blank">script.js</a></li>
+</ul>
+</div>
+</body>
+</html>

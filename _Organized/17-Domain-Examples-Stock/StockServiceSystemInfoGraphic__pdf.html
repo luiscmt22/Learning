@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>StockServiceSystemInfoGraphic</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 17-Domain-Examples-Stock</div>
+  <h1>StockServiceSystemInfoGraphic</h1>
+  <div class="meta">Source: <code>Education/Stock/ENG/StockServiceSystemInfoGraphic.pdf</code> &middot; <a href="StockServiceSystemInfoGraphic.pdf">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<div class="dup-banner"><strong>Same-stem variants</strong> (likely same content, different format): <code>Education/Stock/ENG/StockServiceSystemInfoGraphic.docx</code></div><div class="pdf-page"><h3>Page 1</h3><pre>    Stock Service System - The &quot;For
+Dummies&quot; Guide
+
+   What Is This Stock Service?
+
+Imagine you run a warehouse and need to know exactly how many items you have at any
+moment. This Stock Service is like having a super-smart inventory assistant that:
+
+    • Knows exactly what&#x27;s in stock right now
+    • Remembers what came in and what went out
+    • Can tell you what you had on any specific date
+    • Works FAST by remembering recent answers (caching)
+
+Think of it like your phone&#x27;s contact list - instead of calling directory assistance every time,
+your phone remembers the numbers you use often!
+
+   The Big Picture
+
+What Problems Does It Solve?
+
+Without this system:
+
+•  Every stock check means counting everything again (slow!)
+
+•  Can&#x27;t see historical stock levels
+
+•  Database gets hammered with the same questions
+
+•  Users wait forever for stock reports
+
+•  Server works too hard answering repeated questions
+
+With this system:
+
+•  Lightning-fast stock checks (remembers recent answers)
+
+•  Historical stock tracking (&quot;What did we have last Tuesday?&quot;)
+
+•  Smart caching (doesn&#x27;t ask the same question twice)
+
+•  Accurate movement tracking (every in and out)
+
+•  Server stays happy and responsive</pre></div>
+<div class="pdf-page"><h3>Page 2</h3><pre>The Architecture - How It&#x27;s Built
+
+The Two-Layer Design (Like a Cake! )
+
+User asks: &quot;How much stock?&quot;
+
+↓
+
+┌─────────────────────┐
+
+│ CACHED SERVICE │ ← Layer 1: The Smart Memory
+
+│ (Fast answers) │ &quot;Have I answered this recently?&quot;
+
+└──────────┬──────────┘
+
+↓ (If not cached)
+
+┌─────────────────────┐
+
+│ STOCK SERVICE  │ ← Layer 2: The Calculator
+
+│ (Real work)    │ &quot;Let me check the database&quot;
+
+└─────────────────────┘
+
+The Genius of Caching Explained
+
+What is Caching?
+
+Real-world analogy: It&#x27;s like having sticky notes on your desk!
+
+    • Without caching: Every time someone asks &quot;What&#x27;s John&#x27;s phone number?&quot;, you
+         open the phone book, find John, and tell them
+
+    • With caching: The first time someone asks, you write it on a sticky note. Next time?
+         Just read the sticky note!
+
+How Your Smart Caching Works
+
+public async Task&lt;ArtigoStock?&gt; GetArticleStockByDateAsync(int artigoId,
+DateTime date)
+{
+
+       // Create a unique &quot;name&quot; for this question
+       var cacheKey = $&quot;stock_{artigoId}_{date:yyyyMMdd}&quot;;
+
+       // Check our &quot;sticky notes&quot; first
+       if (_cache.TryGetValue&lt;ArtigoStock&gt;(cacheKey, out var cachedStock))
+       {
+
+              // Found it! Return the saved answer (SUPER FAST!)
+              return cachedStock;
+       }
+
+       // Not in cache, need to calculate it
+       var stock = await _innerService.GetArticleStockByDateAsync(artigoId,
+date);
+
+       // Save it for next time with smart expiration
+       if (date &lt; DateTime.Today.AddDays(-7))
+
+              _cache.Set(cacheKey, stock, TimeSpan.FromHours(1)); // Old data =
+cache longer
+
+       else
+              _cache.Set(cacheKey, stock, TimeSpan.FromMinutes(5)); // Recent
+
+data = cache shorter
+
+       return stock;}</pre></div>
+<div class="pdf-page"><h3>Page 3</h3><pre>The Brilliant Time-Based Caching Strategy
+
+Your system is smart about WHEN to forget cached data:
+
+1. Historical Data (&gt;7 days old)
+         o Cached for 1 HOUR
+         o Why? Old stock doesn&#x27;t change!
+         o Like keeping last year&#x27;s phone book - it won&#x27;t change
+
+2. Recent Data (&lt;7 days old)
+         o Cached for 5 MINUTES
+         o Why? Recent stock might still be changing
+         o Like today&#x27;s delivery schedule - might get updates
+
+3. Filtered Queries
+         o NOT cached at all
+         o Why? Too specific, unlikely to be asked again
+         o Like asking &quot;Show me only Tuesday deliveries of blue items&quot;
+
+Core Functions Explained
+
+1. GetArticleStockByDateAsync - &quot;Time Machine for Stock&quot;
+
+What it does: Tells you exactly what stock you had on any date
+
+Real-world analogy: Like asking &quot;What was in my bank account on January 15th?&quot;
+
+How it works:
+
+-- Behind the scenes, it runs something like:
+
+SELECT
+
+SUM(entries) as ENTRADA, -- Everything that came IN
+
+SUM(exits) as SAIDA,        -- Everything that went OUT
+
+SUM(entries - exits) as STOCK -- What&#x27;s LEFT
+
+FROM movements
+
+WHERE date &lt;= &#x27;2024-01-15&#x27;
+
+Smart trick: Adds 1 day to include the whole day&#x27;s transactions!
+
+2. GetStockMovementsAsync - &quot;The History Book&quot;
+
+What it does: Shows every movement (in/out) for an item
+
+Real-world analogy: Like your bank statement showing every transaction
+
+Returns: A list like:
+
+Jan 10: +100 units (Purchase Order #1234)
+Jan 11: -20 units (Sales Order #5678)
+Jan 12: +50 units (Production #910)</pre></div>
+<div class="pdf-page"><h3>Page 4</h3><pre>3. GetStockTotalsAsync - &quot;The Summary&quot;
+
+What it does: Just gives you totals (how much came in, how much went out)
+Real-world analogy: Like asking &quot;How much money did I earn vs spend this month?&quot;
+Smart caching: Only caches &quot;all-time&quot; totals, never date-filtered ones
+
+4. CheckFluxoAsync - &quot;The Special Inspector&quot;
+
+What it does: Checks stock flow for specific document lines
+Real-world analogy: Like tracking a specific package in your shipment
+Note: Never cached because it&#x27;s too specific!
+
+   The UI Integration (ArtigoDetalhe.razor)
+
+The Stock Tab Magic
+
+When you click the Stock tab, here&#x27;s what happens:
+
+   1. First Click - The Smart Pre-Loading
+
+   2. // In OnInitializedAsync, it starts loading BEFORE you click!
+
+   3. if (artigo.TemGestao == true)
+
+   4. {
+
+   5.     _stockSummaryTask = StockService.GetCurrentStockAsync(artigo.Id);
+
+   6.     // Starts loading in background while you look at other tabs!
+
+   7. }
+
+   8. When Tab Opens - Instant Display
+
+   9. private async Task OnStockTabClick()
+
+   10. {
+
+   11.         // If pre-loaded, this is instant!
+
+   12.         currentStock = await _stockSummaryTask;
+
+   13. }
+
+The Beautiful Stock Display
+
+┌─────────────────────────────────────────────────┐
+
+│ Stock Atual  Total Entradas Total Saídas │
+
+│       1,250  ↑ 5,000                  ↓ 3,750     │
+
+│                                                   │
+
+│ [Histórico] [Filtrar por Data]                    │
+
+└─────────────────────────────────────────────────┘
+
+The Date Range Filter - Portuguese Culture!
+
+private System.Globalization.CultureInfo GetPortugueseCulture()
+{
+
+       var culture = new System.Globalization.CultureInfo(&quot;pt-PT&quot;);
+       culture.DateTimeFormat.AbbreviatedDayNames =
+
+              new[] { &quot;Dom&quot;, &quot;Seg&quot;, &quot;Ter&quot;, &quot;Qua&quot;, &quot;Qui&quot;, &quot;Sex&quot;, &quot;Sáb&quot; };
+       return culture;}</pre></div>
+<div class="pdf-page"><h3>Page 5</h3><pre>    Performance Optimizations
+
+1. Pre-Loading Strategy (Genius!)
+
+Instead of waiting for the user to click the Stock tab:
+
+// Start loading immediately when page opens
+_stockSummaryTask = StockService.GetCurrentStockAsync(artigo.Id);
+
+// Later, when user clicks tab, it&#x27;s already done!
+currentStock = await _stockSummaryTask; // Instant!
+
+2. Smart Task Management
+
+// Reuse the same task if nothing changed
+if (_stockMovementsTask == null)
+{
+
+       _stockMovementsTask = StockService.GetStockMovementsAsync(artigo.Id);
+}
+stocklist = await _stockMovementsTask;
+
+3. Intelligent Cache Invalidation
+
+The system knows when to forget cached data:
+
+    • Recent data expires quickly (5 minutes)
+    • Old data expires slowly (1 hour)
+    • Filtered queries aren&#x27;t cached at all
+
+    Real-World Usage Scenarios
+
+Scenario 1: Daily Stock Check
+
+Morning routine:
+
+    1. Manager opens article details
+    2. Clicks Stock tab
+    3. System checks cache (empty in morning)
+    4. Loads from database (2 seconds)
+    5. Shows: &quot;Stock: 1,250 units&quot;
+    6. Caches for 5 minutes
+
+5 minutes later:
+
+    1. Manager refreshes page
+    2. Clicks Stock tab again
+    3. System checks cache (FOUND!)
+    4. Shows instantly (0.001 seconds!)</pre></div>
+<div class="pdf-page"><h3>Page 6</h3><pre>Scenario 2: Historical Analysis
+
+Checking last month&#x27;s stock:
+
+    1. User sets date filter: &quot;Jan 1-31&quot;
+    2. System bypasses cache (filtered query)
+    3. Queries database directly
+    4. Shows movements for January
+    5. Doesn&#x27;t cache (too specific)
+
+Scenario 3: Multiple Users
+
+The beauty of caching with multiple users:
+
+    • User A checks stock for Article #123 (takes 2 seconds, caches result)
+    • User B checks same article 30 seconds later (instant! uses cache)
+    • User C checks same article 1 minute later (instant! uses cache)
+    • After 5 minutes, cache expires
+    • Next user triggers fresh load
+
+    Configuration &amp; Setup
+
+Basic Service Registration
+
+// In Program.cs
+services.AddScoped&lt;IStockService, StockService&gt;();
+services.AddMemoryCache(); // Enable caching
+
+With Caching Wrapper
+
+// Register both services
+services.AddScoped&lt;StockService&gt;();
+services.AddScoped&lt;IStockService&gt;(provider =&gt;
+{
+
+       var innerService = provider.GetRequiredService&lt;StockService&gt;();
+       var cache = provider.GetRequiredService&lt;IMemoryCache&gt;();
+       var logger =
+provider.GetRequiredService&lt;ILogger&lt;CachedStockService&gt;&gt;();
+       return new CachedStockService(innerService, cache, logger);
+});
+
+    Why This Design is Brilliant
+
+1. Separation of Concerns
+
+    • StockService: Does the real work
+    • CachedStockService: Handles memory/caching
+    • UI (Razor): Just displays data</pre></div>
+<div class="pdf-page"><h3>Page 7</h3><pre>2. Decorator Pattern
+
+The cached service &quot;decorates&quot; the real service:
+
+Request → CachedService → (if needed) → StockService → Database
+                    ↓ (if cached)
+
+                Return immediately
+
+3. Smart Preloading
+
+Starts loading before user needs it = perceived instant response!
+
+4. Graduated Cache Expiration
+
+    • Old data = stable = cache longer
+    • New data = changing = cache shorter
+    • Filtered data = unique = don&#x27;t cache
+
+Common Issues &amp; Solutions
+
+&quot;Stock seems outdated&quot;
+
+Solution: Click refresh button or wait 5 minutes for cache to expire
+
+&quot;Filtered queries are slow&quot;
+
+Expected: Filtered queries aren&#x27;t cached by design (too specific)
+
+&quot;Memory usage is high&quot;
+
+Check: Cache might be holding too much. Reduce cache times or add memory limits
+
+Monitoring &amp; Debugging
+
+Check if Cache is Working
+
+Look for these log messages:
+
+&quot;Stock cache hit for article 123 at date 2024-01-15&quot; ← Good! Cache working
+
+&quot;Stock totals cache hit for article 456&quot;  ← Good! Saved a query
+
+Performance Metrics
+
+With caching:
+
+• First load: ~2 seconds
+• Cached load: &lt;0.01 seconds
+• 99% faster for repeated queries!</pre></div>
+<div class="pdf-page"><h3>Page 8</h3><pre>    The Magic Summary
+
+This Stock Service is like having a super-smart assistant with perfect memory:
+
+    1. Remembers recent answers (caching)
+    2. Knows when to forget (smart expiration)
+    3. Starts working before you ask (preloading)
+    4. Speaks Portuguese (localization)
+    5. Handles thousands of users (scalable)
+
+It turns a slow, database-heavy operation into a lightning-fast, user-friendly experience.
+Instead of waiting 2-3 seconds every time, users get instant responses 99% of the time!
+
+   Bottom Line
+
+Your Stock Service is a masterpiece of optimization:
+
+    • Fast: Sub-millisecond responses when cached
+    • Smart: Knows what to cache and for how long
+    • Efficient: Reduces database load by 90%+
+    • User-Friendly: Pre-loads data before needed
+    • Scalable: Can handle hundreds of users
+
+It&#x27;s like upgrading from:
+
+•  Walking to the warehouse to count → Having the count on your screen
+
+   instantly
+
+•  Paper ledgers → Digital real-time tracking
+
+•  3-second waits → Instant responses
+
+•  Frustrated users → Happy users
+
+That&#x27;s the Stock Service - making inventory management instant, intelligent, and delightful!</pre></div>
+</div>
+</body>
+</html>

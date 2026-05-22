@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>📘 Loadings_Includes_virtuals</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 07-Database-EF-SQL</div>
+  <h1>📘 Loadings_Includes_virtuals</h1>
+  <div class="meta">Source: <code>📘 Loadings_Includes_virtuals.docx</code> &middot; <a href="📘 Loadings_Includes_virtuals.docx">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<h1 id="entity-framework-core-relationships-lazy-loading-virtual-properties">📘 Entity Framework Core — Relationships, Lazy Loading &amp; Virtual Properties</h1>
+<hr>
+<h2 id="1-navigation-properties-foreign-keys">🧩 1. Navigation Properties &amp; Foreign Keys</h2>
+<p>In EF Core, each relationship usually uses both an FK property and a navigation property:</p>
+<pre><code class="lang-csharp">
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">Empresa</span>
+
+{
+
+<span class="kw">public</span> <span class="kw">string</span> <span class="type">EmpresaId</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+
+<span class="kw">public</span> <span class="kw">string</span> <span class="type">Nome</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+
+<span class="cmt">// Foreign key</span>
+
+<span class="kw">public</span> <span class="kw">int</span> <span class="type">CountryId</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+
+<span class="cmt">// Navigation property</span>
+
+<span class="kw">public</span> <span class="type">Country</span> <span class="type">Country</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+
+}
+</code></pre>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Property</th>
+<th>Purpose</th>
+<th>Stored in DB?</th>
+</tr></thead><tbody>
+</tbody></table></div>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>-----------</th>
+<th>----------</th>
+<th>---------------</th>
+</tr></thead><tbody>
+</tbody></table></div>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th><code class="il">CountryId</code></th>
+<th>Foreign key, links entities</th>
+<th>✅ Yes</th>
+</tr></thead><tbody>
+</tbody></table></div>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th><code class="il">Country</code></th>
+<th>Navigation for related data</th>
+<th>❌ No</th>
+</tr></thead><tbody>
+</tbody></table></div>
+<hr>
+<h2 id="2-loading-related-data">⚙️ 2. Loading Related Data</h2>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Loading type</th>
+<th>Description</th>
+<th>Example</th>
+<th>SQL queries</th>
+<th>Recommended for</th>
+</tr></thead><tbody>
+</tbody></table></div>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>---------------</th>
+<th>--------------</th>
+<th>----------</th>
+<th>--------------</th>
+<th>-----------------</th>
+</tr></thead><tbody>
+</tbody></table></div>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th><strong>Lazy Loading</strong></th>
+<th>Loads data when property is first accessed</th>
+<th><code class="il">empresa.Country.Name</code></th>
+<th>Many (N+1)</th>
+<th>Small datasets, simple UIs</th>
+</tr></thead><tbody>
+</tbody></table></div>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th><strong>Eager Loading</strong></th>
+<th>Loads related data up front via join</th>
+<th><code class="il">.Include(e =&gt; e.Country)</code></th>
+<th>Single</th>
+<th>Lists, tables, APIs</th>
+</tr></thead><tbody>
+</tbody></table></div>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th><strong>Explicit Loading</strong></th>
+<th>Manually load related data later</th>
+<th><code class="il">context.Entry(e).Reference(x =&gt; x.Country).Load()</code></th>
+<th>Separate</th>
+<th>Controlled cases</th>
+</tr></thead><tbody>
+</tbody></table></div>
+<hr>
+<h2 id="3-the-virtual-keyword">🧠 3. The <code class="il">virtual</code> Keyword</h2>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Context</th>
+<th>Is <code class="il">virtual</code> needed?</th>
+<th>Why</th>
+</tr></thead><tbody>
+</tbody></table></div>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>----------</th>
+<th>----------------------</th>
+<th>-----</th>
+</tr></thead><tbody>
+</tbody></table></div>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Lazy loading</th>
+<th>✅ Yes</th>
+<th>EF substitutes proxy overrides for navigation props</th>
+</tr></thead><tbody>
+</tbody></table></div>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Eager loading (<code class="il">Include</code>)</th>
+<th>❌ No</th>
+<th>Data loaded via join</th>
+</tr></thead><tbody>
+</tbody></table></div>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Explicit loading (<code class="il">Load</code>)</th>
+<th>❌ No</th>
+<th>Manual load</th>
+</tr></thead><tbody>
+</tbody></table></div>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Projection (<code class="il">Select</code>)</th>
+<th>❌ No</th>
+<th>Custom object mapping</th>
+</tr></thead><tbody>
+</tbody></table></div>
+<blockquote>💡 Tip: Many production apps <strong>turn lazy loading off</strong> for predictable performance and simpler debugging.</blockquote>
+<hr>
+<h2 id="4-recommended-relationship-setup">🧱 4. Recommended Relationship Setup</h2>
+<pre><code class="lang-csharp">
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">Country</span>
+
+{
+
+<span class="kw">public</span> <span class="kw">int</span> <span class="type">CountryId</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+
+<span class="kw">public</span> <span class="kw">string</span> <span class="type">Name</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+
+<span class="kw">public</span> <span class="type">ICollection</span>&lt;<span class="type">Empresa</span>&gt; <span class="type">Empresas</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+
+}
+
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">Empresa</span>
+
+{
+
+<span class="kw">public</span> <span class="kw">string</span> <span class="type">EmpresaId</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+
+<span class="kw">public</span> <span class="kw">string</span> <span class="type">Nome</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+
+<span class="kw">public</span> <span class="kw">int</span> <span class="type">CountryId</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+
+<span class="kw">public</span> <span class="type">Country</span> <span class="type">Country</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+
+}
+</code></pre>
+<p>Optional explicit Fluent API configuration:</p>
+<pre><code class="lang-csharp">
+modelBuilder.<span class="type">Entity</span>&lt;<span class="type">Empresa</span>&gt;()
+
+.<span class="type">HasOne</span>(e =&gt; e.<span class="type">Country</span>)
+
+.<span class="type">WithMany</span>(c =&gt; c.<span class="type">Empresas</span>)
+
+.<span class="type">HasForeignKey</span>(e =&gt; e.<span class="type">CountryId</span>);
+</code></pre>
+<hr>
+<h2 id="5-query-examples">🚀 5. Query Examples</h2>
+<h3 id="eager-loading-recommended-for-lists">✅ Eager Loading (Recommended for lists)</h3>
+<pre><code class="lang-csharp">
+<span class="kw">var</span> empresas = dbContext.<span class="type">Empresas</span>
+
+.<span class="type">Include</span>(e =&gt; e.<span class="type">Country</span>)
+
+.<span class="type">Select</span>(e =&gt; <span class="kw">new</span>
+
+{
+
+e.<span class="type">EmpresaId</span>,
+
+e.<span class="type">Nome</span>,
+
+<span class="type">CountryName</span> = e.<span class="type">Country</span>.<span class="type">Name</span>
+
+})
+
+.<span class="type">ToList</span>();
+</code></pre>
+<p>🧠 <em>Result:</em> A single optimized <code class="il">JOIN</code> query fetching only needed data.</p>
+<hr>
+<h2 id="6-notmapped-attribute">🧰 6. <code class="il">[NotMapped]</code> Attribute</h2>
+<p>Use <code class="il">[NotMapped]</code> <strong>only</strong> for properties <strong>that don’t exist in the database</strong>, e.g.:</p>
+<pre><code class="lang-csharp">
+[<span class="type">NotMapped</span>]
+
+<span class="kw">public</span> <span class="kw">string</span> <span class="type">DisplayName</span> =&gt; $<span class="str">&quot;{Nome} ({Country?.Name})&quot;</span>;
+</code></pre>
+<p>Do <strong>not</strong> use <code class="il">[NotMapped]</code> on valid navigation properties like <code class="il">Country</code>.</p>
+<hr>
+<h2 id="7-performance-tips">⚡ 7. Performance Tips</h2>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Tip</th>
+<th>Why</th>
+</tr></thead><tbody>
+</tbody></table></div>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>-----</th>
+<th>-----</th>
+</tr></thead><tbody>
+</tbody></table></div>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Avoid lazy loading in large loops</th>
+<th>Prevents N+1 query issues</th>
+</tr></thead><tbody>
+</tbody></table></div>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Use <code class="il">.Include()</code></th>
+<th>Loads related data in one query</th>
+</tr></thead><tbody>
+</tbody></table></div>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Use <code class="il">.Select()</code></th>
+<th>Fetch only columns you need</th>
+</tr></thead><tbody>
+</tbody></table></div>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Keep <code class="il">virtual</code> only if lazy loading is used</th>
+<th>Otherwise unnecessary</th>
+</tr></thead><tbody>
+</tbody></table></div>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Turn off lazy loading globally in production</th>
+<th>Makes query flow explicit</th>
+</tr></thead><tbody>
+</tbody></table></div>
+<hr>
+<h2 id="8-quick-decision-guide">🧭 8. Quick Decision Guide</h2>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Scenario</th>
+<th>Lazy Loading</th>
+<th>Eager Loading</th>
+<th><code class="il">virtual</code> Needed</th>
+<th><code class="il">[NotMapped]</code></th>
+</tr></thead><tbody>
+</tbody></table></div>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>-----------</th>
+<th>---------------</th>
+<th>---------------</th>
+<th>------------------</th>
+<th>---------------</th>
+</tr></thead><tbody>
+</tbody></table></div>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Small admin pages</th>
+<th>✅ Optional</th>
+<th>✅ Good</th>
+<th>✅ Yes</th>
+<th>❌ No</th>
+</tr></thead><tbody>
+</tbody></table></div>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Large tables / APIs</th>
+<th>❌ No</th>
+<th>✅ Yes</th>
+<th>❌ No</th>
+<th>❌ No</th>
+</tr></thead><tbody>
+</tbody></table></div>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Computed property</th>
+<th>N/A</th>
+<th>N/A</th>
+<th>❌ No</th>
+<th>✅ Yes</th>
+</tr></thead><tbody>
+</tbody></table></div>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>DTO / projection</th>
+<th>❌ No</th>
+<th>✅ Yes</th>
+<th>❌ No</th>
+<th>✅ (if outside EF)</th>
+</tr></thead><tbody>
+</tbody></table></div>
+<hr>
+<h2 id="9-key-takeaways">✅ 9. Key Takeaways</h2>
+<ul>
+<li>✔️ Keep both <code class="il">CountryId</code> (FK) and <code class="il">Country</code> (navigation).</li>
+</ul>
+<ul>
+<li>⚙️ Use <code class="il">.Include()</code> or <code class="il">.Select()</code> instead of lazy loading.</li>
+</ul>
+<ul>
+<li>🚫 Don’t mark navigation properties <code class="il">[NotMapped]</code>.</li>
+</ul>
+<ul>
+<li>🧠 Only use <code class="il">virtual</code> when you enable lazy loading.</li>
+</ul>
+<ul>
+<li>💪 Prefer eager loading for predictable, performant queries.</li>
+</ul>
+<ul>
+<li>🧾 EF automatically manages relationships via conventions or <code class="il">OnModelCreating</code>.</li>
+</ul>
+<hr>
+<p><strong>End of Notes — EF Core Relationship &amp; Loading Reference</strong></p>
+</div>
+</body>
+</html>

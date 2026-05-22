@@ -1,0 +1,74 @@
+[
+  {
+    "src_rel": "Education/Basics/CSharp_Stack_and_Heap_Guide.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Basics\\CSharp_Stack_and_Heap_Guide.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Basics__CSharp_Stack_and_Heap_Guide.pdf.txt",
+    "word_count": 5234,
+    "category_legacy": "01-Basics"
+  },
+  {
+    "src_rel": "Education/Educational_ML/neural-network-journeyV1.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Educational_ML\\neural-network-journeyV1.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Educational_ML__neural-network-journeyV1.html.txt",
+    "word_count": 3691,
+    "category_legacy": "18-Machine-Learning"
+  },
+  {
+    "src_rel": "Education/26-Expression-Trees-Compiled-Reflection.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\26-Expression-Trees-Compiled-Reflection.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__26-Expression-Trees-Compiled-Reflection.html.txt",
+    "word_count": 2883,
+    "category_legacy": "04-CSharp-Language"
+  },
+  {
+    "src_rel": "Education/Stock/ENG/StockServiceSystemFormalDocumentation.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Stock\\ENG\\StockServiceSystemFormalDocumentation.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Stock__ENG__StockServiceSystemFormalDocumentation.docx.txt",
+    "word_count": 2083,
+    "category_legacy": "17-Domain-Examples-Stock"
+  },
+  {
+    "src_rel": "Education/Stock/ENG/StockServiceSystemInfoGraphic.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Stock\\ENG\\StockServiceSystemInfoGraphic.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Stock__ENG__StockServiceSystemInfoGraphic.pdf.txt",
+    "word_count": 1571,
+    "category_legacy": "17-Domain-Examples-Stock"
+  },
+  {
+    "src_rel": "JScript/AG_Grid_JS_learning.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\JScript\\AG_Grid_JS_learning.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\JScript__AG_Grid_JS_learning.docx.txt",
+    "word_count": 1261,
+    "category_legacy": "12-JavaScript"
+  },
+  {
+    "src_rel": "Education/06-Blazor-JS-Interop-Static-Events.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\06-Blazor-JS-Interop-Static-Events.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__06-Blazor-JS-Interop-Static-Events.md.txt",
+    "word_count": 835,
+    "category_legacy": "12-JavaScript"
+  },
+  {
+    "src_rel": "Education/Git/separating-repos.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Git\\separating-repos.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Git__separating-repos.md.txt",
+    "word_count": 353,
+    "category_legacy": "20-Git"
+  }
+]

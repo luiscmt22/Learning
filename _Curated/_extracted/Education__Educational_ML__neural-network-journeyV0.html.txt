@@ -1,0 +1,297 @@
+Neural Networks from Scratch: The 20 Questions Journey
+🧠
+Neural Networks from Scratch
+The 20 Questions Journey
+Building AI that learns — one concept at a time
+Use arrow keys or buttons to navigate
+The Goal
+Build a 20 Questions game that actually learns
+The Game
+Think of an animal. The computer asks yes/no questions and tries to guess it.
+Simple rules, but requires classification — one of the core problems in machine learning.
+The Challenge
+Don't just code rules — build a system that learns patterns from data .
+When it guesses wrong, it should get smarter for next time.
+💡 Teaching Philosophy
+Understand the "why" not just the "how." Build intuition before formulas. Make mistakes and debug them. That's how real learning happens.
+The Learning Path
+11 Modules from Zero to AI
+✅ Module 1: Foundations — What is Classification?
+✅ Module 2: From Lookup to Learning
+✅ Module 3: Multi-Class Classification
+✅ Module 4: Data Management with EF Core
+✅ Module 5: Hidden Layers & Deep Learning
+✅ Module 6: Backpropagation
+⏳ Module 7: Training at Scale
+⏳ Module 8: Persistence & Production
+🔷 Module 9: Smart Question Selection
+🔷 Module 10: ML Libraries Comparison
+⏳ Module 11: Building the UI
+✅ Complete ⏳ Upcoming 🔷 Optional/Advanced
+MODULE 1 ✓
+Foundations: What is Classification?
+Teaching computers to recognize patterns
+The Core Question
+How do you teach a computer to guess what you're thinking?
+Feature Vectors
+Represent each animal as a list of numbers — its "fingerprint"
+Penguin: [0, 2, 0, 2] // fly, swim, mammal, bird
+Dog: [0, 0, 2, 0]
+Eagle: [2, 0, 0, 2]
+Shark: [0, 2, 0, 0]
+Distance = Similarity
+Similar animals have similar fingerprints.
+Use Manhattan distance to measure how "far apart" two animals are.
+🔑 Key Insight
+Identical fingerprints = indistinguishable objects. If Cat and Dog have the same feature vector, no algorithm can tell them apart. The quality of your questions determines the ceiling of any algorithm's intelligence.
+MODULE 2 ✓
+From Lookup to Learning
+What if the computer figured out patterns itself?
+The Neuron
+Inspired by biology: a unit that takes inputs, weighs them, and fires (or doesn't).
+output = sigmoid( Σ(weight × input) + bias )
+Weights = Knowledge
+Weights encode what the neuron has learned about which features matter.
+High weight = this feature is important for detecting this class.
+The Learning Rule
+weight += learningRate × error × input
+If wrong, adjust weights in the direction that reduces error.
+🔑 Key Insight
+Training is just adjusting weights until errors shrink. The neuron doesn't "understand" — it just finds patterns in numbers through trial and error.
+The Sigmoid Function
+Squashing infinity into [0, 1]
+input
+output
++∞
+-∞
+1
+0
+0.5
+sigmoid(x) = 1 / (1 + e -x )
+Why Sigmoid?
+Converts any number into a probability-like value between 0 and 1. Perfect for "is this a dog? yes/no" decisions.
+Biological Inspiration
+Real neurons either fire or don't. Sigmoid models this "soft" threshold — values near 0.5 are uncertain, near 0 or 1 are confident.
+MODULE 3 ✓
+Multi-Class Classification
+Recognizing many categories, not just one
+One Neuron Per Class
+Each neuron learns to recognize one animal. The network picks the one with highest activation.
+Inputs
+Fly?
+Swim?
+Mammal?
+Bird?
+→
+Output Neurons
+🐧
+🐕
+🦅
+🦈
+→
+Winner
+🐕
+Highest score!
+🔑 Key Insight
+A network is just neurons working together. Each learns to recognize one pattern. The collective behavior produces intelligent classification.
+MODULE 4 ✓
+Data Management
+Scaling beyond hardcoded data with Entity Framework Core
+The Database Schema
+Animals : Id, Name
+Questions : Id, Text
+AnimalAnswers : AnimalId, QuestionId, Value (0=No, 1=Maybe, 2=Yes)
+Why Database?
+Add animals without changing code
+Add questions without changing code
+Network size adapts dynamically
+Persist learned corrections
+Many-to-Many
+Animals ↔ Questions through AnimalAnswers
+Each animal has an answer to each question.
+🔑 Key Insight
+The network structure should be driven by data, not hardcoded. `questions.Count` determines input size. `animals.Count` determines output neurons.
+Lesson: Feature Engineering
+The questions you ask matter more than the algorithm
+The Problem We Hit
+Cat and Dog had identical feature vectors : [0, 0, 2, 0]
+Shark and Salmon too: [0, 2, 0, 0]
+Animal Fly Swim Mammal Bird Distinguishable?
+Dog 0 0 2 0 NO! Same vector
+Cat 0 0 2 0
+Shark 0 2 0 0 NO! Same vector
+Salmon 0 2 0 0
+The Solution: Better Questions
+New Question: "Is it a feline?" → Cat: Yes, Dog: No ✓
+New Question: "Is it dangerous?" → Shark: Yes, Salmon: No ✓
+🔑 Key Insight
+No algorithm can overcome bad data. Feature engineering — choosing the right questions — is often more impactful than choosing the right model.
+MODULE 5 ✓
+Hidden Layers & Deep Learning
+Why can't a single layer solve everything?
+The Architecture
+Inputs (6)
+→
+Hidden (6)
+→
+Output (8)
+public List<List<Neuron>> Layers { get ; set ; }
+// Forward pass: each layer's output becomes next layer's input
+foreach ( var layer in Layers) {
+outputs = ComputeSingleLayer(inputs, layer);
+inputs = outputs; // ← The key line!
+}
+🔑 Key Insight
+Hidden layers learn intermediate representations. A hidden neuron might detect "aquatic mammal" or "flying non-bird" — abstract features that make final classification easier.
+MODULE 6 ✓
+Backpropagation
+How do errors flow backward through layers?
+The Credit Assignment Problem
+If the network guesses "Dog" when it should be "Cat"...
+Which hidden neuron is to blame?
+Output Layer: Easy
+error = expected - actual
+// Direct supervision
+Hidden Layer: Hard
+error = ???
+// No "expected output"!
+The Solution: Blame Flows Backward
+If hidden neuron H has a strong connection to output neuron O that has a big error ...
+Then H contributed heavily to that error!
+hiddenError[h] = Σ( outputError[o] × weight[h→o] )
+Backpropagation: The Flow
+Inputs
+Hidden
+Output
+FORWARD
+BACKWARD (errors)
+Forward Pass
+Signals flow through weights → activations → outputs
+Weights amplify signals
+Backward Pass
+Errors flow through same weights → blame assignment
+Weights distribute blame
+🔑 Key Insight
+The same weights that carry signals forward also carry errors backward. It's a beautiful symmetry — the network learns by reversing its own computation.
+The Sigmoid Derivative
+Why neurons near 0 or 1 learn slowly
+derivative = output × (1 - output)
+0
+0.5
+1
+0.25 (max)
+SATURATED
+SENSITIVE
+SATURATED
+Output ≈ 0.5
+Derivative = 0.25 (maximum)
+Neuron is uncertain — very responsive to learning
+Output ≈ 0 or 1
+Derivative ≈ 0
+Neuron is saturated — confident, barely changes
+🔑 Key Insight
+The derivative answers: "How much can this neuron actually change right now?" It prevents wasting updates on neurons that are already confident.
+Backpropagation: The Code
+public void Train( double [] inputs, double [] expected, double lr) {
+// STEP 1: Forward pass
+var hiddenOutputs = ComputeSingleLayer(inputs, Layers[ 0 ]);
+var finalOutputs = ComputeSingleLayer(hiddenOutputs, Layers[ 1 ]);
+// STEP 2: Output errors (with derivative!)
+var outputErrors = new double [outputLayer.Count];
+for ( int i = 0 ; i var o = finalOutputs[i];
+outputErrors[i] = (expected[i] - o) * o * ( 1 - o);
+}
+// STEP 3: Hidden errors (backpropagation!)
+var hiddenErrors = new double [hiddenLayer.Count];
+for ( int h = 0 ; h double sum = 0 ;
+for ( int o = 0 ; o var ho = hiddenOutputs[h];
+hiddenErrors[h] = sum * ho * ( 1 - ho);
+}
+// STEP 4: Update weights
+for ( int i = 0 ; i for ( int i = 0 ; i
+MODULE 7 — UPCOMING
+Training at Scale
+How do you train on millions of examples efficiently?
+Batch Training
+Train on all examples, then update weights once. Stable but slow.
+Stochastic (SGD)
+Update after each example. Fast but noisy.
+Mini-Batch
+Best of both worlds. Industry standard.
+Learning Rate Schedules
+Start big, go small. Like cooling metal.
+Concepts to Explore
+Overfitting — memorizing training data vs. learning patterns
+Validation sets — "trust but verify" with held-out data
+Early stopping — stop when validation error rises
+MODULE 8 — UPCOMING
+Persistence & Production
+Save and load a trained network
+The Problem
+Training takes millions of iterations. We don't want to start over every time!
+What to Save
+Network architecture (layer sizes)
+All weights
+All biases
+Version/metadata
+Options
+JSON serialization (simple)
+Database tables (structured)
+Binary format (efficient)
+💡 Key Concept
+Training is expensive. Inference is cheap. Train once, deploy everywhere. This is why ML models are shipped as trained weights, not training code.
+MODULE 9 — OPTIONAL
+Smart Question Selection
+What question gives the most information?
+The Idea
+Not all questions are equal. "Does it fly?" might be useless if you've already narrowed to aquatic animals.
+Information Gain = Entropy(before) - Entropy(after)
+Entropy
+Measure of uncertainty. High entropy = many possibilities. Low entropy = almost certain.
+Information Gain
+How much a question reduces uncertainty. Pick the question that maximizes this!
+💡 Key Concept
+Decision trees vs neural networks — Decision trees explicitly optimize question order. Neural networks learn features implicitly. Both have tradeoffs.
+MODULE 11 — FINAL
+Building the UI
+Make it fun to play!
+Tech Stack
+Blazor + MudBlazor — Modern C# web development
+Game Interface
+Beautiful question/answer flow. Animated feedback. Satisfying reveal.
+Training Dashboard
+Watch the network learn in real-time. Error curves, weight visualizations.
+Admin Panel
+Add animals. Add questions. Manage training data.
+💡 Coming Full Circle
+We started with console I/O, understood the math deeply, and now we can build something people actually want to use. That's the power of understanding fundamentals.
+Key Lessons Learned
+Bugs that taught us the most
+Reference vs Value Types
+All neurons shared the same weights array because arrays are reference types. Fix: create new array inside the loop.
+Loop Variable Scope
+`var i = 0` inside foreach resets every iteration. Fix: declare outside loop.
+Random Initialization
+`new Random()` in tight loops produces same values. Fix: create Random once, reuse.
+Identical Feature Vectors
+Cat and Dog were indistinguishable. Fix: add discriminating questions.
+Missing Sigmoid Derivative
+Network didn't generalize well. Fix: scale errors by derivative.
+What You've Built
+🧠
+Neural Network
+From scratch, no libraries
+⚡
+Backpropagation
+Multi-layer learning
+💾
+Database
+EF Core integration
+🎮
+Working Game
+That actually learns!
+Understanding beats memorization. Build it yourself, and you'll never forget how it works.
+The journey continues... → Training at Scale → Persistence → UI
+← Previous
+1 / 20
+Next →

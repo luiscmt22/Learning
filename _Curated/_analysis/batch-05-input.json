@@ -1,0 +1,74 @@
+[
+  {
+    "src_rel": "Education/23-EF-Core-Audit-Trail-Two-Layer-System.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\23-EF-Core-Audit-Trail-Two-Layer-System.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__23-EF-Core-Audit-Trail-Two-Layer-System.html.txt",
+    "word_count": 4628,
+    "category_legacy": "07-Database-EF-SQL"
+  },
+  {
+    "src_rel": "Education/22-ConcurrentDictionary-Thread-Safe-Caching.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\22-ConcurrentDictionary-Thread-Safe-Caching.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__22-ConcurrentDictionary-Thread-Safe-Caching.html.txt",
+    "word_count": 3515,
+    "category_legacy": "08-Concurrency-and-Async"
+  },
+  {
+    "src_rel": "Education/SQL/ef-core-multi-tenant.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\SQL\\ef-core-multi-tenant.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__SQL__ef-core-multi-tenant.html.txt",
+    "word_count": 2728,
+    "category_legacy": "07-Database-EF-SQL"
+  },
+  {
+    "src_rel": "Education/FactoryFloor/PT/SistemaProduçãoChãoFábricaDocumentaçãoFormal.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\FactoryFloor\\PT\\SistemaProduçãoChãoFábricaDocumentaçãoFormal.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__FactoryFloor__PT__SistemaProduçãoChãoFábricaDocumentaçãoFormal.pdf.txt",
+    "word_count": 1757,
+    "category_legacy": "16-Domain-Examples-FactoryFloor"
+  },
+  {
+    "src_rel": "Education/09-Generic-Schedule-Grid-Architecture.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\09-Generic-Schedule-Grid-Architecture.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__09-Generic-Schedule-Grid-Architecture.md.txt",
+    "word_count": 1484,
+    "category_legacy": "05-Scheduling"
+  },
+  {
+    "src_rel": "Identity/IdentityProjectKnowledgeEditable.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Identity\\IdentityProjectKnowledgeEditable.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Identity__IdentityProjectKnowledgeEditable.docx.txt",
+    "word_count": 1221,
+    "category_legacy": "06-Auth-and-Identity"
+  },
+  {
+    "src_rel": "📘 Loadings_Includes_virtuals.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\📘 Loadings_Includes_virtuals.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\📘 Loadings_Includes_virtuals.docx.txt",
+    "word_count": 678,
+    "category_legacy": "07-Database-EF-SQL"
+  },
+  {
+    "src_rel": "JScript/ExemploCores.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\JScript\\ExemploCores.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\JScript__ExemploCores.html.txt",
+    "word_count": 62,
+    "category_legacy": "12-JavaScript"
+  }
+]

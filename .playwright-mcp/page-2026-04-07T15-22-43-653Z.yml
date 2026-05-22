@@ -1,0 +1,98 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "Learning" [ref=e4] [cursor=pointer]:
+        - /url: ../00-Index.html
+      - generic [ref=e5]: ›
+      - generic [ref=e6]: Core Concepts
+    - link "Master index" [ref=e8] [cursor=pointer]:
+      - /url: ../00-Index.html
+  - generic [ref=e9]:
+    - generic [ref=e10]: Core Concepts
+    - heading "Core Concepts" [level=1] [ref=e11]
+    - paragraph [ref=e12]: Pure programming theory that exists independently of any specific application. The reusable knowledge layer.
+    - generic [ref=e13]:
+      - generic [ref=e14]: 10 categories
+      - generic [ref=e15]: 53 documents
+      - generic [ref=e16]: 117,072 words
+  - generic [ref=e17]:
+    - 'link "⟨/⟩ C# Language 9 docs Features of the language itself C# language features that show up everywhere: generics, expression trees, named tuples, delegates, flag enums, and the runtime mechanics that make them work." [ref=e18] [cursor=pointer]':
+      - /url: language/_Category.html
+      - generic [ref=e19]:
+        - generic [ref=e20]: ⟨/⟩
+        - generic [ref=e21]: C# Language
+        - generic [ref=e22]: 9 docs
+      - paragraph [ref=e23]: Features of the language itself
+      - paragraph [ref=e24]: "C# language features that show up everywhere: generics, expression trees, named tuples, delegates, flag enums, and the runtime mechanics that make them work."
+    - link "◇ Patterns & Architecture 9 docs How to organise code that survives change Design patterns and software architecture — clean architecture, SOLID, and the catalog of patterns (Strategy, Adapter, Decorator, Chain of Responsibility, Builder…) as they actually appear in production .NET code." [ref=e25] [cursor=pointer]:
+      - /url: patterns/_Category.html
+      - generic [ref=e26]:
+        - generic [ref=e27]: ◇
+        - generic [ref=e28]: Patterns & Architecture
+        - generic [ref=e29]: 9 docs
+      - paragraph [ref=e30]: How to organise code that survives change
+      - paragraph [ref=e31]: Design patterns and software architecture — clean architecture, SOLID, and the catalog of patterns (Strategy, Adapter, Decorator, Chain of Responsibility, Builder…) as they actually appear in production .NET code.
+    - 'link "⊞ Blazor & Frontend 10 docs Components, lifecycle, JS bridges Blazor Server patterns and JS interop fundamentals: component lifecycle, parent-child communication, the static-events trap, prerendering gotchas, and bridging to jQuery / vanilla JS libraries." [ref=e32] [cursor=pointer]':
+      - /url: frontend/_Category.html
+      - generic [ref=e33]:
+        - generic [ref=e34]: ⊞
+        - generic [ref=e35]: Blazor & Frontend
+        - generic [ref=e36]: 10 docs
+      - paragraph [ref=e37]: Components, lifecycle, JS bridges
+      - paragraph [ref=e38]: "Blazor Server patterns and JS interop fundamentals: component lifecycle, parent-child communication, the static-events trap, prerendering gotchas, and bridging to jQuery / vanilla JS libraries."
+    - link "▤ Data & Persistence 5 docs EF Core, SQL, schemas Persistence and querying — Entity Framework Core (configurations, migrations, change tracking, audit trails), raw SQL, multi-tenant designs, eager vs lazy loading." [ref=e39] [cursor=pointer]:
+      - /url: data/_Category.html
+      - generic [ref=e40]:
+        - generic [ref=e41]: ▤
+        - generic [ref=e42]: Data & Persistence
+        - generic [ref=e43]: 5 docs
+      - paragraph [ref=e44]: EF Core, SQL, schemas
+      - paragraph [ref=e45]: Persistence and querying — Entity Framework Core (configurations, migrations, change tracking, audit trails), raw SQL, multi-tenant designs, eager vs lazy loading.
+    - link "⇄ Concurrency & Performance 5 docs Async, locks, caches How to do multiple things without setting your code on fire — async/await, semaphores, concurrent collections, caching strategies (IMemoryCache, ConcurrentDictionary), and background services." [ref=e46] [cursor=pointer]:
+      - /url: concurrency/_Category.html
+      - generic [ref=e47]:
+        - generic [ref=e48]: ⇄
+        - generic [ref=e49]: Concurrency & Performance
+        - generic [ref=e50]: 5 docs
+      - paragraph [ref=e51]: Async, locks, caches
+      - paragraph [ref=e52]: How to do multiple things without setting your code on fire — async/await, semaphores, concurrent collections, caching strategies (IMemoryCache, ConcurrentDictionary), and background services.
+    - link "⌁ Real-Time 2 docs SignalR fundamentals Real-time communication fundamentals — SignalR hubs, transports, groups, and the mental model of push-based messaging." [ref=e53] [cursor=pointer]:
+      - /url: realtime/_Category.html
+      - generic [ref=e54]:
+        - generic [ref=e55]: ⌁
+        - generic [ref=e56]: Real-Time
+        - generic [ref=e57]: 2 docs
+      - paragraph [ref=e58]: SignalR fundamentals
+      - paragraph [ref=e59]: Real-time communication fundamentals — SignalR hubs, transports, groups, and the mental model of push-based messaging.
+    - link "✓ Testing 3 docs Unit testing for .NET Unit testing strategy and mechanics for .NET — what to test, what not to test, and the mechanics of xUnit / NUnit / MSTest." [ref=e60] [cursor=pointer]:
+      - /url: testing/_Category.html
+      - generic [ref=e61]:
+        - generic [ref=e62]: ✓
+        - generic [ref=e63]: Testing
+        - generic [ref=e64]: 3 docs
+      - paragraph [ref=e65]: Unit testing for .NET
+      - paragraph [ref=e66]: Unit testing strategy and mechanics for .NET — what to test, what not to test, and the mechanics of xUnit / NUnit / MSTest.
+    - link "⌬ Web Fundamentals 2 docs HTTP, browsers, the platform HTTP, browser plumbing, IMAP/SMTP, and the platform mechanics every web developer should know." [ref=e67] [cursor=pointer]:
+      - /url: web/_Category.html
+      - generic [ref=e68]:
+        - generic [ref=e69]: ⌬
+        - generic [ref=e70]: Web Fundamentals
+        - generic [ref=e71]: 2 docs
+      - paragraph [ref=e72]: HTTP, browsers, the platform
+      - paragraph [ref=e73]: HTTP, browser plumbing, IMAP/SMTP, and the platform mechanics every web developer should know.
+    - link "∿ Machine Learning 7 docs How neural networks actually learn Machine learning education — backpropagation, neural networks, sigmoids, training loops, and the math behind credit assignment." [ref=e74] [cursor=pointer]:
+      - /url: ml/_Category.html
+      - generic [ref=e75]:
+        - generic [ref=e76]: ∿
+        - generic [ref=e77]: Machine Learning
+        - generic [ref=e78]: 7 docs
+      - paragraph [ref=e79]: How neural networks actually learn
+      - paragraph [ref=e80]: Machine learning education — backpropagation, neural networks, sigmoids, training loops, and the math behind credit assignment.
+    - link "⎇ Git 1 docs Version control plumbing Git operations and branching strategies — repo separation, rebases, merges." [ref=e81] [cursor=pointer]:
+      - /url: git/_Category.html
+      - generic [ref=e82]:
+        - generic [ref=e83]: ⎇
+        - generic [ref=e84]: Git
+        - generic [ref=e85]: 1 docs
+      - paragraph [ref=e86]: Version control plumbing
+      - paragraph [ref=e87]: Git operations and branching strategies — repo separation, rebases, merges.

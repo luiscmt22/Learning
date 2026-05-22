@@ -1,0 +1,718 @@
+Feature Flags with Hierarchy & Dependencies
+Feature Flags with Hierarchy & Dependencies
+Tutorial #19 — Turn modules on/off per company, with parent-child cascading and cross-module dependencies
+1. What Are Feature Flags?
+A feature flag is a toggle that lets you turn an entire module on or off for a specific company
+without redeploying the application . In GivingCare, every company can have a
+different combination of modules active. One company might use HR + Jobs + Attendance, while
+another only uses CRM + Leads + Documents.
+Each feature has two orthogonal dimensions:
+Three States (Is it on?)
+State Value Meaning
+Enabled 0 Feature is fully active
+Disabled 1 Feature is turned off — users see "Module Disabled" page
+Maintenance 2 Temporarily unavailable — users see "Under Maintenance" page
+public enum FeatureState
+{
+/// <summary>Feature is fully enabled</summary>
+Enabled = 0 ,
+/// <summary>Feature is disabled</summary>
+Disabled = 1 ,
+/// <summary>Feature is temporarily unavailable (maintenance)</summary>
+Maintenance = 2
+}
+Three Access Tiers (How much can they do?)
+Tier Value Meaning
+ReadOnly 1 View and search only. No create/edit/delete.
+Simple 2 Basic CRUD with simplified fields/features.
+Full 3 Full access to all module features.
+public enum AccessTier
+{
+/// <summary>View/search only. No create/edit/delete.</summary>
+ReadOnly = 1 ,
+/// <summary>Basic CRUD with simplified fields/features.</summary>
+Simple = 2 ,
+/// <summary>Full access to all module features.</summary>
+Full = 3
+}
+FeatureState and AccessTier are orthogonal .
+State answers "is this module turned on?" while Tier answers "how much can they do within it?"
+A module can be Enabled with ReadOnly tier — meaning users can
+see the data but cannot create, edit, or delete anything. The tier only matters when the state is Enabled .
+Think of it like a power grid. FeatureState is the circuit breaker — is the
+power on or off? AccessTier is the voltage regulator — how much power flows
+through once the breaker is on. Flipping the breaker off makes the voltage irrelevant.
+2. The Registry — FeatureKeys.cs
+Every feature module in the system is registered as a string constant in the
+FeatureKeys static class. This is the single source of truth for all feature
+identifiers. There are currently 18 feature modules organized into four groups.
+The Constants
+public static class FeatureKeys
+{
+// Standalone modules
+public const string EntitiesModule = "Entities" ;
+public const string ArticlesModule = "Articles" ;
+public const string DocumentsModule = "Documents" ;
+public const string EquipmentModule = "Equipment" ;
+public const string TasksModule = "Tasks" ;
+public const string FormsModule = "Forms" ;
+public const string StockModule = "Stock" ;
+public const string ChatModule = "Chat" ;
+// HR parent + children
+public const string HrModule = "HR" ;
+public const string AttendanceModule = "Attendance" ;
+public const string LeaveModule = "Leave" ;
+public const string CoursesModule = "Courses" ;
+public const string JobsModule = "Jobs" ;
+public const string SchedulingModule = "Scheduling" ;
+// CRM parent + children
+public const string CrmModule = "CRM" ;
+public const string LeadsModule = "Leads" ;
+public const string OportunidadesModule = "Oportunidades" ;
+public const string EmailMonitoringModule = "EmailMonitoring" ;
+// Support/ITSM parent
+public const string SupportModule = "Support" ;
+}
+Module Map
+GivingCare Feature Modules
+================================================================
+STANDALONE HR (parent) CRM (parent)
+---------- ----------- ------------
+Entities Attendance Leads
+Articles
+Parent-Child Relationships: ChildModules
+The ChildModules dictionary declares which modules are children of a parent.
+When a parent is disabled, all its children are implicitly disabled , regardless
+of their own state.
+public static readonly IReadOnlyDictionary < string , string []> ChildModules =
+new Dictionary < string , string []>
+{
+[ HrModule ] = new [] { AttendanceModule , LeaveModule , CoursesModule , JobsModule , SchedulingModule },
+[ CrmModule ] = new [] { LeadsModule , OportunidadesModule , EmailMonitoringModule },
+[ SupportModule ] = Array . Empty < string >()
+};
+Cross-Module Dependencies: DependsOn
+The DependsOn dictionary declares modules that need other modules to function.
+If any dependency is disabled, the dependent module is effectively disabled too.
+public static readonly IReadOnlyDictionary < string , string []> DependsOn =
+new Dictionary < string , string []>
+{
+[ DocumentsModule ] = new [] { ArticlesModule , EntitiesModule },
+[ StockModule ] = new [] { ArticlesModule }
+};
+This means: you cannot use Documents without both Articles and Entities enabled (because
+invoices reference articles and are addressed to entities). You cannot use Stock without
+Articles enabled (because stock tracks article quantities).
+3. The Hierarchy Engine — IsEffectivelyEnabled
+The core algorithm that resolves whether a module is truly usable is
+IsEffectivelyEnabled . It checks three things in order:
+Own state — Is this module itself set to Enabled?
+Parent state — If this module is a child, is its parent Enabled?
+Dependency state — Are all modules this one depends on effectively enabled? (recursive)
+public static bool IsEffectivelyEnabled (
+Dictionary < string , FeatureState > features ,
+string featureKey )
+{
+return IsEffectivelyEnabledInternal ( features , featureKey , new HashSet < string >());
+}
+private static bool IsEffectivelyEnabledInternal (
+Dictionary < string , FeatureState > features ,
+string featureKey ,
+HashSet < string > visited )
+{
+// Prevent infinite recursion from circular dependencies
+if (! visited . Add ( featureKey )) return true ;
+// Check the module's own state (default to enabled if not configured)
+var selfEnabled = ! features . TryGetValue ( featureKey , out var state )
+|| state == FeatureState . Enabled ;
+if (! selfEnabled ) return false ;
+// Check if any parent is disabled
+foreach ( var ( parent , children ) in ChildModules )
+{
+if ( children . Contains ( featureKey ))
+{
+var parentEnabled = ! features . TryGetValue ( parent , out var parentState )
+|| parentState == FeatureState . Enabled ;
+if (! parentEnabled ) return false ;
+}
+}
+// Check if any dependency is disabled (recursive for transitive deps)
+if ( DependsOn . TryGetValue ( featureKey , out var deps ))
+{
+foreach ( var dep in deps )
+{
+if (! IsEffectivelyEnabledInternal ( features , dep , visited ))
+return false ;
+}
+}
+return true ;
+}
+IsEffectivelyEnabled reads as: "Am I on, AND is my parent on, AND are all my
+dependencies on?" If any link in that chain says no, the module is blocked.
+The Circular Dependency Guard
+Notice the HashSet<string> visited parameter. Before processing any module, the
+algorithm calls visited.Add(featureKey) . If the key was already in the set,
+Add returns false , and the method returns true
+(assume enabled to break the cycle). This prevents infinite recursion if someone accidentally
+creates a circular dependency like A depends on B depends on A.
+Visualizing the Parent-Child Cascade
+When a parent module is disabled, every child underneath it is automatically blocked:
+HR (parent) ─── DISABLED
+├── Attendance ─── (BLOCKED by parent)
+├── Leave ─── (BLOCKED by parent)
+├── Courses ─── (BLOCKED by parent)
+├── Jobs ─── (BLOCKED by parent)
+└── Scheduling ─── (BLOCKED by parent)
+Even if Attendance is explicitly set to Enabled in the database,
+it is still blocked because its parent HR is Disabled.
+CRM (parent) ─── DISABLED
+├── Leads ─── (BLOCKED by parent)
+├── Oportunidades ─── (BLOCKED by parent)
+└── EmailMonitoring ─── (BLOCKED by parent)
+Visualizing Cross-Dependencies
+Dependencies work across unrelated modules. Disabling Articles creates a chain reaction:
+Articles ─── DISABLED
+|
+├──dependency──> Documents ─── (BLOCKED: depends on Articles + Entities)
+|
+└──dependency──> Stock ─── (BLOCKED: depends on Articles)
+Even though Documents and Stock are both set to Enabled,
+they cannot function because their dependency (Articles) is off.
+And if Entities is disabled instead:
+Entities ─── DISABLED
+|
+└──dependency──> Documents ─── (BLOCKED: depends on Entities)
+Stock is unaffected because Stock only depends on Articles, not Entities.
+Like a power grid — turning off the main breaker (parent) kills all circuits
+(children) downstream. And some appliances (Documents) need two separate circuits (Articles
++ Entities) to be live before they will turn on.
+4. Access Tiers — ReadOnly / Simple / Full
+Not every module supports access tiers. Only modules listed in the SupportedTiers
+dictionary have configurable tiers. Modules not in this dictionary always operate at
+Full when enabled.
+Access tiers let you sell "lite" versus "full" versions of the same module. A company paying
+for the basic plan might get Simple access to Articles (CRUD only), while a
+premium company gets Full access (templates, categories, BOM, production).
+public static readonly IReadOnlyDictionary < string , AccessTierDefinition []> SupportedTiers =
+new Dictionary < string , AccessTierDefinition []>
+{
+[ ArticlesModule ] = new []
+{
+new AccessTierDefinition ( AccessTier . ReadOnly ,
+"Apenas Leitura" ,
+"Visualizar e pesquisar artigos. Sem criar/editar/eliminar." ),
+new AccessTierDefinition ( AccessTier . Simple ,
+"Simples" ,
+"CRUD basico com template automatico. Sem templates, geracao cartesiana ou familias." ),
+new AccessTierDefinition ( AccessTier . Full ,
+"Completo" ,
+"Acesso total: templates, categorias, BOM, producao." )
+},
+[ EntitiesModule ] = new []
+{
+new AccessTierDefinition ( AccessTier . ReadOnly ,
+"Apenas Leitura" ,
+"Visualizar entidades. Sem criar/editar/eliminar." ),
+new AccessTierDefinition ( AccessTier . Simple ,
+"Simples" ,
+"CRUD basico: nome, tipo, NIF, email, telefone, morada." ),
+new AccessTierDefinition ( AccessTier . Full ,
+"Completo" ,
+"Acesso total: dashboard, armazens, certificacoes, niveis de preco." )
+},
+[ JobsModule ] = new []
+{
+new AccessTierDefinition ( AccessTier . ReadOnly ,
+"Apenas Leitura" ,
+"Visualizar obras e filtrar. Sem criar/editar/eliminar." ),
+new AccessTierDefinition ( AccessTier . Simple ,
+"Simples" ,
+"CRUD + atribuicao de colaboradores/equipas/equipamentos." ),
+new AccessTierDefinition ( AccessTier . Full ,
+"Completo" ,
+"Acesso total: grelha de horarios, detecao de conflitos, operacoes em massa." )
+},
+[ HrModule ] = new []
+{
+new AccessTierDefinition ( AccessTier . ReadOnly ,
+"Apenas Leitura" ,
+"Visualizar lista e detalhes de colaboradores. Sem criar/editar." ),
+new AccessTierDefinition ( AccessTier . Simple ,
+"Simples" ,
+"CRUD basico: dados pessoais e profissionais." ),
+new AccessTierDefinition ( AccessTier . Full ,
+"Completo" ,
+"Acesso total: configuracao RH, contratos, cargos, horarios, cursos, ausencias." )
+}
+};
+Tier Comparison Summary
+Module
+ReadOnly
+Simple
+Full
+Articles
+View/search
++ CRUD with auto template
++ Templates, categories, BOM, production
+Entities
+View entities
++ Basic CRUD (name, NIF, email)
++ Dashboard, warehouses, certifications, price levels
+Jobs
+View/filter
++ CRUD, assign workers/teams/equipment
++ Schedule grid, conflict detection, bulk ops
+HR
+View employees
++ Basic CRUD (personal/professional data)
++ HR config, contracts, roles, schedules, courses, leave
+Modules not in SupportedTiers (like Tasks, Forms, Chat, all CRM children)
+always run at Full when enabled. They have no tier granularity — they are either
+fully on or off.
+5. Database Model — CompanyFeatureFlag
+Feature flags are stored in the BaseControle database (the auth/system DB),
+not in the per-company tenant database. This makes sense because feature flags control
+which companies can access which modules — it is a system-level concern.
+[ Table ( "CompanyFeatureFlags" )]
+public class CompanyFeatureFlag
+{
+[ Key ]
+public int Id { get ; set ; }
+/// <summary>FK to Company table in BaseControle DB</summary>
+public int CompanyId { get ; set ; }
+/// <summary>Feature key (e.g. "Jobs"). See FeatureKeys.</summary>
+[ MaxLength ( 50 )]
+public string FeatureKey { get ; set ; } = string .Empty;
+/// <summary>Current state of the feature for this company</summary>
+public FeatureState State { get ; set ; } = FeatureState . Enabled ;
+/// <summary>Capability tier (only meaningful when State == Enabled)</summary>
+public AccessTier AccessTier { get ; set ; } = AccessTier . Full ;
+public DateTime ModifiedAt { get ; set ; }
+public int ? ModifiedByUserId { get ; set ; }
+}
+The storage model is simple: one row per (CompanyId, FeatureKey) pair . If a
+company has no row for a feature, that feature is treated as Enabled with Full
+access tier. This is the "default to enabled" philosophy.
+Default to ENABLED. Only store overrides. A missing row means full access.
+This ensures backward compatibility — existing companies that predate the feature flag
+system automatically have all modules active without any data migration.
+Example Database Rows
+Id CompanyId FeatureKey State AccessTier ModifiedAt
+1 5 CRM Disabled (1) Full (3) 2026-03-01
+2 5 Articles Enabled (0) Simple (2) 2026-03-01
+3 5 Stock Maintenance (2) Full (3) 2026-03-10
+4 7 HR Enabled (0) ReadOnly (1) 2026-02-15
+In this example:
+Company 5 has CRM disabled — Leads, Oportunidades, and EmailMonitoring are all blocked by parent.
+Company 5 has Articles at Simple tier — they can do basic CRUD but not templates or BOM.
+Company 5 has Stock in Maintenance — users see a maintenance page when they navigate to Stock.
+Company 7 has HR at ReadOnly — they can view employees but cannot create or edit.
+Company 7 has no row for Jobs, so Jobs is Enabled/Full by default.
+6. The Service — CompanyFeatureFlagService
+The CompanyFeatureFlagService is the centralized runtime service that reads,
+caches, and writes feature flag data. It operates on the BaseControle database.
+The Interface
+public interface ICompanyFeatureFlagService
+{
+// Read operations
+Task < FeatureState > GetFeatureStateAsync ( int companyId , string featureKey );
+Task < FeatureState > GetFeatureStateAsync ( string companyDatabase , string featureKey );
+Task < bool > IsFeatureEnabledAsync ( int companyId , string featureKey );
+Task < bool > IsFeatureEnabledAsync ( string companyDatabase , string featureKey );
+Task < Dictionary < string , FeatureState >> GetAllFeaturesAsync ( int companyId );
+Task < Dictionary < string , AccessTier >> GetAllAccessTiersAsync ( int companyId );
+Task < AccessTier > GetAccessTierAsync ( int companyId , string featureKey );
+Task < AccessTier > GetAccessTierAsync ( string companyDatabase , string featureKey );
+// Write operations
+Task < ServiceResult > SetFeatureStateAsync ( int companyId , string featureKey , FeatureState state , int userId );
+Task < ServiceResult > SetAccessTierAsync ( int companyId , string featureKey , AccessTier tier , int userId );
+// Cache management
+void InvalidateCache ( int companyId );
+}
+Notice the overloads: every read method has two signatures — one taking companyId
+(int) and one taking companyDatabase (string). The string overload is for service-layer
+callers that only know the database name, not the company ID.
+Dual Caching Strategy
+The service uses IMemoryCache with two cache levels:
+Cache Key TTL What It Stores
+FeatureFlags_{companyId}
+5 minutes (sliding)
+All feature states + access tiers for a company
+CompanyDbToId_{databaseName}
+30 minutes (sliding)
+Company database name to Company ID mapping
+LoadFlagDataAsync — The Core Data Loader
+This is the method that fetches all flags for a company in a single query and caches the result:
+private async Task < FeatureFlagData > LoadFlagDataAsync ( int companyId )
+{
+var cacheKey = $"FeatureFlags_{companyId}" ;
+if ( _cache . TryGetValue ( cacheKey , out FeatureFlagData ? cached ) && cached != null )
+return cached ;
+try
+{
+await using var context = _contextFactory . CreateBaseControleContext ();
+var flags = await context .CompanyFeatureFlags
+. AsNoTracking ()
+. Where ( f => f .CompanyId == companyId )
+. ToListAsync ();
+var data = new FeatureFlagData (
+States: flags . ToDictionary ( f => f .FeatureKey, f => f .State),
+Tiers: flags . ToDictionary ( f => f .FeatureKey, f => f .AccessTier));
+_cache . Set ( cacheKey , data , new MemoryCacheEntryOptions
+{
+SlidingExpiration = FeatureCacheExpiration
+});
+return data ;
+}
+catch ( Exception ex )
+{
+_logger . LogError ( ex , "Error loading feature flags for company {CompanyId}" , companyId );
+return new FeatureFlagData (
+new Dictionary < string , FeatureState >(),
+new Dictionary < string , AccessTier >());
+}
+}
+Key Design Decisions
+Single query : All flags for one company are loaded at once, not one-by-one. This avoids N+1 queries.
+AsNoTracking : Read-only data — no need for EF change tracking overhead.
+Graceful failure : If the database is unreachable, it returns empty dictionaries. Since the default is "enabled", this means all features remain accessible during outages.
+ResolveCompanyIdAsync — Database Name to ID
+Services often know the company database name (a string like "Empresa_GivingCare" )
+but not the integer Company ID. This method resolves that mapping and caches it for 30 minutes:
+private async Task < int > ResolveCompanyIdAsync ( string companyDatabase )
+{
+if ( string . IsNullOrEmpty ( companyDatabase ))
+return 0 ;
+var cacheKey = $"CompanyDbToId_{companyDatabase}" ;
+if ( _cache . TryGetValue ( cacheKey , out int cachedId ))
+return cachedId ;
+await using var context = _contextFactory . CreateBaseControleContext ();
+var company = await context .Companies
+. AsNoTracking ()
+. FirstOrDefaultAsync ( c => c .DatabaseName == companyDatabase );
+var id = company ?.Id ?? 0 ;
+if ( id > 0 )
+_cache . Set ( cacheKey , id , new MemoryCacheEntryOptions
+{
+SlidingExpiration = CompanyIdCacheExpiration
+});
+return id ;
+}
+When company ID resolves to 0 (unknown company), all IsFeatureEnabledAsync
+and GetAccessTierAsync methods return their defaults ( true and
+Full ). Again: fail-open design.
+Cache Invalidation on Write
+Every write operation ( SetFeatureStateAsync , SetAccessTierAsync ) calls
+InvalidateCache(companyId) after saving:
+public void InvalidateCache ( int companyId )
+{
+_cache . Remove ( $"FeatureFlags_{companyId}" );
+}
+This ensures that the next request after a config change hits the database and gets fresh data.
+The CompanyDbToId cache is not invalidated because company-to-database mappings
+virtually never change.
+The FeatureFlagChangeService
+A small event bus that notifies the UI when flags change (e.g., to re-render the sidebar):
+public class FeatureFlagChangeService : IFeatureFlagChangeService
+{
+public event Action OnFeatureFlagsChanged ;
+public void NotifyChanged ()
+{
+OnFeatureFlagsChanged ?. Invoke ();
+}
+}
+7. Component Base Integration — AuthenticatedComponentBase
+The feature flag system is wired into the Blazor page lifecycle through
+AuthenticatedComponentBase . Every authenticated page automatically gets feature
+flag checking.
+Declaring Requirements on a Page
+Pages declare which features they need by overriding two properties:
+// This page requires the Articles module to be Enabled
+protected override string []? RequiredFeatures =>
+new [] { FeatureKeys . ArticlesModule };
+// This page requires at least Simple tier for Articles
+protected override Dictionary < string , AccessTier >? RequiredAccessTiers => new ()
+{
+[ FeatureKeys . ArticlesModule ] = AccessTier . Simple
+};
+The OnInitializedAsync Flow
+Here is what happens when a page loads:
+OnInitializedAsync()
+├── CheckAuthentication()
+│ ├── Load UserSession
+│ ├── Check IsActive
+│ ├── Get UserRole
+│ ├── Check RequiresCompany
+│ ├── Check MinimumRequiredRole
+│ ├── Check RequiredPermissions
+│ ├── Load EnabledFeatures (all states for this company)
+│ ├── Load AccessTiers (all tiers for this company)
+│ ├── Check RequiredFeatures
+│ │ └── For each: IsEffectivelyEnabled()?
+│ │ ├── YES ─ continue
+│ │ └── NO ─ NavigateTo("/FeatureBlocked/{key}/{state}")
+│ └── Check RequiredAccessTiers
+│ └── For each: HasAccessTier(key, minimum)?
+│ ├── YES ─ continue
+│ └── NO ─ NavigateTo("/FeatureBlocked/{key}/0")
+│
+├── if FeatureBlockedState.HasValue || AccessTierBlocked
+│ └── return (skip derived initialization)
+│
+└── OnAuthenticatedInitializedAsync() ← your page logic runs here
+If any feature check fails, the user is redirected to the blocked page and
+OnAuthenticatedInitializedAsync never runs. This is a hard gate — no data loads,
+no database queries, no service calls for blocked pages.
+Convenience Methods for UI Logic
+Inside any component that extends AuthenticatedComponentBase , you have access to
+these helper methods that work with the already-loaded dictionaries (no async calls needed):
+// Is this module effectively enabled? (respects hierarchy + dependencies)
+protected bool IsFeatureEnabled ( string featureKey )
+{
+return FeatureKeys . IsEffectivelyEnabled ( EnabledFeatures , featureKey );
+}
+// Get the raw state (Enabled/Disabled/Maintenance)
+protected FeatureState GetFeatureState ( string featureKey )
+{
+return EnabledFeatures . TryGetValue ( featureKey , out var state )
+? state : FeatureState . Enabled ;
+}
+// Get the access tier (defaults to Full if not configured)
+protected AccessTier GetAccessTier ( string featureKey )
+{
+return AccessTiers . TryGetValue ( featureKey , out var tier )
+? tier : AccessTier . Full ;
+}
+// Can this company create/edit/delete? (requires at least Simple tier)
+protected bool CanWrite ( string featureKey )
+{
+return GetAccessTier ( featureKey ) >= AccessTier . Simple ;
+}
+// Does this company have full access? (advanced features, bulk ops, etc.)
+protected bool HasFullAccess ( string featureKey )
+{
+return GetAccessTier ( featureKey ) == AccessTier . Full ;
+}
+8. The Blocked Page
+When a required feature is not enabled, the user is redirected to
+/FeatureBlocked/{FeatureKey}/{StateValue:int} . This is a simple Razor page that
+shows a styled error depending on whether the module is Disabled or in Maintenance.
+@page "/FeatureBlocked/{FeatureKey}/{StateValue:int}"
+@using GivingCare.Models.Authorization
+@inject NavigationManager NavigationManager
+< PageTitle >@(_isMaintenance ? "Em Manutencao" : "Modulo Desativado" )</ PageTitle >
+< MudPaper >
+< GlitchError
+Preset= "@(_isMaintenance
+? GlitchError.ErrorPreset.ServiceUnavailable
+: GlitchError.ErrorPreset.Forbidden)"
+Compact= "true" />
+< MudButton
+OnClick= "@(() => NavigationManager.NavigateTo("/", true))" >
+Ir para o Inicio
+</ MudButton >
+</ MudPaper >
+@code {
+[ Parameter ] public string FeatureKey { get ; set ; }
+[ Parameter ] public int StateValue { get ; set ; }
+private bool _isMaintenance ;
+protected override void OnParametersSet ()
+{
+_isMaintenance = ( FeatureState ) StateValue == FeatureState . Maintenance ;
+}
+}
+The page renders two different error presets:
+Disabled (state 1) : Shows a Forbidden glitch error — "Module is not active for your company"
+Maintenance (state 2) : Shows a ServiceUnavailable glitch error — "Module is temporarily under maintenance"
+Both include a "Go to Home" button to navigate the user back to the index page.
+9. Real-World Usage Examples
+Here is how feature flags are used in actual GivingCare Razor pages.
+Example 1: Page-Level Guard (Artigos.razor)
+The simplest pattern — declare RequiredFeatures and the base class handles the rest:
+@code {
+protected override string []? RequiredFeatures =>
+new [] { FeatureKeys . ArticlesModule };
+// If Articles is disabled (or its dependencies are off),
+// this page redirects to /FeatureBlocked automatically.
+// OnAuthenticatedInitializedAsync() never runs.
+}
+Example 2: Read-Only Alert Banner
+When the module is enabled but the access tier is ReadOnly , show an informational banner:
+@if ( GetAccessTier ( FeatureKeys . ArticlesModule ) == AccessTier . ReadOnly )
+{
+< MudAlert Severity= "Severity.Info"
+Variant= "Variant.Outlined"
+Dense= "true"
+Icon= "@Icons.Material.Filled.Visibility"
+Class= "mb-2 mt-2" >
+Modo apenas leitura. Contacte o administrador para acesso completo.
+</ MudAlert >
+}
+Example 3: Hiding Buttons Unless CanWrite()
+The "Add" and "Delete" buttons only appear when the company has at least Simple tier:
+@if ( CanWrite ( FeatureKeys . ArticlesModule ))
+{
+< MudButton Variant= "Variant.Filled"
+Color= "Color.Primary"
+StartIcon= "@Icons.Material.Filled.Add"
+OnClick= "@OpenCreateDialog" >
+Novo Artigo
+</ MudButton >
+}
+@* In a table row: *@
+@if ( CanWrite ( FeatureKeys . ArticlesModule ))
+{
+< MudButton Color= "Color.Error"
+OnClick= "@(() => DeleteArtigo(context.Id))" >
+Eliminar
+</ MudButton >
+}
+Example 4: Disabling Advanced Tabs Unless HasFullAccess()
+On the Jobs page, the schedule grid tab requires Full tier (it includes conflict
+detection and bulk operations):
+< MudTabPanel Text= "Agendamento"
+Icon= "@Icons.Material.Filled.EditCalendar"
+Disabled= "@(!HasFullAccess(FeatureKeys.JobsModule))" >
+@* Schedule grid, conflict detection, bulk operations *@
+< JobEmployeeScheduleView />
+</ MudTabPanel >
+Example 5: Passing AccessTier to a Dialog
+When opening an edit dialog, pass the current tier so the dialog knows which fields to show:
+var parameters = new DialogParameters
+{
+{ nameof ( EntityEditDialog .UserId), CurrentUserId },
+{ nameof ( EntityEditDialog .CompanyDatabase), CompanyDatabase },
+{ nameof ( EntityEditDialog .AccessTier),
+GetAccessTier ( FeatureKeys . EntitiesModule ) }
+};
+var dialog = await DialogService. ShowAsync < EntityEditDialog >(
+"Nova Entidade" , parameters , options );
+The dialog can then conditionally render advanced fields (warehouses, certifications, price levels)
+only when AccessTier == Full .
+Example 6: Checking Features in the Sidebar (MainLayout.razor)
+The navigation sidebar uses IsFeatureEnabled() to show/hide menu items:
+@if ( IsFeatureEnabled ( FeatureKeys . HrModule ))
+{
+< MudNavLink Href= "/Colaboradores" Icon= "@Icons.Material.Filled.Groups" >
+Recursos Humanos
+</ MudNavLink >
+}
+@if ( IsFeatureEnabled ( FeatureKeys . CrmModule ))
+{
+< MudNavLink Href= "/CRM" Icon= "@Icons.Material.Filled.Handshake" >
+CRM
+</ MudNavLink >
+}
+10. Adding a New Feature Flag — Step by Step
+Suppose you want to add a new "Invoicing" module. Here is the complete checklist:
+Step 1: Add the Constant to FeatureKeys.cs
+// In FeatureKeys.cs, add to the appropriate group:
+public const string InvoicingModule = "Invoicing" ;
+Step 2: Add to GetAll()
+This makes it appear in the Configuracoes admin UI:
+new FeatureDefinition (
+Key: InvoicingModule ,
+Name: "Modulo Faturacao" ,
+Description: "Emissao e gestao de faturas" ,
+Icon: "Receipt" ,
+Color: "#FF5722" )
+Step 3 (Optional): Add Parent-Child Relationship
+If Invoicing is a child of Documents:
+// You would need to add Documents as a parent with children,
+// or add Invoicing to an existing parent's children array.
+[ DocumentsModule ] = new [] { InvoicingModule }
+Step 4 (Optional): Add Cross-Module Dependencies
+If Invoicing depends on both Documents and Entities:
+[ InvoicingModule ] = new [] { DocumentsModule , EntitiesModule }
+Step 5 (Optional): Add Access Tiers
+If you want tiered access for the new module:
+[ InvoicingModule ] = new []
+{
+new AccessTierDefinition ( AccessTier . ReadOnly ,
+"Apenas Leitura" , "Ver faturas emitidas." ),
+new AccessTierDefinition ( AccessTier . Simple ,
+"Simples" , "Emitir faturas simples." ),
+new AccessTierDefinition ( AccessTier . Full ,
+"Completo" , "Faturacao completa com recibos, notas de credito e relatorios." )
+}
+Step 6: Guard the Page
+@code {
+protected override string []? RequiredFeatures =>
+new [] { FeatureKeys . InvoicingModule };
+}
+Step 7: Use Tier Checks in the UI
+@if ( CanWrite ( FeatureKeys . InvoicingModule ))
+{
+< MudButton >Emitir Fatura</ MudButton >
+}
+That is it. No database migration needed — the system defaults to Enabled/Full for any
+feature without an explicit database row.
+The complete checklist: (1) Add const to FeatureKeys ,
+(2) Add to GetAll() ,
+(3) Optionally add to ChildModules / DependsOn / SupportedTiers ,
+(4) Add RequiredFeatures to the page,
+(5) Use CanWrite() / HasFullAccess() in the template.
+No migration, no deployment, no restart.
+11. The Complete Data Flow
+Putting it all together, here is the lifecycle of a feature flag check from page load to UI render:
+User navigates to /Artigos
+│
+├─ Artigos.razor extends AuthenticatedComponentBase
+│ └─ RequiredFeatures = ["Articles"]
+│
+├─ OnInitializedAsync()
+│ └─ CheckAuthentication()
+│ ├─ Load UserSession, check auth, check role
+│ ├─ FeatureFlagService.GetAllFeaturesAsync(CompanyId)
+│ │ └─ LoadFlagDataAsync(CompanyId)
+│ │ ├─ Check IMemoryCache ("FeatureFlags_5")
+│ │ │ ├─ HIT → return cached FeatureFlagData
+│ │ │ └─ MISS → query BaseControle DB
+│ │ │ → cache for 5 min sliding
+│ │ └─ Return { States: {...}, Tiers: {...} }
+│ │
+│ ├─ FeatureFlagService.GetAllAccessTiersAsync(CompanyId)
+│ │ └─ (same cached data, no extra query)
+│ │
+│ ├─ FeatureKeys.IsEffectivelyEnabled(states, "Articles")
+│ │ ├─ Check Articles own state → Enabled ✓
+│ │ ├─ Check parent → Articles has no parent ✓
+│ │ └─ Check dependencies → Articles has no deps ✓
+│ │ → return true
+│ │
+│ └─ Check RequiredAccessTiers → none declared
+│
+├─ OnAuthenticatedInitializedAsync()
+│ └─ (load articles from service)
+│
+└─ Render template
+├─ GetAccessTier("Articles") → Simple
+├─ Show ReadOnly alert? No (Simple ≠ ReadOnly)
+├─ CanWrite("Articles")? Yes (Simple ≥ Simple)
+│ → show "Novo Artigo" button
+└─ HasFullAccess("Articles")? No (Simple ≠ Full)
+→ hide template/BOM features
+12. Summary of Key Files
+File Purpose
+Models/Authorization/FeatureKeys.cs
+Registry: constants, hierarchy, dependencies, tiers, definitions
+Models/Authorization/FeatureState.cs
+Enum: Enabled (0), Disabled (1), Maintenance (2)
+Models/Authorization/AccessTier.cs
+Enum: ReadOnly (1), Simple (2), Full (3)
+Models/Authorization/CompanyFeatureFlag.cs
+EF entity stored in BaseControle database
+Services/Authorization/ICompanyFeatureFlagService.cs
+Interface: read/write/cache feature data
+Services/Authorization/CompanyFeatureFlagService.cs
+Implementation with IMemoryCache dual-caching
+Services/FeatureFlags/FeatureFlagChangeService.cs
+Event bus for UI refresh on flag changes
+Shared/AuthenticatedComponentBase.cs
+Page-level guards and convenience methods
+Pages/Controle/FeatureBlocked.razor
+Blocked page UI (Disabled vs Maintenance)
+The entire system reads like: "Load which features this company has. For each page, check if the
+required features are effectively enabled (considering parents and dependencies). If not, redirect
+to the blocked page. If yes, load the access tiers and let the UI conditionally show/hide buttons,
+tabs, and fields based on whether the company can write or has full access."

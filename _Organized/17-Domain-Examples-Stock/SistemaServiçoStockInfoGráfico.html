@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SistemaServiçoStockInfoGráfico</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 17-Domain-Examples-Stock</div>
+  <h1>SistemaServiçoStockInfoGráfico</h1>
+  <div class="meta">Source: <code>Education/Stock/PT/SistemaServiçoStockInfoGráfico.docx</code> &middot; <a href="SistemaServiçoStockInfoGráfico.docx">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<div class="dup-banner"><strong>Same-stem variants</strong> (likely same content, different format): <code>Education/Stock/PT/SistemaServiçoStockInfoGráfico.pdf</code></div><p>📦 Sistema de Serviço de Stock - O Guia &quot;Para Totós&quot;</p>
+<p>📖 O Que É Este Serviço de Stock?</p>
+<p>Imagine que gere um armazém e precisa de saber exatamente quantos itens tem a qualquer momento. Este Serviço de Stock é como ter um assistente de inventário super-inteligente que:</p>
+<p>Sabe exatamente o que está em stock agora mesmo</p>
+<p>Lembra-se do que entrou e do que saiu</p>
+<p>Pode dizer-lhe o que tinha em qualquer data específica</p>
+<p>Funciona RÁPIDO ao lembrar-se de respostas recentes (caching)</p>
+<p>Pense nisto como a lista de contactos do seu telemóvel - em vez de ligar às informações sempre, o seu telemóvel lembra-se dos números que usa frequentemente!</p>
+<p>🎯 A Visão Geral</p>
+<p>Que Problemas Resolve?</p>
+<p>Sem este sistema:</p>
+<p>🐌 Cada verificação de stock significa contar tudo outra vez (lento!)</p>
+<p>📊 Não consegue ver níveis históricos de stock</p>
+<p>🔄 A base de dados fica sobrecarregada com as mesmas perguntas</p>
+<p>⏰ Os utilizadores esperam eternamente por relatórios de stock</p>
+<p>💾 O servidor trabalha demais a responder a perguntas repetidas</p>
+<p>Com este sistema:</p>
+<p>⚡ Verificações de stock ultra-rápidas (lembra-se de respostas recentes)</p>
+<p>📈 Rastreamento histórico de stock (&quot;O que tínhamos na terça passada?&quot;)</p>
+<p>🧠 Cache inteligente (não faz a mesma pergunta duas vezes)</p>
+<p>🎯 Rastreamento preciso de movimentos (cada entrada e saída)</p>
+<p>💪 O servidor mantém-se feliz e responsivo</p>
+<p>🏗️ A Arquitetura - Como É Construído</p>
+<p>O Design de Duas Camadas (Como um Bolo! 🎂)</p>
+<p>Utilizador pergunta: &quot;Quanto stock?&quot;</p>
+<p>↓</p>
+<p>┌─────────────────────┐</p>
+<p>│   SERVIÇO COM CACHE │ ← Camada 1: A Memória Inteligente</p>
+<p>│  (Respostas rápidas)│   &quot;Já respondi a isto recentemente?&quot;</p>
+<p>└──────────┬──────────┘</p>
+<p>↓ (Se não está em cache)</p>
+<p>┌─────────────────────┐</p>
+<p>│   SERVIÇO DE STOCK  │ ← Camada 2: O Calculador</p>
+<p>│   (Trabalho real)   │   &quot;Deixa-me verificar a base de dados&quot;</p>
+<p>└─────────────────────┘</p>
+<p>💡 O Génio do Caching Explicado</p>
+<p>O Que é Caching?</p>
+<p>Analogia do mundo real: É como ter post-its na sua secretária!</p>
+<p>Sem caching: Sempre que alguém pergunta &quot;Qual é o número do João?&quot;, você abre a lista telefónica, procura o João, e diz-lhes</p>
+<p>Com caching: A primeira vez que alguém pergunta, escreve num post-it. Da próxima vez? Só lê o post-it!</p>
+<p>Como Funciona o Seu Cache Inteligente</p>
+<p>public async Task&lt;ArtigoStock?&gt; GetArticleStockByDateAsync(int artigoId, DateTime date)</p>
+<p>{</p>
+<p>// Cria um &quot;nome&quot; único para esta pergunta</p>
+<p>var cacheKey = $&quot;stock_{artigoId}_{date:yyyyMMdd}&quot;;</p>
+<p>// Verifica os nossos &quot;post-its&quot; primeiro</p>
+<p>if (_cache.TryGetValue&lt;ArtigoStock&gt;(cacheKey, out var cachedStock))</p>
+<p>{</p>
+<p>// Encontrou! Devolve a resposta guardada (SUPER RÁPIDO!)</p>
+<p>return cachedStock;</p>
+<p>}</p>
+<p>// Não está em cache, precisa calcular</p>
+<p>var stock = await _innerService.GetArticleStockByDateAsync(artigoId, date);</p>
+<p>// Guarda para a próxima vez com expiração inteligente</p>
+<p>if (date &lt; DateTime.Today.AddDays(-7))</p>
+<p>_cache.Set(cacheKey, stock, TimeSpan.FromHours(1)); // Dados antigos = cache mais longo</p>
+<p>else</p>
+<p>_cache.Set(cacheKey, stock, TimeSpan.FromMinutes(5)); // Dados recentes = cache mais curto</p>
+<p>return stock;}</p>
+<p>A Estratégia Brilhante de Cache Baseada em Tempo</p>
+<p>O seu sistema é inteligente sobre QUANDO esquecer dados em cache:</p>
+<p>Dados Históricos (&gt;7 dias atrás) 📅</p>
+<p>Cache por 1 HORA</p>
+<p>Porquê? Stock antigo não muda!</p>
+<p>Como guardar a lista telefónica do ano passado - não vai mudar</p>
+<p>Dados Recentes (&lt;7 dias atrás) 📆</p>
+<p>Cache por 5 MINUTOS</p>
+<p>Porquê? Stock recente ainda pode estar a mudar</p>
+<p>Como o horário de entregas de hoje - pode ter atualizações</p>
+<p>Queries Filtradas 🔍</p>
+<p>NÃO guardadas em cache</p>
+<p>Porquê? Muito específicas, improvável serem perguntadas novamente</p>
+<p>Como perguntar &quot;Mostra-me só entregas de terça de itens azuis&quot;</p>
+<p>🔧 Funções Principais Explicadas</p>
+<ol>
+<li>GetArticleStockByDateAsync - &quot;Máquina do Tempo para Stock&quot;</li>
+</ol>
+<p>O que faz: Diz-lhe exatamente que stock tinha em qualquer data</p>
+<p>Analogia do mundo real: Como perguntar &quot;Quanto tinha na minha conta bancária a 15 de janeiro?&quot;</p>
+<p>Como funciona:</p>
+<p>-- Por trás dos bastidores, executa algo como:</p>
+<p>SELECT</p>
+<p>SUM(entradas) as ENTRADA,       -- Tudo que ENTROU</p>
+<p>SUM(saidas) as SAIDA,          -- Tudo que SAIU</p>
+<p>SUM(entradas - saidas) as STOCK  -- O que SOBROU</p>
+<p>FROM movimentos</p>
+<p>WHERE data &lt;= &#x27;2024-01-15&#x27;</p>
+<p>Truque inteligente: Adiciona 1 dia para incluir todas as transações do dia!</p>
+<ol>
+<li>GetStockMovementsAsync - &quot;O Livro de História&quot;</li>
+</ol>
+<p>O que faz: Mostra cada movimento (entrada/saída) de um item</p>
+<p>Analogia do mundo real: Como o seu extrato bancário mostrando cada transação</p>
+<p>Devolve: Uma lista como:</p>
+<p>✅ 10 Jan: +100 unidades (Ordem de Compra #1234)</p>
+<p>❌ 11 Jan: -20 unidades (Ordem de Venda #5678)</p>
+<p>✅ 12 Jan: +50 unidades (Produção #910)</p>
+<ol>
+<li>GetStockTotalsAsync - &quot;O Resumo&quot;</li>
+</ol>
+<p>O que faz: Só dá os totais (quanto entrou, quanto saiu)</p>
+<p>Analogia do mundo real: Como perguntar &quot;Quanto ganhei vs gastei este mês?&quot;</p>
+<p>Cache inteligente: Só guarda totais &quot;desde sempre&quot;, nunca os filtrados por data</p>
+<ol>
+<li>CheckFluxoAsync - &quot;O Inspetor Especial&quot;</li>
+</ol>
+<p>O que faz: Verifica o fluxo de stock para linhas de documento específicas</p>
+<p>Analogia do mundo real: Como rastrear um pacote específico no seu envio</p>
+<p>Nota: Nunca em cache porque é muito específico!</p>
+<p>🎨 A Integração UI (ArtigoDetalhe.razor)</p>
+<p>A Magia do Separador Stock</p>
+<p>Quando clica no separador Stock, eis o que acontece:</p>
+<p>Primeiro Clique - O Pré-Carregamento Inteligente</p>
+<p>// Em OnInitializedAsync, começa a carregar ANTES de clicar!</p>
+<p>if (artigo.TemGestao == true)</p>
+<p>{</p>
+<p>_stockSummaryTask = StockService.GetCurrentStockAsync(artigo.Id);</p>
+<p>// Começa a carregar em segundo plano enquanto vê outros separadores!</p>
+<p>}</p>
+<p>Quando o Separador Abre - Exibição Instantânea</p>
+<p>private async Task OnStockTabClick()</p>
+<p>{</p>
+<p>// Se pré-carregado, isto é instantâneo!</p>
+<p>currentStock = await _stockSummaryTask;</p>
+<p>}</p>
+<p>A Exibição de Stock</p>
+<p>┌─────────────────────────────────────────────────┐</p>
+<p>│  Stock Atual     Total Entradas    Total Saídas │</p>
+<p>│     1.250        ↑ 5.000          ↓ 3.750       │</p>
+<p>│                                                 │</p>
+<p>│  [Histórico] [Filtrar por Data]                 │</p>
+<p>└─────────────────────────────────────────────────┘</p>
+<p>O Filtro de Intervalo de Datas - Cultura Portuguesa!</p>
+<p>private System.Globalization.CultureInfo GetPortugueseCulture()</p>
+<p>{</p>
+<p>var culture = new System.Globalization.CultureInfo(&quot;pt-PT&quot;);</p>
+<p>culture.DateTimeFormat.AbbreviatedDayNames =</p>
+<p>new[] { &quot;Dom&quot;, &quot;Seg&quot;, &quot;Ter&quot;, &quot;Qua&quot;, &quot;Qui&quot;, &quot;Sex&quot;, &quot;Sáb&quot; };</p>
+<p>return culture;</p>
+<p>}</p>
+<p>🚀 Otimizações de Performance</p>
+<ol>
+<li>Estratégia de Pré-Carregamento (Genial!)</li>
+</ol>
+<p>Em vez de esperar que o utilizador clique no separador Stock:</p>
+<p>// Começa a carregar imediatamente quando a página abre</p>
+<p>_stockSummaryTask = StockService.GetCurrentStockAsync(artigo.Id);</p>
+<p>// Mais tarde, quando o utilizador clica no separador, já está pronto!</p>
+<p>currentStock = await _stockSummaryTask; // Instantâneo!</p>
+<ol>
+<li>Gestão Inteligente de Tarefas</li>
+</ol>
+<p>// Reutiliza a mesma tarefa se nada mudou</p>
+<p>if (_stockMovementsTask == null)</p>
+<p>{</p>
+<p>_stockMovementsTask = StockService.GetStockMovementsAsync(artigo.Id);</p>
+<p>}</p>
+<p>stocklist = await _stockMovementsTask;</p>
+<ol>
+<li>Invalidação Inteligente de Cache</li>
+</ol>
+<p>O sistema sabe quando esquecer dados em cache:</p>
+<p>Dados recentes expiram rapidamente (5 minutos)</p>
+<p>Dados antigos expiram lentamente (1 hora)</p>
+<p>Queries filtradas não são guardadas em cache</p>
+<p>📊 Cenários de Uso no Mundo Real</p>
+<p>Cenário 1: Verificação Diária de Stock</p>
+<p>Rotina matinal:</p>
+<p>Gestor abre detalhes do artigo</p>
+<p>Clica no separador Stock</p>
+<p>Sistema verifica cache (vazio de manhã)</p>
+<p>Carrega da base de dados (2 segundos)</p>
+<p>Mostra: &quot;Stock: 1.250 unidades&quot;</p>
+<p>Guarda em cache por 5 minutos</p>
+<p>5 minutos depois:</p>
+<p>Gestor atualiza a página</p>
+<p>Clica no separador Stock novamente</p>
+<p>Sistema verifica cache (ENCONTRADO!)</p>
+<p>Mostra instantaneamente (0,001 segundos!)</p>
+<p>Cenário 2: Análise Histórica</p>
+<p>Verificando stock do mês passado:</p>
+<p>Utilizador define filtro de data: &quot;1-31 Jan&quot;</p>
+<p>Sistema ignora cache (query filtrada)</p>
+<p>Consulta base de dados diretamente</p>
+<p>Mostra movimentos de janeiro</p>
+<p>Não guarda em cache (muito específico)</p>
+<p>Cenário 3: Múltiplos Utilizadores</p>
+<p>A beleza do caching com múltiplos utilizadores:</p>
+<p>Utilizador A verifica stock do Artigo #123 (demora 2 segundos, guarda resultado em cache)</p>
+<p>Utilizador B verifica mesmo artigo 30 segundos depois (instantâneo! usa cache)</p>
+<p>Utilizador C verifica mesmo artigo 1 minuto depois (instantâneo! usa cache)</p>
+<p>Após 5 minutos, cache expira</p>
+<p>Próximo utilizador desencadeia novo carregamento</p>
+<p>🛠️ Configuração e Setup</p>
+<p>Registo Básico do Serviço</p>
+<p>// Em Program.cs</p>
+<p>services.AddScoped&lt;IStockService, StockService&gt;();</p>
+<p>services.AddMemoryCache(); // Ativar caching</p>
+<p>Com Wrapper de Caching</p>
+<p>// Registar ambos os serviços</p>
+<p>services.AddScoped&lt;StockService&gt;();</p>
+<p>services.AddScoped&lt;IStockService&gt;(provider =&gt;</p>
+<p>{</p>
+<p>var innerService = provider.GetRequiredService&lt;StockService&gt;();</p>
+<p>var cache = provider.GetRequiredService&lt;IMemoryCache&gt;();</p>
+<p>var logger = provider.GetRequiredService&lt;ILogger&lt;CachedStockService&gt;&gt;();</p>
+<p>return new CachedStockService(innerService, cache, logger);</p>
+<p>});</p>
+<p>🎯 Porque Este Design é Brilhante</p>
+<ol>
+<li>Separação de Responsabilidades</li>
+</ol>
+<p>StockService: Faz o trabalho real</p>
+<p>CachedStockService: Gere memória/caching</p>
+<p>UI (Razor): Apenas exibe dados</p>
+<ol>
+<li>Padrão Decorator</li>
+</ol>
+<p>O serviço com cache &quot;decora&quot; o serviço real:</p>
+<p>Pedido → ServiçoCache → (se necessário) → ServiçoStock → BaseDados</p>
+<p>↓ (se em cache)</p>
+<p>Devolve imediatamente</p>
+<ol>
+<li>Pré-carregamento Inteligente</li>
+</ol>
+<p>Começa a carregar antes do utilizador precisar = resposta percebida como instantânea!</p>
+<ol>
+<li>Expiração Graduada de Cache</li>
+</ol>
+<p>Dados antigos = estáveis = cache mais longo</p>
+<p>Dados novos = mutáveis = cache mais curto</p>
+<p>Dados filtrados = únicos = não guardar em cache</p>
+<p>🐛 Problemas Comuns e Soluções</p>
+<p>&quot;Stock parece desatualizado&quot;</p>
+<p>Solução: Clique no botão atualizar ou espere 5 minutos para o cache expirar</p>
+<p>&quot;Queries filtradas são lentas&quot;</p>
+<p>Esperado: Queries filtradas não são guardadas em cache por design (muito específicas)</p>
+<p>&quot;Uso de memória está alto&quot;</p>
+<p>Verificar: Cache pode estar a guardar demais. Reduza tempos de cache ou adicione limites de memória</p>
+<p>📈 Monitorização e Debugging</p>
+<p>Verificar se o Cache Está a Funcionar</p>
+<p>Procure estas mensagens de log:</p>
+<p>&quot;Stock cache hit for article 123 at date 2024-01-15&quot;  ← Bom! Cache a funcionar</p>
+<p>&quot;Stock totals cache hit for article 456&quot;              ← Bom! Poupou uma query</p>
+<p>Métricas de Performance</p>
+<p>Com caching:</p>
+<p>Primeiro carregamento: ~2 segundos</p>
+<p>Carregamento em cache: &lt;0,01 segundos</p>
+<p>99% mais rápido para queries repetidas!</p>
+<p>✨ O Resumo Mágico</p>
+<p>Este Serviço de Stock é como ter um assistente super-inteligente com memória perfeita:</p>
+<p>Lembra-se de respostas recentes (caching)</p>
+<p>Sabe quando esquecer (expiração inteligente)</p>
+<p>Começa a trabalhar antes de perguntar (pré-carregamento)</p>
+<p>Fala português (localização)</p>
+<p>Gere milhares de utilizadores (escalável)</p>
+<p>Transforma uma operação lenta e pesada para a base de dados numa experiência ultra-rápida e amigável. Em vez de esperar 2-3 segundos sempre, os utilizadores têm respostas instantâneas 99% das vezes!</p>
+<p>🎉 Resumo Final</p>
+<p>O seu Serviço de Stock é uma obra-prima de otimização:</p>
+<p>Rápido: Respostas em sub-milissegundos quando em cache</p>
+<p>Inteligente: Sabe o que guardar em cache e por quanto tempo</p>
+<p>Eficiente: Reduz carga da base de dados em 90%+</p>
+<p>Amigável: Pré-carrega dados antes de serem necessários</p>
+<p>Escalável: Pode gerir centenas de utilizadores</p>
+<p>É como fazer upgrade de:</p>
+<p>🐌 Ir ao armazém para contar → 🚀 Ter a contagem no ecrã instantaneamente</p>
+<p>📝 Livros em papel → 💻 Rastreamento digital em tempo real</p>
+<p>⏰ Esperas de 3 segundos → ⚡ Respostas instantâneas</p>
+<p>😫 Utilizadores frustrados → 😊 Utilizadores felizes</p>
+<p>É isto o Serviço de Stock - tornando a gestão de inventário instantânea, inteligente e deliciosa!</p>
+</div>
+</body>
+</html>

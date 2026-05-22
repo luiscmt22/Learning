@@ -1,0 +1,441 @@
+[
+  {
+    "src_rel": "Education/Basics/CSharp_Stack_and_Heap_Guide.pdf",
+    "title": "Stack and Heap in C# — Understanding Memory Management in .NET",
+    "doc_type": "core-concept",
+    "topic_family": "language",
+    "domain": null,
+    "topic_slug": "csharp-stack-and-heap",
+    "complexity": "intermediate",
+    "one_line_summary": "A comprehensive tour of .NET memory management covering stack vs heap, value vs reference types, boxing, garbage collection, leaks, and performance optimization techniques.",
+    "executive_summary": "This guide walks from the history of manual memory management through the CLR's managed model, explaining why value types usually live on the stack while reference types live on the managed heap and references themselves are 8 bytes regardless of object size. It then dives into GC generations, the mark-sweep-compact algorithm, boxing/unboxing costs, stack allocation with stackalloc, and subtle cases like strings, captured closures, and struct fields inside classes. The second half is practical: identifying memory leaks (events, static caches, captured variables, Blazor circuits), reducing allocations with ArrayPool and Span<T>, avoiding the Large Object Heap, and using IDisposable correctly. The key insight is that managed memory isn't free — understanding where data lives lets you write code that cooperates with the GC instead of fighting it.",
+    "key_concepts": [
+      "stack vs managed heap",
+      "value types vs reference types",
+      "generational garbage collection",
+      "boxing and unboxing",
+      "stackalloc and Span<T>",
+      "Large Object Heap (LOH)",
+      "IDisposable pattern"
+    ],
+    "prerequisites": [
+      "basic C# syntax",
+      "classes and structs",
+      "method calls and variables"
+    ],
+    "builds_toward": [
+      "performance profiling",
+      "high-performance .NET",
+      "unsafe code and pointers",
+      "async state machines"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": null,
+    "suggested_metaphor": "Think of the stack as your kitchen counter and the heap as your garage. The counter is tiny but you can grab things instantly, and whenever you finish a recipe you wipe it clean without thinking. The garage is huge, but finding something takes a walk, and someone has to occasionally come through and sweep up the boxes nobody's using anymore — that someone is the garbage collector.",
+    "suggested_intro_hook": "Your C# code has never had a memory leak... or has it? The garbage collector protects you from forgetting to call free(), but it can't save you from an event handler that silently keeps a 100MB object alive for the rest of the app's life. Understanding what lives where is the difference between 'my app works' and 'my app works at scale'.",
+    "what_it_teaches": "How .NET's memory model actually works under the covers — which data lives on the stack vs the heap, how generational GC decides what to collect and when, how boxing silently allocates objects, where .NET apps still leak memory despite having a GC, and what tools and techniques (pooling, Span<T>, stackalloc, pre-sizing, proper Dispose) actually move the needle on performance.",
+    "key_takeaways": [
+      "Value types live on the stack by default but move to the heap when they're fields of a class, array elements, boxed, or captured by a closure",
+      "A reference is always 8 bytes on 64-bit; the object it points to can be anywhere from 16 bytes to gigabytes on the heap",
+      "The GC is generational because most objects die young — Gen0 collections are cheap, Gen2 collections hurt",
+      "Boxing is a silent performance killer: ArrayList.Add(int) allocates on every call, List<int>.Add(int) does not",
+      ".NET memory leaks are almost always event handlers, static collections, long-lived delegates with captured state, or un-disposed Blazor subscriptions",
+      "Reaching for ArrayPool, Span<T>, stackalloc, and pre-sized collections is how you drop allocation counts in hot paths"
+    ],
+    "cross_references": [
+      "csharp-generics",
+      "csharp-span-and-memory",
+      "dotnet-performance-profiling",
+      "idisposable-pattern",
+      "blazor-component-lifecycle"
+    ],
+    "quality_notes": "Very thorough and well-structured — covers history, fundamentals, mechanics, practical leaks, optimization, and debugging tools. Diagrams render a bit roughly in the text extraction (the 's' character marks box borders) but the content itself is excellent and production-quality teaching material.",
+    "reading_difficulty_minutes": 35,
+    "is_part_of_series": false,
+    "series_name": null
+  },
+  {
+    "src_rel": "Education/Educational_ML/neural-network-journeyV1.html",
+    "title": "Neural Networks from Scratch — The 20 Questions Journey",
+    "doc_type": "core-concept",
+    "topic_family": "ml",
+    "domain": null,
+    "topic_slug": "neural-networks-from-scratch",
+    "complexity": "beginner",
+    "one_line_summary": "An interactive, zero-math-required tutorial that builds a neural network from first principles through the lens of a 20 Questions game that learns which animal you're thinking of.",
+    "executive_summary": "This is a guided, 17-slide educational journey that explains neural networks without assuming any background beyond basic arithmetic. It starts by turning animals into feature vectors, compares them with k-Nearest Neighbors distance, then shows why that fails when two animals have identical features — motivating the need for learning. From there it introduces a single artificial neuron (multiply inputs by weights, add, squash through sigmoid), walks through the weight update rule, extends to one-neuron-per-class, exposes the XOR limitation to motivate hidden layers, and finally arrives at backpropagation using the soccer-team analogy to explain credit assignment. The companion project is a C# + Blazor implementation called TwentyQ, so this doc is the conceptual foundation that lets a .NET developer understand why they're writing the code they're writing.",
+    "key_concepts": [
+      "feature vectors",
+      "k-Nearest Neighbors classification",
+      "artificial neuron (weights, bias, sigmoid)",
+      "gradient descent and weight updates",
+      "XOR problem and hidden layers",
+      "backpropagation",
+      "credit assignment problem"
+    ],
+    "prerequisites": [
+      "basic arithmetic",
+      "very light programming familiarity (optional)"
+    ],
+    "builds_toward": [
+      "deep learning",
+      "ML.NET and scikit-learn usage",
+      "training loops and loss functions",
+      "overfitting and regularization"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": null,
+    "suggested_metaphor": "A neural network learns the way a toddler learns 'dog': nobody hands them a rulebook saying 'four legs AND fur AND barks'. Instead they see hundreds of dogs, some poodles and some great danes, and the pattern slowly etches itself into their brain. The weights in a neuron are exactly that etching — they start random and get nudged every time the network is wrong, until the bumps and grooves happen to match the shape of 'dog-ness'.",
+    "suggested_intro_hook": "Everyone uses AI. Almost nobody can explain, in plain English, what a 'weight' actually is. If you can explain a weight and a sigmoid to a curious twelve-year-old, you're already in the top 1% of people who talk about machine learning.",
+    "what_it_teaches": "How a neural network actually works — not as a magic black box but as a chain of very simple arithmetic operations (multiply, add, squash) whose numbers get nudged by a recipe called gradient descent until the output starts matching what you wanted. The doc covers why single neurons can't solve XOR, why hidden layers fix that by learning intermediate features, and how backpropagation distributes blame through the network so every weight knows which direction to move.",
+    "key_takeaways": [
+      "Classification is the core shape of most ML: turn stuff into numbers, then decide which category those numbers belong to",
+      "A neuron is just 'multiply inputs by weights, add them up, squash the result' — nothing magical",
+      "Learning is a loop: predict, measure error, nudge weights, repeat. The learning rate controls how big the nudges are",
+      "A single-layer network can only separate data with a straight line — XOR proves why you need hidden layers",
+      "Backpropagation distributes blame proportional to how strongly each neuron contributed to the output, using the exact same weights that carried signals forward",
+      "The sigmoid derivative makes confident neurons learn slowly — which is why the network doesn't forget what it already knows"
+    ],
+    "cross_references": [
+      "ml-dotnet-fundamentals",
+      "linear-algebra-for-ml",
+      "gradient-descent",
+      "twentyq-project",
+      "activation-functions"
+    ],
+    "quality_notes": "Exceptional teaching quality — uses interactive 'your turn' prompts, concrete numeric examples, and analogies (mailroom, soccer team, gas pedal) to carry abstract concepts. Ends slightly abruptly at backpropagation (modules 7-11 are teased but not in this V1). Perfect as a gentle first pass before any formal ML course.",
+    "reading_difficulty_minutes": 25,
+    "is_part_of_series": true,
+    "series_name": "Neural Networks from Scratch — 20 Questions Journey"
+  },
+  {
+    "src_rel": "Education/26-Expression-Trees-Compiled-Reflection.html",
+    "title": "Expression Trees & Compiled Reflection — From Slow Reflection to Native Speed",
+    "doc_type": "core-concept",
+    "topic_family": "language",
+    "domain": null,
+    "topic_slug": "expression-trees-compiled-reflection",
+    "complexity": "advanced",
+    "one_line_summary": "How to build a ReflectionCache that compiles property getters and setters into delegates at runtime so config-driven property access runs at native speed instead of 100x slower reflection.",
+    "executive_summary": "The doc tackles a real problem: when a config file names properties as strings, the naive solution is PropertyInfo.GetValue, which is roughly 100x slower than direct access because each call re-looks up metadata and boxes values. It walks through building an expression tree — Parameter → Convert → Property → Convert → Lambda → Compile — to produce a native delegate equivalent to hand-written code, then caches the delegate in a ConcurrentDictionary keyed by (Type, propertyName) so compilation only happens once per pair. The critical distinction it hammers home is Expression<Func<T,R>> (data, inspectable, what EF Core translates to SQL) versus Func<T,R> (already-compiled machine code), because passing a compiled Func to EF Core's Where collapses server-side filtering into client-side evaluation — a catastrophe this doc helps you avoid.",
+    "key_concepts": [
+      "Expression trees as code-as-data",
+      "Expression.Compile() and JIT",
+      "ConcurrentDictionary caching",
+      "ReflectionCache pattern",
+      "Expression<Func<T,R>> vs Func<T,R>",
+      "EF Core LINQ-to-SQL translation",
+      "runtime code generation"
+    ],
+    "prerequisites": [
+      "C# generics",
+      "reflection basics (PropertyInfo)",
+      "delegates and lambdas",
+      "LINQ fundamentals"
+    ],
+    "builds_toward": [
+      "source generators",
+      "dynamic EF Core queries",
+      "AutoMapper-style mappers",
+      "runtime IL emission"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": null,
+    "suggested_metaphor": "Reflection is like opening the cookbook every single time you need to chop an onion — you re-read which page, re-read the technique, then finally cut. A compiled expression is what happens after you've made that recipe fifty times: your hands just know. You pay for studying once; after that, every onion gets chopped at muscle-memory speed.",
+    "suggested_intro_hook": "Your config file says 'CodeProperty: Codigo' and suddenly you're calling PropertyInfo.GetValue 50,000 times per page load. The profiler lights up red. You need dynamic property access without the dynamic tax — and .NET has a trick for that, hiding in the System.Linq.Expressions namespace.",
+    "what_it_teaches": "How to build, compile, and cache expression trees so that config-driven or generic property access runs essentially as fast as hand-written code. It also teaches the crucial distinction between an expression tree (inspectable data) and a compiled delegate (executable code) — the same distinction that determines whether EF Core generates SQL or materializes the entire table.",
+    "key_takeaways": [
+      "PropertyInfo.GetValue is about 100x slower than direct access; compiled expressions are within 3x",
+      "Build the tree once with Expression.Parameter → Convert → Property → Convert → Lambda → Compile",
+      "Cache the resulting delegate in a ConcurrentDictionary keyed by (Type, propertyName) — use GetOrAdd so two threads racing the same key is harmless",
+      "Expression<Func<T,R>> is data; Func<T,R> is compiled code. Pass the wrong one to EF Core and you pull the whole table into memory",
+      "Use compiled expressions for repeated config-driven property access; use raw PropertyInfo for one-off lookups; use direct access when you know the property at compile time"
+    ],
+    "cross_references": [
+      "reflection-basics",
+      "ef-core-linq-translation",
+      "delegates-and-lambdas",
+      "concurrent-collections",
+      "source-generators"
+    ],
+    "quality_notes": "Very high quality tutorial — clearly structured, includes full working code, explains the 'why' with a performance ladder, walks through every node of the expression tree, and ends with a decision flowchart. Includes a metaphor of its own (cookbook) and the three-layer navigation analogy. Part of a numbered tutorial series (#26).",
+    "reading_difficulty_minutes": 18,
+    "is_part_of_series": true,
+    "series_name": "Education numbered tutorials"
+  },
+  {
+    "src_rel": "Education/Stock/ENG/StockServiceSystemFormalDocumentation.docx",
+    "title": "Stock Service System — Formal Technical Documentation",
+    "doc_type": "applied-implementation",
+    "topic_family": null,
+    "domain": "stock-service",
+    "topic_slug": "stock-service-system",
+    "complexity": "advanced",
+    "one_line_summary": "Formal technical reference for a high-performance inventory tracking system built around a decorator-pattern cached service layer, SQL Server functions, pre-loading tasks, and graduated cache expiration.",
+    "executive_summary": "This is the formal architecture document for the Stock Service — a three-layer system (UI/Service/Data) where a CachedStockService decorator wraps a StockService implementation that talks to SQL Server table-valued functions (fn_ArtigoStockByDate, fn_ArtigoUsedInFluxo) through a raw ADO.NET connection for performance. The caching strategy uses graduated expiration: 1 hour for historical data older than 7 days, 5 minutes for recent data, nothing at all for filtered queries. Razor components pre-load expensive operations as Tasks in OnInitializedAsync so that by the time the user clicks the Stock tab, the data is already there. The doc also covers extension methods, health checks, structured logging with cache-hit tagging, cache inspection endpoints, and future enhancements like Redis and SignalR-driven invalidation.",
+    "key_concepts": [
+      "decorator pattern for caching",
+      "graduated cache expiration",
+      "SQL Server table-valued functions",
+      "IDbContextFactory and connection pooling",
+      "Task pre-loading in Blazor",
+      "IMemoryCache with size limits",
+      "point-in-time stock queries"
+    ],
+    "prerequisites": [
+      "EF Core basics",
+      "Blazor components",
+      "IMemoryCache",
+      "dependency injection",
+      "async/await"
+    ],
+    "builds_toward": [
+      "distributed caching with Redis",
+      "event-driven cache invalidation",
+      "CQRS for read-heavy systems"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": {
+      "why_it_exists": "Inventory queries are the most asked question in a warehouse ERP, and they're brutally expensive because computing 'what did I have on January 15th?' means summing every movement from the beginning of time up to that date. Hitting the database for every query brings the system to its knees and users wait 2-3 seconds every single time. The Stock Service exists to eliminate that wait by caching aggressively for data that doesn't change (historical stock) and conservatively for data that might (today's stock), while never caching filtered queries that are too specific to repeat. The result is sub-millisecond responses for 99% of queries with the database staying cool.",
+      "what_it_does": "Exposes an IStockService with four operations: GetArticleStockByDateAsync (point-in-time query), GetStockMovementsAsync (movement history with optional date filters), GetStockTotalsAsync (aggregate entradas/saídas), and CheckFluxoAsync (per-document-line flow). A CachedStockService wraps the real StockService as a decorator and checks IMemoryCache first, falling back to the real service on miss and then storing the result with an expiration chosen based on how old the queried date is. The UI layer (ArtigoDetalhe.razor) kicks off stock queries as Tasks in OnInitializedAsync so that clicking the Stock tab awaits an already-completed task.",
+      "how_it_works": "Under the hood, the StockService opens a raw SqlCommand on the DbContext's connection and invokes the dbo.fn_ArtigoStockByDate table-valued function with parameterized arguments — deliberately bypassing EF Core's change tracker and LINQ translation for maximum speed. A 'smart trick' adds one day to the filter date so the query includes everything up to end-of-day. Movement queries use EF Core LINQ with three joins (CrmDocumentoDetalhes → CrmDocumentos → CrmTipoDocumentos → CrmSerieDocumentos) filtered by Movstocks=true. The CachedStockService generates keys like 'stock_{artigoId}_{yyyyMMdd}' and picks an expiration: TimeSpan.FromHours(1) if the date is more than 7 days old, TimeSpan.FromMinutes(5) otherwise. The Razor layer orchestrates task reuse — if a filter hasn't changed, it awaits the existing _stockMovementsTask field; if the filter did change, it creates a new task and parallel-awaits a totals task alongside it. Health checks run a test query + cache statistics, and structured logging emits one-line entries with ArticleId, Date, CacheHit, and ExecutionTime tags for monitoring."
+    },
+    "suggested_metaphor": "The Stock Service is a coffee shop with a secret second menu — the barista keeps sticky notes of the most recent orders so that if you ask for the same drink someone just ordered, they hand it to you instantly. Regular espresso from yesterday? Sticky note lasts an hour because yesterday can't change. Today's cappuccino? Sticky note lasts five minutes because someone might modify it. A custom half-caf oat milk with exactly 1.5 pumps of vanilla? No sticky note — too specific, nobody else is ordering that.",
+    "suggested_intro_hook": "Every time a user clicks the Stock tab on an article page, the database has to sum every inbound and outbound movement since the beginning of time to tell them how many units are on the shelf. That's expensive. Now imagine 40 users clicking that tab every minute across 50,000 articles. This is how you make that scream instead of crawl.",
+    "what_it_teaches": "How to architect a read-heavy service in .NET using the decorator pattern, graduated in-memory caching, SQL Server table-valued functions for aggregation performance, and Blazor task pre-loading to make the UI feel instant even on slow queries.",
+    "key_takeaways": [
+      "Wrap expensive services with a cached decorator so caching logic lives in one place and tests can swap it out",
+      "Cache expiration should be proportional to how likely the data is to change — historical = long, recent = short, filtered = don't bother",
+      "SQL Server table-valued functions called via raw ADO.NET skip EF Core overhead and are perfect for pure-aggregate queries",
+      "Start expensive Tasks in OnInitializedAsync and store them as fields — clicking a tab then awaits an already-complete task",
+      "Cache keys should encode everything that distinguishes the query (artigoId + date) and the format should be predictable for manual invalidation",
+      "Monitor cache hit rates via IMemoryCache.GetCurrentStatistics in a health check — if the ratio degrades, something upstream changed"
+    ],
+    "cross_references": [
+      "decorator-pattern",
+      "imemorycache-patterns",
+      "ef-core-raw-sql",
+      "blazor-task-preloading",
+      "factory-floor-system",
+      "sql-table-valued-functions"
+    ],
+    "quality_notes": "Production-grade technical documentation — complete with ASCII architecture diagrams, mermaid sequence diagram, full code snippets for every layer, performance metrics table, configuration examples, health checks, and best-practices do/don't list. Reads like internal architecture docs for a real production system.",
+    "reading_difficulty_minutes": 25,
+    "is_part_of_series": false,
+    "series_name": null
+  },
+  {
+    "src_rel": "Education/Stock/ENG/StockServiceSystemInfoGraphic.pdf",
+    "title": "Stock Service System — The 'For Dummies' Guide",
+    "doc_type": "applied-implementation",
+    "topic_family": null,
+    "domain": "stock-service",
+    "topic_slug": "stock-service-system-dummies-guide",
+    "complexity": "beginner",
+    "one_line_summary": "A plain-language, analogy-heavy walkthrough of the Stock Service's caching strategy, decorator pattern, and Blazor pre-loading — designed to explain the system to someone who has never seen the code.",
+    "executive_summary": "The 'For Dummies' version of the Stock Service formal doc — same system, same architecture, but told through analogies (sticky notes for cache, time machine for date queries, history book for movement lists, phone book for the database). It walks through the two-layer cached/uncached service design, explains graduated cache expiration with concrete 'why would you cache a phone book from last year versus today's delivery schedule' reasoning, and covers pre-loading tasks using a sticky-note analogy. The doc concludes with three real-world usage scenarios (daily stock check, historical analysis, multiple users hitting the same cache) that make the design decisions tangible. Same content as the formal version, optimized for someone who learns from stories rather than code.",
+    "key_concepts": [
+      "decorator pattern (explained as cake layers)",
+      "memory caching with sticky-note analogy",
+      "graduated cache expiration",
+      "point-in-time stock queries",
+      "Blazor task pre-loading",
+      "cache hit vs cache miss"
+    ],
+    "prerequisites": [
+      "basic understanding of what a web app is",
+      "familiarity with the Stock Service domain is helpful but not required"
+    ],
+    "builds_toward": [
+      "stock-service-system",
+      "decorator-pattern"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": {
+      "why_it_exists": "Formal technical docs are great for engineers who already know the vocabulary, but a manager, a new hire, or a curious stakeholder needs to understand the Stock Service without having to first learn what IMemoryCache and a decorator pattern are. This doc translates every concept into kitchen/office analogies so anyone can walk away knowing what the system does and why it's designed that way. It's the 'explain it to my grandma' version — except the grandma is technical enough to appreciate that caching saves database load.",
+      "what_it_does": "Covers the same ground as the formal doc — IStockService interface, CachedStockService decorator, graduated expiration (1h historical / 5min recent / no caching for filtered queries), Blazor pre-loading — but replaces most code with analogies. It explains caching as 'writing sticky notes on your desk', historical vs recent data as 'last year's phone book vs today's delivery schedule', and the decorator pattern as 'a two-layer cake where the top layer answers first'. The scenarios section walks through three concrete cases: a manager doing a daily stock check, an analyst running a historical filter, and multiple users hitting the same article in succession.",
+      "how_it_works": "The doc opens by framing the problem in warehouse terms (too many queries, slow responses, frustrated users), then presents the architecture as a two-layer cake: the CachedService layer checks its sticky notes first and only asks the StockService layer when it doesn't already know the answer. Each of the four core methods gets an analogy — GetArticleStockByDateAsync is a 'time machine for stock', GetStockMovementsAsync is a 'history book', GetStockTotalsAsync is a 'monthly summary', CheckFluxoAsync is a 'special inspector'. The UI section shows how pre-loading kicks off in OnInitializedAsync so the Stock tab appears instant when clicked, using the same task-reuse logic as the formal doc. Performance claims are concrete — 99% faster for cached queries, 2s → 0.001s — and the closing summary reinforces the design choices as 'fast, smart, efficient, user-friendly, scalable'."
+    },
+    "suggested_metaphor": "The formal doc is the car's service manual; this one is the salesperson's pitch on the showroom floor. Same car, same engine, but one tells you about torque and compression ratios and the other tells you it feels like silk on the highway. Both are true, and you need both depending on who you're talking to.",
+    "suggested_intro_hook": "Someone once said 'if you can't explain it to a six-year-old, you don't understand it yourself.' Here's your Stock Service explained in sticky notes, phone books, and bank statements — no interfaces, no generics, no async keywords. If it makes sense now, you actually understand what you built.",
+    "what_it_teaches": "The same system as the formal Stock Service doc, but using analogies and plain-language explanations instead of code-heavy technical exposition. It teaches the decorator pattern, graduated cache expiration, point-in-time queries, and Blazor task pre-loading in a way that someone who isn't a .NET developer can still follow.",
+    "key_takeaways": [
+      "Caching is 'writing the answer on a sticky note so you don't have to ask again' — that's literally the whole idea",
+      "Old data doesn't change, so you can cache it longer; new data might change, so cache it briefly; specific data (filtered queries) won't be asked again, so don't cache it at all",
+      "The decorator pattern is a two-layer cake: the top layer intercepts the question and only asks the bottom layer when it has to",
+      "Starting expensive work before the user asks for it (pre-loading) turns a 2-second wait into an instant response",
+      "Good architecture pays dividends when multiple users hit the same data — the second user gets an instant answer for free"
+    ],
+    "cross_references": [
+      "stock-service-system",
+      "decorator-pattern",
+      "imemorycache-patterns"
+    ],
+    "quality_notes": "Excellent complementary doc to the formal version — same system, totally different audience. Strong use of analogies (sticky notes, phone books, cake layers, bank statements) makes it ideal for onboarding or explaining the system to non-technical stakeholders. Technically accurate while staying accessible.",
+    "reading_difficulty_minutes": 12,
+    "is_part_of_series": false,
+    "series_name": null
+  },
+  {
+    "src_rel": "JScript/AG_Grid_JS_learning.docx",
+    "title": "AG Grid Custom Cell Editor — JavaScript Prototypes & DOM Fundamentals",
+    "doc_type": "core-concept",
+    "topic_family": "frontend",
+    "domain": null,
+    "topic_slug": "ag-grid-custom-cell-editor-js-prototypes",
+    "complexity": "beginner",
+    "one_line_summary": "A conversational walkthrough of building a custom AG Grid select-dropdown cell editor, doubling as a gentle introduction to JavaScript prototypes, the DOM, and why AG Grid still uses constructor-function patterns instead of ES6 classes.",
+    "executive_summary": "The doc starts as a step-by-step explanation of AG Grid's custom cell editor lifecycle — init, getGui, afterGuiAttached, getValue, isPopup — building a select-dropdown editor that maps IDs to display names from a Razor ViewBag dictionary. It handles the tricky bits: stopping mousedown propagation so AG Grid doesn't prematurely close the dropdown, using setTimeout to force-focus and auto-open the select after attachment, and returning IDs (not names) from getValue so the data model stays clean. Then the user asks 'what even is the DOM? what's a prototype?' and the second half becomes a JavaScript fundamentals primer: DOM as a tree of page nodes, prototypes as JavaScript's inheritance mechanism (pre-ES6), why AG Grid uses the constructor-function pattern for backward compatibility, and a note that ES6 classes exist now but are just syntactic sugar over prototypes.",
+    "key_concepts": [
+      "AG Grid cell editor lifecycle (init, getGui, afterGuiAttached, getValue, isPopup)",
+      "JavaScript prototypes",
+      "DOM manipulation (document.createElement, appendChild)",
+      "event propagation (stopPropagation)",
+      "ID-to-name mapping in editors",
+      "constructor function pattern vs ES6 classes"
+    ],
+    "prerequisites": [
+      "basic HTML",
+      "Razor/ViewBag familiarity",
+      "very basic JavaScript syntax"
+    ],
+    "builds_toward": [
+      "AG Grid full column configuration",
+      "modern ES6 JavaScript",
+      "Blazor JS interop"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": false,
+    "tutorial_structure": null,
+    "suggested_metaphor": "A prototype in JavaScript is like a shared recipe card pinned to the fridge. Every object you make from a constructor function is a cook who walks over to that one card whenever they need to know how to fry an onion — they don't each carry their own copy. ES6 classes just put a nicer frame on the same pinned card so it looks like the cookbooks you're used to.",
+    "suggested_intro_hook": "You've built your AG Grid. The column is there, the data is there, but when the user clicks the cell to edit it, the dropdown flashes open and immediately closes. Welcome to event propagation hell — where you'll learn more about JavaScript's prototype chain than you ever wanted to, just to make a select box stay open.",
+    "what_it_teaches": "Two things at once: (1) the concrete mechanics of building a custom AG Grid cell editor with an ID/name mapping, and (2) the JavaScript fundamentals that make that code look weird to a .NET developer — DOM manipulation, prototype-based inheritance, and why older libraries use `Foo.prototype.method = function(){}` instead of `class Foo { method() {} }`.",
+    "key_takeaways": [
+      "AG Grid cell editors follow a fixed lifecycle — init creates the element, getGui returns it, afterGuiAttached runs post-DOM insertion, getValue returns the final value to the grid",
+      "Stopping mousedown propagation is necessary because AG Grid listens for clicks outside the editor to close it",
+      "The DOM is a tree representation of the page that JavaScript can read and modify",
+      "Prototypes are JavaScript's pre-ES6 inheritance mechanism — objects inherit from other objects, not from classes",
+      "ES6 `class` syntax exists but is syntactic sugar over prototypes; AG Grid examples often still use the older pattern for backward compatibility"
+    ],
+    "cross_references": [
+      "javascript-fundamentals",
+      "dom-manipulation",
+      "ag-grid-integration",
+      "blazor-js-interop"
+    ],
+    "quality_notes": "Half tutorial, half FAQ — the structure is 'here's how to do X, now here's what all those weird words mean'. Good for someone who's a .NET developer first and JavaScript-curious second. Content is correct but conversational; would benefit from a cleaner code-fence presentation.",
+    "reading_difficulty_minutes": 10,
+    "is_part_of_series": false,
+    "series_name": null
+  },
+  {
+    "src_rel": "Education/06-Blazor-JS-Interop-Static-Events.md",
+    "title": "Blazor JS Interop — Static Events vs Instance-Isolated Callbacks",
+    "doc_type": "core-concept",
+    "topic_family": "frontend",
+    "domain": null,
+    "topic_slug": "blazor-js-interop-instance-isolation",
+    "complexity": "advanced",
+    "one_line_summary": "Why static C# events in Blazor JS interop leak data between concurrent component instances, and how to fix it with a ConcurrentDictionary of per-instance callbacks keyed by Guid.",
+    "executive_summary": "The doc walks through a real, ugly bug: two facial recognition kiosks running simultaneously were subscribed to the same static event (FacialRecognitionHelper.OnFacialIdentifyComplete), so when Alice scanned her face at Kiosk A, both kiosks received the event and displayed 'Welcome Alice!' — then seconds later Bob scanned at Kiosk B and both screens switched to 'Welcome Bob!'. The fix is instance-isolated callbacks: each component generates a Guid instanceId in OnInitialized, registers a callback in a static ConcurrentDictionary<string, Action<string>>, passes that instanceId through to JavaScript when starting the capture, and unregisters in Dispose(). The JSInvokable method now takes instanceId as its first parameter and only invokes the matching callback. The doc is careful to note that static events are still fine for truly app-level notifications — the rule is 'if more than one instance can exist, route by instanceId'.",
+    "key_concepts": [
+      "Blazor JS interop callbacks",
+      "[JSInvokable] static methods",
+      "instance identity via Guid",
+      "ConcurrentDictionary for thread-safe routing",
+      "component lifecycle (OnInitialized, Dispose)",
+      "event broadcasting vs targeted invocation"
+    ],
+    "prerequisites": [
+      "Blazor component basics",
+      "JS interop fundamentals",
+      "C# events and delegates",
+      "ConcurrentDictionary"
+    ],
+    "builds_toward": [
+      "scoped JS interop services",
+      "DotNetObjectReference pattern",
+      "multi-tenant Blazor apps"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": null,
+    "suggested_metaphor": "A static event in Blazor JS interop is like announcing 'pizza's here!' over an entire office PA system — every team on every floor hears it, and if two teams ordered pizza at the same time, you end up with everyone running to the wrong lobby. Instance-isolated callbacks are like texting the specific person who ordered it. The message goes exactly where it needs to, and nobody else's lunch gets interrupted.",
+    "suggested_intro_hook": "You ship a facial recognition kiosk. The demo goes great with one user. Then you deploy a second kiosk in the lobby downstairs, and suddenly when someone scans their face, the wrong person's name shows up on the wrong screen. The bug lives in a single C# keyword you probably didn't think twice about: `static`.",
+    "what_it_teaches": "Why static C# events in Blazor JS interop broadcast to every subscriber and how that silently breaks multi-instance scenarios. The fix: each component registers itself in a ConcurrentDictionary keyed by a Guid, passes that Guid down to JavaScript, and the JSInvokable method routes the callback back only to the specific instance that initiated the action. Also covers when static events are still acceptable (truly app-level broadcasts).",
+    "key_takeaways": [
+      "Static events broadcast — every subscriber receives every event, which is almost never what you want for user-specific data",
+      "Give each component instance a Guid and register it in a static ConcurrentDictionary<string, Action<T>>",
+      "Pass the instanceId through JavaScript all the way to the [JSInvokable] method so callbacks route to the right instance",
+      "ConcurrentDictionary is thread-safe without explicit locks — perfect for this pattern",
+      "Always unregister in Dispose() to prevent memory leaks from lingering callback references",
+      "Static events are still OK when only one instance will ever exist OR when the notification is genuinely app-level"
+    ],
+    "cross_references": [
+      "blazor-js-interop-fundamentals",
+      "facial-recognition-module",
+      "concurrent-collections",
+      "component-lifecycle-disposal",
+      "dotnetobjectreference"
+    ],
+    "quality_notes": "Excellent — real bug, clearly diagnosed, with timeline diagrams showing the data leakage and a second set of diagrams showing the fix. Includes the 'when to use each pattern' section which is what makes it genuinely educational rather than a bug-fix writeup. Cross-references the facial recognition codebase files.",
+    "reading_difficulty_minutes": 12,
+    "is_part_of_series": true,
+    "series_name": "Education numbered tutorials"
+  },
+  {
+    "src_rel": "Education/Git/separating-repos.md",
+    "title": "Separating a Project Into Its Own Repository (Preserving Full History)",
+    "doc_type": "core-concept",
+    "topic_family": "git",
+    "domain": null,
+    "topic_slug": "git-separating-repos",
+    "complexity": "intermediate",
+    "one_line_summary": "A short, focused recipe for splitting one Git repo into two while preserving full commit history, including the lesser-known trick of pushing a specific commit SHA to a remote branch to rewind it without touching your local working tree.",
+    "executive_summary": "The scenario is practical: two projects (HRModule and Joti) were developed in the same repo, and now Joti needs its own independent repository. The doc walks through four steps — repoint origin, push full history to the new repo, add the old repo as a temporary remote and use `git push hrmodule 019bcea:master --force` to rewind the old repo to before Joti's commit, then clean up the temporary remote. The core trick is the push-by-SHA syntax which rewrites a remote branch without requiring you to checkout or switch branches locally, meaning your uncommitted changes are completely safe during the operation.",
+    "key_concepts": [
+      "git remote set-url",
+      "pushing a specific commit SHA to a remote branch",
+      "force push to rewind remote history",
+      "temporary remote for cross-repo operations",
+      "preserving commit history across repo splits"
+    ],
+    "prerequisites": [
+      "basic git (clone, commit, push, remote)",
+      "understanding of commits as SHAs"
+    ],
+    "builds_toward": [
+      "git filter-branch and git filter-repo",
+      "git subtree split",
+      "monorepo-to-polyrepo migrations"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": false,
+    "tutorial_structure": null,
+    "suggested_metaphor": "`git push hrmodule 019bcea:master --force` is the remote equivalent of photoshopping your ex out of a group photo without getting out of your chair. You don't have to go to their house, you don't have to meet up — you just tell the photo album directly 'this is the new picture' and walk away. Meanwhile your own copy of the photo is untouched on your desk.",
+    "suggested_intro_hook": "Two projects. One repo. One of them needs to leave, with all its history intact, and the other needs to forget it ever existed. And you'd rather not touch your working tree at all. Here's the Git incantation that does exactly that.",
+    "what_it_teaches": "How to cleanly split one Git repository into two while preserving commit history on one side and removing specific commits from the other, using the non-obvious 'push commit-sha:branch --force' syntax to rewind a remote branch without affecting your local state.",
+    "key_takeaways": [
+      "`git remote set-url origin <new-url>` repoints an existing remote without losing local state",
+      "Pushing with `git push <remote> <sha>:<branch> --force` rewrites a remote branch to a specific commit without requiring a local checkout",
+      "You can temporarily add a second remote, manipulate its branches, and remove it — your main remote stays unaffected",
+      "Force push is required because you're rewriting history; understand the consequences for anyone else working on that branch",
+      "Your local working tree is completely safe during these operations — uncommitted changes are not touched"
+    ],
+    "cross_references": [
+      "git-remotes",
+      "git-force-push",
+      "git-history-rewriting",
+      "git-subtree-split"
+    ],
+    "quality_notes": "Short and sharp — exactly the right length for a 'how I did this one tricky thing' note. The commit SHA trick is genuinely useful and not commonly known. Could benefit from a note about what to do if other collaborators have already pulled the old history.",
+    "reading_difficulty_minutes": 5,
+    "is_part_of_series": false,
+    "series_name": null
+  }
+]

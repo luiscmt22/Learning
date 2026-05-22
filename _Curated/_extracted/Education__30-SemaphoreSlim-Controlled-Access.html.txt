@@ -1,0 +1,428 @@
+SemaphoreSlim — Controlled Access & Async Locking
+SemaphoreSlim — Controlled Access & Async Locking
+Tutorial #30 — The async-friendly bouncer that keeps your concurrent code safe
+1. What Is SemaphoreSlim?
+SemaphoreSlim is a lightweight synchronization primitive that limits the number of threads
+(or async tasks) that can access a resource concurrently . It lives in
+System.Threading and is the go-to tool for async-safe locking in .NET.
+SemaphoreSlim is like a parking garage with a limited number of spots.
+WaitAsync() drives in (if there's space) or waits at the entrance.
+Release() drives out, freeing a spot for the next car.
+The constructor takes two numbers:
+// SemaphoreSlim(initialCount, maxCount)
+var mutex = new SemaphoreSlim ( 1 , 1 ); // Mutex: only 1 at a time (async-friendly lock)
+var throttle = new SemaphoreSlim ( 3 , 3 ); // Allow 3 concurrent accessors
+var gate = new SemaphoreSlim ( 0 , 1 ); // Starts closed (0 permits), max 1 — useful for signaling
+SemaphoreSlim(1, 1) = mutex (only 1 at a time) — the async-friendly version of lock()
+SemaphoreSlim(3, 3) = allow 3 concurrent accessors — rate limiting / parallelism control
+initialCount = how many permits are available right now
+maxCount = the maximum permits that can ever exist
+new SemaphoreSlim(3, 3) reads as: "Create a gate that allows at most 3 through at a time,
+starting with 3 available spots."
+2. Why Not Just Use lock()?
+The lock statement is the simplest synchronization tool in C#. But it has a
+fatal limitation : it cannot contain await statements.
+The Problem: lock() + await = Compiler Error
+// BROKEN — C# compiler error CS1996
+lock ( _lockObject )
+{
+await DoAsyncWork (); // ERROR: cannot await in lock body
+}
+The C# compiler flat-out refuses this. Why? Because lock() is thread-affine — it tracks
+which thread owns the lock. But await can resume on a different thread ,
+so the lock would be released by a thread that never acquired it. The compiler prevents this chaos.
+The Workaround That Fails
+// WORKS BUT DANGEROUS — releases lock across await
+lock ( _lockObject )
+{
+_isInitialized = true ;
+}
+await DoAsyncWork (); // lock released, another thread can enter!
+Putting the await outside the lock "works" syntactically but defeats the entire purpose.
+The lock is released before the async work completes, so another thread can enter the critical
+section while the first thread is still doing its work.
+GivingCare Has This Exact Problem
+Two services in the codebase use lock() with async methods, creating a race condition window:
+GlobalChatService.cs — The Race Condition
+private readonly object _lockObject = new ();
+public async Task InitializeAsync ( int userId )
+{
+lock ( _lockObject )
+{
+if ( _isInitialized && _currentUserId == userId ) return ;
+_currentUserId = userId ;
+}
+// ^^^ Lock released! Another thread can enter InitializeAsync here!
+await CreateHubConnection ();
+await ConnectAsync ();
+_isInitialized = true ; // Too late — second thread already past the lock check
+}
+GlobalNotificationService.cs has the same pattern and the same problem.
+What can go wrong?
+Thread A enters the lock, sets _currentUserId , exits the lock
+Thread B enters the lock (it's released!), also sets _currentUserId , exits
+Both threads call CreateHubConnection() simultaneously
+You get two hub connections, resource leaks, and unpredictable behavior
+lock() and SemaphoreSlim(1,1) do the same thing conceptually — mutual exclusion.
+The difference: lock() cannot contain await . SemaphoreSlim can.
+If your critical section has ANY async calls, you MUST use SemaphoreSlim .
+3. The Fix: SemaphoreSlim(1, 1) as Async Mutex
+Here is the corrected version of GlobalChatService.InitializeAsync :
+private readonly SemaphoreSlim _initLock = new ( 1 , 1 );
+public async Task InitializeAsync ( int userId )
+{
+await _initLock . WaitAsync (); // Await-friendly! Blocks until available.
+try
+{
+if ( _isInitialized && _currentUserId == userId ) return ;
+_currentUserId = userId ;
+await CreateHubConnection (); // Safe! Still holding the semaphore.
+await ConnectAsync ();
+_isInitialized = true ;
+}
+finally
+{
+_initLock . Release (); // ALWAYS release, even on exception.
+}
+}
+ALWAYS Release() in a finally block. If you forget, the semaphore
+count stays at 0 forever — every future WaitAsync() will deadlock.
+Why this works:
+WaitAsync() is itself an async method — it yields the thread while waiting, no blocking
+Unlike lock() , it is not thread-affine — you can await inside it safely
+The try/finally ensures the semaphore is released even if CreateHubConnection or ConnectAsync throws
+Thread B calling WaitAsync() will wait asynchronously until Thread A's Release()
+4. How SemaphoreSlim Works Internally
+Let's trace through what happens when two threads compete for a SemaphoreSlim(1, 1) :
+SemaphoreSlim(1, 1) — starts with 1 permit
+════════════════════════════════════════════════════
+Thread A: WaitAsync() ──→ gets permit (count: 1 → 0)
+Thread B: WaitAsync() ──→ no permits, WAITS...
+Thread A: [does async work...]
+Thread A: [await CreateHubConnection()]
+Thread A: [await ConnectAsync()]
+Thread A: Release() ──→ count back to 1 (count: 0 → 1)
+Thread B: ──→ gets permit (count: 1 → 0), continues
+Thread B: [does async work...]
+Thread B: Release() ──→ count back to 1 (count: 0 → 1)
+Key points:
+The count tracks available permits (not waiting threads)
+WaitAsync() decrements the count. If count reaches 0, the caller waits.
+Release() increments the count. If anyone is waiting, the next in line wakes up.
+Waiting is async — the thread is freed back to the thread pool while waiting
+5. SemaphoreSlim(N, N) — Rate Limiting / Parallelism Control
+The real power of SemaphoreSlim over lock() is that it's not limited to
+mutual exclusion. You can allow N concurrent accessors :
+// Allow max 3 concurrent API calls
+private readonly SemaphoreSlim _apiThrottle = new ( 3 , 3 );
+public async Task < Result > CallExternalApiAsync ()
+{
+await _apiThrottle . WaitAsync ();
+try
+{
+return await _httpClient . GetAsync ( url );
+}
+finally
+{
+_apiThrottle . Release ();
+}
+}
+This is perfect for:
+External API rate limits (e.g., "max 5 requests per second")
+Database connection pooling (e.g., "max 10 concurrent queries")
+File I/O throttling (e.g., "max 2 concurrent file writes")
+SemaphoreSlim(3, 3) — starts with 3 permits
+════════════════════════════════════════════════════
+Thread A: WaitAsync() ──→ permit (count: 3 → 2)
+Thread B: WaitAsync() ──→ permit (count: 2 → 1)
+Thread C: WaitAsync() ──→ permit (count: 1 → 0)
+Thread D: WaitAsync() ──→ WAITS... (all 3 permits taken)
+[A, B, C all doing work concurrently...]
+Thread A: Release() ──→ (count: 0 → 1)
+Thread D: ──→ gets permit (count: 1 → 0), continues
+[B, C, D all doing work concurrently...]
+Notice that three threads run concurrently at all times. The fourth thread waits only until
+one of the first three finishes — then it immediately picks up the freed permit.
+6. SemaphoreSlim with Timeout
+In production systems, you don't always want to wait forever. WaitAsync accepts
+a timeout, returning true if the permit was acquired and false if the
+timeout expired:
+if ( await _semaphore . WaitAsync ( TimeSpan . FromSeconds ( 5 )))
+{
+try
+{
+// Got access within 5 seconds — do work
+await DoProtectedWorkAsync ();
+}
+finally
+{
+_semaphore . Release ();
+}
+}
+else
+{
+// Couldn't get access within 5 seconds — handle gracefully
+return ServiceResult . Failure ( "Service busy, try again later" );
+}
+Important nuance: only call Release() if WaitAsync returned true .
+If it returned false , you never acquired the permit, so releasing would add an extra permit
+and break the count.
+// WRONG — releases even when we didn't acquire!
+await _semaphore . WaitAsync ( TimeSpan . FromSeconds ( 5 ));
+try { await DoWork (); }
+finally { _semaphore . Release (); } // BUG if WaitAsync timed out!
+// CORRECT — only release if acquired
+var acquired = await _semaphore . WaitAsync ( TimeSpan . FromSeconds ( 5 ));
+try
+{
+if (! acquired ) return ServiceResult . Failure ( "Timeout" );
+await DoWork ();
+}
+finally
+{
+if ( acquired ) _semaphore . Release ();
+}
+7. The Complete Synchronization Toolkit
+Where does SemaphoreSlim fit among other .NET synchronization primitives?
+Primitive
+Async-Safe?
+Max Concurrent
+Use Case
+lock()
+NO
+1
+Simple sync-only critical sections
+SemaphoreSlim(1,1)
+YES
+1
+Async mutex (initialization, single-writer)
+SemaphoreSlim(N,N)
+YES
+N
+Rate limiting, parallelism control
+ConcurrentDictionary
+YES (built-in)
+Unlimited reads
+Thread-safe key-value store
+Monitor (lock)
+NO
+1
+Same as lock() (explicit API)
+Decision flow:
+Need to protect async code? → SemaphoreSlim
+Need to protect sync-only code? → lock() (simpler, lighter)
+Need a thread-safe dictionary? → ConcurrentDictionary (built-in atomicity)
+No shared mutable state? → No synchronization needed
+8. Common Patterns in Web Apps
+Pattern 1: Singleton Service Initialization
+This is the exact pattern GlobalChatService and GlobalNotificationService need:
+public class GlobalChatService : IAsyncDisposable
+{
+private readonly SemaphoreSlim _initLock = new ( 1 , 1 );
+private HubConnection ? _hubConnection ;
+private bool _isInitialized ;
+public async Task EnsureInitializedAsync ( int userId )
+{
+await _initLock . WaitAsync ();
+try
+{
+if ( _isInitialized ) return ;
+_hubConnection = new HubConnectionBuilder ()
+. WithUrl ( $"/chatHub?userId={userId}" )
+. Build ();
+await _hubConnection . StartAsync ();
+_isInitialized = true ;
+}
+finally
+{
+_initLock . Release ();
+}
+}
+}
+Pattern 2: External API Rate Limiting
+public class ExternalApiService
+{
+// The external API allows max 5 concurrent requests
+private readonly SemaphoreSlim _throttle = new ( 5 , 5 );
+public async Task < string > FetchDataAsync ( string endpoint )
+{
+await _throttle . WaitAsync ();
+try
+{
+return await _httpClient . GetStringAsync ( endpoint );
+}
+finally
+{
+_throttle . Release ();
+}
+}
+}
+Pattern 3: File Write Serialization
+public class LogFileService
+{
+// Only one writer at a time to prevent file corruption
+private readonly SemaphoreSlim _fileLock = new ( 1 , 1 );
+public async Task AppendLogAsync ( string message )
+{
+await _fileLock . WaitAsync ();
+try
+{
+await File . AppendAllTextAsync ( _logPath , message + "\n" );
+}
+finally
+{
+_fileLock . Release ();
+}
+}
+}
+Pattern 4: Database Bulk Operation Throttling
+// Process 1000 records but only 10 DB operations at a time
+var throttle = new SemaphoreSlim ( 10 , 10 );
+var tasks = records . Select ( async record =>
+{
+await throttle . WaitAsync ();
+try
+{
+await using var context = _contextFactory . CreateCompanyContext ( companyDb );
+await ProcessRecordAsync ( context , record );
+}
+finally
+{
+throttle . Release ();
+}
+});
+await Task . WhenAll ( tasks );
+Pattern 5: Resource Pool Management
+// Limit concurrent PDF generation (memory-intensive)
+private readonly SemaphoreSlim _pdfPool = new ( 2 , 2 );
+public async Task < byte []> GeneratePdfAsync ( ReportData data )
+{
+await _pdfPool . WaitAsync ();
+try
+{
+return await _pdfBuilder . BuildAsync ( data );
+}
+finally
+{
+_pdfPool . Release ();
+}
+}
+9. Disposal and Cleanup
+SemaphoreSlim implements IDisposable . If your service owns a semaphore
+and that service has a lifetime (like a Singleton or a scoped service), dispose it properly:
+public class MyService : IDisposable
+{
+private readonly SemaphoreSlim _lock = new ( 1 , 1 );
+public async Task DoWorkAsync ()
+{
+await _lock . WaitAsync ();
+try
+{
+// protected work...
+}
+finally
+{
+_lock . Release ();
+}
+}
+public void Dispose ()
+{
+_lock . Dispose ();
+}
+}
+For async disposal (e.g., with IAsyncDisposable ):
+public class MyService : IAsyncDisposable
+{
+private readonly SemaphoreSlim _lock = new ( 1 , 1 );
+public async ValueTask DisposeAsync ()
+{
+// Wait for any in-progress operation to finish before disposing
+await _lock . WaitAsync ();
+try
+{
+// Cleanup resources...
+}
+finally
+{
+_lock . Release ();
+_lock . Dispose ();
+}
+}
+}
+Note: Disposing a SemaphoreSlim while threads are waiting on it will throw
+ObjectDisposedException on those waiting threads. Make sure all work is complete before disposal.
+10. When NOT to Use SemaphoreSlim
+SemaphoreSlim is powerful, but it's not always the right tool. Here's when to pick something else:
+For simple non-async synchronization → use lock()
+// This is purely synchronous — lock() is simpler and lighter
+private readonly object _sync = new ();
+private int _counter ;
+public void Increment ()
+{
+lock ( _sync )
+{
+_counter ++; // No async, no await — lock() is fine
+}
+}
+For thread-safe collections → use ConcurrentDictionary
+// Don't wrap a regular Dictionary with SemaphoreSlim
+// Use ConcurrentDictionary instead — it has built-in atomicity
+private readonly ConcurrentDictionary < string , UserSession > _sessions = new ();
+_sessions . TryAdd ( key , session ); // Atomic
+_sessions . GetOrAdd ( key , createFunc ); // Atomic
+_sessions . AddOrUpdate ( key , add , update ); // Atomic
+For immutable data → no synchronization needed
+// Immutable objects are inherently thread-safe
+private readonly ImmutableList < string > _permissions = ImmutableList < string >. Empty ;
+// "Modifying" creates a new list — the original is never changed
+var updated = _permissions . Add ( "CanEdit" ); // New object, no contention
+For per-request data → no sharing = no contention
+// Scoped services in Blazor Server get a new instance per circuit
+// No two users share this instance — no synchronization needed
+public class UserDashboardService // Registered as Scoped
+{
+private List < Notification > _notifications = new ();
+public void AddNotification ( Notification n )
+{
+_notifications . Add ( n ); // Safe — only one circuit uses this instance
+}
+}
+The decision tree:
+Do I need synchronization?
+│
+├── Is data shared between threads/tasks?
+│ ├── NO → No synchronization needed (per-request, immutable)
+│ └── YES → Continue...
+│
+├── Do I need a thread-safe collection?
+│ ├── YES → ConcurrentDictionary / ConcurrentQueue / etc.
+│ └── NO → Continue...
+│
+├── Does the critical section contain await?
+│ ├── YES → SemaphoreSlim (the ONLY option)
+│ └── NO → lock() (simpler, lighter)
+│
+└── Do I need to allow N concurrent accessors?
+├── YES → SemaphoreSlim(N, N)
+└── NO → SemaphoreSlim(1, 1) or lock()
+Quick Reference
+// === ASYNC MUTEX (1 at a time) ===
+private readonly SemaphoreSlim _lock = new ( 1 , 1 );
+await _lock . WaitAsync (); // Acquire (blocks if unavailable)
+try { /* work */ }
+finally { _lock . Release (); } // Release (ALWAYS in finally)
+// === RATE LIMITER (N at a time) ===
+private readonly SemaphoreSlim _throttle = new ( 5 , 5 );
+// === WITH TIMEOUT ===
+if ( await _lock . WaitAsync ( TimeSpan . FromSeconds ( 5 )))
+{
+try { /* work */ }
+finally { _lock . Release (); }
+}
+else { /* timeout — handle gracefully */ }
+// === WITH CANCELLATION ===
+await _lock . WaitAsync ( cancellationToken );
+// === CHECK STATE ===
+int available = _lock . CurrentCount ; // How many permits available right now
+// === CLEANUP ===
+_lock . Dispose (); // When service is disposed

@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EF Core Audit Trail — Two-Layer System</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --surface: #16213e;
+            --surface2: #0f3460;
+            --accent: #e94560;
+            --accent2: #533483;
+            --text: #eee;
+            --text-muted: #aab;
+            --success: #4ecca3;
+            --warning: #f0a500;
+            --code-bg: #0d1117;
+            --border: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+
+        h2 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin: 2.5rem 0 1rem 0;
+            padding-bottom: 0.3rem;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        h3 {
+            color: var(--success);
+            font-size: 1.2rem;
+            margin: 1.8rem 0 0.8rem 0;
+        }
+
+        h4 {
+            color: var(--warning);
+            font-size: 1.05rem;
+            margin: 1.2rem 0 0.5rem 0;
+        }
+
+        p { margin-bottom: 1rem; }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.2rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        code {
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9rem;
+        }
+
+        p code, li code {
+            background: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .keyword { color: #569cd6; }
+        .type { color: #4ec9b0; }
+        .string { color: #ce9178; }
+        .comment { color: #6a9955; }
+        .method { color: #dcdcaa; }
+        .number { color: #b5cea8; }
+        .param { color: #9cdcfe; }
+
+        .callout {
+            border-radius: 8px;
+            padding: 1.2rem 1.5rem;
+            margin: 1.5rem 0;
+            border-left: 4px solid;
+        }
+
+        .callout-metaphor {
+            background: rgba(83, 52, 131, 0.2);
+            border-color: var(--accent2);
+        }
+        .callout-metaphor::before {
+            content: "Metaphor";
+            display: block;
+            font-weight: bold;
+            color: var(--accent2);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-english {
+            background: rgba(78, 204, 163, 0.1);
+            border-color: var(--success);
+        }
+        .callout-english::before {
+            content: "Read It Like English";
+            display: block;
+            font-weight: bold;
+            color: var(--success);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-warning {
+            background: rgba(240, 165, 0, 0.1);
+            border-color: var(--warning);
+        }
+        .callout-warning::before {
+            content: "Common Confusion";
+            display: block;
+            font-weight: bold;
+            color: var(--warning);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-rule {
+            background: rgba(233, 69, 96, 0.1);
+            border-color: var(--accent);
+        }
+        .callout-rule::before {
+            content: "Golden Rule";
+            display: block;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        ul, ol {
+            margin: 0.5rem 0 1rem 1.5rem;
+        }
+
+        li { margin-bottom: 0.3rem; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 0.6rem 1rem;
+            text-align: left;
+        }
+
+        th {
+            background: var(--surface2);
+            color: var(--success);
+        }
+
+        td { background: var(--surface); }
+
+        .diagram {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'Cascadia Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            white-space: pre;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+
+<h1>EF Core Audit Trail — Two-Layer System</h1>
+<p class="subtitle">Tutorial #23 — Who Changed What, When, and Why?</p>
+
+<!-- ============================================================ -->
+<!-- SECTION 1: WHY AUDIT? -->
+<!-- ============================================================ -->
+
+<h2>1. Why Audit?</h2>
+
+<p>
+    Every serious business application needs to answer a deceptively simple question: <strong>"Who changed what, when, and why?"</strong>
+    This question comes up constantly — from compliance auditors, from managers debugging a bad data entry, from developers
+    tracing a production bug, and from security teams investigating suspicious activity.
+</p>
+
+<p>Audit trails serve three primary purposes:</p>
+
+<ul>
+    <li><strong>Compliance</strong> — Regulators and certifications (GDPR, ISO 27001, SOC 2) require you to prove who accessed or modified sensitive data and when.</li>
+    <li><strong>Debugging</strong> — When a record has wrong data, the audit trail tells you exactly when the change happened and who made it. No more guessing.</li>
+    <li><strong>Accountability</strong> — Users behave more carefully when they know their actions are recorded. And when something goes wrong, you know exactly who to talk to.</li>
+</ul>
+
+<p>
+    But not all audit needs are the same. Sometimes you just need to know "when was this record last touched?" Other times you need
+    a full operation log: "User Maria moved Lead 'Acme Corp' from stage 'Contacto' to 'Proposta' at 14:30 on Tuesday."
+    These are fundamentally different questions, and GivingCare addresses them with two distinct layers.
+</p>
+
+<!-- ============================================================ -->
+<!-- SECTION 2: THE TWO-LAYER ARCHITECTURE -->
+<!-- ============================================================ -->
+
+<h2>2. The Two-Layer Architecture</h2>
+
+<p>
+    GivingCare's audit system is split into two complementary layers, each solving a different problem.
+    Think of them as different lenses through which you can view system activity.
+</p>
+
+<div class="diagram">
+<strong>Layer 1: Entity Audit Fields</strong> (BaseAuditableEntity)
+├── CreatedAt, CreatedByUserId
+├── ModifiedAt, ModifiedByUserId
+├── DeletedAt, DeletedByUserId (soft-delete)
+└── Purpose: "When was this record last touched, and by whom?"
+
+<strong>Layer 2: Operation Audit Logs</strong>
+├── <span class="type">System Level</span>: AuditLog → BaseControleContext (login, logout, password change)
+├── <span class="type">Domain Level</span>: CrmActivityLog → Company DB (Lead created, Opportunity state changed)
+└── Purpose: "What meaningful actions did users perform over time?"
+</div>
+
+<div class="callout callout-metaphor">
+    <strong>Layer 1</strong> is like a "Last edited by" stamp on a document — it tells you the most recent person who touched it and when.
+    <strong>Layer 2</strong> is like a full revision history — who did what, when, and what they changed. Every action is a separate entry you can scroll through.
+</div>
+
+<p>
+    Layer 1 lives <em>on the entities themselves</em> — every row in the database carries its own audit stamp.
+    Layer 2 lives in <em>separate log tables</em> — one for system-wide events, another for domain-specific business actions.
+    Together, they give you both the quick glance ("who last modified this?") and the deep dive ("show me everything that happened to this lead").
+</p>
+
+<!-- ============================================================ -->
+<!-- SECTION 3: LAYER 1 — BASE ENTITY ABSTRACTIONS -->
+<!-- ============================================================ -->
+
+<h2>3. Layer 1: Base Entity Abstractions</h2>
+
+<p>
+    The foundation of entity-level auditing is a set of interfaces and abstract base classes.
+    Every entity that needs auditing inherits from these, getting the audit fields "for free" through the inheritance chain.
+</p>
+
+<h3>The Interfaces: IAuditable and ISoftDeletable</h3>
+
+<p>
+    First, two interfaces define the <em>contracts</em> — what properties an auditable or soft-deletable entity must have:
+</p>
+
+<pre><code><span class="keyword">namespace</span> <span class="type">GivingCare.Models</span>;
+
+<span class="comment">/// &lt;summary&gt;</span>
+<span class="comment">/// Interface for entities that track creation and modification audit information.</span>
+<span class="comment">/// &lt;/summary&gt;</span>
+<span class="keyword">public</span> <span class="keyword">interface</span> <span class="type">IAuditable</span>
+{
+    <span class="type">DateTime</span> <span class="param">CreatedAt</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="type">int</span>? <span class="param">CreatedByUserId</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="type">DateTime</span>? <span class="param">ModifiedAt</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="type">int</span>? <span class="param">ModifiedByUserId</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+}</code></pre>
+
+<pre><code><span class="keyword">namespace</span> <span class="type">GivingCare.Models</span>;
+
+<span class="comment">/// &lt;summary&gt;</span>
+<span class="comment">/// Interface for entities that support soft deletion.</span>
+<span class="comment">/// &lt;/summary&gt;</span>
+<span class="keyword">public</span> <span class="keyword">interface</span> <span class="type">ISoftDeletable</span>
+{
+    <span class="type">bool</span> <span class="param">IsDeleted</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="type">DateTime</span>? <span class="param">DeletedAt</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="type">int</span>? <span class="param">DeletedByUserId</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+}</code></pre>
+
+<p>
+    Why interfaces? Because they let you write generic code that operates on <em>any</em> auditable entity.
+    An EF Core interceptor (or a service method) can check <code>if (entity is IAuditable auditable)</code> and act on it,
+    regardless of whether it's an <code>Employee</code>, a <code>Lead</code>, or a <code>Document</code>.
+</p>
+
+<h3>The Inheritance Chain</h3>
+
+<p>Now the abstract classes that implement these interfaces, forming a three-level hierarchy:</p>
+
+<pre><code><span class="keyword">using</span> System.ComponentModel.DataAnnotations;
+
+<span class="keyword">namespace</span> <span class="type">GivingCare.Models</span>;
+
+<span class="comment">/// &lt;summary&gt;</span>
+<span class="comment">/// Base class for all entities with an integer primary key.</span>
+<span class="comment">/// &lt;/summary&gt;</span>
+<span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="type">BaseEntity</span>
+{
+    [<span class="type">Key</span>]
+    <span class="keyword">public</span> <span class="type">int</span> <span class="param">Id</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+}</code></pre>
+
+<pre><code><span class="keyword">namespace</span> <span class="type">GivingCare.Models</span>;
+
+<span class="comment">/// &lt;summary&gt;</span>
+<span class="comment">/// Base class for entities that track creation and modification audit information.</span>
+<span class="comment">/// &lt;/summary&gt;</span>
+<span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="type">BaseAuditableEntity</span> : <span class="type">BaseEntity</span>, <span class="type">IAuditable</span>
+{
+    <span class="keyword">public</span> <span class="type">DateTime</span> <span class="param">CreatedAt</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; } = <span class="type">DateTime</span>.<span class="param">UtcNow</span>;
+    <span class="keyword">public</span> <span class="type">int</span>? <span class="param">CreatedByUserId</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public</span> <span class="type">DateTime</span>? <span class="param">ModifiedAt</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public</span> <span class="type">int</span>? <span class="param">ModifiedByUserId</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+}</code></pre>
+
+<pre><code><span class="keyword">namespace</span> <span class="type">GivingCare.Models</span>;
+
+<span class="comment">/// &lt;summary&gt;</span>
+<span class="comment">/// Base class for entities that support soft deletion with full audit trail.</span>
+<span class="comment">/// &lt;/summary&gt;</span>
+<span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="type">BaseSoftDeletableEntity</span> : <span class="type">BaseAuditableEntity</span>, <span class="type">ISoftDeletable</span>
+{
+    <span class="keyword">public</span> <span class="type">bool</span> <span class="param">IsDeleted</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public</span> <span class="type">DateTime</span>? <span class="param">DeletedAt</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public</span> <span class="type">int</span>? <span class="param">DeletedByUserId</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+}</code></pre>
+
+<p>Visualizing the inheritance chain:</p>
+
+<div class="diagram">
+<span class="type">BaseEntity</span>                        <span class="comment">// Just has Id</span>
+    └── <span class="type">BaseAuditableEntity</span>          <span class="comment">// + CreatedAt/By, ModifiedAt/By</span>
+            └── <span class="type">BaseSoftDeletableEntity</span>  <span class="comment">// + IsDeleted, DeletedAt/By</span>
+</div>
+
+<h4>Which base class should your entity inherit from?</h4>
+
+<table>
+    <tr>
+        <th>Base Class</th>
+        <th>Use When</th>
+        <th>Example Entities</th>
+    </tr>
+    <tr>
+        <td><code>BaseEntity</code></td>
+        <td>Lookup tables, configuration records — no audit needed</td>
+        <td><code>AuditLog</code>, <code>Country</code>, <code>District</code></td>
+    </tr>
+    <tr>
+        <td><code>BaseAuditableEntity</code></td>
+        <td>Business entities you want to track creation/modification</td>
+        <td><code>CrmActivityLog</code>, <code>FormTemplate</code>, <code>Schedule</code></td>
+    </tr>
+    <tr>
+        <td><code>BaseSoftDeletableEntity</code></td>
+        <td>Entities that should never truly disappear — "deleted" means hidden</td>
+        <td><code>Employee</code>, <code>Lead</code>, <code>Document</code>, <code>Ticket</code></td>
+    </tr>
+</table>
+
+<p>
+    Notice that <code>CreatedAt</code> has a default value of <code>DateTime.UtcNow</code>. This means the moment you
+    <code>new</code> up an entity, the clock starts ticking. If you forget to set it explicitly in your service code,
+    it still gets a reasonable default. But <code>ModifiedAt</code> and <code>DeletedAt</code> are nullable — they start as
+    <code>null</code>, meaning "never modified" and "never deleted," which makes perfect semantic sense.
+</p>
+
+<!-- ============================================================ -->
+<!-- SECTION 4: MANUAL POPULATION IN SERVICES -->
+<!-- ============================================================ -->
+
+<h2>4. Manual Population in Services</h2>
+
+<p>
+    Here is a critical design decision in GivingCare: <strong>audit fields are set manually in service code</strong>,
+    not automatically via EF Core interceptors. Every service method that creates, updates, or deletes an entity
+    is responsible for setting the appropriate audit fields.
+</p>
+
+<div class="callout callout-warning">
+    GivingCare does <strong>NOT</strong> use EF Core interceptors for automatic auditing. All audit fields are set
+    <strong>MANUALLY</strong> in service code. This is intentional — explicit is better than magic. When you read a service
+    method, you can see exactly what audit fields are being set without hunting through interceptor pipelines.
+</div>
+
+<h3>Create Pattern</h3>
+
+<pre><code><span class="comment">// From EntityService.cs — creating a new entity</span>
+<span class="param">entity</span>.<span class="param">CreatedAt</span> = <span class="type">DateTime</span>.<span class="param">UtcNow</span>;
+<span class="param">entity</span>.<span class="param">CreatedByUserId</span> = <span class="param">userId</span>;
+<span class="keyword">await</span> <span class="param">context</span>.<span class="method">SaveChangesAsync</span>();</code></pre>
+
+<h3>Update Pattern</h3>
+
+<pre><code><span class="comment">// From EntityService.cs — modifying an existing entity</span>
+<span class="param">existing</span>.<span class="param">ModifiedAt</span> = <span class="type">DateTime</span>.<span class="param">UtcNow</span>;
+<span class="param">existing</span>.<span class="param">ModifiedByUserId</span> = <span class="param">userId</span>;
+<span class="keyword">await</span> <span class="param">context</span>.<span class="method">SaveChangesAsync</span>();</code></pre>
+
+<h3>Soft Delete Pattern</h3>
+
+<pre><code><span class="comment">// From CrmEntityServiceBase.cs — soft-deleting an entity</span>
+<span class="param">softDeletable</span>.<span class="param">IsDeleted</span> = <span class="keyword">true</span>;
+<span class="param">softDeletable</span>.<span class="param">DeletedAt</span> = <span class="type">DateTime</span>.<span class="param">UtcNow</span>;
+<span class="param">softDeletable</span>.<span class="param">DeletedByUserId</span> = <span class="param">userId</span>;
+<span class="keyword">await</span> <span class="param">context</span>.<span class="method">SaveChangesAsync</span>();</code></pre>
+
+<h3>The Trade-Off</h3>
+
+<p>Manual audit field population is a deliberate trade-off:</p>
+
+<table>
+    <tr>
+        <th>Advantage</th>
+        <th>Disadvantage</th>
+    </tr>
+    <tr>
+        <td>Explicit — you can see exactly what's happening in each method</td>
+        <td>Repetitive — the same 2-3 lines in every create/update method</td>
+    </tr>
+    <tr>
+        <td>Predictable — no hidden behavior, no surprises</td>
+        <td>Forgettable — if a developer skips the lines, no audit trail</td>
+    </tr>
+    <tr>
+        <td>Flexible — you can decide per-method whether to update audit fields</td>
+        <td>Inconsistent — different services may use <code>DateTime.UtcNow</code> vs <code>DateTime.Now</code></td>
+    </tr>
+    <tr>
+        <td>Easy to debug — no interceptor chain to trace through</td>
+        <td>Scales poorly — more entities = more places to remember</td>
+    </tr>
+</table>
+
+<p>
+    In practice, GivingCare mitigates the repetition risk by centralizing common patterns in base service classes.
+    For example, <code>CrmEntityServiceBase</code> has generic <code>CreateAsync</code> and <code>DeleteAsync</code>
+    methods that handle audit fields once — all CRM entity services inherit these methods.
+</p>
+
+<!-- ============================================================ -->
+<!-- SECTION 5: THE ALTERNATIVE — SAVECHANGES INTERCEPTOR -->
+<!-- ============================================================ -->
+
+<h2>5. The Alternative: SaveChanges Interceptor</h2>
+
+<p>
+    GivingCare chose manual population, but EF Core offers a powerful alternative: the <code>SaveChangesInterceptor</code>.
+    This hooks into the EF pipeline and automatically sets audit fields on every <code>SaveChanges</code> call.
+    Let's look at what this would look like — for educational purposes.
+</p>
+
+<h3>How an Interceptor Works</h3>
+
+<pre><code><span class="keyword">using</span> Microsoft.EntityFrameworkCore;
+<span class="keyword">using</span> Microsoft.EntityFrameworkCore.Diagnostics;
+
+<span class="keyword">public</span> <span class="keyword">class</span> <span class="type">AuditInterceptor</span> : <span class="type">SaveChangesInterceptor</span>
+{
+    <span class="keyword">public</span> <span class="keyword">override</span> <span class="type">ValueTask</span>&lt;<span class="type">InterceptionResult</span>&lt;<span class="type">int</span>&gt;&gt; <span class="method">SavingChangesAsync</span>(
+        <span class="type">DbContextEventData</span> <span class="param">eventData</span>,
+        <span class="type">InterceptionResult</span>&lt;<span class="type">int</span>&gt; <span class="param">result</span>,
+        <span class="type">CancellationToken</span> <span class="param">ct</span>)
+    {
+        <span class="keyword">var</span> <span class="param">context</span> = <span class="param">eventData</span>.<span class="param">Context</span>!;
+
+        <span class="comment">// Scan all tracked entities that implement IAuditable</span>
+        <span class="keyword">foreach</span> (<span class="keyword">var</span> <span class="param">entry</span> <span class="keyword">in</span> <span class="param">context</span>.<span class="param">ChangeTracker</span>.<span class="method">Entries</span>&lt;<span class="type">IAuditable</span>&gt;())
+        {
+            <span class="keyword">switch</span> (<span class="param">entry</span>.<span class="param">State</span>)
+            {
+                <span class="keyword">case</span> <span class="type">EntityState</span>.<span class="param">Added</span>:
+                    <span class="param">entry</span>.<span class="param">Entity</span>.<span class="param">CreatedAt</span> = <span class="type">DateTime</span>.<span class="param">UtcNow</span>;
+                    <span class="keyword">break</span>;
+                <span class="keyword">case</span> <span class="type">EntityState</span>.<span class="param">Modified</span>:
+                    <span class="param">entry</span>.<span class="param">Entity</span>.<span class="param">ModifiedAt</span> = <span class="type">DateTime</span>.<span class="param">UtcNow</span>;
+                    <span class="keyword">break</span>;
+            }
+        }
+
+        <span class="comment">// Handle soft-deletable entities too</span>
+        <span class="keyword">foreach</span> (<span class="keyword">var</span> <span class="param">entry</span> <span class="keyword">in</span> <span class="param">context</span>.<span class="param">ChangeTracker</span>.<span class="method">Entries</span>&lt;<span class="type">ISoftDeletable</span>&gt;())
+        {
+            <span class="keyword">if</span> (<span class="param">entry</span>.<span class="param">State</span> == <span class="type">EntityState</span>.<span class="param">Modified</span> &amp;&amp;
+                <span class="param">entry</span>.<span class="param">Entity</span>.<span class="param">IsDeleted</span> &amp;&amp;
+                <span class="param">entry</span>.<span class="param">Property</span>(<span class="string">"IsDeleted"</span>).<span class="param">IsModified</span>)
+            {
+                <span class="param">entry</span>.<span class="param">Entity</span>.<span class="param">DeletedAt</span> = <span class="type">DateTime</span>.<span class="param">UtcNow</span>;
+            }
+        }
+
+        <span class="keyword">return</span> <span class="keyword">base</span>.<span class="method">SavingChangesAsync</span>(<span class="param">eventData</span>, <span class="param">result</span>, <span class="param">ct</span>);
+    }
+}</code></pre>
+
+<h3>How Interceptors Hook Into the EF Pipeline</h3>
+
+<div class="diagram">
+Your Code                      EF Core Pipeline                    Database
+─────────                      ────────────────                    ────────
+                               ┌──────────────────┐
+context.SaveChangesAsync() ──► │  Change Tracker   │
+                               │  detects Added,   │
+                               │  Modified, Deleted │
+                               └────────┬─────────┘
+                                        │
+                               ┌────────▼─────────┐
+                               │  <span class="type">AuditInterceptor</span>  │  ◄── Your interceptor runs HERE
+                               │  SavingChangesAsync│      BEFORE the SQL is sent
+                               │  sets CreatedAt,   │
+                               │  ModifiedAt, etc.  │
+                               └────────┬─────────┘
+                                        │
+                               ┌────────▼─────────┐
+                               │  Generate SQL     │
+                               │  INSERT/UPDATE    │──────►  SQL Server
+                               └──────────────────┘
+</div>
+
+<h3>Registration</h3>
+
+<p>
+    You register an interceptor when configuring your <code>DbContext</code>:
+</p>
+
+<pre><code><span class="comment">// In your DbContext's OnConfiguring, or in DI registration:</span>
+<span class="param">optionsBuilder</span>.<span class="method">AddInterceptors</span>(<span class="keyword">new</span> <span class="type">AuditInterceptor</span>());</code></pre>
+
+<h3>Interceptor Pros and Cons</h3>
+
+<table>
+    <tr>
+        <th>Pro</th>
+        <th>Con</th>
+    </tr>
+    <tr>
+        <td>Automatic — impossible to forget</td>
+        <td>Hard to pass <code>userId</code> (interceptor doesn't know who the user is)</td>
+    </tr>
+    <tr>
+        <td>Centralized — one place for all audit logic</td>
+        <td>Less control — fires on every <code>SaveChanges</code>, even internal ops</td>
+    </tr>
+    <tr>
+        <td>Consistent — same behavior everywhere</td>
+        <td>"Magic" — behavior is hidden from the call site</td>
+    </tr>
+    <tr>
+        <td>DRY — no repetitive code in services</td>
+        <td>Harder to debug — interceptor chain is invisible in the service</td>
+    </tr>
+</table>
+
+<p>
+    The <code>userId</code> problem is the biggest challenge with interceptors. The interceptor runs deep inside
+    EF Core's pipeline — it has no access to the HTTP context, the session, or the current user. Common workarounds
+    include injecting <code>IHttpContextAccessor</code> or passing user info through the <code>DbContext</code> itself,
+    but both add complexity. GivingCare's manual approach sidesteps this entirely: the service already knows the
+    <code>userId</code> because it's passed as a parameter.
+</p>
+
+<!-- ============================================================ -->
+<!-- SECTION 6: LAYER 2 SYSTEM AUDIT — AUDITSERVICE -->
+<!-- ============================================================ -->
+
+<h2>6. Layer 2: System Audit — AuditService</h2>
+
+<p>
+    Layer 2 is about logging <em>operations</em>, not just touching fields on records. The first half of Layer 2
+    handles <strong>system-level events</strong>: logins, logouts, failed login attempts, and password changes.
+    These are cross-company events stored in the central <code>BaseControleContext</code> database.
+</p>
+
+<h3>The AuditLog Model</h3>
+
+<pre><code><span class="keyword">using</span> System.ComponentModel.DataAnnotations;
+<span class="keyword">using</span> System.ComponentModel.DataAnnotations.Schema;
+
+<span class="keyword">namespace</span> <span class="type">GivingCare.Models</span>;
+
+[<span class="type">Table</span>(<span class="string">"AuditLogs"</span>)]
+<span class="keyword">public</span> <span class="keyword">partial</span> <span class="keyword">class</span> <span class="type">AuditLog</span> : <span class="type">BaseEntity</span>
+{
+    [<span class="type">Column</span>(<span class="string">"UserId"</span>)]
+    <span class="keyword">public</span> <span class="type">int</span>? <span class="param">UserId</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+
+    [<span class="type">Column</span>(<span class="string">"Timestamp"</span>, TypeName = <span class="string">"datetime"</span>)]
+    <span class="keyword">public</span> <span class="type">DateTime</span>? <span class="param">Timestamp</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+
+    [<span class="type">Column</span>(<span class="string">"Action"</span>)]
+    <span class="keyword">public</span> <span class="type">string</span>? <span class="param">Action</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+}</code></pre>
+
+<p>
+    Notice that <code>AuditLog</code> inherits from <code>BaseEntity</code>, not <code>BaseAuditableEntity</code>.
+    It would be circular to audit the audit log — this is a terminal entity that simply records facts.
+</p>
+
+<h3>The AuditService</h3>
+
+<pre><code><span class="keyword">namespace</span> <span class="type">GivingCare.Services.Audit</span>;
+
+<span class="keyword">public</span> <span class="keyword">interface</span> <span class="type">IAuditService</span>
+{
+    <span class="type">Task</span> <span class="method">LogAsync</span>(<span class="type">int</span> <span class="param">userId</span>, <span class="type">string</span> <span class="param">action</span>);
+    <span class="type">Task</span> <span class="method">LogLoginAsync</span>(<span class="type">int</span> <span class="param">userId</span>, <span class="type">string</span> <span class="param">ipAddress</span> = <span class="keyword">null</span>);
+    <span class="type">Task</span> <span class="method">LogLogoutAsync</span>(<span class="type">int</span> <span class="param">userId</span>);
+    <span class="type">Task</span> <span class="method">LogPasswordChangeAsync</span>(<span class="type">int</span> <span class="param">userId</span>);
+    <span class="type">Task</span> <span class="method">LogFailedLoginAsync</span>(<span class="type">string</span> <span class="param">username</span>, <span class="type">string</span> <span class="param">ipAddress</span> = <span class="keyword">null</span>);
+}
+
+<span class="keyword">public</span> <span class="keyword">class</span> <span class="type">AuditService</span> : <span class="type">IAuditService</span>
+{
+    <span class="keyword">private</span> <span class="keyword">readonly</span> <span class="type">IDbContextFactoryService</span> <span class="param">_contextFactory</span>;
+    <span class="keyword">private</span> <span class="keyword">readonly</span> <span class="type">ILogger</span>&lt;<span class="type">AuditService</span>&gt; <span class="param">_logger</span>;
+
+    <span class="keyword">public</span> <span class="method">AuditService</span>(<span class="type">IDbContextFactoryService</span> <span class="param">contextFactory</span>, <span class="type">ILogger</span>&lt;<span class="type">AuditService</span>&gt; <span class="param">logger</span>)
+    {
+        <span class="param">_contextFactory</span> = <span class="param">contextFactory</span>;
+        <span class="param">_logger</span> = <span class="param">logger</span>;
+    }
+
+    <span class="keyword">public</span> <span class="keyword">async</span> <span class="type">Task</span> <span class="method">LogAsync</span>(<span class="type">int</span> <span class="param">userId</span>, <span class="type">string</span> <span class="param">action</span>)
+    {
+        <span class="keyword">try</span>
+        {
+            <span class="keyword">await</span> <span class="keyword">using</span> <span class="keyword">var</span> <span class="param">context</span> = <span class="param">_contextFactory</span>.<span class="method">CreateBaseControleContext</span>();
+            <span class="param">context</span>.<span class="param">AuditLogs</span>.<span class="method">Add</span>(<span class="keyword">new</span> <span class="type">AuditLog</span>
+            {
+                <span class="param">UserId</span> = <span class="param">userId</span>,
+                <span class="param">Timestamp</span> = <span class="type">DateTime</span>.<span class="param">Now</span>,
+                <span class="param">Action</span> = <span class="param">action</span>
+            });
+            <span class="keyword">await</span> <span class="param">context</span>.<span class="method">SaveChangesAsync</span>();
+        }
+        <span class="keyword">catch</span> (<span class="type">Exception</span> <span class="param">ex</span>)
+        {
+            <span class="param">_logger</span>.<span class="method">LogError</span>(<span class="param">ex</span>, <span class="string">$"Error logging audit for user {userId}: {action}"</span>);
+        }
+    }
+
+    <span class="keyword">public</span> <span class="type">Task</span> <span class="method">LogLoginAsync</span>(<span class="type">int</span> <span class="param">userId</span>, <span class="type">string</span> <span class="param">ipAddress</span> = <span class="keyword">null</span>)
+    {
+        <span class="keyword">var</span> <span class="param">message</span> = <span class="param">ipAddress</span> != <span class="keyword">null</span>
+            ? <span class="string">$"LOGIN from {ipAddress}"</span>
+            : <span class="string">"LOGIN"</span>;
+        <span class="keyword">return</span> <span class="method">LogAsync</span>(<span class="param">userId</span>, <span class="param">message</span>);
+    }
+
+    <span class="keyword">public</span> <span class="type">Task</span> <span class="method">LogLogoutAsync</span>(<span class="type">int</span> <span class="param">userId</span>)
+        =&gt; <span class="method">LogAsync</span>(<span class="param">userId</span>, <span class="string">"LOGOUT"</span>);
+
+    <span class="keyword">public</span> <span class="type">Task</span> <span class="method">LogPasswordChangeAsync</span>(<span class="type">int</span> <span class="param">userId</span>)
+        =&gt; <span class="method">LogAsync</span>(<span class="param">userId</span>, <span class="string">"PASSWORD_CHANGED"</span>);
+
+    <span class="keyword">public</span> <span class="keyword">async</span> <span class="type">Task</span> <span class="method">LogFailedLoginAsync</span>(<span class="type">string</span> <span class="param">username</span>, <span class="type">string</span> <span class="param">ipAddress</span> = <span class="keyword">null</span>)
+    {
+        <span class="keyword">var</span> <span class="param">message</span> = <span class="param">ipAddress</span> != <span class="keyword">null</span>
+            ? <span class="string">$"FAILED_LOGIN: {username} from {ipAddress}"</span>
+            : <span class="string">$"FAILED_LOGIN: {username}"</span>;
+        <span class="keyword">await</span> <span class="method">LogAsync</span>(<span class="number">0</span>, <span class="param">message</span>);
+    }
+}</code></pre>
+
+<p>Key design observations:</p>
+
+<ul>
+    <li><strong>Fire-and-forget safety</strong> — The <code>try/catch</code> ensures that a logging failure never crashes the calling operation. If the audit log can't be written, the actual business action still succeeds.</li>
+    <li><strong>BaseControleContext</strong> — System audit logs go to the central auth database, not a company-specific one. This means you can see all login/logout events across all companies in one place.</li>
+    <li><strong>UserId = 0 for failed logins</strong> — When login fails, we don't have a valid user ID, so we log with <code>0</code> and include the attempted username in the action string instead.</li>
+    <li><strong>Specialized methods</strong> — <code>LogLoginAsync</code>, <code>LogLogoutAsync</code>, <code>LogPasswordChangeAsync</code>, and <code>LogFailedLoginAsync</code> are thin wrappers that enforce consistent action strings. This prevents one developer writing "Login" and another writing "USER_LOGIN".</li>
+</ul>
+
+<!-- ============================================================ -->
+<!-- SECTION 7: LAYER 2 DOMAIN AUDIT — CRMAUDITSERVICE -->
+<!-- ============================================================ -->
+
+<h2>7. Layer 2: Domain Audit — CrmAuditService</h2>
+
+<p>
+    The second half of Layer 2 handles <strong>domain-level events</strong>: business actions within a specific company.
+    "Lead created," "Opportunity moved to Proposta stage," "Contact added to lead." These are stored in the
+    company-specific database via <code>DynamicCompanyContext</code>.
+</p>
+
+<h3>The CrmActivityLog Model</h3>
+
+<pre><code><span class="keyword">using</span> System.ComponentModel.DataAnnotations;
+<span class="keyword">using</span> System.ComponentModel.DataAnnotations.Schema;
+
+<span class="keyword">namespace</span> <span class="type">GivingCare.Models.CRM</span>;
+
+[<span class="type">Table</span>(<span class="string">"CrmActivityLogs"</span>)]
+<span class="keyword">public</span> <span class="keyword">class</span> <span class="type">CrmActivityLog</span> : <span class="type">BaseAuditableEntity</span>
+{
+    [<span class="type">Required</span>, <span class="type">MaxLength</span>(<span class="number">50</span>)]
+    <span class="keyword">public</span> <span class="type">string</span> <span class="param">EntityType</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; } = <span class="type">string</span>.<span class="param">Empty</span>;  <span class="comment">// "Lead", "Opportunity"</span>
+
+    <span class="keyword">public</span> <span class="type">int</span> <span class="param">EntityId</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+
+    [<span class="type">Required</span>, <span class="type">MaxLength</span>(<span class="number">100</span>)]
+    <span class="keyword">public</span> <span class="type">string</span> <span class="param">Action</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; } = <span class="type">string</span>.<span class="param">Empty</span>;
+
+    [<span class="type">MaxLength</span>(<span class="number">500</span>)]
+    <span class="keyword">public</span> <span class="type">string</span>? <span class="param">Description</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+
+    [<span class="type">MaxLength</span>(<span class="number">100</span>)]
+    <span class="keyword">public</span> <span class="type">string</span>? <span class="param">OldValue</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+
+    [<span class="type">MaxLength</span>(<span class="number">100</span>)]
+    <span class="keyword">public</span> <span class="type">string</span>? <span class="param">NewValue</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+
+    <span class="keyword">public</span> <span class="type">int</span>? <span class="param">UserId</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+
+    [<span class="type">MaxLength</span>(<span class="number">200</span>)]
+    <span class="keyword">public</span> <span class="type">string</span>? <span class="param">UserName</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+
+    <span class="comment">// Constant strings prevent typos in entity type references</span>
+    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="type">EntityTypes</span>
+    {
+        <span class="keyword">public</span> <span class="keyword">const</span> <span class="type">string</span> <span class="param">Lead</span> = <span class="string">"Lead"</span>;
+        <span class="keyword">public</span> <span class="keyword">const</span> <span class="type">string</span> <span class="param">Opportunity</span> = <span class="string">"Opportunity"</span>;
+    }
+
+    <span class="comment">// Constant strings prevent typos in action references</span>
+    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="type">Actions</span>
+    {
+        <span class="keyword">public</span> <span class="keyword">const</span> <span class="type">string</span> <span class="param">Created</span> = <span class="string">"Criado"</span>;
+        <span class="keyword">public</span> <span class="keyword">const</span> <span class="type">string</span> <span class="param">Updated</span> = <span class="string">"Atualizado"</span>;
+        <span class="keyword">public</span> <span class="keyword">const</span> <span class="type">string</span> <span class="param">StatusChanged</span> = <span class="string">"Estado Alterado"</span>;
+        <span class="keyword">public</span> <span class="keyword">const</span> <span class="type">string</span> <span class="param">StageMoved</span> = <span class="string">"Etapa Alterada"</span>;
+        <span class="keyword">public</span> <span class="keyword">const</span> <span class="type">string</span> <span class="param">Converted</span> = <span class="string">"Convertido"</span>;
+        <span class="keyword">public</span> <span class="keyword">const</span> <span class="type">string</span> <span class="param">Won</span> = <span class="string">"Ganha"</span>;
+        <span class="keyword">public</span> <span class="keyword">const</span> <span class="type">string</span> <span class="param">Lost</span> = <span class="string">"Perdida"</span>;
+        <span class="keyword">public</span> <span class="keyword">const</span> <span class="type">string</span> <span class="param">Cancelled</span> = <span class="string">"Cancelada"</span>;
+        <span class="keyword">public</span> <span class="keyword">const</span> <span class="type">string</span> <span class="param">NoteAdded</span> = <span class="string">"Nota Adicionada"</span>;
+        <span class="keyword">public</span> <span class="keyword">const</span> <span class="type">string</span> <span class="param">ContactAdded</span> = <span class="string">"Contacto Adicionado"</span>;
+    }
+}</code></pre>
+
+<div class="callout callout-english">
+    A <code>CrmActivityLog</code> entry reads as: "At this time (<code>CreatedAt</code>), this user
+    (<code>UserName</code>) performed this action (<code>Action</code>) on this entity
+    (<code>EntityType</code> + <code>EntityId</code>), changing it from <code>OldValue</code> to
+    <code>NewValue</code>." For example: "At 2026-03-17 14:30, Maria performed 'Etapa Alterada' on Lead #42,
+    changing it from 'Contacto' to 'Proposta'."
+</div>
+
+<p>
+    Notice the <code>EntityTypes</code> and <code>Actions</code> nested classes. These are <code>const string</code>
+    values that act as a lightweight enum. By using constants instead of raw strings, the compiler catches typos
+    at build time: <code>CrmActivityLog.Actions.Created</code> is safe, while <code>"Criado"</code> could be
+    mistyped as <code>"criado"</code> or <code>"Creado"</code> without anyone noticing.
+</p>
+
+<h3>The CrmAuditService</h3>
+
+<pre><code><span class="keyword">namespace</span> <span class="type">GivingCare.Services.CRM</span>;
+
+<span class="keyword">public</span> <span class="keyword">interface</span> <span class="type">ICrmAuditService</span>
+{
+    <span class="type">Task</span> <span class="method">LogActivityAsync</span>(
+        <span class="type">string</span> <span class="param">entityType</span>, <span class="type">int</span> <span class="param">entityId</span>, <span class="type">string</span> <span class="param">action</span>,
+        <span class="type">string</span>? <span class="param">description</span>, <span class="type">string</span>? <span class="param">oldValue</span>, <span class="type">string</span>? <span class="param">newValue</span>,
+        <span class="type">int</span>? <span class="param">userId</span>, <span class="type">string</span>? <span class="param">userName</span>, <span class="type">string</span> <span class="param">companyDatabase</span>);
+
+    <span class="type">Task</span>&lt;<span class="type">ServiceResult</span>&lt;<span class="type">List</span>&lt;<span class="type">CrmActivityLog</span>&gt;&gt;&gt; <span class="method">GetActivitiesAsync</span>(
+        <span class="type">string</span> <span class="param">entityType</span>, <span class="type">int</span> <span class="param">entityId</span>, <span class="type">string</span> <span class="param">companyDatabase</span>);
+}
+
+<span class="keyword">public</span> <span class="keyword">class</span> <span class="type">CrmAuditService</span> : <span class="type">ICrmAuditService</span>
+{
+    <span class="keyword">private</span> <span class="keyword">readonly</span> <span class="type">IDbContextFactoryService</span> <span class="param">_contextFactory</span>;
+    <span class="keyword">private</span> <span class="keyword">readonly</span> <span class="type">ILogger</span>&lt;<span class="type">CrmAuditService</span>&gt; <span class="param">_logger</span>;
+
+    <span class="keyword">public</span> <span class="method">CrmAuditService</span>(
+        <span class="type">IDbContextFactoryService</span> <span class="param">contextFactory</span>,
+        <span class="type">ILogger</span>&lt;<span class="type">CrmAuditService</span>&gt; <span class="param">logger</span>)
+    {
+        <span class="param">_contextFactory</span> = <span class="param">contextFactory</span>;
+        <span class="param">_logger</span> = <span class="param">logger</span>;
+    }
+
+    <span class="keyword">public</span> <span class="keyword">async</span> <span class="type">Task</span> <span class="method">LogActivityAsync</span>(
+        <span class="type">string</span> <span class="param">entityType</span>, <span class="type">int</span> <span class="param">entityId</span>, <span class="type">string</span> <span class="param">action</span>,
+        <span class="type">string</span>? <span class="param">description</span>, <span class="type">string</span>? <span class="param">oldValue</span>, <span class="type">string</span>? <span class="param">newValue</span>,
+        <span class="type">int</span>? <span class="param">userId</span>, <span class="type">string</span>? <span class="param">userName</span>, <span class="type">string</span> <span class="param">companyDatabase</span>)
+    {
+        <span class="keyword">try</span>
+        {
+            <span class="keyword">await</span> <span class="keyword">using</span> <span class="keyword">var</span> <span class="param">context</span> = <span class="param">_contextFactory</span>.<span class="method">CreateCompanyContext</span>(<span class="param">companyDatabase</span>);
+            <span class="keyword">var</span> <span class="param">log</span> = <span class="keyword">new</span> <span class="type">CrmActivityLog</span>
+            {
+                <span class="param">EntityType</span> = <span class="param">entityType</span>,
+                <span class="param">EntityId</span> = <span class="param">entityId</span>,
+                <span class="param">Action</span> = <span class="param">action</span>,
+                <span class="param">Description</span> = <span class="param">description</span>,
+                <span class="param">OldValue</span> = <span class="param">oldValue</span>,
+                <span class="param">NewValue</span> = <span class="param">newValue</span>,
+                <span class="param">UserId</span> = <span class="param">userId</span>,
+                <span class="param">UserName</span> = <span class="param">userName</span>
+            };
+
+            <span class="param">context</span>.<span class="method">Set</span>&lt;<span class="type">CrmActivityLog</span>&gt;().<span class="method">Add</span>(<span class="param">log</span>);
+            <span class="keyword">await</span> <span class="param">context</span>.<span class="method">SaveChangesAsync</span>();
+        }
+        <span class="keyword">catch</span> (<span class="type">Exception</span> <span class="param">ex</span>)
+        {
+            <span class="param">_logger</span>.<span class="method">LogError</span>(<span class="param">ex</span>, <span class="string">"Error logging CRM activity for {EntityType} {EntityId}"</span>,
+                <span class="param">entityType</span>, <span class="param">entityId</span>);
+        }
+    }
+
+    <span class="keyword">public</span> <span class="keyword">async</span> <span class="type">Task</span>&lt;<span class="type">ServiceResult</span>&lt;<span class="type">List</span>&lt;<span class="type">CrmActivityLog</span>&gt;&gt;&gt; <span class="method">GetActivitiesAsync</span>(
+        <span class="type">string</span> <span class="param">entityType</span>, <span class="type">int</span> <span class="param">entityId</span>, <span class="type">string</span> <span class="param">companyDatabase</span>)
+    {
+        <span class="keyword">try</span>
+        {
+            <span class="keyword">await</span> <span class="keyword">using</span> <span class="keyword">var</span> <span class="param">context</span> = <span class="param">_contextFactory</span>.<span class="method">CreateCompanyContext</span>(<span class="param">companyDatabase</span>);
+            <span class="keyword">var</span> <span class="param">activities</span> = <span class="keyword">await</span> <span class="param">context</span>.<span class="method">Set</span>&lt;<span class="type">CrmActivityLog</span>&gt;()
+                .<span class="method">AsNoTracking</span>()
+                .<span class="method">Where</span>(<span class="param">a</span> =&gt; <span class="param">a</span>.<span class="param">EntityType</span> == <span class="param">entityType</span> &amp;&amp; <span class="param">a</span>.<span class="param">EntityId</span> == <span class="param">entityId</span>)
+                .<span class="method">OrderByDescending</span>(<span class="param">a</span> =&gt; <span class="param">a</span>.<span class="param">CreatedAt</span>)
+                .<span class="method">Take</span>(<span class="number">100</span>)
+                .<span class="method">ToListAsync</span>();
+
+            <span class="keyword">return</span> <span class="type">ServiceResult</span>&lt;<span class="type">List</span>&lt;<span class="type">CrmActivityLog</span>&gt;&gt;.<span class="method">SuccessResult</span>(<span class="param">activities</span>);
+        }
+        <span class="keyword">catch</span> (<span class="type">Exception</span> <span class="param">ex</span>)
+        {
+            <span class="param">_logger</span>.<span class="method">LogError</span>(<span class="param">ex</span>, <span class="string">"Error getting CRM activities for {EntityType} {EntityId}"</span>,
+                <span class="param">entityType</span>, <span class="param">entityId</span>);
+            <span class="keyword">return</span> <span class="type">ServiceResult</span>&lt;<span class="type">List</span>&lt;<span class="type">CrmActivityLog</span>&gt;&gt;.<span class="method">Failure</span>(<span class="string">$"Erro: {ex.Message}"</span>);
+        }
+    }
+}</code></pre>
+
+<p>Key differences from the system-level <code>AuditService</code>:</p>
+
+<ul>
+    <li><strong>Company context</strong> — Uses <code>CreateCompanyContext(companyDatabase)</code> instead of <code>CreateBaseControleContext()</code>. Each tenant has its own activity logs.</li>
+    <li><strong>Rich data</strong> — Captures entity type, entity ID, old/new values, description, and the user who performed the action. Far more detailed than the simple system audit.</li>
+    <li><strong>ServiceResult pattern</strong> — <code>GetActivitiesAsync</code> returns a <code>ServiceResult&lt;T&gt;</code>, following the codebase convention for all service-to-UI communication.</li>
+    <li><strong>Take(100) safety</strong> — Limits results to 100 entries to prevent loading thousands of log entries for a heavily-used entity.</li>
+    <li><strong>AsNoTracking()</strong> — Since we're only reading logs (never modifying them from this query), we skip EF's change tracking for better performance.</li>
+</ul>
+
+<h3>How Services Call CrmAuditService</h3>
+
+<p>
+    When a CRM service performs a significant business action, it calls <code>LogActivityAsync</code>
+    as part of the operation. Here's the typical pattern:
+</p>
+
+<pre><code><span class="comment">// Inside LeadService — when a lead's stage changes</span>
+<span class="keyword">await</span> <span class="param">_auditService</span>.<span class="method">LogActivityAsync</span>(
+    <span class="type">CrmActivityLog</span>.<span class="type">EntityTypes</span>.<span class="param">Lead</span>,
+    <span class="param">lead</span>.<span class="param">Id</span>,
+    <span class="type">CrmActivityLog</span>.<span class="type">Actions</span>.<span class="param">StageMoved</span>,
+    <span class="param">description</span>: <span class="string">$"Etapa alterada de '{oldStage}' para '{newStage}'"</span>,
+    <span class="param">oldValue</span>: <span class="param">oldStage</span>,
+    <span class="param">newValue</span>: <span class="param">newStage</span>,
+    <span class="param">userId</span>: <span class="param">currentUserId</span>,
+    <span class="param">userName</span>: <span class="param">currentUserName</span>,
+    <span class="param">companyDatabase</span>: <span class="param">companyDatabase</span>
+);</code></pre>
+
+<!-- ============================================================ -->
+<!-- SECTION 8: UI — AUDIT TRAIL COMPONENTS -->
+<!-- ============================================================ -->
+
+<h2>8. UI — Audit Trail Components</h2>
+
+<p>
+    The domain audit logs are displayed in the UI using MudBlazor's <code>MudTimeline</code> component.
+    GivingCare has two audit trail components — <code>LeadAuditTrail.razor</code> and
+    <code>OpportunityAuditTrail.razor</code> — that share the same pattern.
+</p>
+
+<h3>LeadAuditTrail.razor</h3>
+
+<pre><code><span class="keyword">@using</span> GivingCare.Models.CRM
+<span class="keyword">@using</span> GivingCare.Services.CRM
+<span class="keyword">@inject</span> <span class="type">ICrmAuditService</span> AuditService
+
+<span class="keyword">@if</span> (_loading)
+{
+    &lt;<span class="type">MudProgressCircular</span> Size="Size.Small" Indeterminate="true" /&gt;
+}
+<span class="keyword">else if</span> (!_activities.Any())
+{
+    &lt;<span class="type">MudText</span> Typo="Typo.body2" Color="Color.Secondary"&gt;
+        Sem atividade registada.
+    &lt;/<span class="type">MudText</span>&gt;
+}
+<span class="keyword">else</span>
+{
+    &lt;<span class="type">MudTimeline</span> TimelinePosition="TimelinePosition.Start"&gt;
+        <span class="keyword">@foreach</span> (var activity in _activities)
+        {
+            &lt;<span class="type">MudTimelineItem</span> Color="@GetActivityColor(activity.Action)" Size="Size.Small"&gt;
+                &lt;ItemContent&gt;
+                    &lt;div class="d-flex justify-space-between align-center"&gt;
+                        &lt;<span class="type">MudText</span> Typo="Typo.body2"&gt;
+                            &lt;strong&gt;@activity.Action&lt;/strong&gt;
+                        &lt;/<span class="type">MudText</span>&gt;
+                        &lt;<span class="type">MudText</span> Typo="Typo.caption" Color="Color.Secondary"&gt;
+                            @activity.CreatedAt.ToString(<span class="string">"dd/MM/yyyy HH:mm"</span>)
+                        &lt;/<span class="type">MudText</span>&gt;
+                    &lt;/div&gt;
+                    <span class="keyword">@if</span> (!string.IsNullOrEmpty(activity.Description))
+                    {
+                        &lt;<span class="type">MudText</span> Typo="Typo.body2"&gt;@activity.Description&lt;/<span class="type">MudText</span>&gt;
+                    }
+                    <span class="keyword">@if</span> (!string.IsNullOrEmpty(activity.OldValue)
+                        || !string.IsNullOrEmpty(activity.NewValue))
+                    {
+                        &lt;<span class="type">MudText</span> Typo="Typo.caption"&gt;
+                            @activity.OldValue → @activity.NewValue
+                        &lt;/<span class="type">MudText</span>&gt;
+                    }
+                    <span class="keyword">@if</span> (!string.IsNullOrEmpty(activity.UserName))
+                    {
+                        &lt;<span class="type">MudText</span> Typo="Typo.caption" Color="Color.Secondary"&gt;
+                            por @activity.UserName
+                        &lt;/<span class="type">MudText</span>&gt;
+                    }
+                &lt;/ItemContent&gt;
+            &lt;/<span class="type">MudTimelineItem</span>&gt;
+        }
+    &lt;/<span class="type">MudTimeline</span>&gt;
+}</code></pre>
+
+<h3>The Code-Behind</h3>
+
+<pre><code><span class="keyword">@code</span> {
+    [<span class="type">Parameter</span>] <span class="keyword">public</span> <span class="type">int</span> <span class="param">LeadId</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    [<span class="type">Parameter</span>] <span class="keyword">public</span> <span class="type">string</span> <span class="param">CompanyDatabase</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; } = <span class="type">string</span>.<span class="param">Empty</span>;
+
+    <span class="keyword">private</span> <span class="type">List</span>&lt;<span class="type">CrmActivityLog</span>&gt; <span class="param">_activities</span> = <span class="keyword">new</span>();
+    <span class="keyword">private</span> <span class="type">bool</span> <span class="param">_loading</span> = <span class="keyword">true</span>;
+
+    <span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">async</span> <span class="type">Task</span> <span class="method">OnParametersSetAsync</span>()
+    {
+        <span class="keyword">if</span> (<span class="param">LeadId</span> &gt; <span class="number">0</span> &amp;&amp; !<span class="type">string</span>.<span class="method">IsNullOrEmpty</span>(<span class="param">CompanyDatabase</span>))
+        {
+            <span class="keyword">var</span> <span class="param">result</span> = <span class="keyword">await</span> <span class="param">AuditService</span>.<span class="method">GetActivitiesAsync</span>(
+                <span class="type">CrmActivityLog</span>.<span class="type">EntityTypes</span>.<span class="param">Lead</span>,
+                <span class="param">LeadId</span>,
+                <span class="param">CompanyDatabase</span>);
+            <span class="keyword">if</span> (<span class="param">result</span>.<span class="param">Success</span> &amp;&amp; <span class="param">result</span>.<span class="param">Data</span> != <span class="keyword">null</span>)
+                <span class="param">_activities</span> = <span class="param">result</span>.<span class="param">Data</span>;
+            <span class="param">_loading</span> = <span class="keyword">false</span>;
+        }
+    }
+
+    <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">Color</span> <span class="method">GetActivityColor</span>(<span class="type">string</span> <span class="param">action</span>) =&gt; <span class="param">action</span> <span class="keyword">switch</span>
+    {
+        <span class="type">CrmActivityLog</span>.<span class="type">Actions</span>.<span class="param">Created</span>       =&gt; <span class="type">Color</span>.<span class="param">Success</span>,
+        <span class="type">CrmActivityLog</span>.<span class="type">Actions</span>.<span class="param">StatusChanged</span> =&gt; <span class="type">Color</span>.<span class="param">Info</span>,
+        <span class="type">CrmActivityLog</span>.<span class="type">Actions</span>.<span class="param">Converted</span>     =&gt; <span class="type">Color</span>.<span class="param">Primary</span>,
+        <span class="type">CrmActivityLog</span>.<span class="type">Actions</span>.<span class="param">Won</span>           =&gt; <span class="type">Color</span>.<span class="param">Success</span>,
+        <span class="type">CrmActivityLog</span>.<span class="type">Actions</span>.<span class="param">Lost</span>          =&gt; <span class="type">Color</span>.<span class="param">Error</span>,
+        <span class="type">CrmActivityLog</span>.<span class="type">Actions</span>.<span class="param">Cancelled</span>     =&gt; <span class="type">Color</span>.<span class="param">Warning</span>,
+        _                                      =&gt; <span class="type">Color</span>.<span class="param">Default</span>
+    };
+}</code></pre>
+
+<p>
+    The <code>OpportunityAuditTrail.razor</code> component is structurally identical — it just passes
+    <code>CrmActivityLog.EntityTypes.Opportunity</code> and <code>OpportunityId</code> instead. This is the beauty
+    of the <code>EntityType</code> + <code>EntityId</code> design: one service and one table serve all
+    entity types, and the UI components are simple wrappers that filter by type.
+</p>
+
+<p>
+    The <code>GetActivityColor</code> switch expression maps action types to MudBlazor color constants,
+    giving users immediate visual cues: green for creation/wins, red for losses, orange for cancellations.
+    This is a thin UI concern — the component makes no business decisions, it only maps data to display.
+</p>
+
+<!-- ============================================================ -->
+<!-- SECTION 9: TWO DATABASES, TWO PURPOSES -->
+<!-- ============================================================ -->
+
+<h2>9. Two Databases, Two Purposes</h2>
+
+<p>
+    The two-layer system maps directly to GivingCare's multi-tenant database architecture. Here's the complete picture:
+</p>
+
+<table>
+    <tr>
+        <th>Layer</th>
+        <th>Model</th>
+        <th>Database</th>
+        <th>Scope</th>
+        <th>Example</th>
+    </tr>
+    <tr>
+        <td>System Audit</td>
+        <td><code>AuditLog</code></td>
+        <td>BaseControle (auth)</td>
+        <td>Cross-company</td>
+        <td>"User X logged in at 14:30"</td>
+    </tr>
+    <tr>
+        <td>Domain Audit</td>
+        <td><code>CrmActivityLog</code></td>
+        <td>Company DB (per-tenant)</td>
+        <td>Per-tenant</td>
+        <td>"Lead 'Acme Corp' stage changed from Contacto to Proposta"</td>
+    </tr>
+    <tr>
+        <td>Entity Fields</td>
+        <td><code>IAuditable</code> props</td>
+        <td>Company DB (per-tenant)</td>
+        <td>Per-record</td>
+        <td>"Article modified at 2026-03-17 by user 5"</td>
+    </tr>
+</table>
+
+<div class="diagram">
+<span class="type">BaseControle Database</span> (central, shared by all companies)
+┌─────────────────────────────────────────────┐
+│  AuditLogs                                  │
+│  ├── UserId: 12                             │
+│  ├── Timestamp: 2026-03-17 14:30:00         │
+│  └── Action: "LOGIN from 192.168.1.100"     │
+│                                             │
+│  ├── UserId: 12                             │
+│  ├── Timestamp: 2026-03-17 17:45:00         │
+│  └── Action: "LOGOUT"                       │
+│                                             │
+│  ├── UserId: 0                              │
+│  ├── Timestamp: 2026-03-17 09:15:00         │
+│  └── Action: "FAILED_LOGIN: admin@..."      │
+└─────────────────────────────────────────────┘
+
+<span class="type">Company_AcmeCorp Database</span> (tenant-specific)
+┌─────────────────────────────────────────────┐
+│  CrmActivityLogs                            │
+│  ├── EntityType: "Lead", EntityId: 42       │
+│  ├── Action: "Etapa Alterada"               │
+│  ├── OldValue: "Contacto"                   │
+│  ├── NewValue: "Proposta"                   │
+│  ├── UserName: "Maria Silva"                │
+│  └── CreatedAt: 2026-03-17 14:35:00         │
+│                                             │
+│  <span class="comment">(+ every entity has IAuditable fields)</span>     │
+│  Leads table row #42:                       │
+│  ├── ...business fields...                  │
+│  ├── CreatedAt: 2026-03-10 09:00:00         │
+│  ├── CreatedByUserId: 12                    │
+│  ├── ModifiedAt: 2026-03-17 14:35:00        │
+│  └── ModifiedByUserId: 12                   │
+└─────────────────────────────────────────────┘
+</div>
+
+<p>
+    This separation is not arbitrary. System-level audit events (logins, password changes) are <em>authentication
+    concerns</em> — they happen before a company is even selected. They belong in the central database. Domain-level
+    audit events (lead stage changes, opportunity wins) are <em>business concerns</em> — they're specific to a
+    company's data and must stay in that company's database for both logical isolation and tenant data sovereignty.
+</p>
+
+<!-- ============================================================ -->
+<!-- SECTION 10: BEST PRACTICES -->
+<!-- ============================================================ -->
+
+<h2>10. Best Practices</h2>
+
+<div class="callout callout-rule">
+    If you change state, log it. If you just read data, don't. The audit trail should tell a story, not generate noise.
+</div>
+
+<h3>Always Set Audit Fields in the Service Layer</h3>
+
+<p>
+    Razor components should <em>never</em> set <code>CreatedAt</code>, <code>ModifiedByUserId</code>, or any other
+    audit field. The service layer owns all business logic, and audit is business logic. The Razor page passes
+    <code>userId</code> and <code>companyDatabase</code> — the service does the rest.
+</p>
+
+<pre><code><span class="comment">// CORRECT: Service sets audit fields</span>
+<span class="keyword">public</span> <span class="keyword">async</span> <span class="type">Task</span>&lt;<span class="type">ServiceResult</span>&gt; <span class="method">CreateEntityAsync</span>(<span class="type">Entity</span> <span class="param">entity</span>, <span class="type">int</span> <span class="param">userId</span>, <span class="type">string</span> <span class="param">companyDb</span>)
+{
+    <span class="param">entity</span>.<span class="param">CreatedAt</span> = <span class="type">DateTime</span>.<span class="param">UtcNow</span>;
+    <span class="param">entity</span>.<span class="param">CreatedByUserId</span> = <span class="param">userId</span>;
+    <span class="comment">// ...save...</span>
+}
+
+<span class="comment">// WRONG: Razor component sets audit fields</span>
+<span class="comment">// entity.CreatedAt = DateTime.UtcNow;  // Don't do this in .razor!</span>
+<span class="comment">// await MyService.CreateEntityAsync(entity, companyDb);</span></code></pre>
+
+<h3>Log Domain-Meaningful Actions</h3>
+
+<p>
+    Don't just log "record updated." Log <em>what</em> changed and <em>why</em> it matters.
+    Compare these two audit entries:
+</p>
+
+<table>
+    <tr>
+        <th>Poor Audit Entry</th>
+        <th>Good Audit Entry</th>
+    </tr>
+    <tr>
+        <td>Action: "Atualizado"</td>
+        <td>Action: "Etapa Alterada"</td>
+    </tr>
+    <tr>
+        <td>Description: null</td>
+        <td>Description: "Etapa alterada de 'Contacto' para 'Proposta'"</td>
+    </tr>
+    <tr>
+        <td>OldValue: null</td>
+        <td>OldValue: "Contacto"</td>
+    </tr>
+    <tr>
+        <td>NewValue: null</td>
+        <td>NewValue: "Proposta"</td>
+    </tr>
+</table>
+
+<p>
+    The good entry tells a complete story. A manager reading the audit trail can immediately understand what happened
+    without needing to query the database or ask the developer.
+</p>
+
+<h3>Include Old/New Values for State Changes</h3>
+
+<p>
+    Whenever you log a state transition, always include both the previous and new values. The <code>OldValue</code>
+    and <code>NewValue</code> fields on <code>CrmActivityLog</code> exist precisely for this purpose.
+    Without them, you know <em>that</em> something changed, but not <em>from what to what</em>.
+</p>
+
+<h3>Use UtcNow for Timestamps</h3>
+
+<p>
+    Always use <code>DateTime.UtcNow</code> for audit timestamps. Store UTC in the database; convert to local
+    time only for display. The UI components already do this — notice how <code>LeadAuditTrail.razor</code> formats
+    with <code>activity.CreatedAt.ToString("dd/MM/yyyy HH:mm")</code>, which respects the application's configured culture.
+</p>
+
+<pre><code><span class="comment">// CORRECT: UTC in storage</span>
+<span class="param">entity</span>.<span class="param">CreatedAt</span> = <span class="type">DateTime</span>.<span class="param">UtcNow</span>;
+
+<span class="comment">// AVOID: Local time in storage (causes timezone bugs)</span>
+<span class="param">entity</span>.<span class="param">CreatedAt</span> = <span class="type">DateTime</span>.<span class="param">Now</span>;  <span class="comment">// Depends on server timezone!</span></code></pre>
+
+<h3>Don't Audit Reads</h3>
+
+<p>
+    Auditing every <code>SELECT</code> query would generate astronomical volumes of data and drown the meaningful
+    audit entries in noise. Only audit <em>writes</em> and <em>state changes</em>:
+</p>
+
+<ul>
+    <li><strong>Audit</strong>: Create, Update, Delete, State transitions (stage changes, status changes), Login/Logout, Password changes</li>
+    <li><strong>Don't audit</strong>: List pages, detail views, search queries, report generation, data exports</li>
+</ul>
+
+<h3>Protect the Audit Trail</h3>
+
+<p>
+    Audit logs should be append-only. Notice that neither <code>AuditService</code> nor <code>CrmAuditService</code>
+    exposes an <code>UpdateAsync</code> or <code>DeleteAsync</code> method. Once an audit entry is written, it is
+    permanent. If you need to "correct" an audit entry, you write a new corrective entry — you never modify the original.
+</p>
+
+<h3>Never Let Audit Failures Break Business Logic</h3>
+
+<p>
+    Both <code>AuditService</code> and <code>CrmAuditService</code> wrap their logging calls in <code>try/catch</code>.
+    If the audit database is temporarily unavailable, the actual business operation (creating a lead, changing a stage)
+    still succeeds. The error is logged to <code>ILogger</code> for investigation, but the user's workflow is never
+    interrupted by a logging failure.
+</p>
+
+<!-- ============================================================ -->
+<!-- SECTION: SUMMARY -->
+<!-- ============================================================ -->
+
+<h2>Summary: The Complete Audit Picture</h2>
+
+<div class="diagram">
+<span class="type">User performs an action</span> (e.g., moves Lead to new stage)
+          │
+          ▼
+┌─────────────────────────────────┐
+│  <span class="type">LeadService.MoveStageAsync()</span>    │
+│                                 │
+│  <span class="comment">// Layer 1: Entity fields</span>     │
+│  lead.ModifiedAt = UtcNow;      │
+│  lead.ModifiedByUserId = uid;   │
+│                                 │
+│  <span class="comment">// Layer 2: Domain audit log</span>  │
+│  _auditService.LogActivityAsync │
+│    EntityType: "Lead"           │
+│    Action: "Etapa Alterada"     │
+│    OldValue → NewValue          │
+│                                 │
+│  context.SaveChangesAsync();    │
+└─────────────────────────────────┘
+          │
+          ├──► <span class="type">Company DB</span>: Lead row updated with ModifiedAt/By
+          └──► <span class="type">Company DB</span>: CrmActivityLogs gets new entry
+
+<span class="type">User logs in</span>
+          │
+          ▼
+┌─────────────────────────────────┐
+│  <span class="type">AuthService.LoginAsync()</span>       │
+│                                 │
+│  _auditService.LogLoginAsync()  │
+└─────────────────────────────────┘
+          │
+          └──► <span class="type">BaseControle DB</span>: AuditLogs gets "LOGIN from 192.168.x.x"
+</div>
+
+<p>
+    The two-layer audit system gives GivingCare both breadth and depth. Layer 1 (entity fields) provides a quick,
+    always-available "last modified" stamp on every record. Layer 2 (operation logs) provides a rich, searchable
+    history of meaningful business actions. System audits go to the central database for cross-company visibility;
+    domain audits go to each company's database for tenant isolation. Together, they answer the full spectrum of
+    "who changed what, when, and why?" questions.
+</p>
+
+</body>
+</html>

@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ASyncPattern</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 08-Concurrency-and-Async</div>
+  <h1>ASyncPattern</h1>
+  <div class="meta">Source: <code>Microsoft_Fullstack/ASyncPattern.docx</code> &middot; <a href="ASyncPattern.docx">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<p>Exemplo Microsoft</p>
+<p>using System;</p>
+<p>using System.Collections.Generic;</p>
+<p>using System.Threading.Tasks;</p>
+<p>public class Product</p>
+<p>{</p>
+<p>public string Name { get; set; }</p>
+<p>public Product(string name)</p>
+<p>{</p>
+<p>Name = name;</p>
+<p>}</p>
+<p>}</p>
+<p>public class Review</p>
+<p>{</p>
+<p>public string Content { get; set; }</p>
+<p>public Review(string content)</p>
+<p>{</p>
+<p>Content = content;</p>
+<p>}</p>
+<p>}</p>
+<p>public class Program</p>
+<p>{</p>
+<p>// Asynchronous method to fetch product data</p>
+<p>public async Task&lt;List&lt;Product&gt;&gt; FetchProductsAsync()</p>
+<p>{</p>
+<p>await Task.Delay(2000); // Simulating a 2-second delay for fetching products</p>
+<p>return new List&lt;Product&gt;</p>
+<p>{</p>
+<p>new Product(&quot;Eco Bag&quot;),</p>
+<p>new Product(&quot;Reusable Straw&quot;)</p>
+<p>};</p>
+<p>}</p>
+<p>// Asynchronous method to fetch review data</p>
+<p>public async Task&lt;List&lt;Review&gt;&gt; FetchReviewsAsync()</p>
+<p>{</p>
+<p>await Task.Delay(3000); // Simulating a 3-second delay for fetching reviews</p>
+<p>return new List&lt;Review&gt;</p>
+<p>{</p>
+<p>new Review(&quot;Great product!&quot;),</p>
+<p>new Review(&quot;Good value for the money.&quot;),</p>
+<p>};</p>
+<p>}</p>
+<p>// Asynchronous method to display both products and reviews</p>
+<p>public async Task FetchDataAsync()</p>
+<p>{</p>
+<p>// Start fetching products and reviews concurrently</p>
+<p>Task&lt;List&lt;Product&gt;&gt; productsTask = FetchProductsAsync();</p>
+<p>Task&lt;List&lt;Review&gt;&gt; reviewsTask = FetchReviewsAsync();</p>
+<p>// Wait for both tasks to complete</p>
+<p>await Task.WhenAll(productsTask, reviewsTask);</p>
+<p>// Get the results</p>
+<p>List&lt;Product&gt; products = await productsTask;</p>
+<p>List&lt;Review&gt; reviews = await reviewsTask;</p>
+<p>// Display the results</p>
+<p>Console.WriteLine(&quot;Products:&quot;);</p>
+<p>foreach (Product product in products)</p>
+<p>{</p>
+<p>Console.WriteLine(product.Name);</p>
+<p>}</p>
+<p>// Display fetched reviews</p>
+<p>Console.WriteLine(&quot;\nReviews:&quot;);</p>
+<p>foreach (Review review in reviews)</p>
+<p>{</p>
+<p>Console.WriteLine(review.Content);</p>
+<p>}</p>
+<p>}</p>
+<p>// Main entry point</p>
+<p>public static async Task Main(string[] args)</p>
+<p>{</p>
+<p>// Calling the asynchronous method to fetch and display products and reviews</p>
+<p>Program program = new Program();</p>
+<p>await program.FetchDataAsync();</p>
+<p>}</p>
+<p>}</p>
+<p>🔄 These two lines:</p>
+<p>Task&lt;List&lt;Product&gt;&gt; productsTask = FetchProductsAsync();</p>
+<p>Task&lt;List&lt;Review&gt;&gt; reviewsTask = FetchReviewsAsync();</p>
+<p>📌 What they do: They start both asynchronous operations at the same time, but don’t wait for them yet. These methods immediately return a Task that represents the future result of each operation. The actual work (e.g., simulated delays) is already happening in the background.</p>
+<p>💡 Think of this like placing two food delivery orders at the same time — you haven’t opened the door yet, but both deliveries are on their way.</p>
+<p>🕒 Then:</p>
+<p>await Task.WhenAll(productsTask, reviewsTask);</p>
+<p>📌 What it does: It tells your program: &quot;Wait here until both deliveries arrive.&quot; But importantly: since you started both orders earlier, the timer on both has already been running in parallel.</p>
+<p>⏱️ This is way faster than doing:</p>
+<p>List&lt;Product&gt; products = await FetchProductsAsync();</p>
+<p>List&lt;Review&gt; reviews = await FetchReviewsAsync();</p>
+<p>which would first wait 2 seconds for products, then wait another 3 seconds for reviews = 5 seconds total.</p>
+<p>With Task.WhenAll, it&#x27;s just 3 seconds total, since both tasks are running in parallel.</p>
+<p>✅ After both are done:</p>
+<p>List&lt;Product&gt; products = await productsTask;</p>
+<p>List&lt;Review&gt; reviews = await reviewsTask;</p>
+<p>📌 What it does: You&#x27;re now extracting the results (they&#x27;re already ready at this point). Technically, you could have just used productsTask.Result, but awaiting it is better practice to avoid exceptions being swallowed.</p>
+<p>🔁 Summary</p>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Line</th>
+<th>What it does</th>
+</tr></thead><tbody>
+<tr>
+<td>Task&lt;List&lt;...&gt;&gt; = Fetch...Async();</td>
+<td>Starts async operation (non-blocking).</td>
+</tr>
+<tr>
+<td>await Task.WhenAll(...)</td>
+<td>Waits until both are finished.</td>
+</tr>
+<tr>
+<td>await productsTask</td>
+<td>Retrieves the result. Safe even if already completed.</td>
+</tr>
+</tbody></table></div>
+<p>🧠 TL;DR</p>
+<p>You&#x27;re kicking off two tasks at the same time, then awaiting both with Task.WhenAll, and only then extracting their results. This pattern is how you do real concurrency in C# async — efficient and clean.</p>
+<p>If anything&#x27;s still fuzzy, let me know and I’ll drill into that part further.</p>
+<p>🧮 Synchronous Example:</p>
+<p>int a = Sum();  // This runs Sum()</p>
+<p>int b = Sum();  // This runs Sum() again — new call, new result</p>
+<p>✅ In this case, each call to Sum() actually runs the method again. So yeah, it&#x27;s executed twice.</p>
+<p>⚡ Asynchronous Example:</p>
+<p>Task&lt;List&lt;Product&gt;&gt; productsTask = FetchProductsAsync(); // starts running it ONCE</p>
+<p>await Task.WhenAll(productsTask);                         // just waits, doesn’t run it again</p>
+<p>List&lt;Product&gt; products = await productsTask;              // gets the result of that same run</p>
+<p>✅ Here:</p>
+<p>FetchProductsAsync() is called once.</p>
+<p>productsTask is a reference to that ongoing or completed task.</p>
+<p>await productsTask does not call it again — it just waits (if needed) and then unwraps the result.</p>
+<p>🧠 Rule of Thumb:</p>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Line</th>
+<th>Triggers execution?</th>
+</tr></thead><tbody>
+<tr>
+<td>FetchProductsAsync()</td>
+<td>✅ Yes – each call starts a new task</td>
+</tr>
+<tr>
+<td>await existingTask</td>
+<td>❌ No – just waits for that one to finish and gets its result</td>
+</tr>
+</tbody></table></div>
+<p>So if you write:</p>
+<p>var task1 = FetchProductsAsync();</p>
+<p>var task2 = FetchProductsAsync();</p>
+<p>You’ve actually started two independent tasks, both running the method from scratch. But if you do:</p>
+<p>var task = FetchProductsAsync();</p>
+<p>await task;</p>
+<p>await task;</p>
+<p>The second await just gets the same result again — no second call.</p>
+<p>🔥 Bottom Line:</p>
+<p>Yes — await task doesn’t re-run the method. Only the actual method call (FetchProductsAsync()) creates a new execution.</p>
+<p>Exemplo do Gepeto</p>
+<p>public async Task DoWorkAsync()</p>
+<p>{</p>
+<p>// Moment 1: Start the task</p>
+<p>Task&lt;int&gt; dataTask = GetDataAsync();</p>
+<p>// Meanwhile, do other work in parallel</p>
+<p>DoOtherWork();</p>
+<p>await Task.Delay(5000); // simulate 5 seconds of unrelated work</p>
+<p>// Moment 15: Await the result when actually needed</p>
+<p>int result = await dataTask;</p>
+<p>Console.WriteLine($&quot;Data result: {result}&quot;);</p>
+<p>}</p>
+<p>private async Task&lt;int&gt; GetDataAsync()</p>
+<p>{</p>
+<p>await Task.Delay(10000); // simulate long fetch</p>
+<p>return 42;</p>
+<p>}</p>
+<p>How it works:</p>
+<p>At “moment 1” → GetDataAsync() starts running immediately because we assigned it to dataTask.</p>
+<p>The returned Task&lt;int&gt; represents a promise of the future result.</p>
+<p>The code keeps running without blocking.</p>
+<p>At “moment 15” → we await dataTask to get the actual result, and if it’s already completed, the await resumes immediately.</p>
+<p>Benefits:</p>
+<p>Overlaps the long-running task with other work.</p>
+<p>Reduces idle waiting time.</p>
+<p>Keeps code clean and non-blocking.</p>
+<p>Pitfalls to watch for:</p>
+<p>If you forget to await the task at some point, you may swallow exceptions silently (unless you handle them from the task itself).</p>
+<p>If the task’s result is needed sooner than expected, you could still end up waiting the full duration.</p>
+</div>
+</body>
+</html>

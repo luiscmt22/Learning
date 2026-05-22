@@ -1,0 +1,552 @@
+C# Events and Async Patterns for Godot Developers
+
+Understanding Events, Actions, and Async Patterns in .NET
+
+Table of Contents
+
+Events/Actions = Godot Signals
+
+The Observer Pattern Connection
+
+Understanding async void
+
+Complete Comparison Reference
+
+Practical Implementation
+
+Events/Actions = Godot Signals {#events-are-signals}
+
+Direct Comparison: Godot Signal vs C# Event
+
+Events in C# are exactly like Signals in Godot - they implement the same Observer pattern for decoupled communication between objects.
+
+In Godot (GDScript):
+
+# Define a signal
+
+signal health_changed(new_health)
+
+# Emit the signal
+
+emit_signal("health_changed", 50)
+
+# Connect to the signal
+
+player.connect("health_changed", self, "_on_player_health_changed")
+
+func _on_player_health_changed(new_health):
+
+print("Health is now: ", new_health)
+
+In C# (Events):
+
+// Define an event (like a signal)
+
+public event Action<int> OnHealthChanged;
+
+// Fire the event (like emit_signal)
+
+OnHealthChanged?.Invoke(50);
+
+// Subscribe to the event (like connect)
+
+player.OnHealthChanged += OnPlayerHealthChanged;
+
+private void OnPlayerHealthChanged(int newHealth)
+
+{
+
+Console.WriteLine($"Health is now: {newHealth}");
+
+}
+
+Understanding Action Types
+
+Action is a delegate type (function pointer) that defines what parameters the signal/event sends:
+
+// Godot signal with parameters
+
+signal item_picked_up(item_name, quantity)  // Sends string and int
+
+// C# equivalent
+
+public event Action<string, int> OnItemPickedUp;  // Action<string, int> = sends string and int
+
+Common Action Types:
+
+| Action Type | Parameters | Godot Equivalent |
+| --- | --- | --- |
+| Action | None | signal clicked() |
+| Action<int> | One integer | signal health_changed(amount) |
+| Action<string, int> | String and integer | signal item_picked(name, qty) |
+| Action<CrmEmpresa> | Complex object | signal company_changed(company_data) |
+
+The Observer Pattern Connection {#observer-pattern}
+
+Events and Signals are implementations of the Observer Pattern, providing loose coupling between components.
+
+Pattern Structure:
+
+// THE PATTERN:
+
+// Subject (Observable) ← Has the event
+
+// Observers (Listeners) ← Subscribe to the event
+
+// In practice:
+
+public class ThemeChangeService  // Subject (like a Godot Node with signals)
+
+{
+
+public event Action<CrmEmpresa> OnThemeChanged;  // The signal
+
+public void NotifyThemeChanged(CrmEmpresa empresa)
+
+{
+
+OnThemeChanged?.Invoke(empresa);  // emit_signal()
+
+}
+
+}
+
+public class MainLayout  // Observer (like a Godot Node listening to signals)
+
+{
+
+void Subscribe()
+
+{
+
+service.OnThemeChanged += HandleChange;  // connect()
+
+}
+
+void HandleChange(CrmEmpresa empresa)  // Signal handler
+
+{
+
+// React to the signal
+
+}
+
+void Unsubscribe()
+
+{
+
+service.OnThemeChanged -= HandleChange;  // disconnect()
+
+}
+
+}
+
+Understanding async void {#async-void}
+
+Why async void is Usually Bad
+
+The main issue with async void is exception handling and error propagation.
+
+Normal async method (Good):
+
+public async Task SaveDataAsync()  // Returns Task
+
+{
+
+await DatabaseSave();
+
+// If this crashes, the Task contains the exception
+
+// Caller can catch it
+
+}
+
+// Usage:
+
+try
+
+{
+
+await SaveDataAsync();  // Can catch exceptions!
+
+}
+
+catch(Exception ex)
+
+{
+
+// We can handle errors
+
+}
+
+Async void method (Dangerous):
+
+public async void SaveDataAsync()  // Returns nothing
+
+{
+
+await DatabaseSave();
+
+// If this crashes, exception goes to global handler
+
+// Can CRASH your entire app!
+
+}
+
+// Usage:
+
+SaveDataAsync();  // Can't await it! Can't catch exceptions!
+
+// If it fails, your app might crash
+
+Why Events MUST Use async void
+
+Events are defined to return void, not Task, because they follow a fire-and-forget pattern:
+
+// The event delegate signature is fixed:
+
+public event Action<CrmEmpresa> OnThemeChanged;
+
+//            ^^^^^^
+
+//            Action returns void, not Task!
+
+// So handlers must match:
+
+async void HandleThemeChanged(CrmEmpresa e)  // Must be void to match Action
+
+{
+
+try
+
+{
+
+// Always wrap async void in try-catch!
+
+await DoStuff();
+
+}
+
+catch(Exception ex)
+
+{
+
+// Handle errors here, don't let them escape!
+
+_logger.LogError(ex, "Error in event handler");
+
+}
+
+}
+
+The Godot Analogy
+
+In Godot, signals are fire-and-forget:
+
+# This doesn't wait for handlers
+
+emit_signal("theme_changed", empresa)
+
+# Next line runs immediately
+
+# Similar to C#:
+
+ThemeChangeService.NotifyThemeChanged(empresa);
+
+// Code continues immediately, doesn't wait for handlers
+
+Complete Comparison Reference {#comparison-reference}
+
+Terminology Mapping
+
+| Godot | C# | Purpose |
+| --- | --- | --- |
+| signal | event | Declare an observable event |
+| emit_signal() | Invoke() | Fire the event |
+| connect() | += | Subscribe to event |
+| disconnect() | -= | Unsubscribe from event |
+| Signal handler | Event handler | Function that responds |
+| queue_free() | Dispose() | Cleanup when destroying |
+| AutoLoad singleton | Singleton service | Global accessible instance |
+| _ready() | OnInitialized() | Component initialization |
+| _exit_tree() | Dispose() | Component cleanup |
+
+Memory Management Comparison
+
+Godot (Automatic):
+
+func _ready():
+
+player.connect("health_changed", self, "_on_health_changed")
+
+# Godot automatically disconnects when node is freed
+
+func _exit_tree():
+
+# Optional - Godot handles this automatically
+
+pass
+
+C# (Manual):
+
+protected override void OnInitialized()
+
+{
+
+player.OnHealthChanged += OnHealthChanged;
+
+// We MUST manually unsubscribe!
+
+}
+
+public void Dispose()
+
+{
+
+// REQUIRED - prevent memory leaks!
+
+player.OnHealthChanged -= OnHealthChanged;
+
+}
+
+Practical Implementation {#practical-implementation}
+
+Complete ThemeChange System Example
+
+If this were Godot:
+
+# ThemeChangeService.gd (like a global AutoLoad)
+
+extends Node
+
+signal theme_changed(company_data)
+
+func notify_theme_changed(company):
+
+emit_signal("theme_changed", company)
+
+# MainLayout.gd
+
+extends Control
+
+func _ready():
+
+# Subscribe to the global signal
+
+ThemeChangeService.connect("theme_changed", self, "_on_theme_changed")
+
+func _on_theme_changed(company):
+
+# Update UI with new theme
+
+update_colors(company.color1, company.color2)
+
+update_logo(company.logo_path)
+
+func _exit_tree():
+
+# Cleanup (automatic in Godot, manual in C#)
+
+ThemeChangeService.disconnect("theme_changed", self, "_on_theme_changed")
+
+The C# Implementation:
+
+// ThemeChangeService.cs (Singleton/Scoped service)
+
+public class ThemeChangeService : IThemeChangeService
+
+{
+
+public event Action<CrmEmpresa> OnThemeChanged;
+
+public void NotifyThemeChanged(CrmEmpresa empresa)
+
+{
+
+OnThemeChanged?.Invoke(empresa);
+
+}
+
+}
+
+// MainLayout.razor
+
+@implements IDisposable
+
+@code {
+
+protected override async Task OnInitializedAsync()
+
+{
+
+// Subscribe to theme changes (_ready equivalent)
+
+ThemeChangeService.OnThemeChanged += HandleThemeChanged;
+
+}
+
+private async void HandleThemeChanged(CrmEmpresa empresa)
+
+{
+
+try
+
+{
+
+// Update UI with new theme
+
+await UpdateColors(empresa.Cor1, empresa.Cor2);
+
+await UpdateLogo(empresa.LogoNavBar);
+
+// Tell Blazor to re-render (Godot does this automatically)
+
+await InvokeAsync(StateHasChanged);
+
+}
+
+catch (Exception ex)
+
+{
+
+// Always handle exceptions in async void!
+
+_logger.LogError(ex, "Theme update failed");
+
+}
+
+}
+
+public void Dispose()
+
+{
+
+// Manual cleanup required (_exit_tree equivalent)
+
+ThemeChangeService.OnThemeChanged -= HandleThemeChanged;
+
+}
+
+}
+
+Thread Safety Considerations
+
+Why InvokeAsync is Needed:
+
+Blazor components are not thread-safe, similar to how Godot's scene tree must be accessed from the main thread:
+
+// Event might fire from any thread
+
+private async void HandleThemeChanged(CrmEmpresa empresa)
+
+{
+
+// Wrong - might crash if on wrong thread:
+
+// StateHasChanged();
+
+// Correct - ensures UI thread:
+
+await InvokeAsync(StateHasChanged);
+
+// Similar to Godot's:
+
+// call_deferred("update_ui")
+
+}
+
+Service Lifetime Comparison
+
+Singleton (Global, like AutoLoad):
+
+builder.Services.AddSingleton<IThemeChangeService, ThemeChangeService>();
+
+// One instance for entire application
+
+// All users share the same instance
+
+// Like Godot's AutoLoad
+
+Scoped (Per-Connection):
+
+builder.Services.AddScoped<IThemeChangeService, ThemeChangeService>();
+
+// One instance per user session
+
+// Each user gets their own instance
+
+// Better for user-specific state
+
+Transient (New Each Time):
+
+builder.Services.AddTransient<IThemeChangeService, ThemeChangeService>();
+
+// New instance every injection
+
+// Rarely used for event systems
+
+Key Takeaways
+
+Events = Signals: C# events are functionally identical to Godot signals
+
+Manual Memory Management: Unlike Godot, C# requires manual event unsubscription
+
+async void Exception: Only use with events, always wrap in try-catch
+
+Thread Safety: Use InvokeAsync() when updating UI from events
+
+Service Lifetimes: Choose Scoped for user-specific events, Singleton for app-wide
+
+Best Practices
+
+Always Implement IDisposable When Using Events:
+
+@implements IDisposable
+
+public void Dispose()
+
+{
+
+// Unsubscribe all events
+
+Service.OnEvent -= Handler;
+
+}
+
+Always Handle Exceptions in async void:
+
+private async void EventHandler(Data data)
+
+{
+
+try
+
+{
+
+await AsyncOperation();
+
+}
+
+catch (Exception ex)
+
+{
+
+_logger.LogError(ex, "Handler failed");
+
+}
+
+}
+
+Use InvokeAsync for UI Updates:
+
+await InvokeAsync(() =>
+
+{
+
+// UI updates here
+
+StateHasChanged();
+
+});
+
+This guide bridges the conceptual gap between Godot's signal system and C#'s event system, helping Godot developers quickly understand and apply C# patterns in their .NET applications.

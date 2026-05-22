@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>08-Agnostic-Schedule-Conflict-Detection</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 05-Scheduling</div>
+  <h1>08-Agnostic-Schedule-Conflict-Detection</h1>
+  <div class="meta">Source: <code>Education/08-Agnostic-Schedule-Conflict-Detection.md</code> &middot; <a href="08-Agnostic-Schedule-Conflict-Detection.md">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<h1 id="agnostic-schedule-conflict-detection-educational-guide">Agnostic Schedule Conflict Detection - Educational Guide</h1>
+<h2 id="overview">Overview</h2>
+<p>This document explains the <strong>Strategy Pattern</strong> implementation used for schedule conflict detection in HRModule. The system is designed to be <strong>entity-agnostic</strong>, meaning the same conflict detection logic works for Employees, Equipment, and any future entity types.</p>
+<hr>
+<h2 id="the-problem">The Problem</h2>
+<p>Previously, schedule conflict detection was tightly coupled to Employees:</p>
+<pre><code class="lang-csharp"><span class="cmt">// OLD: Employee-specific, hard to extend</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">JobConflictService</span> : <span class="type">IJobConflictService</span>
+{
+    <span class="kw">public</span> <span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">HasTimeOverlapAsync</span>(<span class="kw">int</span> employeeId, ...)
+    {
+        <span class="cmt">// Queries JobSchedule table directly</span>
+        <span class="cmt">// Adding Equipment would require duplicating this entire service</span>
+    }
+}</code></pre>
+<p><strong>Issues:</strong></p>
+<ul>
+<li>Adding Equipment scheduling would require copy-pasting the entire service</li>
+<li>Violates <strong>DRY</strong> (Don&#x27;t Repeat Yourself)</li>
+<li>Violates <strong>OCP</strong> (Open/Closed Principle) - must modify existing code to add new types</li>
+</ul>
+<hr>
+<h2 id="the-solution-strategy-pattern">The Solution: Strategy Pattern</h2>
+<h3 id="solid-principles-applied">SOLID Principles Applied</h3>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Principle</th>
+<th>How It&#x27;s Applied</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>S</strong>ingle Responsibility</td>
+<td>Each strategy handles ONE entity type</td>
+</tr>
+<tr>
+<td><strong>O</strong>pen/Closed</td>
+<td>Add new entities by creating strategies, not modifying existing code</td>
+</tr>
+<tr>
+<td><strong>L</strong>iskov Substitution</td>
+<td>All strategies are interchangeable via the interface</td>
+</tr>
+<tr>
+<td><strong>I</strong>nterface Segregation</td>
+<td><code class="il">IScheduleEntry</code> has only what&#x27;s needed for conflict detection</td>
+</tr>
+<tr>
+<td><strong>D</strong>ependency Inversion</td>
+<td>Detector depends on <code class="il">IScheduleConflictStrategy</code> abstraction</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="architecture">Architecture</h2>
+<div class="diagram-box"><pre>┌─────────────────────────────────────────────────────────────────┐
+│                    IScheduleConflictDetector                     │
+│                         (Facade)                                 │
+│  Routes requests to appropriate strategy based on entityType     │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              │ GetStrategy(entityType)
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              IEnumerable&lt;IScheduleConflictStrategy&gt;              │
+│                    (Injected via DI)                             │
+└─────────────────────────────────────────────────────────────────┘
+          │                                    │
+          ▼                                    ▼
+┌─────────────────────┐          ┌─────────────────────────┐
+│ EmployeeSchedule    │          │ EquipmentSchedule       │
+│ ConflictStrategy    │          │ ConflictStrategy        │
+│                     │          │                         │
+│ EntityType=&quot;Employee&quot;│         │ EntityType=&quot;Equipment&quot;  │
+│ Uses: JobSchedule   │          │ Uses: JobEquipmentSchedule│
+└─────────────────────┘          └─────────────────────────┘
+          │                                    │
+          ▼                                    ▼
+┌─────────────────────┐          ┌─────────────────────────┐
+│    JobSchedule      │          │  JobEquipmentSchedule   │
+│ (implements         │          │ (implements             │
+│  IScheduleEntry)    │          │  IScheduleEntry)        │
+└─────────────────────┘          └─────────────────────────┘</pre></div>
+<hr>
+<h2 id="key-components">Key Components</h2>
+<h3 id="1-ischeduleentry-interface-isp">1. IScheduleEntry Interface (ISP)</h3>
+<p>Defines the common contract for any schedule entry:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">interface</span> <span class="type">IScheduleEntry</span>
+{
+    <span class="kw">int</span> <span class="type">Id</span> { <span class="kw">get</span>; }
+    <span class="kw">int</span> <span class="type">JobId</span> { <span class="kw">get</span>; }
+    <span class="kw">int</span> <span class="type">EntityId</span> { <span class="kw">get</span>; }           <span class="cmt">// EmployeeId OR EquipmentId</span>
+    <span class="type">DateTime</span> <span class="type">ScheduleDate</span> { <span class="kw">get</span>; }
+    <span class="type">DateTime</span>? <span class="type">EndDate</span> { <span class="kw">get</span>; }
+    <span class="type">TimeSpan</span>? <span class="type">CheckInTime</span> { <span class="kw">get</span>; }
+    <span class="type">TimeSpan</span>? <span class="type">CheckOutTime</span> { <span class="kw">get</span>; }
+
+    <span class="cmt">// Computed properties for overlap detection</span>
+    <span class="type">DateTime</span> <span class="type">ActualStartDateTime</span> { <span class="kw">get</span>; }
+    <span class="type">DateTime</span> <span class="type">ActualEndDateTime</span> { <span class="kw">get</span>; }
+    <span class="kw">bool</span> <span class="type">IsCrossMidnightShift</span> { <span class="kw">get</span>; }
+    <span class="kw">decimal</span> <span class="type">CalculatedTotalHours</span> { <span class="kw">get</span>; }
+
+    <span class="kw">bool</span> <span class="type">OverlapsWith</span>(<span class="type">IScheduleEntry</span> other);
+}</code></pre>
+<p><strong>Why?</strong> Both <code class="il">JobSchedule</code> and <code class="il">JobEquipmentSchedule</code> implement this interface, allowing the conflict detection logic to work with either type.</p>
+<p><strong>Both models now implement IScheduleEntry:</strong></p>
+<pre><code class="lang-csharp"><span class="cmt">// JobSchedule.cs</span>
+<span class="kw">public</span> <span class="kw">partial</span> <span class="kw">class</span> <span class="type">JobSchedule</span> : <span class="type">IScheduleEntry</span>
+{
+    <span class="kw">public</span> <span class="kw">int</span> <span class="type">EmployeeId</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+
+    [<span class="type">NotMapped</span>]
+    <span class="kw">public</span> <span class="kw">int</span> <span class="type">EntityId</span> =&gt; <span class="type">EmployeeId</span>;  <span class="cmt">// Maps to EmployeeId</span>
+
+    <span class="kw">public</span> <span class="kw">bool</span> <span class="type">OverlapsWith</span>(<span class="type">IScheduleEntry</span> other) { ... }
+}
+
+<span class="cmt">// JobEquipmentSchedule.cs</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">JobEquipmentSchedule</span> : <span class="type">IScheduleEntry</span>
+{
+    <span class="kw">public</span> <span class="kw">int</span> <span class="type">EquipmentId</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+
+    [<span class="type">NotMapped</span>]
+    <span class="kw">public</span> <span class="kw">int</span> <span class="type">EntityId</span> =&gt; <span class="type">EquipmentId</span>;  <span class="cmt">// Maps to EquipmentId</span>
+
+    <span class="kw">public</span> <span class="kw">bool</span> <span class="type">OverlapsWith</span>(<span class="type">IScheduleEntry</span> other) { ... }
+}</code></pre>
+<h3 id="2-ischeduleconflictstrategy-interface-strategy-pattern">2. IScheduleConflictStrategy Interface (Strategy Pattern)</h3>
+<p>Each entity type has its own strategy:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">interface</span> <span class="type">IScheduleConflictStrategy</span>
+{
+    <span class="kw">string</span> <span class="type">EntityType</span> { <span class="kw">get</span>; }  <span class="cmt">// &quot;Employee&quot;, &quot;Equipment&quot;, etc.</span>
+
+    <span class="type">Task</span>&lt;<span class="type">List</span>&lt;<span class="type">ScheduleConflict</span>&gt;&gt; <span class="type">GetScheduleConflictsAsync</span>(...);
+    <span class="type">Task</span>&lt;<span class="type">DetailedConflictInfo</span>&gt; <span class="type">GetDetailedConflictsAsync</span>(...);
+    <span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">WouldCreateConflictAsync</span>(...);
+    <span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">HasTimeOverlapAsync</span>(...);
+    <span class="type">Task</span>&lt;<span class="kw">decimal</span>&gt; <span class="type">CalculateDailyHoursAsync</span>(...);
+}</code></pre>
+<h3 id="3-scheduleconflictdetector-facade">3. ScheduleConflictDetector (Facade)</h3>
+<p>Routes to the correct strategy:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">ScheduleConflictDetector</span> : <span class="type">IScheduleConflictDetector</span>
+{
+    <span class="kw">private</span> <span class="kw">readonly</span> <span class="type">IEnumerable</span>&lt;<span class="type">IScheduleConflictStrategy</span>&gt; _strategies;
+
+    <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">HasTimeOverlapAsync</span>(
+        <span class="kw">string</span> entityType,    <span class="cmt">// &lt;-- This determines which strategy</span>
+        <span class="kw">int</span> entityId,
+        ...)
+    {
+        <span class="kw">var</span> strategy = <span class="type">GetStrategy</span>(entityType);
+        <span class="kw">return</span> <span class="kw">await</span> strategy.<span class="type">HasTimeOverlapAsync</span>(entityId, ...);
+    }
+
+    <span class="kw">private</span> <span class="type">IScheduleConflictStrategy</span> <span class="type">GetStrategy</span>(<span class="kw">string</span> entityType)
+    {
+        <span class="kw">return</span> _strategies.<span class="type">FirstOrDefault</span>(s =&gt;
+            s.<span class="type">EntityType</span>.<span class="type">Equals</span>(entityType, <span class="type">StringComparison</span>.<span class="type">OrdinalIgnoreCase</span>))
+            ?? <span class="kw">throw</span> <span class="kw">new</span> <span class="type">ArgumentException</span>($<span class="str">&quot;No strategy for: {entityType}&quot;</span>);
+    }
+}</code></pre>
+<hr>
+<h2 id="the-magic-di-registration">The Magic: DI Registration</h2>
+<pre><code class="lang-csharp"><span class="cmt">// Program.cs</span>
+
+<span class="cmt">// Register ALL strategies as the same interface type</span>
+builder.<span class="type">Services</span>.<span class="type">AddScoped</span>&lt;<span class="type">IScheduleConflictStrategy</span>, <span class="type">EmployeeScheduleConflictStrategy</span>&gt;();
+builder.<span class="type">Services</span>.<span class="type">AddScoped</span>&lt;<span class="type">IScheduleConflictStrategy</span>, <span class="type">EquipmentScheduleConflictStrategy</span>&gt;();
+<span class="cmt">// Future: builder.Services.AddScoped&lt;IScheduleConflictStrategy, VehicleScheduleConflictStrategy&gt;();</span>
+
+<span class="cmt">// The detector receives ALL registered strategies via IEnumerable&lt;T&gt;</span>
+builder.<span class="type">Services</span>.<span class="type">AddScoped</span>&lt;<span class="type">IScheduleConflictDetector</span>, <span class="type">ScheduleConflictDetector</span>&gt;();</code></pre>
+<p><strong>How it works:</strong> When <code class="il">ScheduleConflictDetector</code> is constructed, DI injects an <code class="il">IEnumerable&lt;IScheduleConflictStrategy&gt;</code> containing ALL registered strategies. The detector then selects the right one based on <code class="il">EntityType</code>.</p>
+<hr>
+<h2 id="usage-examples">Usage Examples</h2>
+<h3 id="current-usage-employee">Current Usage (Employee)</h3>
+<pre><code class="lang-csharp"><span class="cmt">// In JobService or JobScheduleService</span>
+<span class="kw">var</span> hasConflict = <span class="kw">await</span> _conflictDetector.<span class="type">HasTimeOverlapAsync</span>(
+    <span class="type">ConflictEntityTypes</span>.<span class="type">Employee</span>,  <span class="cmt">// &quot;Employee&quot;</span>
+    employeeId,
+    startDate,
+    startTime,
+    endDate,
+    endTime,
+    excludeJobId,
+    companyDatabase);</code></pre>
+<h3 id="current-usage-equipment">Current Usage (Equipment)</h3>
+<pre><code class="lang-csharp"><span class="cmt">// In EquipmentAssignmentService (future)</span>
+<span class="kw">var</span> hasConflict = <span class="kw">await</span> _conflictDetector.<span class="type">HasTimeOverlapAsync</span>(
+    <span class="type">ConflictEntityTypes</span>.<span class="type">Equipment</span>,  <span class="cmt">// &quot;Equipment&quot;</span>
+    equipmentId,
+    startDate,
+    startTime,
+    endDate,
+    endTime,
+    excludeJobId,
+    companyDatabase);</code></pre>
+<hr>
+<h2 id="adding-a-new-entity-type-e-g-vehicle">Adding a New Entity Type (e.g., Vehicle)</h2>
+<h3 id="step-1-create-the-schedule-model">Step 1: Create the Schedule Model</h3>
+<pre><code class="lang-csharp"><span class="cmt">// Models/Jobs/JobVehicleSchedule.cs</span>
+[<span class="type">Table</span>(<span class="str">&quot;JobVehicleSchedules&quot;</span>)]
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">JobVehicleSchedule</span> : <span class="type">IScheduleEntry</span>
+{
+    <span class="kw">public</span> <span class="kw">int</span> <span class="type">Id</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public</span> <span class="kw">int</span> <span class="type">JobId</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public</span> <span class="kw">int</span> <span class="type">VehicleId</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+
+    <span class="cmt">// IScheduleEntry.EntityId implementation</span>
+    [<span class="type">NotMapped</span>]
+    <span class="kw">public</span> <span class="kw">int</span> <span class="type">EntityId</span> =&gt; <span class="type">VehicleId</span>;
+
+    <span class="cmt">// ... rest of properties (copy from JobEquipmentSchedule)</span>
+}</code></pre>
+<h3 id="step-2-create-the-strategy">Step 2: Create the Strategy</h3>
+<pre><code class="lang-csharp"><span class="cmt">// Services/Core/Scheduling/Strategies/VehicleScheduleConflictStrategy.cs</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">VehicleScheduleConflictStrategy</span> : <span class="type">IScheduleConflictStrategy</span>
+{
+    <span class="kw">public</span> <span class="kw">string</span> <span class="type">EntityType</span> =&gt; <span class="type">ConflictEntityTypes</span>.<span class="type">Vehicle</span>;  <span class="cmt">// Add this constant</span>
+
+    <span class="cmt">// Copy from EquipmentScheduleConflictStrategy</span>
+    <span class="cmt">// Replace JobEquipmentSchedule with JobVehicleSchedule</span>
+    <span class="cmt">// Replace EquipmentId with VehicleId</span>
+}</code></pre>
+<h3 id="step-3-register-in-di">Step 3: Register in DI</h3>
+<pre><code class="lang-csharp"><span class="cmt">// Program.cs</span>
+builder.<span class="type">Services</span>.<span class="type">AddScoped</span>&lt;<span class="type">IScheduleConflictStrategy</span>, <span class="type">VehicleScheduleConflictStrategy</span>&gt;();</code></pre>
+<h3 id="step-4-add-entity-type-constant">Step 4: Add Entity Type Constant</h3>
+<pre><code class="lang-csharp"><span class="cmt">// Services/Core/Scheduling/ConflictEntityTypes.cs</span>
+<span class="kw">public</span> <span class="kw">static</span> <span class="kw">class</span> <span class="type">ConflictEntityTypes</span>
+{
+    <span class="kw">public</span> <span class="kw">const</span> <span class="kw">string</span> <span class="type">Employee</span> = <span class="str">&quot;Employee&quot;</span>;
+    <span class="kw">public</span> <span class="kw">const</span> <span class="kw">string</span> <span class="type">Equipment</span> = <span class="str">&quot;Equipment&quot;</span>;
+    <span class="kw">public</span> <span class="kw">const</span> <span class="kw">string</span> <span class="type">Vehicle</span> = <span class="str">&quot;Vehicle&quot;</span>;  <span class="cmt">// Add this</span>
+}</code></pre>
+<p><strong>That&#x27;s it!</strong> No modification to existing code. The detector automatically picks up the new strategy.</p>
+<hr>
+<h2 id="why-this-design">Why This Design?</h2>
+<h3 id="before-switch-statement-violates-ocp">Before (Switch Statement - Violates OCP)</h3>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">HasConflictAsync</span>(<span class="kw">string</span> entityType, <span class="kw">int</span> entityId, ...)
+{
+    <span class="kw">return</span> entityType <span class="kw">switch</span>
+    {
+        <span class="str">&quot;Employee&quot;</span> =&gt; <span class="type">CheckEmployeeConflict</span>(entityId, ...),
+        <span class="str">&quot;Equipment&quot;</span> =&gt; <span class="type">CheckEquipmentConflict</span>(entityId, ...),
+        <span class="str">&quot;Vehicle&quot;</span> =&gt; <span class="type">CheckVehicleConflict</span>(entityId, ...),  <span class="cmt">// Must modify!</span>
+        _ =&gt; <span class="kw">throw</span> <span class="kw">new</span> <span class="type">ArgumentException</span>()
+    };
+}</code></pre>
+<p><strong>Problem:</strong> Every new entity type requires modifying this method.</p>
+<h3 id="after-strategy-pattern-follows-ocp">After (Strategy Pattern - Follows OCP)</h3>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">HasConflictAsync</span>(<span class="kw">string</span> entityType, <span class="kw">int</span> entityId, ...)
+{
+    <span class="kw">var</span> strategy = _strategies.<span class="type">First</span>(s =&gt; s.<span class="type">EntityType</span> == entityType);
+    <span class="kw">return</span> strategy.<span class="type">HasConflictAsync</span>(entityId, ...);
+    <span class="cmt">// Add new types without touching this code!</span>
+}</code></pre>
+<p><strong>Benefit:</strong> New entity types are added by registration, not modification.</p>
+<hr>
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ol>
+<li><strong>Strategy Pattern</strong> allows runtime selection of algorithm based on type</li>
+<li><strong>DI with IEnumerable&lt;T&gt;</strong> collects all implementations of an interface</li>
+<li><strong>IScheduleEntry interface</strong> provides a common contract for different schedule types</li>
+<li><strong>EntityType string</strong> is the discriminator that routes to the correct strategy</li>
+<li><strong>OCP compliance</strong> means adding new types never modifies existing code</li>
+</ol>
+<hr>
+<h2 id="files-reference">Files Reference</h2>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>File</th>
+<th>Purpose</th>
+</tr></thead><tbody>
+<tr>
+<td><code class="il">Services/Core/Scheduling/IScheduleEntry.cs</code></td>
+<td>Common interface for schedules</td>
+</tr>
+<tr>
+<td><code class="il">Services/Core/Scheduling/IScheduleConflictStrategy.cs</code></td>
+<td>Strategy interface</td>
+</tr>
+<tr>
+<td><code class="il">Services/Core/Scheduling/IScheduleConflictDetector.cs</code></td>
+<td>Facade interface + DTOs</td>
+</tr>
+<tr>
+<td><code class="il">Services/Core/Scheduling/ScheduleConflictDetector.cs</code></td>
+<td>Facade implementation</td>
+</tr>
+<tr>
+<td><code class="il">Services/Core/Scheduling/Strategies/EmployeeScheduleConflictStrategy.cs</code></td>
+<td>Employee strategy</td>
+</tr>
+<tr>
+<td><code class="il">Services/Core/Scheduling/Strategies/EquipmentScheduleConflictStrategy.cs</code></td>
+<td>Equipment strategy</td>
+</tr>
+<tr>
+<td><code class="il">Models/Jobs/JobSchedule.cs</code></td>
+<td>Employee schedule model (implements IScheduleEntry)</td>
+</tr>
+<tr>
+<td><code class="il">Models/Jobs/JobEquipmentSchedule.cs</code></td>
+<td>Equipment schedule model (implements IScheduleEntry)</td>
+</tr>
+</tbody></table></div>
+</div>
+</body>
+</html>

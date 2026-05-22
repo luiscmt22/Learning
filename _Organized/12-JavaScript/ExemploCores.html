@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exemplo Cores</title>
+    <style>
+        :root {
+            /* Cores Primárias e Secundárias */
+            --color-primary: #df2e26;
+            --color-primary-hover: #b8251e;
+            --color-secondary: #f26d28;
+            --color-secondary-hover: #c25820;
+            
+            /* Neutras */
+            --neutral-menu: #f5e6e5;
+            --neutral-light: #f8f8f8;
+            --neutral-dark: #333333;
+            --neutral-text: #666666;
+            --neutral-border: #e0e0e0;
+            
+            /* Feedback */
+            --success: #2ecc71;
+            --success-hover: #27ae60;
+            --error: #e74c3c;
+            --error-hover: #c0392b;
+            --warning: #f39c12;
+            --warning-hover: #d35400;
+            --info: #3498db;
+            --info-hover: #2980b9;
+            
+            /* Links */
+            --link: #3498db;
+            --link-hover: #2874a6;
+            
+            /* Espaçamentos */
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            display: grid;
+            grid-template-areas:
+                "header header"
+                "sidebar main"
+                "footer footer";
+            grid-template-columns: 250px 1fr;
+            grid-template-rows: auto 1fr auto;
+            min-height: 100vh;
+            background-color: var(--neutral-light);
+        }
+        
+        /* Header - Cor Primária */
+        header {
+            grid-area: header;
+            background-color: var(--color-primary);
+            padding: var(--spacing-md) var(--spacing-lg);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .logo {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        
+        /* Sidebar - Tom Neutro Relacionado */
+        nav {
+            grid-area: sidebar;
+            background-color: var(--neutral-menu);
+            padding: var(--spacing-lg) 0;
+            border-right: 1px solid var(--neutral-border);
+        }
+        
+        .menu-section {
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .menu-section h3 {
+            padding: 0 var(--spacing-lg) var(--spacing-md);
+            color: var(--color-primary);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .menu-item {
+            padding: var(--spacing-md) var(--spacing-lg);
+            color: var(--neutral-dark);
+            text-decoration: none;
+            display: block;
+            transition: all 0.2s ease;
+        }
+        
+        .menu-item:hover {
+            background-color: rgba(223, 46, 38, 0.1);
+            border-left: 3px solid var(--color-primary);
+            padding-left: calc(var(--spacing-lg) - 3px);
+        }
+        
+        /* Main Content */
+        main {
+            grid-area: main;
+            padding: var(--spacing-lg);
+            background-color: white;
+        }
+        
+        /* Grid de Componentes */
+        .component-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--spacing-lg);
+        }
+        
+        .component-box {
+            border: 1px solid var(--neutral-border);
+            padding: var(--spacing-lg);
+            border-radius: 8px;
+            background-color: white;
+        }
+        
+        /* Botões com Hover */
+        .btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            margin-right: 12px;
+            margin-bottom: 12px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-primary {
+            background-color: var(--color-primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--color-primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .btn-secondary {
+            background-color: var(--color-secondary);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: var(--color-secondary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .btn-cancel {
+            background-color: white;
+            color: var(--neutral-dark);
+            border: 1px solid var(--neutral-border);
+        }
+        
+        .btn-cancel:hover {
+            background-color: var(--neutral-light);
+            border-color: var(--neutral-text);
+        }
+        
+        /* Links */
+        a.link {
+            color: var(--link);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+            border-bottom: 1px solid transparent;
+        }
+        
+        a.link:hover {
+            color: var(--link-hover);
+            border-bottom: 1px solid var(--link-hover);
+        }
+        
+        /* Feedbacks */
+        .feedback-box {
+            padding: var(--spacing-md);
+            border-radius: 6px;
+            margin-bottom: var(--spacing-md);
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        .feedback-box:hover {
+            transform: translateX(5px);
+        }
+        
+        .feedback-success {
+            background-color: rgba(46, 204, 113, 0.1);
+            border-left: 4px solid var(--success);
+            color: var(--neutral-dark);
+        }
+        
+        .feedback-error {
+            background-color: rgba(231, 76, 60, 0.1);
+            border-left: 4px solid var(--error);
+            color: var(--neutral-dark);
+        }
+        
+        .feedback-warning {
+            background-color: rgba(243, 156, 18, 0.1);
+            border-left: 4px solid var(--warning);
+            color: var(--neutral-dark);
+        }
+        
+        .feedback-info {
+            background-color: rgba(52, 152, 219, 0.1);
+            border-left: 4px solid var(--info);
+            color: var(--neutral-dark);
+        }
+        
+        /* Footer */
+        footer {
+            grid-area: footer;
+            background-color: var(--neutral-dark);
+            color: white;
+            padding: var(--spacing-md) var(--spacing-lg);
+            text-align: center;
+            font-size: 0.8rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">Logo Cliente</div>
+        <div class="user-menu">
+            <a href="#" class="link">Perfil</a>
+        </div>
+    </header>
+    
+    <nav>
+        <div class="menu-section">
+            <h3>Menu</h3>
+            <a href="#" class="menu-item">blablabla</a>
+            <a href="#" class="menu-item">blablabla</a>
+            <a href="#" class="menu-item">blablabla</a>
+        </div>
+        
+        <div class="menu-section">
+            <h3>Configurações</h3>
+            <a href="#" class="menu-item">blablabla</a>
+            <a href="#" class="menu-item">blablabla</a>
+        </div>
+    </nav>
+    
+    <main>
+        <div class="component-grid">
+            <!-- Botões com Hover -->
+            <div class="component-box">
+                <h3>Botões Interativos</h3>
+                <button class="btn btn-primary">Submeter</button>
+                <button class="btn btn-secondary">Secundário</button>
+                <button class="btn btn-cancel">Cancelar</button>
+                
+                <div style="margin-top: 20px;">
+                    <a href="#" class="link">Exemplo de Link</a>
+                </div>
+            </div>
+            
+            <!-- Feedbacks Completos -->
+            <div class="component-box">
+                <h3>Sistema de Feedbacks</h3>
+                <div class="feedback-box feedback-success">
+                    Operação concluída com sucesso
+                </div>
+                <div class="feedback-box feedback-error">
+                    Ocorreu um erro no processamento
+                </div>
+                <div class="feedback-box feedback-warning">
+                    Atenção: dados incompletos
+                </div>
+                <div class="feedback-box feedback-info">
+                    Nova atualização disponível
+                </div>
+            </div>
+            
+            <!-- Exemplo de Formulário -->
+            <div class="component-box">
+                <h3>Formulário</h3>
+                <p>blablabla</p>
+                <button class="btn btn-primary">Submeter</button>
+                <button class="btn btn-cancel">Cancelar</button>
+                <div style="margin-top: 15px;">
+                    <a href="#" class="link">Esqueceu a password?</a>
+                </div>
+            </div>
+            
+            <!-- Cards com Links -->
+            <div class="component-box">
+                <h3>Notificações</h3>
+                <p>blablabla <a href="#" class="link">ver mais</a></p>
+                <div class="feedback-box feedback-info" style="margin-top: 15px;">
+                    <span>3 novas mensagens <a href="#" class="link" style="margin-left: 10px;">visualizar</a></span>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer>
+        © 2025 Exemplo de Cores Web. <a href="#" class="link" style="color: white; opacity: 0.8;">Termos de uso</a>
+    </footer>
+</body>
+</html>

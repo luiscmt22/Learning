@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IMemoryCache — Dual-Caching Strategy</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --surface: #16213e;
+            --surface2: #0f3460;
+            --accent: #e94560;
+            --accent2: #533483;
+            --text: #eee;
+            --text-muted: #aab;
+            --success: #4ecca3;
+            --warning: #f0a500;
+            --code-bg: #0d1117;
+            --border: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+
+        h2 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin: 2.5rem 0 1rem 0;
+            padding-bottom: 0.3rem;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        h3 {
+            color: var(--success);
+            font-size: 1.2rem;
+            margin: 1.8rem 0 0.8rem 0;
+        }
+
+        h4 {
+            color: var(--warning);
+            font-size: 1.05rem;
+            margin: 1.2rem 0 0.5rem 0;
+        }
+
+        p { margin-bottom: 1rem; }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.2rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        code {
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9rem;
+        }
+
+        p code, li code {
+            background: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .keyword { color: #569cd6; }
+        .type { color: #4ec9b0; }
+        .string { color: #ce9178; }
+        .comment { color: #6a9955; }
+        .method { color: #dcdcaa; }
+        .number { color: #b5cea8; }
+        .param { color: #9cdcfe; }
+
+        .callout {
+            border-radius: 8px;
+            padding: 1.2rem 1.5rem;
+            margin: 1.5rem 0;
+            border-left: 4px solid;
+        }
+
+        .callout-metaphor {
+            background: rgba(83, 52, 131, 0.2);
+            border-color: var(--accent2);
+        }
+        .callout-metaphor::before {
+            content: "Metaphor";
+            display: block;
+            font-weight: bold;
+            color: var(--accent2);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-english {
+            background: rgba(78, 204, 163, 0.1);
+            border-color: var(--success);
+        }
+        .callout-english::before {
+            content: "Read It Like English";
+            display: block;
+            font-weight: bold;
+            color: var(--success);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-warning {
+            background: rgba(240, 165, 0, 0.1);
+            border-color: var(--warning);
+        }
+        .callout-warning::before {
+            content: "Common Confusion";
+            display: block;
+            font-weight: bold;
+            color: var(--warning);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-rule {
+            background: rgba(233, 69, 96, 0.1);
+            border-color: var(--accent);
+        }
+        .callout-rule::before {
+            content: "Golden Rule";
+            display: block;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        ul, ol {
+            margin: 0.5rem 0 1rem 1.5rem;
+        }
+
+        li { margin-bottom: 0.3rem; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 0.6rem 1rem;
+            text-align: left;
+        }
+
+        th {
+            background: var(--surface2);
+            color: var(--success);
+        }
+
+        td { background: var(--surface); }
+
+        .diagram {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'Cascadia Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            white-space: pre;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+<div style="background:rgba(7,9,15,0.94);border-bottom:1px solid #1f2940;padding:12px 24px;font:13px/1.4 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;position:fixed;top:0;left:0;right:0;z-index:99999;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);display:flex;align-items:center;gap:10px;color:#94a3bf;box-sizing:border-box;min-height:48px;"><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;">Learning</a><span style="color:#5f6b86;">›</span><a href="../_Hub.html" style="color:#94a3bf;text-decoration:none;">CORE</a><span style="color:#5f6b86;">›</span><a href="_Category.html" style="color:#94a3bf;text-decoration:none;">Concurrency &amp; Performance</a><span style="color:#5f6b86;">›</span><span style="color:#e9eef8;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">IMemoryCache — Dual-Caching Strategy</span><a href="imemorycache-dual-caching.html" download style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">↓ Download</a><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">All docs</a></div><div style="height:48px;"></div><div style="background:linear-gradient(135deg,#0a0e1a 0%,#11182a 100%);border:1px solid #1f2940;border-radius:14px;padding:24px 28px;margin:20px;font:15px/1.7 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;color:#e9eef8;box-shadow:0 12px 40px rgba(0,0,0,0.35);"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.6px;color:#6aa6ff;font-weight:600;margin-bottom:8px;">▸ Curated · Concept · Concurrency</div><div style="font-size:24px;font-weight:700;color:#e9eef8;margin-bottom:10px;letter-spacing:-0.02em;line-height:1.2;">IMemoryCache — Dual-Caching Strategy</div><div style="font-size:16px;color:#94a3bf;margin-bottom:18px;line-height:1.5;">Teaches .NET IMemoryCache through a real dual-layer strategy where different data has different expiration lifetimes, plus when to reach for ConcurrentDictionary instead and the anti-patterns to avoid.</div><div style="font-style:italic;border-left:3px solid #6aa6ff;padding:6px 0 6px 16px;margin:14px 0;color:#e9eef8;">Here&#x27;s a question that exposes every junior caching bug: &#x27;a user toggles a feature OFF — how long until every server in your cluster actually respects that?&#x27; If your answer is &#x27;whenever the cache expires,&#x27; you&#x27;ve just described why dual-caching exists. Feature flags need a 5-minute leash; lookup tables can stay out for 30. Same cache, same service, two completely different lifetimes. Here&#x27;s how.</div><div style="background:rgba(106,166,255,0.06);border:1px solid rgba(106,166,255,0.20);border-radius:10px;padding:14px 18px;margin:14px 0;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#6aa6ff;margin-bottom:6px;font-weight:600;">Executive summary</div><div style="font-size:14px;color:#e9eef8;line-height:1.6;">This tutorial explains the TryGetValue + Set pattern for IMemoryCache and, more importantly, why different kinds of data need different cache lifetimes in the same service. Feature flags get a 5-minute sliding expiration because toggles must propagate quickly; company-to-database mappings get 30 minutes because they almost never change. It also covers graceful degradation (return empty defaults, not exceptions), when ConcurrentDictionary beats IMemoryCache for compiled-reflection permanence, why GetOrCreateAsync has a cache-stampede problem, and a Dictionary+lock anti-pattern from a real service that should have been ConcurrentDictionary.</div></div><div style="background:rgba(184,106,255,0.06);border:1px solid rgba(184,106,255,0.25);border-radius:10px;padding:14px 18px;margin:14px 0;display:flex;gap:12px;"><div style="font-size:20px;flex-shrink:0;">💡</div><div style="flex:1;font-size:14px;color:#e9eef8;line-height:1.6;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#b86aff;margin-bottom:4px;font-weight:700;">Metaphor</div>IMemoryCache is sticky notes on your monitor. The feature-flag note is written in pencil and you rewrite it every five minutes because the office is always tweaking what&#x27;s enabled. The company-address note is in permanent marker and you only bother refreshing it every half hour. ConcurrentDictionary is a note engraved into your desk — it&#x27;s never changing, you never need to re-read the filing cabinet. And the mistake? Some people keep their pencil notes on a shared whiteboard where two people write at once and nobody remembers to bring the marker — that&#x27;s Dictionary + manual lock, and it eventually gets someone in trouble.</div></div><div style="margin-top:14px;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#5f6b86;margin-bottom:8px;font-weight:600;">Key concepts</div><div><span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">IMemoryCache</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">SlidingExpiration vs AbsoluteExpiration</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">TryGetValue + Set pattern</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">cache invalidation on write</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">graceful degradation / fail-open</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">ConcurrentDictionary for permanent data</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">cache stampede</span></div></div><div style="margin-top:18px;padding-top:14px;border-top:1px solid #1f2940;font-size:11px;color:#5f6b86;">↑ Curated overlay added by render_curated.py · the original document follows below</div></div>
+
+<h1>IMemoryCache &mdash; Dual-Caching Strategy</h1>
+<p class="subtitle">Tutorial #20 &mdash; How GivingCare caches database lookups with different expiration lifetimes</p>
+
+<!-- ============================================================ -->
+<h2>1. Why Cache?</h2>
+
+<p>Every time your application asks the database a question, it costs time: a network roundtrip, query parsing, disk I/O, and result serialization. For data that changes rarely &mdash; like which company ID maps to which database name, or whether a feature flag is enabled &mdash; that cost is pure waste after the first read.</p>
+
+<p><code>IMemoryCache</code> stores data directly in your application's process memory. No network hop, no serialization, no SQL. Just a dictionary lookup measured in nanoseconds.</p>
+
+<p>But here is the key insight: <strong>not all data has the same freshness requirement</strong>. A feature flag toggle should propagate in a few minutes. A company-to-database mapping might be fine staying cached for half an hour. This is why our codebase uses a <strong>dual-caching strategy</strong> &mdash; two cache layers with different expiration times in the same service.</p>
+
+<div class="callout callout-metaphor">
+    IMemoryCache is like a sticky note on your monitor. Fast to check, but the note gets old &mdash; you tear it off after 5 minutes and write a fresh one. Some notes (like your company's address) you keep for 30 minutes because they almost never change.
+</div>
+
+<!-- ============================================================ -->
+<h2>2. How IMemoryCache Works</h2>
+
+<h3>Registration</h3>
+
+<p>In <code>Program.cs</code>, a single line registers the memory cache as a singleton service:</p>
+
+<pre><code><span class="comment">// Program.cs, line 73</span>
+<span class="param">builder</span>.<span class="param">Services</span>.<span class="method">AddMemoryCache</span>();</code></pre>
+
+<p>That is all. Behind the scenes, .NET registers <code>IMemoryCache</code> as a <strong>singleton</strong>, meaning every service in the application shares the same cache instance. This is what you want &mdash; if each scoped service had its own cache, nothing would actually be cached across requests.</p>
+
+<h3>Injection</h3>
+
+<p>Any service can then ask for the cache via constructor injection:</p>
+
+<pre><code><span class="keyword">private readonly</span> <span class="type">IMemoryCache</span> <span class="param">_cache</span>;
+
+<span class="keyword">public</span> <span class="method">CompanyFeatureFlagService</span>(
+    <span class="type">IDbContextFactoryService</span> <span class="param">contextFactory</span>,
+    <span class="type">IMemoryCache</span> <span class="param">cache</span>,
+    <span class="type">ILogger</span>&lt;<span class="type">CompanyFeatureFlagService</span>&gt; <span class="param">logger</span>)
+{
+    <span class="param">_contextFactory</span> = <span class="param">contextFactory</span>;
+    <span class="param">_cache</span> = <span class="param">cache</span>;
+    <span class="param">_logger</span> = <span class="param">logger</span>;
+}</code></pre>
+
+<h3>Thread Safety</h3>
+
+<p><code>IMemoryCache</code> (the default <code>MemoryCache</code> implementation) is <strong>thread-safe out of the box</strong>. Multiple requests can read and write concurrently without corrupting the cache. You do not need locks around <code>TryGetValue</code> or <code>Set</code>.</p>
+
+<h3>Two Expiration Types</h3>
+
+<table>
+    <tr>
+        <th>Expiration Type</th>
+        <th>Behavior</th>
+        <th>Use When</th>
+    </tr>
+    <tr>
+        <td><code>SlidingExpiration</code></td>
+        <td>Timer resets every time the entry is read</td>
+        <td>Data that is frequently accessed &mdash; keep it warm as long as someone needs it</td>
+    </tr>
+    <tr>
+        <td><code>AbsoluteExpiration</code></td>
+        <td>Fixed deadline &mdash; entry is evicted no matter how often it is read</td>
+        <td>Data that MUST be refreshed after a hard time limit</td>
+    </tr>
+</table>
+
+<div class="callout callout-warning">
+    <code>SlidingExpiration</code> resets every time you <em>read</em> the cache. <code>AbsoluteExpiration</code> does not. A sliding 5-minute cache that gets read every 4 minutes lives <strong>FOREVER</strong>. If you need a hard upper bound, combine both: set a <code>SlidingExpiration</code> of 5 minutes AND an <code>AbsoluteExpirationRelativeToNow</code> of 30 minutes.
+</div>
+
+<!-- ============================================================ -->
+<h2>3. The Pattern &mdash; TryGetValue + Set</h2>
+
+<p>Here is the core caching pattern from <code>CompanyFeatureFlagService.LoadFlagDataAsync</code>:</p>
+
+<pre><code><span class="keyword">private async</span> <span class="type">Task</span>&lt;<span class="type">FeatureFlagData</span>&gt; <span class="method">LoadFlagDataAsync</span>(<span class="keyword">int</span> <span class="param">companyId</span>)
+{
+    <span class="keyword">var</span> <span class="param">cacheKey</span> = <span class="string">$"FeatureFlags_{companyId}"</span>;
+
+    <span class="comment">// Step 1: Check if we already have it</span>
+    <span class="keyword">if</span> (<span class="param">_cache</span>.<span class="method">TryGetValue</span>(<span class="param">cacheKey</span>, <span class="keyword">out</span> <span class="type">FeatureFlagData</span>? <span class="param">cached</span>) &amp;&amp; <span class="param">cached</span> != <span class="keyword">null</span>)
+        <span class="keyword">return</span> <span class="param">cached</span>;
+
+    <span class="comment">// Step 2: Not in cache — load from database</span>
+    <span class="keyword">await using var</span> <span class="param">context</span> = <span class="param">_contextFactory</span>.<span class="method">CreateBaseControleContext</span>();
+
+    <span class="keyword">var</span> <span class="param">flags</span> = <span class="keyword">await</span> <span class="param">context</span>.<span class="param">CompanyFeatureFlags</span>
+        .<span class="method">AsNoTracking</span>()
+        .<span class="method">Where</span>(<span class="param">f</span> =&gt; <span class="param">f</span>.<span class="param">CompanyId</span> == <span class="param">companyId</span>)
+        .<span class="method">ToListAsync</span>();
+
+    <span class="keyword">var</span> <span class="param">data</span> = <span class="keyword">new</span> <span class="type">FeatureFlagData</span>(
+        States: <span class="param">flags</span>.<span class="method">ToDictionary</span>(<span class="param">f</span> =&gt; <span class="param">f</span>.<span class="param">FeatureKey</span>, <span class="param">f</span> =&gt; <span class="param">f</span>.<span class="param">State</span>),
+        Tiers:  <span class="param">flags</span>.<span class="method">ToDictionary</span>(<span class="param">f</span> =&gt; <span class="param">f</span>.<span class="param">FeatureKey</span>, <span class="param">f</span> =&gt; <span class="param">f</span>.<span class="param">AccessTier</span>));
+
+    <span class="comment">// Step 3: Store in cache for next time</span>
+    <span class="param">_cache</span>.<span class="method">Set</span>(<span class="param">cacheKey</span>, <span class="param">data</span>, <span class="keyword">new</span> <span class="type">MemoryCacheEntryOptions</span>
+    {
+        SlidingExpiration = <span class="param">FeatureCacheExpiration</span>  <span class="comment">// 5 minutes</span>
+    });
+
+    <span class="keyword">return</span> <span class="param">data</span>;
+}</code></pre>
+
+<div class="callout callout-english">
+    <code>TryGetValue</code> reads as: "Do I already have this? Yes &rarr; use it. No &rarr; go get it from the database, then remember it for next time."
+</div>
+
+<h3>Why Not GetOrCreate?</h3>
+
+<p>You might wonder: .NET has <code>_cache.GetOrCreate(key, entry => ...)</code> that combines the check-and-set. Why don't we use it?</p>
+
+<ol>
+    <li><strong>No async support in the factory</strong> &mdash; <code>GetOrCreate</code> takes a synchronous factory delegate. Our data loading is <code>async</code> (database queries). There is <code>GetOrCreateAsync</code>, but it has a subtle problem...</li>
+    <li><strong>Cache stampede</strong> &mdash; <code>GetOrCreateAsync</code> does NOT lock on the cache key. If 50 requests hit simultaneously on a cold cache, all 50 will call the factory and all 50 will query the database. With <code>TryGetValue</code> + <code>Set</code>, only the first one that completes will set the cache, and the rest will find it on their next attempt (the double-hit is acceptable for our use case).</li>
+    <li><strong>Explicit control</strong> &mdash; The <code>TryGetValue</code> + <code>Set</code> pattern makes the cache logic visible and debuggable. You can set breakpoints, add logging, or adjust the options per-scenario.</li>
+</ol>
+
+<!-- ============================================================ -->
+<h2>4. Dual-Layer Caching in CompanyFeatureFlagService</h2>
+
+<p>This is where it gets interesting. <code>CompanyFeatureFlagService</code> maintains <strong>two independent cache layers</strong> with different lifetimes, because the two types of data have fundamentally different change frequencies.</p>
+
+<h3>The Two Cache Layers</h3>
+
+<table>
+    <tr>
+        <th>Cache Key Pattern</th>
+        <th>Cached Data</th>
+        <th>Expiration</th>
+        <th>Why This Duration</th>
+    </tr>
+    <tr>
+        <td><code>FeatureFlags_{companyId}</code></td>
+        <td><code>FeatureFlagData</code> (States + Tiers dicts)</td>
+        <td>5 min sliding</td>
+        <td>Feature changes need to propagate relatively quickly</td>
+    </tr>
+    <tr>
+        <td><code>CompanyDbToId_{database}</code></td>
+        <td><code>int</code> (company ID)</td>
+        <td>30 min sliding</td>
+        <td>Company-to-DB mapping almost never changes</td>
+    </tr>
+</table>
+
+<h3>The FeatureFlagData Record</h3>
+
+<p>Both feature states and access tiers are loaded in a single query and cached as one unit:</p>
+
+<pre><code><span class="comment">/// Cached data for a company's feature configuration (states + access tiers).</span>
+<span class="keyword">internal record</span> <span class="type">FeatureFlagData</span>(
+    <span class="type">Dictionary</span>&lt;<span class="keyword">string</span>, <span class="type">FeatureState</span>&gt; <span class="param">States</span>,
+    <span class="type">Dictionary</span>&lt;<span class="keyword">string</span>, <span class="type">AccessTier</span>&gt; <span class="param">Tiers</span>);</code></pre>
+
+<p>Using a <code>record</code> here is deliberate. Records are immutable by convention, which is exactly what you want for cached data &mdash; nobody should be modifying the cached dictionaries after they are stored.</p>
+
+<h3>The Expiration Constants</h3>
+
+<pre><code><span class="keyword">private static readonly</span> <span class="type">TimeSpan</span> <span class="param">FeatureCacheExpiration</span> = <span class="type">TimeSpan</span>.<span class="method">FromMinutes</span>(<span class="number">5</span>);
+<span class="keyword">private static readonly</span> <span class="type">TimeSpan</span> <span class="param">CompanyIdCacheExpiration</span> = <span class="type">TimeSpan</span>.<span class="method">FromMinutes</span>(<span class="number">30</span>);</code></pre>
+
+<p>These are <code>static readonly</code> because they never change at runtime. Declaring them as named constants makes the code self-documenting and easy to tune later.</p>
+
+<h3>Layer 1: Feature Flag Cache (5 minutes)</h3>
+
+<p>This is the <code>LoadFlagDataAsync</code> method we saw in Section 3. It caches the full feature state + access tier dictionaries for a company under the key <code>FeatureFlags_{companyId}</code>.</p>
+
+<h3>Layer 2: Company ID Cache (30 minutes)</h3>
+
+<p>Many callers only have the company database name (a string like <code>"GivingCare_CompanyX"</code>), not the integer company ID. The service needs to resolve that first:</p>
+
+<pre><code><span class="keyword">private async</span> <span class="type">Task</span>&lt;<span class="keyword">int</span>&gt; <span class="method">ResolveCompanyIdAsync</span>(<span class="keyword">string</span> <span class="param">companyDatabase</span>)
+{
+    <span class="keyword">if</span> (<span class="keyword">string</span>.<span class="method">IsNullOrEmpty</span>(<span class="param">companyDatabase</span>))
+        <span class="keyword">return</span> <span class="number">0</span>;
+
+    <span class="keyword">var</span> <span class="param">cacheKey</span> = <span class="string">$"CompanyDbToId_{companyDatabase}"</span>;
+
+    <span class="comment">// Check cache first</span>
+    <span class="keyword">if</span> (<span class="param">_cache</span>.<span class="method">TryGetValue</span>(<span class="param">cacheKey</span>, <span class="keyword">out int</span> <span class="param">cachedId</span>))
+        <span class="keyword">return</span> <span class="param">cachedId</span>;
+
+    <span class="comment">// Not cached — query the database</span>
+    <span class="keyword">await using var</span> <span class="param">context</span> = <span class="param">_contextFactory</span>.<span class="method">CreateBaseControleContext</span>();
+
+    <span class="keyword">var</span> <span class="param">company</span> = <span class="keyword">await</span> <span class="param">context</span>.<span class="param">Companies</span>
+        .<span class="method">AsNoTracking</span>()
+        .<span class="method">FirstOrDefaultAsync</span>(<span class="param">c</span> =&gt; <span class="param">c</span>.<span class="param">DatabaseName</span> == <span class="param">companyDatabase</span>);
+
+    <span class="keyword">var</span> <span class="param">id</span> = <span class="param">company</span>?.<span class="param">Id</span> ?? <span class="number">0</span>;
+
+    <span class="comment">// Only cache valid IDs (don't cache failures)</span>
+    <span class="keyword">if</span> (<span class="param">id</span> &gt; <span class="number">0</span>)
+    {
+        <span class="param">_cache</span>.<span class="method">Set</span>(<span class="param">cacheKey</span>, <span class="param">id</span>, <span class="keyword">new</span> <span class="type">MemoryCacheEntryOptions</span>
+        {
+            SlidingExpiration = <span class="param">CompanyIdCacheExpiration</span>  <span class="comment">// 30 minutes</span>
+        });
+    }
+
+    <span class="keyword">return</span> <span class="param">id</span>;
+}</code></pre>
+
+<p>Notice the guard: <code>if (id > 0)</code>. We deliberately do NOT cache zero/failure results. If a company database name was temporarily unavailable, we don't want to cache "not found" for 30 minutes.</p>
+
+<h3>The Flow: Two Caches Working Together</h3>
+
+<div class="diagram">
+Caller: GetFeatureStateAsync("GivingCare_CompanyX", "CRM")
+                    |
+                    v
+        +---------------------------+
+        | ResolveCompanyIdAsync()   |  <-- Cache Layer 2 (30 min)
+        | key: CompanyDbToId_GC_CX  |
+        +---------------------------+
+            |  Hit? Return 42        |  Miss? Query DB, cache it
+            v
+        +---------------------------+
+        | LoadFlagDataAsync(42)     |  <-- Cache Layer 1 (5 min)
+        | key: FeatureFlags_42      |
+        +---------------------------+
+            |  Hit? Return data      |  Miss? Query DB, cache it
+            v
+        Return FeatureState for "CRM"
+</div>
+
+<p>On a warm cache, this entire operation is <strong>two dictionary lookups</strong>. Zero database queries. Zero network I/O.</p>
+
+<!-- ============================================================ -->
+<h2>5. Cache Invalidation</h2>
+
+<p>There is a famous joke in computer science: "The two hardest problems in CS are cache invalidation, naming things, and off-by-one errors." Let's see how our codebase handles the first one.</p>
+
+<h3>Explicit Invalidation for Feature Flags</h3>
+
+<pre><code><span class="keyword">public void</span> <span class="method">InvalidateCache</span>(<span class="keyword">int</span> <span class="param">companyId</span>)
+{
+    <span class="param">_cache</span>.<span class="method">Remove</span>(<span class="string">$"FeatureFlags_{companyId}"</span>);
+}</code></pre>
+
+<p>This is called in two places &mdash; both write operations:</p>
+
+<pre><code><span class="keyword">public async</span> <span class="type">Task</span>&lt;<span class="type">ServiceResult</span>&gt; <span class="method">SetFeatureStateAsync</span>(<span class="keyword">int</span> <span class="param">companyId</span>, ...)
+{
+    <span class="comment">// ... update database ...</span>
+    <span class="keyword">await</span> <span class="param">context</span>.<span class="method">SaveChangesAsync</span>();
+    <span class="method">InvalidateCache</span>(<span class="param">companyId</span>);  <span class="comment">// Immediately clear stale data</span>
+    <span class="comment">// ...</span>
+}
+
+<span class="keyword">public async</span> <span class="type">Task</span>&lt;<span class="type">ServiceResult</span>&gt; <span class="method">SetAccessTierAsync</span>(<span class="keyword">int</span> <span class="param">companyId</span>, ...)
+{
+    <span class="comment">// ... update database ...</span>
+    <span class="keyword">await</span> <span class="param">context</span>.<span class="method">SaveChangesAsync</span>();
+    <span class="method">InvalidateCache</span>(<span class="param">companyId</span>);  <span class="comment">// Immediately clear stale data</span>
+    <span class="comment">// ...</span>
+}</code></pre>
+
+<p>The pattern is clear: <strong>save to database first, then invalidate</strong>. The next read will find the cache empty and reload fresh data from the database.</p>
+
+<div class="callout callout-rule">
+    If you write, invalidate. If you only read, let it expire naturally.
+</div>
+
+<h3>No Invalidation for Company ID Cache</h3>
+
+<p>Notice that <code>InvalidateCache</code> only removes the <code>FeatureFlags_{companyId}</code> key. It does NOT touch the <code>CompanyDbToId_{database}</code> key. Why?</p>
+
+<ul>
+    <li>Company-to-database mappings essentially <strong>never change</strong> at runtime</li>
+    <li>If they did change (a very rare admin operation), the 30-minute sliding expiration handles it eventually</li>
+    <li>There is no <code>UpdateCompanyDatabase</code> method in this service, so there is nowhere to trigger invalidation</li>
+</ul>
+
+<p>This is a deliberate design choice: invest invalidation effort where data actually changes, and rely on natural expiration for data that barely moves.</p>
+
+<!-- ============================================================ -->
+<h2>6. Graceful Degradation</h2>
+
+<p>What happens when the cache is empty AND the database query fails? A poorly designed cache would crash the entire request. Our service handles this gracefully.</p>
+
+<h3>Feature Flags: Return Empty on Error</h3>
+
+<pre><code><span class="keyword">private async</span> <span class="type">Task</span>&lt;<span class="type">FeatureFlagData</span>&gt; <span class="method">LoadFlagDataAsync</span>(<span class="keyword">int</span> <span class="param">companyId</span>)
+{
+    <span class="comment">// ... try to load from cache, then from DB ...</span>
+    <span class="keyword">catch</span> (<span class="type">Exception</span> <span class="param">ex</span>)
+    {
+        <span class="param">_logger</span>.<span class="method">LogError</span>(<span class="param">ex</span>, <span class="string">"Error loading feature flags for company {CompanyId}"</span>, <span class="param">companyId</span>);
+        <span class="keyword">return new</span> <span class="type">FeatureFlagData</span>(
+            <span class="keyword">new</span> <span class="type">Dictionary</span>&lt;<span class="keyword">string</span>, <span class="type">FeatureState</span>&gt;(),
+            <span class="keyword">new</span> <span class="type">Dictionary</span>&lt;<span class="keyword">string</span>, <span class="type">AccessTier</span>&gt;());
+    }
+}</code></pre>
+
+<p>Empty dictionaries, not exceptions. The caller gets zero data, not a crash.</p>
+
+<h3>Feature State: Default to Enabled</h3>
+
+<pre><code><span class="keyword">public async</span> <span class="type">Task</span>&lt;<span class="type">FeatureState</span>&gt; <span class="method">GetFeatureStateAsync</span>(<span class="keyword">int</span> <span class="param">companyId</span>, <span class="keyword">string</span> <span class="param">featureKey</span>)
+{
+    <span class="keyword">var</span> <span class="param">data</span> = <span class="keyword">await</span> <span class="method">LoadFlagDataAsync</span>(<span class="param">companyId</span>);
+    <span class="keyword">return</span> <span class="param">data</span>.<span class="param">States</span>.<span class="method">TryGetValue</span>(<span class="param">featureKey</span>, <span class="keyword">out var</span> <span class="param">state</span>) ? <span class="param">state</span> : <span class="type">FeatureState</span>.<span class="param">Enabled</span>;
+}</code></pre>
+
+<p>If the cache and database both fail, <code>LoadFlagDataAsync</code> returns empty dictionaries. <code>TryGetValue</code> finds nothing for the requested key. The fallback is <code>FeatureState.Enabled</code> &mdash; features work by default. Similarly, <code>GetAccessTierAsync</code> defaults to <code>AccessTier.Full</code>.</p>
+
+<p>This is a <strong>fail-open</strong> strategy: if the system cannot determine whether a feature is disabled, it assumes it is enabled. The reasoning is that it is better for users to temporarily see a feature they shouldn't, than for the entire application to break because a cache lookup failed.</p>
+
+<h3>Company ID: Return Zero on Error</h3>
+
+<pre><code><span class="keyword">public async</span> <span class="type">Task</span>&lt;<span class="type">FeatureState</span>&gt; <span class="method">GetFeatureStateAsync</span>(<span class="keyword">string</span> <span class="param">companyDatabase</span>, <span class="keyword">string</span> <span class="param">featureKey</span>)
+{
+    <span class="keyword">var</span> <span class="param">companyId</span> = <span class="keyword">await</span> <span class="method">ResolveCompanyIdAsync</span>(<span class="param">companyDatabase</span>);
+    <span class="keyword">if</span> (<span class="param">companyId</span> == <span class="number">0</span>) <span class="keyword">return</span> <span class="type">FeatureState</span>.<span class="param">Enabled</span>;  <span class="comment">// Can't resolve? Default to enabled</span>
+    <span class="keyword">return await</span> <span class="method">GetFeatureStateAsync</span>(<span class="param">companyId</span>, <span class="param">featureKey</span>);
+}</code></pre>
+
+<p>If company resolution fails (returns 0), the service short-circuits to the safe default rather than attempting to look up feature flags for company ID zero.</p>
+
+<!-- ============================================================ -->
+<h2>7. ConcurrentDictionary as Alternative Cache</h2>
+
+<p>Not all caching uses <code>IMemoryCache</code>. Some data is <strong>computed once and never changes</strong> for the lifetime of the application. For these cases, our codebase uses <code>ConcurrentDictionary</code> instead.</p>
+
+<h3>ReflectionCache.cs</h3>
+
+<pre><code><span class="keyword">public static class</span> <span class="type">ReflectionCache</span>
+{
+    <span class="keyword">private static readonly</span> <span class="type">ConcurrentDictionary</span>&lt;(<span class="type">Type</span>, <span class="keyword">string</span>), <span class="type">Func</span>&lt;<span class="keyword">object</span>, <span class="keyword">object</span>?&gt;&gt; <span class="param">Getters</span> = <span class="keyword">new</span>();
+    <span class="keyword">private static readonly</span> <span class="type">ConcurrentDictionary</span>&lt;(<span class="type">Type</span>, <span class="keyword">string</span>), <span class="type">Action</span>&lt;<span class="keyword">object</span>, <span class="keyword">object</span>?&gt;&gt; <span class="param">Setters</span> = <span class="keyword">new</span>();
+
+    <span class="keyword">public static</span> <span class="type">T</span>? <span class="method">GetValue</span>&lt;<span class="type">T</span>&gt;(<span class="keyword">object</span> <span class="param">entity</span>, <span class="keyword">string</span> <span class="param">propertyName</span>)
+    {
+        <span class="keyword">if</span> (<span class="param">entity</span> == <span class="keyword">null</span>) <span class="keyword">return default</span>;
+
+        <span class="keyword">var</span> <span class="param">key</span> = (<span class="param">entity</span>.<span class="method">GetType</span>(), <span class="param">propertyName</span>);
+        <span class="keyword">var</span> <span class="param">getter</span> = <span class="param">Getters</span>.<span class="method">GetOrAdd</span>(<span class="param">key</span>, <span class="method">CreateGetter</span>);
+
+        <span class="keyword">if</span> (<span class="param">getter</span> == <span class="keyword">null</span>) <span class="keyword">return default</span>;
+
+        <span class="keyword">var</span> <span class="param">value</span> = <span class="method">getter</span>(<span class="param">entity</span>);
+        <span class="keyword">if</span> (<span class="param">value</span> == <span class="keyword">null</span>) <span class="keyword">return default</span>;
+
+        <span class="keyword">return</span> (<span class="type">T</span>)<span class="param">value</span>;
+    }
+}</code></pre>
+
+<p>The <code>CreateGetter</code> method compiles a lambda expression into a fast delegate &mdash; an expensive operation that should happen at most once per (Type, PropertyName) combination:</p>
+
+<pre><code><span class="keyword">private static</span> <span class="type">Func</span>&lt;<span class="keyword">object</span>, <span class="keyword">object</span>?&gt;? <span class="method">CreateGetter</span>((<span class="type">Type</span> <span class="param">type</span>, <span class="keyword">string</span> <span class="param">propertyName</span>) <span class="param">key</span>)
+{
+    <span class="keyword">var</span> <span class="param">property</span> = <span class="param">key</span>.<span class="param">type</span>.<span class="method">GetProperty</span>(<span class="param">key</span>.<span class="param">propertyName</span>,
+        <span class="type">BindingFlags</span>.<span class="param">Public</span> | <span class="type">BindingFlags</span>.<span class="param">Instance</span>);
+    <span class="keyword">if</span> (<span class="param">property</span> == <span class="keyword">null</span> || !<span class="param">property</span>.<span class="param">CanRead</span>) <span class="keyword">return null</span>;
+
+    <span class="keyword">var</span> <span class="param">param</span> = <span class="type">Expression</span>.<span class="method">Parameter</span>(<span class="keyword">typeof</span>(<span class="keyword">object</span>), <span class="string">"obj"</span>);
+    <span class="keyword">var</span> <span class="param">castToEntity</span> = <span class="type">Expression</span>.<span class="method">Convert</span>(<span class="param">param</span>, <span class="param">key</span>.<span class="param">type</span>);
+    <span class="keyword">var</span> <span class="param">propertyAccess</span> = <span class="type">Expression</span>.<span class="method">Property</span>(<span class="param">castToEntity</span>, <span class="param">property</span>);
+    <span class="keyword">var</span> <span class="param">castToObject</span> = <span class="type">Expression</span>.<span class="method">Convert</span>(<span class="param">propertyAccess</span>, <span class="keyword">typeof</span>(<span class="keyword">object</span>));
+
+    <span class="keyword">return</span> <span class="type">Expression</span>.<span class="method">Lambda</span>&lt;<span class="type">Func</span>&lt;<span class="keyword">object</span>, <span class="keyword">object</span>?&gt;&gt;(<span class="param">castToObject</span>, <span class="param">param</span>).<span class="method">Compile</span>();
+}</code></pre>
+
+<h3>Why ConcurrentDictionary Here Instead of IMemoryCache?</h3>
+
+<ul>
+    <li><strong>No expiration needed</strong> &mdash; a compiled expression for <code>Article.Code</code> will be valid for the entire app lifetime. The types and properties do not change at runtime.</li>
+    <li><strong>Static context</strong> &mdash; <code>ReflectionCache</code> is a <code>static class</code> with <code>static</code> fields. <code>IMemoryCache</code> requires DI injection, which is not available in static contexts.</li>
+    <li><strong>Simpler API</strong> &mdash; <code>GetOrAdd(key, factory)</code> is one call that atomically checks-or-creates. No need for <code>TryGetValue</code> + <code>Set</code> two-step.</li>
+    <li><strong>No eviction overhead</strong> &mdash; <code>IMemoryCache</code> has background cleanup, size tracking, and eviction callbacks. For permanent data, that is wasted work.</li>
+</ul>
+
+<div class="diagram">
+IMemoryCache                        ConcurrentDictionary
+------------------------------------------------------
+Has expiration (sliding/absolute)   No expiration (permanent)
+Has size limits + eviction          Grows unbounded
+Background cleanup timer            No background work
+Requires DI injection               Works in static contexts
+GetOrCreateAsync available          GetOrAdd (sync only)
+Good for DB results                 Good for computed data
+</div>
+
+<!-- ============================================================ -->
+<h2>8. When to Use Which</h2>
+
+<table>
+    <tr>
+        <th>Scenario</th>
+        <th>Use</th>
+        <th>Why</th>
+    </tr>
+    <tr>
+        <td>DB query results that change (feature flags, settings)</td>
+        <td><code>IMemoryCache</code> with short sliding expiration</td>
+        <td>Need automatic freshness &mdash; stale data is visible to users</td>
+    </tr>
+    <tr>
+        <td>DB query results that rarely change (company IDs, lookup tables)</td>
+        <td><code>IMemoryCache</code> with long sliding expiration</td>
+        <td>Eventual consistency is OK &mdash; save the most queries</td>
+    </tr>
+    <tr>
+        <td>Compiled expressions / reflection metadata</td>
+        <td><code>ConcurrentDictionary</code> (static)</td>
+        <td>Never changes, expensive to create, no DI needed</td>
+    </tr>
+    <tr>
+        <td>Per-request data</td>
+        <td>None &mdash; just pass it around</td>
+        <td>Too short-lived to cache; overhead exceeds benefit</td>
+    </tr>
+</table>
+
+<!-- ============================================================ -->
+<h2>9. The Anti-Pattern &mdash; ArticlePersistenceService</h2>
+
+<p>Not all caching in the codebase is done correctly. <code>ArticlePersistenceService</code> contains a pattern that works in practice but is technically flawed:</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">ArticlePersistenceService</span> : <span class="type">IArticlePersistenceService</span>
+{
+    <span class="comment">// Cached property setters for performance (compiled once per property)</span>
+    <span class="keyword">private static readonly</span> <span class="type">Dictionary</span>&lt;<span class="keyword">string</span>, <span class="type">PropertyInfo</span>&gt; <span class="param">_propertyCache</span> = <span class="keyword">new</span>();
+    <span class="keyword">private static readonly</span> <span class="keyword">object</span> <span class="param">_cacheLock</span> = <span class="keyword">new</span>();
+    <span class="comment">// ...</span>
+}</code></pre>
+
+<h3>The GetCachedProperty Method</h3>
+
+<pre><code><span class="keyword">private static</span> <span class="type">PropertyInfo</span>? <span class="method">GetCachedProperty</span>(<span class="keyword">string</span> <span class="param">propertyName</span>)
+{
+    <span class="comment">// Problem 1: Reading Dictionary without lock (not thread-safe for writes!)</span>
+    <span class="keyword">if</span> (<span class="param">_propertyCache</span>.<span class="method">TryGetValue</span>(<span class="param">propertyName</span>, <span class="keyword">out var</span> <span class="param">cached</span>))
+    {
+        <span class="keyword">return</span> <span class="param">cached</span>;
+    }
+
+    <span class="keyword">lock</span> (<span class="param">_cacheLock</span>)
+    {
+        <span class="comment">// Double-check inside lock (correct)</span>
+        <span class="keyword">if</span> (<span class="param">_propertyCache</span>.<span class="method">TryGetValue</span>(<span class="param">propertyName</span>, <span class="keyword">out</span> <span class="param">cached</span>))
+        {
+            <span class="keyword">return</span> <span class="param">cached</span>;
+        }
+
+        <span class="keyword">var</span> <span class="param">propertyInfo</span> = <span class="keyword">typeof</span>(<span class="type">Article</span>).<span class="method">GetProperty</span>(<span class="param">propertyName</span>);
+        <span class="keyword">if</span> (<span class="param">propertyInfo</span> != <span class="keyword">null</span>)
+        {
+            <span class="comment">// Problem 2: Writing to Dictionary while other threads may be reading</span>
+            <span class="param">_propertyCache</span>[<span class="param">propertyName</span>] = <span class="param">propertyInfo</span>;
+        }
+        <span class="keyword">return</span> <span class="param">propertyInfo</span>;
+    }
+}</code></pre>
+
+<h3>What Is Wrong</h3>
+
+<ol>
+    <li><strong><code>Dictionary&lt;K,V&gt;</code> is NOT thread-safe for concurrent reads and writes.</strong> The first <code>TryGetValue</code> call happens <em>outside</em> the lock. If another thread is writing inside the lock at the same moment, the reader could encounter a corrupted internal state (bucket array being resized, for example). In practice this rarely crashes because <code>Dictionary</code> writes are small, but it is <em>undefined behavior</em>.</li>
+    <li><strong>Manual locking is error-prone.</strong> You have to remember to lock every access point. If someone adds a new method that reads <code>_propertyCache</code> without the lock, you get a race condition with no compiler warning.</li>
+    <li><strong>The fix is one line.</strong> Replace <code>Dictionary</code> + <code>object _cacheLock</code> with <code>ConcurrentDictionary</code>:</li>
+</ol>
+
+<pre><code><span class="comment">// Before (broken)</span>
+<span class="keyword">private static readonly</span> <span class="type">Dictionary</span>&lt;<span class="keyword">string</span>, <span class="type">PropertyInfo</span>&gt; <span class="param">_propertyCache</span> = <span class="keyword">new</span>();
+<span class="keyword">private static readonly</span> <span class="keyword">object</span> <span class="param">_cacheLock</span> = <span class="keyword">new</span>();
+
+<span class="comment">// After (correct)</span>
+<span class="keyword">private static readonly</span> <span class="type">ConcurrentDictionary</span>&lt;<span class="keyword">string</span>, <span class="type">PropertyInfo</span>&gt; <span class="param">_propertyCache</span> = <span class="keyword">new</span>();
+
+<span class="comment">// And the entire GetCachedProperty method becomes:</span>
+<span class="keyword">private static</span> <span class="type">PropertyInfo</span>? <span class="method">GetCachedProperty</span>(<span class="keyword">string</span> <span class="param">propertyName</span>)
+{
+    <span class="keyword">return</span> <span class="param">_propertyCache</span>.<span class="method">GetOrAdd</span>(<span class="param">propertyName</span>,
+        <span class="param">name</span> =&gt; <span class="keyword">typeof</span>(<span class="type">Article</span>).<span class="method">GetProperty</span>(<span class="param">name</span>));
+}</code></pre>
+
+<p>Compare this to <code>ReflectionCache.cs</code> which does the same thing correctly with <code>ConcurrentDictionary</code> from the start. This is why having a reference pattern matters &mdash; when you see the right way once, you can spot the wrong way instantly.</p>
+
+<!-- ============================================================ -->
+<h2>10. Adding Cache to a New Service &mdash; Step by Step</h2>
+
+<p>Let's say you are building a new service that reads holiday data from the database. Holidays change very rarely (maybe once a year), so they are a great caching candidate.</p>
+
+<h3>Step 1: Inject IMemoryCache</h3>
+
+<pre><code><span class="keyword">public class</span> <span class="type">HolidayLookupService</span>
+{
+    <span class="keyword">private readonly</span> <span class="type">IDbContextFactoryService</span> <span class="param">_contextFactory</span>;
+    <span class="keyword">private readonly</span> <span class="type">IMemoryCache</span> <span class="param">_cache</span>;
+    <span class="keyword">private readonly</span> <span class="type">ILogger</span>&lt;<span class="type">HolidayLookupService</span>&gt; <span class="param">_logger</span>;
+
+    <span class="keyword">public</span> <span class="method">HolidayLookupService</span>(
+        <span class="type">IDbContextFactoryService</span> <span class="param">contextFactory</span>,
+        <span class="type">IMemoryCache</span> <span class="param">cache</span>,
+        <span class="type">ILogger</span>&lt;<span class="type">HolidayLookupService</span>&gt; <span class="param">logger</span>)
+    {
+        <span class="param">_contextFactory</span> = <span class="param">contextFactory</span>;
+        <span class="param">_cache</span> = <span class="param">cache</span>;
+        <span class="param">_logger</span> = <span class="param">logger</span>;
+    }
+}</code></pre>
+
+<h3>Step 2: Define Cache Key and Expiration</h3>
+
+<pre><code><span class="keyword">private const string</span> <span class="param">HolidayCachePrefix</span> = <span class="string">"Holidays_"</span>;
+<span class="keyword">private static readonly</span> <span class="type">TimeSpan</span> <span class="param">HolidayCacheExpiration</span> = <span class="type">TimeSpan</span>.<span class="method">FromHours</span>(<span class="number">1</span>);</code></pre>
+
+<p>Cache keys should be unique and descriptive. Use a prefix + the varying part (company database name, ID, year, etc.).</p>
+
+<h3>Step 3: TryGetValue + Set in the Read Method</h3>
+
+<pre><code><span class="keyword">public async</span> <span class="type">Task</span>&lt;<span class="type">ServiceResult</span>&lt;<span class="type">List</span>&lt;<span class="type">Holiday</span>&gt;&gt;&gt; <span class="method">GetHolidaysAsync</span>(
+    <span class="keyword">int</span> <span class="param">year</span>, <span class="keyword">string</span> <span class="param">companyDatabase</span>)
+{
+    <span class="keyword">var</span> <span class="param">cacheKey</span> = <span class="string">$"{HolidayCachePrefix}{companyDatabase}_{year}"</span>;
+
+    <span class="comment">// Check cache</span>
+    <span class="keyword">if</span> (<span class="param">_cache</span>.<span class="method">TryGetValue</span>(<span class="param">cacheKey</span>, <span class="keyword">out</span> <span class="type">List</span>&lt;<span class="type">Holiday</span>&gt;? <span class="param">cached</span>) &amp;&amp; <span class="param">cached</span> != <span class="keyword">null</span>)
+        <span class="keyword">return</span> <span class="type">ServiceResult</span>&lt;<span class="type">List</span>&lt;<span class="type">Holiday</span>&gt;&gt;.<span class="method">SuccessResult</span>(<span class="param">cached</span>);
+
+    <span class="comment">// Load from database</span>
+    <span class="keyword">await using var</span> <span class="param">context</span> = <span class="param">_contextFactory</span>.<span class="method">CreateCompanyContext</span>(<span class="param">companyDatabase</span>);
+    <span class="keyword">var</span> <span class="param">holidays</span> = <span class="keyword">await</span> <span class="param">context</span>.<span class="param">Holidays</span>
+        .<span class="method">AsNoTracking</span>()
+        .<span class="method">Where</span>(<span class="param">h</span> =&gt; <span class="param">h</span>.<span class="param">Date</span>.<span class="param">Year</span> == <span class="param">year</span>)
+        .<span class="method">ToListAsync</span>();
+
+    <span class="comment">// Cache the result</span>
+    <span class="param">_cache</span>.<span class="method">Set</span>(<span class="param">cacheKey</span>, <span class="param">holidays</span>, <span class="keyword">new</span> <span class="type">MemoryCacheEntryOptions</span>
+    {
+        SlidingExpiration = <span class="param">HolidayCacheExpiration</span>
+    });
+
+    <span class="keyword">return</span> <span class="type">ServiceResult</span>&lt;<span class="type">List</span>&lt;<span class="type">Holiday</span>&gt;&gt;.<span class="method">SuccessResult</span>(<span class="param">holidays</span>);
+}</code></pre>
+
+<h3>Step 4: Invalidate on Write Operations</h3>
+
+<pre><code><span class="keyword">public async</span> <span class="type">Task</span>&lt;<span class="type">ServiceResult</span>&gt; <span class="method">CreateHolidayAsync</span>(
+    <span class="type">Holiday</span> <span class="param">holiday</span>, <span class="keyword">string</span> <span class="param">companyDatabase</span>)
+{
+    <span class="comment">// ... save to database ...</span>
+    <span class="keyword">await</span> <span class="param">context</span>.<span class="method">SaveChangesAsync</span>();
+
+    <span class="comment">// Invalidate the cached holidays for that year</span>
+    <span class="param">_cache</span>.<span class="method">Remove</span>(<span class="string">$"{HolidayCachePrefix}{companyDatabase}_{holiday.Date.Year}"</span>);
+
+    <span class="keyword">return</span> <span class="type">ServiceResult</span>.<span class="method">SuccessResult</span>(<span class="string">"Feriado criado com sucesso"</span>);
+}</code></pre>
+
+<h3>Checklist</h3>
+
+<ol>
+    <li>Inject <code>IMemoryCache</code> via constructor</li>
+    <li>Define a unique cache key pattern (prefix + variable part)</li>
+    <li>Define expiration as a <code>static readonly TimeSpan</code></li>
+    <li>In read methods: <code>TryGetValue</code> &rarr; return if hit &rarr; query DB &rarr; <code>Set</code></li>
+    <li>In write methods: save to DB first &rarr; <code>Remove</code> the cache key</li>
+    <li>Handle errors gracefully &mdash; return defaults, not exceptions</li>
+    <li>Do NOT cache failure results (zero IDs, empty results from errors)</li>
+</ol>
+
+<!-- ============================================================ -->
+<h2>Summary &mdash; The Complete Mental Model</h2>
+
+<div class="diagram">
++-----------------------------------------------------------+
+|                    Your Application                        |
+|                                                           |
+|  Request arrives                                          |
+|       |                                                   |
+|       v                                                   |
+|  +------------------+    HIT     +------------------+     |
+|  | IMemoryCache     | --------&gt; | Return instantly  |     |
+|  | (in-process RAM) |           | (nanoseconds)     |     |
+|  +------------------+           +------------------+     |
+|       | MISS                                              |
+|       v                                                   |
+|  +------------------+           +------------------+     |
+|  | SQL Server       | --------&gt; | Store in cache   |     |
+|  | (network + disk) |           | with expiration   |     |
+|  +------------------+           +------------------+     |
+|                                                           |
+|  Write operation                                          |
+|       |                                                   |
+|       v                                                   |
+|  Save to DB ----&gt; InvalidateCache() ----&gt; Next read      |
+|                                            reloads fresh  |
++-----------------------------------------------------------+
+</div>
+
+<table>
+    <tr>
+        <th>Concept</th>
+        <th>In Our Codebase</th>
+    </tr>
+    <tr>
+        <td>Registration</td>
+        <td><code>builder.Services.AddMemoryCache()</code> in <code>Program.cs</code></td>
+    </tr>
+    <tr>
+        <td>Read pattern</td>
+        <td><code>TryGetValue</code> + <code>Set</code> (not <code>GetOrCreate</code>)</td>
+    </tr>
+    <tr>
+        <td>Short-lived cache</td>
+        <td><code>FeatureFlags_{id}</code> &mdash; 5 min sliding</td>
+    </tr>
+    <tr>
+        <td>Long-lived cache</td>
+        <td><code>CompanyDbToId_{db}</code> &mdash; 30 min sliding</td>
+    </tr>
+    <tr>
+        <td>Explicit invalidation</td>
+        <td><code>InvalidateCache(companyId)</code> after writes</td>
+    </tr>
+    <tr>
+        <td>Natural expiration</td>
+        <td>Company ID cache &mdash; no manual invalidation</td>
+    </tr>
+    <tr>
+        <td>Graceful degradation</td>
+        <td>Empty dictionaries + <code>FeatureState.Enabled</code> as defaults</td>
+    </tr>
+    <tr>
+        <td>Permanent cache</td>
+        <td><code>ConcurrentDictionary</code> in <code>ReflectionCache</code></td>
+    </tr>
+    <tr>
+        <td>Anti-pattern</td>
+        <td><code>Dictionary</code> + manual lock in <code>ArticlePersistenceService</code></td>
+    </tr>
+</table>
+
+<div class="callout callout-rule">
+    Every service that reads from a cache should have a clear answer to three questions: (1) What is the cache key? (2) How long does it live? (3) When does it get invalidated? If you cannot answer all three, your caching strategy has a gap.
+</div>
+
+</body>
+</html>

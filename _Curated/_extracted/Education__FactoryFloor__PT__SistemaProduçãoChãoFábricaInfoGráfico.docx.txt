@@ -1,0 +1,405 @@
+🏭 Sistema de Produção de Chão de Fábrica - O Guia "Para Totós"
+
+📖 O Que É Este Sistema?
+
+Imagine que gere uma fábrica que produz produtos. Este sistema é como um assistente inteligente que ajuda os trabalhadores no chão de fábrica a controlar o que estão a produzir, quanto material estão a usar, e garante que tudo fica registado corretamente.
+
+Pense nisto como uma aplicação de receitas para uma fábrica - diz-lhe que ingredientes precisa, controla o que realmente usa, e garante que nada é desperdiçado!
+
+🎯 A Visão Geral
+
+Que Problemas Resolve?
+
+Sem este sistema:
+
+📝 Os trabalhadores escrevem a produção em papel (perde-se!)
+
+🤷 Ninguém sabe quanto material foi realmente usado
+
+📊 Os gestores não conseguem ver dados de produção em tempo real
+
+💸 Os materiais são desperdiçados sem ninguém reparar
+
+🔄 As contagens de stock estão sempre erradas
+
+Com este sistema:
+
+✅ Tudo é digital e instantâneo
+
+📱 Os trabalhadores usam tablets/computadores no chão de fábrica
+
+📈 Os gestores veem estatísticas de produção ao vivo
+
+🎯 O uso de material é controlado com precisão
+
+📦 Os níveis de stock atualizam automaticamente
+
+👥 As Três Partes Principais Explicadas
+
+1. A Página do Chão de Fábrica (Factory_New.razor) - "O Centro de Controlo"
+
+Como é: Pense nisto como o painel principal que um trabalhador da fábrica vê quando começa o seu turno.
+
+Analogia do mundo real: É como o ecrã de pedidos numa cozinha de restaurante - mostra o que precisa de ser feito, o que está a ser feito agora, e o que está concluído.
+
+O que os trabalhadores veem:
+
+Caixa de Estatísticas de Hoje 📊
+
+Quantas unidades concluídas hoje (como um placar!)
+
+Quantas unidades ainda precisam de ser feitas
+
+Seletor de Máquina 🎮
+
+Como escolher qual forno está a usar numa padaria
+
+Clique em "GERAL" para ver todas as ordens
+
+Clique numa máquina específica para ver só as suas ordens
+
+Duas Colunas de Ordens de Trabalho 📋
+
+Lado esquerdo: "Por Iniciar" - Ordens à espera de começar (como uma lista de tarefas)
+
+Lado direito: "Iniciadas" - Ordens atualmente em produção
+
+Como os trabalhadores usam:
+
+Chegam ao trabalho, abrem a página
+
+Selecionam a sua máquina
+
+Veem o que precisa de ser feito
+
+Clicam "Iniciar" para começar a trabalhar
+
+Clicam "Pausar" para pausas
+
+Clicam "Parar" quando terminam
+
+2. O Modal de Consumo de Materiais (MaterialConsumptionModal.razor) - "O Controlador de Receitas"
+
+Como é: Este é o formulário que aparece quando um trabalhador termina de fazer algo.
+
+Analogia do mundo real: Como a folha de preparação de um chef onde registam:
+
+Quantos pratos fizeram ✅
+
+Que ingredientes usaram 🥕
+
+Se algo foi desperdiçado 🗑️
+
+O que mostra:
+
+Informação de Produção 📦
+
+Que produto foi feito
+
+Quantos foram encomendados
+
+Quantos ainda são necessários
+
+Campos de Quantidade 🔢
+
+Unidades Produzidas: "Fiz 50 peças"
+
+Desperdício: "3 peças tinham defeito"
+
+Tabela de Materiais 📋
+
+Mostra todos os materiais necessários (como uma lista de compras)
+
+Quantidades planeadas vs. reais
+
+Níveis de stock atuais (destacado a vermelho se estiver baixo!)
+
+Médias históricas ("Normalmente usamos cerca disto...")
+
+Funcionalidades inteligentes:
+
+🎯 Calcula automaticamente as necessidades de material baseado na quantidade produzida
+
+📊 Mostra se está a usar mais/menos que o planeado
+
+🔴 Avisa se o stock está muito baixo
+
+📈 Aprende com o histórico ("Da última vez que fizemos 100, usámos 15kg")
+
+3. O Serviço (FactoryFloorService.cs) - "O Cérebro"
+
+Como é: Este é o ajudante invisível que faz todos os cálculos e registo.
+
+Analogia do mundo real: Como ter um gestor de escritório super-eficiente que:
+
+Toma notas de tudo 📝
+
+Atualiza o inventário instantaneamente 📦
+
+Calcula custos automaticamente 💰
+
+Envia relatórios para a contabilidade 📊
+
+O que faz nos bastidores:
+
+Quando a produção começa:
+
+Marca a ordem como "em progresso"
+
+Regista quem começou e quando
+
+Como picar o ponto para um trabalho específico
+
+Quando a produção pausa/para:
+
+Atualiza o estado da ordem
+
+Ativa o formulário de consumo de material
+
+Como fazer uma pausa para café mas registá-la
+
+Quando os materiais são registados:
+
+Atualiza níveis de stock (remove materiais usados)
+
+Adiciona produtos acabados ao inventário
+
+Regista qualquer desperdício
+
+Envia dados para o sistema de contabilidade (Primavera)
+
+Como um caixa a processar uma venda, mas para produção
+
+Cálculos inteligentes:
+
+Se fazer 50 unidades precisa de 100kg de material...
+
+E só faz 25 unidades...
+
+Sugere que provavelmente usou 50kg
+
+Mas deixa ajustar se necessário!
+
+🎬 Um Dia na Vida - Como Tudo Funciona Junto
+
+O Turno da Manhã Começa (8:00)
+
+O João, Operador de Máquina, chega:
+
+Abre o sistema no tablet da fábrica
+
+Introduz o seu PIN (como picar o ponto)
+
+Seleciona a sua máquina (Máquina #3 - a azul)
+
+Vê as ordens de hoje:
+
+Ordem #1234: Fazer 100 garrafas de plástico
+
+Ordem #1235: Fazer 50 tampas de garrafa
+
+Início da Produção (8:15)
+
+O João clica "Iniciar" na Ordem #1234
+
+O sistema pede o seu PIN (verificação de segurança!)
+
+O sistema regista:
+
+O João iniciou a Ordem #1234
+
+Às 8:15
+
+Na Máquina #3
+
+A ordem move-se da coluna "Por Iniciar" para "Iniciadas"
+
+Pausa para Almoço (12:00)
+
+O João fez 60 garrafas, precisa de uma pausa
+
+Clica no botão "Pausar"
+
+PIN necessário novamente
+
+O formulário de Consumo de Material aparece:
+
+Introduz: "60 garrafas produzidas"
+
+O sistema mostra: "Provavelmente usou 6kg de plástico"
+
+O João confirma ou ajusta
+
+Clica "Confirmar Produção"
+
+O sistema automaticamente:
+
+Remove 6kg de plástico do stock do armazém
+
+Adiciona 60 garrafas aos produtos acabados
+
+Atualiza a Ordem #1234: "40 garrafas restantes"
+
+Regista tudo com timestamps
+
+Depois do Almoço (13:00)
+
+O João volta, clica "Iniciar" novamente
+
+Continua a fazer as 40 garrafas restantes
+
+Às 14:30, termina a ordem
+
+Clica "Parar"
+
+O formulário de material aparece novamente:
+
+Introduz: "40 garrafas produzidas"
+
+Introduz: "2 garrafas desperdiçadas" (problemas de qualidade)
+
+O sistema marca a ordem como COMPLETA ✅
+
+Fim do Dia
+
+A Gestora Maria verifica o painel:
+
+Vê "100 garrafas concluídas hoje"
+
+Vê "50 tampas ainda pendentes"
+
+Revê o uso de material (algum consumo anormal?)
+
+Todos os dados já enviados para a contabilidade!
+
+💡 Porque É Que Isto É Brilhante
+
+Para os Trabalhadores:
+
+Sem papelada - tudo é digital
+
+Não podem esquecer passos - o sistema guia-os
+
+Feedback instantâneo - sabem se estão a fazer bem
+
+Menos culpa - o sistema controla tudo de forma justa
+
+Para os Gestores:
+
+Visibilidade em tempo real - veem a produção ao vivo
+
+Custos precisos - sabem exatamente o que foi usado
+
+Detetar problemas cedo - uso anormal de material = sinal vermelho
+
+Melhor planeamento - dados históricos ajudam a prever necessidades futuras
+
+Para a Empresa:
+
+Menos desperdício - controlar e reduzir perda de material
+
+Melhor inventário - níveis de stock sempre precisos
+
+Faturação mais rápida - integração automática com contabilidade
+
+Controlo de qualidade - saber que lotes tiveram problemas
+
+🚨 Cenários Comuns e Soluções
+
+"Ups, introduzi quantidade errada!"
+
+Antes de confirmar: Basta mudar o número
+
+Depois de confirmar: O supervisor pode criar ajuste
+
+"A máquina avariou durante a produção!"
+
+Carregar "Pausar" → Registar o que foi feito até agora
+
+A manutenção arranja a máquina
+
+Carregar "Iniciar" novamente para continuar
+
+"Ficámos sem material!"
+
+O sistema mostra aviso vermelho antes de começar
+
+Não pode prosseguir sem autorização do supervisor
+
+Previne início de ordens impossíveis
+
+"Esqueci-me do meu PIN!"
+
+O supervisor tem acesso mestre
+
+Pode repor o PIN
+
+Todas as ações continuam registadas
+
+🎯 A Magia Por Trás dos Bastidores
+
+O sistema é inteligente porque:
+
+Aprende com o histórico 📊
+
+"Das últimas 10 vezes que fizemos isto, usámos média de 5.2kg"
+
+Sugere esta quantidade automaticamente
+
+Previne erros 🛡️
+
+Não pode usar mais material do que existe
+
+Não pode produzir quantidades negativas
+
+Requer PIN para ações importantes
+
+Liga tudo 🔗
+
+Produção → Stock → Contabilidade
+
+Tudo automático, sem entrada dupla
+
+Uma ação atualiza tudo
+
+Fornece insights 💡
+
+"A Máquina #3 usa 10% mais material que as outras"
+
+"As produções de terça têm sempre mais desperdício"
+
+Ajuda a identificar áreas de melhoria
+
+📚 Pense Nisto Como...
+
+Todo o sistema é como uma cozinha inteligente:
+
+Página Factory_New = Ecrã de pedidos da cozinha
+
+Modal de Material = Ficha de receita + folha de preparação
+
+Serviço = Sous chef a fazer todos os cálculos
+
+Ou como um videojogo:
+
+Página Factory_New = Lobby do jogo/seleção de missão
+
+Modal de Material = Relatório pós-missão
+
+Serviço = Motor do jogo a calcular pontuações
+
+✅ Resumo Final
+
+Este sistema transforma a produção caótica da fábrica num processo organizado, rastreado e otimizado. Os trabalhadores sabem o que fazer, os gestores sabem o que está a acontecer, e os contabilistas sabem quanto custou - tudo em tempo real, sem papelada!
+
+É como fazer upgrade de:
+
+📝 Listas em papel → 📱 Rastreamento digital
+
+🤷 Adivinhar → 📊 Saber
+
+🐌 Relatórios fim-de-mês → ⚡ Dados em tempo real
+
+😰 Caos → 😌 Controlo
+
+É isto o Sistema de Chão de Fábrica - tornando a produção simples, rastreável e inteligente!

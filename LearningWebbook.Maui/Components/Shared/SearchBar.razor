@@ -1,0 +1,19 @@
+<div class="search-box">
+    <input type="text"
+           class="search-input"
+           placeholder="Search topics..."
+           value="@SearchQuery"
+           @oninput="OnInput"
+           autocomplete="off" />
+</div>
+
+@code {
+    [Parameter] public string SearchQuery { get; set; } = "";
+    [Parameter] public EventCallback<string> SearchQueryChanged { get; set; }
+
+    private async Task OnInput(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString() ?? "";
+        await SearchQueryChanged.InvokeAsync(value);
+    }
+}

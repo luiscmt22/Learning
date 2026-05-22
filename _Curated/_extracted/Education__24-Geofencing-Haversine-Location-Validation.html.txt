@@ -1,0 +1,717 @@
+Geofencing & Haversine — GPS-Based Location Validation
+Geofencing & Haversine
+GPS-Based Location Validation — How GivingCare Knows Where You Are
+1. What Is Geofencing?
+A geofence is an invisible boundary around a physical location, defined by a center point
+(latitude + longitude) and a radius (in meters). The system checks whether a person's GPS coordinates fall
+inside or outside that boundary.
+In GivingCare, geofencing answers one critical question for attendance: "Are you actually at the
+office (or job site) when you check in?" Without this, employees could clock in from home and
+the system would have no way to verify their physical presence.
+The default geofence radius in GivingCare is 100 meters . This is configurable per Location
+and per Job.
+A geofence is like an invisible dog fence — the boundary exists only in software, but if you cross
+it, the system knows. There is no physical wire or wall. The "fence" lives entirely in the database as
+a latitude, longitude, and radius. The phone's GPS is the "collar" that tells the system where you are.
+* Employee phone GPS (41.1580, -8.6300)
+/
+/ Distance = 87m (Haversine)
+/
+O -------- radius: 100m -------- Office center (41.1579, -8.6291)
+Result: INSIDE geofence (87m < 100m) --> CHECK-IN ALLOWED
+The circle has a center (the office) and a radius (100m). The employee's phone reports GPS coordinates.
+We calculate the distance between the two points. If distance <= radius , they are inside.
+If distance > radius , they are outside.
+2. The Math: Haversine Formula
+The core of geofencing is distance calculation. Given two GPS coordinates, how far apart are they in
+meters? This is handled by the GeofenceService — a stateless utility that implements
+the Haversine formula .
+The Actual Code
+From Services/Core/Geofence/GeofenceService.cs :
+public class GeofenceService : IGeofenceService
+{
+// Earth's radius in meters
+private const double EarthRadiusMeters = 6371000 ;
+public double CalculateDistance ( decimal lat1 , decimal lon1 , decimal lat2 , decimal lon2 )
+{
+// Convert to radians
+var lat1Rad = ( double ) lat1 * Math .PI / 180 ;
+var lat2Rad = ( double ) lat2 * Math .PI / 180 ;
+var deltaLat = (( double ) lat2 - ( double ) lat1 ) * Math .PI / 180 ;
+var deltaLon = (( double ) lon2 - ( double ) lon1 ) * Math .PI / 180 ;
+// Haversine formula
+var a = Math . Sin ( deltaLat / 2 ) * Math . Sin ( deltaLat / 2 ) +
+Math . Cos ( lat1Rad ) * Math . Cos ( lat2Rad ) *
+Math . Sin ( deltaLon / 2 ) * Math . Sin ( deltaLon / 2 );
+var c = 2 * Math . Atan2 ( Math . Sqrt ( a ), Math . Sqrt ( 1 - a ));
+return EarthRadiusMeters * c ;
+}
+}
+Breaking Down the Math Step by Step
+Step 1: Convert Degrees to Radians
+GPS coordinates are in degrees (e.g., 41.1579). Trigonometric functions like
+Math.Sin and Math.Cos expect radians . The conversion is
+simple: multiply by π/180 .
+var lat1Rad = ( double ) lat1 * Math .PI / 180 ;
+// 41.1579° becomes 0.7185 radians
+Step 2: Calculate the Deltas
+deltaLat and deltaLon are the differences between the two points, also
+converted to radians. These represent "how far apart are the two points in each axis?"
+var deltaLat = (( double ) lat2 - ( double ) lat1 ) * Math .PI / 180 ;
+var deltaLon = (( double ) lon2 - ( double ) lon1 ) * Math .PI / 180 ;
+// Small differences: ~0.000017 radians for 1 meter
+Step 3: The Haversine Formula (variable a )
+This is the heart of the algorithm. It calculates a value a that represents the
+square of the half-chord length between the two points on the sphere:
+var a = Math . Sin ( deltaLat / 2 ) * Math . Sin ( deltaLat / 2 ) +
+Math . Cos ( lat1Rad ) * Math . Cos ( lat2Rad ) *
+Math . Sin ( deltaLon / 2 ) * Math . Sin ( deltaLon / 2 );
+The formula is: a = sin²(Δlat/2) + cos(lat1) × cos(lat2) ×
+sin²(Δlon/2)
+Think of it this way: the first term ( sin²(Δlat/2) ) handles the north-south
+distance. The second term handles the east-west distance, but it is weighted by
+cos(lat1) × cos(lat2) because longitude lines converge at the poles.
+At the equator, cos(0°) = 1 , so longitude has full weight. At the North Pole,
+cos(90°) = 0 , so longitude contributes nothing (because all longitude lines meet
+at the poles).
+Step 4: Angular Distance (variable c )
+var c = 2 * Math . Atan2 ( Math . Sqrt ( a ), Math . Sqrt ( 1 - a ));
+c is the angular distance in radians between the two points on the
+sphere's surface. The atan2 function is used instead of asin because it is
+more numerically stable for small distances (which is exactly our use case — we are measuring
+tens to hundreds of meters, not thousands of kilometers).
+Step 5: Multiply by Earth's Radius
+return EarthRadiusMeters * c ;
+// 6,371,000 meters × angular distance = surface distance in meters
+The angular distance c (in radians) times the sphere's radius gives the arc
+length — the actual distance along the Earth's surface. This is the number we compare
+against the geofence radius.
+The Haversine formula reads as: "Given two points on a sphere, how far apart are they along the surface?"
+It accounts for the curve of the Earth. You cannot just use sqrt((x2-x1)² + (y2-y1)²)
+because that would be a straight line through the Earth, not along the surface. And more importantly,
+degrees of longitude are not the same physical distance at every latitude.
+Why Not Pythagorean Distance?
+You might think: "Can't I just calculate sqrt((lat2-lat1)² + (lon2-lon1)²) and
+multiply by some constant?" The answer is no , for two reasons:
+The Earth is a sphere, not a flat plane. Distances along the surface are curved,
+not straight lines.
+Longitude degrees are not constant. At the equator (latitude 0°),
+1° of longitude = ~111 km. At latitude 41° (Porto, Portugal), 1° of longitude = ~85 km.
+At latitude 60° (Helsinki), 1° of longitude = ~55 km. At the poles, 1° of longitude = 0 km.
+The Pythagorean formula treats longitude and latitude as equal, which would produce wildly wrong
+distances at non-equatorial latitudes.
+Never use Pythagorean distance for GPS coordinates. The Earth is a sphere. Use Haversine. At latitude
+41° (Porto), 1° of longitude is only ~85km, not 111km like at the equator. Using flat-plane
+math would overestimate east-west distances by ~30% at Porto's latitude, potentially blocking employees
+who are legitimately inside the geofence.
+Latitude
+City
+1° Longitude (km)
+1° Latitude (km)
+0°
+Equator
+111.3
+110.6
+41°
+Porto
+84.0
+111.0
+60°
+Helsinki
+55.8
+111.4
+90°
+North Pole
+0.0
+111.7
+Notice that latitude degrees stay roughly constant (~111 km) everywhere, but longitude degrees shrink
+as you move toward the poles. Haversine handles this correctly with the cos(lat) weighting
+in the formula.
+3. Getting the User's Location — JavaScript Interop
+Before we can validate a geofence, we need the employee's GPS coordinates. Since Blazor Server runs on
+the server, it cannot directly access the phone's GPS. We use JavaScript Interop to
+call the browser's Geolocation API, then pass the result back to C#.
+The JavaScript Fallback Chain
+From App.razor — the geolocation function uses a three-step fallback:
+// Geolocation Function with fallback chain: GPS -> Network -> IP
+window . getGeolocation = async () => {
+if ( location .protocol !== 'https:' && location .hostname !== 'localhost' ) {
+return { success : false , error : "HTTPS necessario para geolocalizacao" };
+}
+if (! navigator .geolocation) {
+return await getIpGeolocation ();
+}
+// Step 1: Try high accuracy (GPS) - 5 second timeout
+const highAccuracy = await tryBrowserGeolocation ( true , 5000 );
+if ( highAccuracy .success) return highAccuracy ;
+// Step 2: Try low accuracy (cell tower/network) - 2 second timeout
+const lowAccuracy = await tryBrowserGeolocation ( false , 2000 );
+if ( lowAccuracy .success) return lowAccuracy ;
+// Step 3: Fall back to IP geolocation
+return await getIpGeolocation ();
+};
+The Browser Geolocation Helper
+const tryBrowserGeolocation = ( highAccuracy , timeout ) => {
+return new Promise (( resolve ) => {
+navigator .geolocation. getCurrentPosition (
+( pos ) => resolve ({
+success : true ,
+latitude : pos .coords.latitude,
+longitude : pos .coords.longitude
+}),
+( err ) => resolve ({ success : false , error : err .message }),
+{ enableHighAccuracy : highAccuracy , timeout : timeout , maximumAge : 60000 }
+);
+});
+};
+The IP Geolocation Fallback
+const getIpGeolocation = async () => {
+try {
+const response = await fetch ( 'http://ip-api.com/json/?fields=status,lat,lon,message' );
+const data = await response . json ();
+if ( data .status === 'success' ) {
+return { success : true , latitude : data .lat, longitude : data .lon };
+}
+} catch ( e ) {
+// IP geolocation failed
+}
+return {
+success : false ,
+error : 'Nao foi possivel obter localizacao. Ative o GPS.'
+};
+};
+Understanding the Three Levels
+Step
+Method
+Accuracy
+Speed
+Battery
+Requires
+1
+GPS chip (high accuracy)
+3-10 meters
+Slow (1-5s)
+High
+GPS hardware + clear sky
+2
+Cell tower/WiFi (low accuracy)
+30-100 meters
+Fast (<1s)
+Low
+Cell/WiFi signal
+3
+IP geolocation (fallback)
+1-50 km
+Fast (<1s)
+None
+Internet connection
+Key constraints:
+HTTPS is required. The navigator.geolocation API only works on
+secure contexts (HTTPS or localhost). The code checks this first and returns an error if not
+over HTTPS.
+High accuracy = GPS chip. Precise but slow and battery-heavy. The phone
+literally talks to satellites.
+Low accuracy = cell tower triangulation. Fast but imprecise. Fine for
+"are you in the right city?" but not for "are you in the right building?"
+IP geolocation = last resort. City-level accuracy at best. Essentially useless
+for geofencing but lets us at least record an approximate location.
+The C# Side: DeviceLocationService
+From Services/Core/Location/DeviceLocationService.cs :
+public class DeviceLocationService : IDeviceLocationService
+{
+private readonly IJSRuntime _jsRuntime ;
+public DeviceLocationService ( IJSRuntime jsRuntime )
+{
+_jsRuntime = jsRuntime ;
+}
+public async Task < LocationResult > GetCurrentLocationAsync ()
+{
+try
+{
+var result = await _jsRuntime . InvokeAsync < JsLocationResult >( "getGeolocation" );
+if ( result ?.Success == true )
+{
+return LocationResult . Ok ( result .Latitude, result .Longitude);
+}
+return LocationResult . Fail ( result ?.Error ?? "Nao foi possivel obter localizacao GPS" );
+}
+catch ( Exception ex )
+{
+return LocationResult . Fail ( $"Erro GPS: { ex .Message} " );
+}
+}
+}
+The flow is: C# calls JavaScript (via IJSRuntime.InvokeAsync ) →
+JavaScript calls browser API ( navigator.geolocation ) →
+browser asks operating system (GPS chip, WiFi, etc.) → result
+comes back to C# as a LocationResult .
+4. The Data Models
+Location — Where the Geofence Lives
+From Models/HR/Location.cs :
+public partial class Location
+{
+[ Key ]
+public int Id { get ; set ; }
+[ Required ]
+[ StringLength ( 100 )]
+public string Name { get ; set ; } = string .Empty;
+// Geofence center point
+public double ? Latitude { get ; set ; }
+public double ? Longitude { get ; set ; }
+/// Geofence radius in meters (default: 100m)
+/// Employees must check-in within this radius from the center point
+public int GeofenceRadius { get ; set ; } = 100 ;
+/// Checks if this location has valid GPS coordinates for geofencing
+[ NotMapped ]
+public bool HasGeofence => Latitude.HasValue && Longitude.HasValue;
+}
+Key design decisions:
+Latitude and Longitude are nullable ( double? ).
+Not every location has GPS coordinates. An office might exist in the system for organizational
+purposes without a geofence.
+GeofenceRadius defaults to 100 meters and is non-nullable. If
+coordinates exist, there is always a radius.
+HasGeofence is a [NotMapped] computed property. It is
+not stored in the database — it is calculated on the fly from the nullable coordinates.
+The database does not need to store a redundant boolean.
+Jobs have the exact same geofence properties:
+public class Job
+{
+public double ? Latitude { get ; set ; }
+public double ? Longitude { get ; set ; }
+public int GeofenceRadius { get ; set ; } = 100 ; // meters
+}
+CheckInContext — The Geofence State Bag
+From Models/HR/CheckInContext.cs — the region that holds geofence state:
+public class CheckInContext
+{
+#region Geofence State
+/// True if employee is within the geofence
+public bool IsWithinGeofence { get ; set ; }
+/// Distance from employee to target location (meters)
+public double DistanceToLocation { get ; set ; }
+/// Geofence radius from configuration (meters)
+public double GeofenceRadius { get ; set ; }
+/// Name of the geofence target (Job name or Location name)
+public string ? GeofenceTargetName { get ; set ; }
+/// Latitude of the target location
+public decimal ? TargetLatitude { get ; set ; }
+/// Longitude of the target location
+public decimal ? TargetLongitude { get ; set ; }
+#endregion
+#region Configuration Flags
+/// True if employee requires geolocation for check-in
+public bool RequiresGeolocation { get ; set ; }
+/// True if employee is bound to a job for check-in
+public bool IsJobBound { get ; set ; }
+#endregion
+}
+The CheckInContext acts as a state bag that is populated step by step:
+LoadCheckInContextAsync() loads the employee, schedules, and configuration flags
+ValidateGeofence() calculates distance and sets IsWithinGeofence ,
+DistanceToLocation , GeofenceRadius , and GeofenceTargetName
+The validator pipeline reads these values to decide if check-in is allowed
+LocationResult — The GPS Acquisition Result
+From Models/HR/LocationResult.cs :
+public class LocationResult
+{
+public bool Success { get ; set ; }
+public double Latitude { get ; set ; }
+public double Longitude { get ; set ; }
+public string ? Error { get ; set ; }
+public static LocationResult Ok ( double latitude , double longitude ) => new ()
+{
+Success = true ,
+Latitude = latitude ,
+Longitude = longitude
+};
+public static LocationResult Fail ( string error ) => new ()
+{
+Success = false ,
+Error = error
+};
+}
+This follows the same Result pattern used throughout GivingCare (like
+ServiceResult<T> ). It forces the caller to check Success before
+using the coordinates. No exceptions for "normal" failures like GPS being unavailable.
+5. The Validation Pipeline
+Check-in validation uses a chain of responsibility pattern. Each validator checks
+one thing and returns either Ok() or Fail("reason") . They run in order.
+The first failure stops the chain.
+The Validator Interface
+public interface ICheckInValidator
+{
+/// Execution order (lower = earlier)
+int Order { get ; }
+/// Validates the check-in context. Returns Ok or Fail with message.
+CheckInValidationResult Validate ( CheckInContext context , CheckInValidationOptions options );
+}
+public record CheckInValidationResult ( bool IsValid , string ? Message )
+{
+public static CheckInValidationResult Ok () => new ( true , null );
+public static CheckInValidationResult Fail ( string message ) => new ( false , message );
+}
+The Pipeline Order
+Order 10 Order 20 Order 30 Order 40
++-----------+ +-----------------+ +-----------------+ +-------------------+
+| Active |-->| Schedule Source |-->| Time Window |-->| Geolocation |
+| CheckIn | | Validator | | Validator | | Validator |
+| Validator | | | | | | |
++-----------+ +-----------------+ +-----------------+ +-------------------+
+"Already "No schedule" "Too early" "Outside geofence"
+checked in?" "All shifts done?" "Before window?" "Too far away?"
+Each validator has a single responsibility (SRP). If validator at Order 10 fails, the ones at 20, 30,
+and 40 never run. This means we do not waste time calculating GPS distance if the employee is already
+checked in.
+The GeolocationValidator (Check-In)
+From Services/CheckIn/Validators/GeolocationValidator.cs — the last validator in
+the chain (Order 40):
+public class GeolocationValidator : ICheckInValidator
+{
+public int Order => 40 ;
+public CheckInValidationResult Validate ( CheckInContext context , CheckInValidationOptions options )
+{
+// Skip if geolocation not required for this employee
+if (! context .RequiresGeolocation)
+return CheckInValidationResult . Ok ();
+// Location not yet obtained (still acquiring GPS)
+if (! options .LocationObtained)
+return CheckInValidationResult . Fail ( "A obter localizacao..." );
+// No valid geofence target (Location/Job missing coordinates)
+if (! context .TargetLatitude.HasValue || ! context .TargetLongitude.HasValue)
+return CheckInValidationResult . Fail (
+"Localizacao de trabalho sem coordenadas GPS configuradas" );
+// Outside geofence
+if (! context .IsWithinGeofence)
+{
+var distanceOutside = context .DistanceToLocation - context .GeofenceRadius;
+return CheckInValidationResult . Fail (
+$"Fora da area autorizada ( { distanceOutside : F0 } m fora)" );
+}
+return CheckInValidationResult . Ok ();
+}
+}
+Notice the progression of early returns. The method checks the simplest, cheapest condition first
+( RequiresGeolocation is just a boolean) and only reaches the expensive check
+( IsWithinGeofence ) if everything else passed. This is polite code
+— fail fast, fail cheap.
+How the Pipeline Runs
+From CheckInValidationService.CanPerformCheckIn() :
+public ( bool CanCheckIn, string ? BlockReason) CanPerformCheckIn (
+CheckInContext context ,
+bool locationObtained )
+{
+var options = new CheckInValidationOptions (
+LocationObtained: locationObtained ,
+EarlyCheckInToleranceMinutes: _config .EarlyCheckInToleranceMinutes
+);
+// Run validators in order (SOLID: OCP - add new validators without modifying this)
+foreach ( var validator in _validators )
+{
+var result = validator . Validate ( context , options );
+if (! result .IsValid)
+{
+return ( false , result .Message);
+}
+}
+return ( true , null );
+}
+The _validators collection is injected via DI as
+IEnumerable<ICheckInValidator> , sorted by Order in the constructor.
+Adding a new validator is a matter of creating a class and registering it — no changes to
+existing code (Open/Closed Principle).
+6. Check-In vs Check-Out — The Critical Difference
+The geofence behaves differently for check-in and check-out. This is by design.
+Operation
+Outside Geofence?
+Behavior
+Check-In
+BLOCKED
+"You can't start work if you're not here"
+Check-Out
+ALLOWED but RECORDED
+"You can end your shift anywhere, but we note it"
+Check-in blocks you outside the geofence. Check-out records it but
+lets you leave. This is intentional — you cannot fake arriving at work, but you should not be
+stuck unable to clock out because you left for lunch, drove to a client meeting, or just walked to
+the car park. The system records the checkout location for auditing but does not prevent the action.
+Check-Out GeolocationValidator
+From Services/CheckOut/Validators/GeolocationValidator.cs :
+public class GeolocationValidator : ICheckOutValidator
+{
+private readonly IGeofenceService _geofenceService ;
+public int Order => 30 ;
+public CheckOutValidationResult Validate (
+CheckOutContext context ,
+CheckOutValidationOptions options )
+{
+if (! context .RequiresGeolocation)
+{
+context .IsValidLocation = true ;
+return CheckOutValidationResult . Ok ();
+}
+if (! options .LocationObtained)
+return CheckOutValidationResult . Fail ( "A obter localizacao..." );
+if (! context .TargetLatitude.HasValue || ! context .TargetLongitude.HasValue)
+{
+// Allow checkout but mark as invalid location
+context .IsValidLocation = false ;
+context .GeofenceMessage = "Localizacao sem coordenadas GPS configuradas" ;
+return CheckOutValidationResult . Ok (); // <-- Always allows!
+}
+// Calculate distance
+var distance = _geofenceService . CalculateDistance (
+options .Latitude, options .Longitude,
+context .TargetLatitude.Value, context .TargetLongitude.Value);
+context .Distance = ( decimal ) distance ;
+context .IsValidLocation = distance <= context .GeofenceRadius;
+if ( context .IsValidLocation)
+{
+context .GeofenceMessage = $"Valido - { context .GeofenceTargetName} ( { distance : F0 } m)" ;
+}
+else
+{
+var distanceOutside = distance - context .GeofenceRadius;
+context .GeofenceMessage = $"Fora da area ( { distanceOutside : F0 } m fora)" ;
+}
+// Allow checkout even if outside geofence
+// The IsValidLocation flag records whether they were inside or not
+return CheckOutValidationResult . Ok (); // <-- ALWAYS returns Ok
+}
+}
+Observe the key difference from the check-in validator: this validator always returns
+Ok() . It never blocks. Instead, it populates context.IsValidLocation
+and context.GeofenceMessage — recording the facts for the attendance record without
+preventing the action.
+The CheckOutContext even has a separate Distance property (as
+decimal? ) that gets snapshotted into the attendance record for later auditing.
+7. Geofence Priority Resolution
+An employee might have multiple potential geofence targets: they could be assigned to a Job and
+have an office Location. The GeofenceResolutionService resolves which geofence to validate
+against, using a strict priority chain.
+Priority 1: Job
+Does the employee have a Job with GPS coordinates?
+YES --> Use Job's geofence (construction site, client office, etc.)
+|
+NO
+|
+Priority 2: EmployeeLocation
+Does the employee have an assigned Location with GPS?
+YES --> Use Location's geofence (HQ, warehouse, regional office)
+|
+NO
+|
+Priority 3: No geofence
+Geolocation not required. Allow without location check.
+From Services/Integration/GeofenceResolutionService.cs :
+public async Task < GeofenceValidationResult > ValidateLocationAsync (
+int employeeId , decimal latitude , decimal longitude ,
+int ? jobId , string companyDatabase )
+{
+await using var context = _contextFactory . CreateCompanyContext ( companyDatabase );
+// Priority 1: Validate against Job geofence if jobId provided
+if ( jobId .HasValue)
+{
+var job = await context . Set < Job >()
+. AsNoTracking ()
+. FirstOrDefaultAsync ( j => j .Id == jobId .Value);
+if ( job ?.Latitude.HasValue == true && job .Longitude.HasValue)
+{
+var distance = _geofenceService . CalculateDistance (
+latitude , longitude ,
+( decimal ) job .Latitude.Value, ( decimal ) job .Longitude.Value);
+var isValid = distance <= job .GeofenceRadius;
+return new GeofenceValidationResult { ... };
+}
+}
+// Priority 2: Validate against EmployeeLocation
+var employeeLocation = await context . Set < EmployeeLocation >()
+. AsNoTracking ()
+. Include ( el => el .Location)
+. Where ( el => el .EmployeeId == employeeId &&
+el .IsActive &&
+(! el .EndDate.HasValue || el .EndDate >= DateTime .Today))
+. FirstOrDefaultAsync ();
+if ( employeeLocation ?.Location != null && employeeLocation .Location.HasGeofence)
+{
+// Same pattern: calculate distance, compare to radius
+...
+}
+// No geofence configured - consider valid by default
+return new GeofenceValidationResult { IsValid = true , Source = GeofenceSourceType .None };
+}
+The priority chain also exists in CheckInValidationService.ValidateGeofence() , which
+validates inline rather than through the resolution service. For job-bound employees, it always
+checks against the job. For non-job-bound employees, it resolves the schedule source based on the
+current time window and checks against the appropriate location.
+8. The Full Flow
+Here is the complete journey from "employee taps Check In" to "attendance record created":
+Employee opens app --> taps "Check In"
+|
+v
+Browser: navigator.geolocation.getCurrentPosition()
+| Step 1: High accuracy GPS (5s timeout)
+| Step 2: Low accuracy network (2s timeout)
+| Step 3: IP geolocation (fallback)
+|
+v GPS: (41.1580, -8.6300)
+DeviceLocationService --> LocationResult.Ok(lat, lon)
+|
+v
+CheckInValidationService.LoadCheckInContextAsync()
+| Loads employee, schedules, configuration
+| Sets RequiresGeolocation, IsJobBound
+|
+v
+CheckInValidationService.ValidateGeofence(context, lat, lon)
+| Resolves target: "Employee has Job #42 at (41.1579, -8.6291), radius 100m"
+| GeofenceService.CalculateDistance() --> 87 meters
+| Sets: IsWithinGeofence = true (87m < 100m)
+|
+v
+Validator Pipeline: CanPerformCheckIn()
+|
+| [Order 10] ActiveCheckInValidator --> OK (no active check-in)
+| [Order 20] ScheduleSourceValidator --> OK (JobSchedule found)
+| [Order 30] TimeWindowValidator --> OK (within time window)
+| [Order 40] GeolocationValidator --> OK (inside geofence)
+|
+v
+All validators passed --> Attendance record created
+|
+v
+Attendance saved with geofence snapshot:
+- CheckInLatitude: 41.1580
+- CheckInLongitude: -8.6300
+- GeofenceDistance: 87m
+- GeofenceValid: true
+Every step is a separate concern: GPS acquisition, context loading, geofence calculation, and
+validation. If any step fails, the employee gets a clear Portuguese error message explaining why.
+9. Singleton Registration
+The GeofenceService is registered as a Singleton in
+Program.cs :
+#region Core Utility Services (Shared across modules - no database dependencies)
+builder .Services. AddSingleton < IGeofenceService , GeofenceService >();
+builder .Services. AddSingleton < IHoursCalculationService , HoursCalculationService >();
+builder .Services. AddScoped < IWorkingDaysCalculationService , WorkingDaysCalculationService >();
+Why Singleton? Three reasons:
+Pure math, no state. The service has no fields that change. EarthRadiusMeters
+is a const . There are no instance variables to corrupt.
+No database, no DI dependencies. The class has zero constructor parameters. It
+does not inject anything. It cannot hold a reference to a scoped DbContext.
+Thread-safe by nature. Since there are no mutable fields, any number of threads
+can call CalculateDistance simultaneously without interference. The method is
+referentially transparent — the same inputs always produce the same outputs.
+Contrast this with GeofenceResolutionService , which is Scoped because it
+accesses the database. It needs a fresh IDbContextFactoryService per request.
+"If a service has no state and no dependencies, make it a Singleton. If it touches the database or
+user-specific data, make it Scoped. If it is used once and thrown away (validators, generators), make
+it Transient." This simple heuristic covers 95% of DI lifetime decisions.
+10. Testing Geofences
+Using Browser DevTools to Override GPS
+You do not need to physically travel to a location to test geofencing. Chrome DevTools lets you
+set fake GPS coordinates:
+Open Chrome DevTools (F12)
+Click the three-dot menu (…) → More tools → Sensors
+Under Location , select "Custom location" or one of the presets
+Enter your test latitude and longitude
+The browser will report these fake coordinates to navigator.geolocation
+Test scenarios to cover:
+Scenario
+Test Coordinates
+Expected Result
+Inside geofence (center)
+Exact office coordinates
+Distance ~0m, check-in allowed
+Inside geofence (edge)
+~95m from center
+Distance < 100m, check-in allowed
+Outside geofence (barely)
+~105m from center
+Blocked: "Fora da area autorizada (5m fora)"
+Far outside geofence
+Different city
+Blocked: "Fora da area autorizada (50000m fora)"
+No GPS available
+Block geolocation in Sensors
+Blocked: "A obter localizacao..."
+Location without coordinates
+Any coordinates
+Blocked: "Localizacao sem coordenadas GPS configuradas"
+Common Pitfalls
+GPS Accuracy Indoors
+GPS accuracy indoors is poor: typically 30-50 meters of error. Inside buildings,
+the GPS signal bounces off walls and ceilings (multipath interference), making the reported position
+jump around. This is why the default geofence radius is 100 meters — it accounts for the fact
+that even a phone sitting on your desk at the office might report a position 30 meters away from the
+actual office center.
+Why 100 Meters?
+GPS accuracy indoors: 30-50m error is normal
+Building size: A typical office building is 30-50m across
+Parking lot: Employees often check in from the car park, which might be 50-80m
+from the building center
+100m = comfortable margin that covers all these cases without being so large that
+employees could check in from a neighboring building
+The radius is configurable per Location and per Job, so a small retail shop might use 50m while a
+large construction site might use 500m.
+Edge Case: Exact Boundary
+If the employee is at exactly 100.0 meters from the center and the radius is 100m, they
+pass . The comparison is distance <= radius (less than or
+equal to ). Even 1 meter inside the boundary is a pass. At 100.1 meters, it is a fail.
+// From GeofenceService.IsWithinRadius()
+var distance = CalculateDistance ( latitude , longitude , targetLatitude , targetLongitude );
+return distance <= radiusMeters ; // <= not <
+Caching Gotcha: maximumAge
+Notice in the JavaScript code: maximumAge: 60000 (60 seconds). This means the browser
+can return a cached GPS position up to 60 seconds old instead of getting a fresh one. This is
+acceptable for check-in (you are not moving between buildings in 60 seconds), but be aware that
+if you teleport in DevTools, you may need to wait up to 60 seconds for the new position to take
+effect.
+11. Summary — Key Takeaways
+Architecture Layers
+Layer
+File
+Responsibility
+Browser
+App.razor (JS)
+GPS acquisition via fallback chain
+Interop
+DeviceLocationService.cs
+Bridge JS to C# via IJSRuntime
+Math
+GeofenceService.cs
+Haversine distance calculation (Singleton)
+Resolution
+GeofenceResolutionService.cs
+Determine which geofence to use (Scoped)
+Context
+CheckInValidationService.cs
+Load context + validate geofence
+Validation
+GeolocationValidator.cs
+Block/allow based on geofence result
+Models
+Location.cs , CheckInContext.cs
+Data structures and state bags
+Design Patterns Used
+Chain of Responsibility: Validators run in order; first failure stops the chain
+Strategy: Check-in validators vs check-out validators have different behavior for the same geofence data
+Result Pattern: LocationResult , CheckInValidationResult ,
+GeofenceResult — no exceptions for expected failures
+Factory: GeofenceTarget.FromJob() , GeofenceTarget.FromLocation()
+— static factory methods for clean construction
+Fallback Chain: GPS → Network → IP geolocation — graceful degradation
+The Core Formula
+a = sin^2(delta_lat / 2) + cos(lat1) * cos(lat2) * sin^2(delta_lon / 2)
+c = 2 * atan2(sqrt(a), sqrt(1 - a))
+distance = Earth_Radius * c
+Where:
+Earth_Radius = 6,371,000 meters
+All angles in radians (degrees * pi / 180)
+Remember
+Check-in blocks outside the geofence — check-out records but allows
+Haversine, not Pythagorean — the Earth is a sphere
+100m default radius accounts for GPS imprecision indoors
+Priority: Job → Location → None for geofence target resolution
+Singleton for pure math , Scoped for database access
+HTTPS required for browser geolocation API

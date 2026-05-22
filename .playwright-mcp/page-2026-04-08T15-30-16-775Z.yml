@@ -1,0 +1,442 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - link "Learning" [ref=e3] [cursor=pointer]:
+      - /url: ../../00-Index.html
+    - generic [ref=e4]: ›
+    - link "CORE" [ref=e5] [cursor=pointer]:
+      - /url: ../_Hub.html
+    - generic [ref=e6]: ›
+    - link "C# Language" [ref=e7] [cursor=pointer]:
+      - /url: _Category.html
+    - generic [ref=e8]: ›
+    - generic [ref=e9]: Inside async/await — State Machines and Hidden Mains
+    - link "↓ Download" [ref=e10] [cursor=pointer]:
+      - /url: async-state-machines.html
+    - link "All docs" [ref=e11] [cursor=pointer]:
+      - /url: ../../00-Index.html
+  - generic [ref=e13]:
+    - generic [ref=e14]: ▸ Curated · Concept · Language
+    - generic [ref=e15]: Inside async/await — State Machines and Hidden Mains
+    - generic [ref=e16]: How the C# compiler rewrites top-level statements and async methods behind your back — generating a synthetic Main and a state-machine struct before the runtime ever sees your code.
+    - generic [ref=e17]: Your Program.cs has no Main method and somehow runs. Your async method pauses mid-execution and somehow resumes on a different thread. Both look like the language is cheating — but neither is. The compiler is doing something so clever before the runtime ever sees your code that it fakes two fundamentally impossible things at once. This tutorial pulls back the curtain on both.
+    - generic [ref=e18]:
+      - generic [ref=e19]: Executive summary
+      - generic [ref=e20]: This tutorial dissolves two C# "magic" features by showing the compiler transformations beneath them. Top-level statements get wrapped in a hidden Program class with a synthesized Main whose signature the compiler picks based on whether your code uses await and/or returns an int. Async methods get rewritten as state-machine structs with a MoveNext dispatcher, a state field, and hoisted fields for every local variable — so the method can literally return, release its thread, and resume later. The doc then shows the measurable cost of writing versus returning directly, and introduces the three sentinel tasks (CompletedTask / FromResult / FromException) for fulfilling a Task contract with zero async overhead.
+    - generic [ref=e21]:
+      - generic [ref=e22]: 💡
+      - generic [ref=e23]:
+        - generic [ref=e24]: Metaphor
+        - text: Async/await is like a TV show written with "previously on…" flashbacks. The script looks linear to you — scene 1, scene 2, scene 3 — but behind the camera the editor shoots scene 1, stops rolling, goes home, shoots scene 2 three months later when the guest actor is finally available, then stitches them with a short recap so the viewer never notices the gap. The compiler is that editor. The field is "which scene are we filming right now?", and the hoisted locals are the props you had to keep in storage between shoots.
+    - generic [ref=e25]:
+      - generic [ref=e26]: Key concepts
+      - generic [ref=e27]:
+        - generic [ref=e28]: top-level statements
+        - generic [ref=e29]: synthetic Main generation
+        - generic [ref=e30]: async state machine
+        - generic [ref=e31]: MoveNext dispatcher
+        - generic [ref=e32]: hoisted local variables
+        - generic [ref=e33]: AsyncTaskMethodBuilder
+        - generic [ref=e34]: Task.CompletedTask / Task.FromResult / Task.FromException
+        - generic [ref=e35]: IAsyncStateMachine struct
+        - generic [ref=e36]: synchronous-completion fast path
+    - generic [ref=e37]: ↑ Curated overlay added by render_curated.py · the original document follows below
+  - heading "Inside async/await" [level=1] [ref=e38]
+  - paragraph [ref=e39]: "Tutorial #33 — State machines, hidden Mains, and the compiler tricks you never see"
+  - heading "1. The Two Mysteries" [level=2] [ref=e40]
+  - paragraph [ref=e41]: "When you use modern C#, two things happen that look like magic but aren't:"
+  - list [ref=e42]:
+    - listitem [ref=e43]:
+      - strong [ref=e44]: Top-level statements
+      - text: — your Program.cs has no visible
+      - code [ref=e45]: Main
+      - text: ", yet the app runs."
+    - listitem [ref=e46]:
+      - strong [ref=e47]: async/await
+      - text: — a single method seems to "pause" and "resume", which should be impossible.
+  - paragraph [ref=e48]:
+    - text: "Both are resolved by the same underlying idea:"
+    - emphasis [ref=e49]: the compiler is doing something very clever before the runtime ever sees your code
+    - text: . The runtime is dumb and strict. The compiler is clever and lenient. Understanding where that line sits is one of the biggest jumps in C# intuition.
+  - generic [ref=e50]:
+    - text: Golden Rule Syntactic sugar is always about what the compiler does with your code
+    - emphasis [ref=e51]: before
+    - text: the runtime sees it. Once you grasp this, a lot of C# "magic" disappears.
+  - 'heading "2. Mystery #1 — The Hidden Main" [level=2] [ref=e52]'
+  - paragraph [ref=e53]: "Consider this Program.cs from a modern C# console app:"
+  - code [ref=e55]: using System; Console.WriteLine("Hello, World!");
+  - paragraph [ref=e56]:
+    - text: Where is
+    - code [ref=e57]: Main
+    - text: "? It must exist — the CLR (the .NET runtime) has no concept of \"top-level statements\". Every .NET executable must have a static"
+    - code [ref=e58]: Main
+    - text: method in its assembly. The compiler won't run your program without one.
+  - paragraph [ref=e59]:
+    - text: "The secret: the compiler"
+    - strong [ref=e60]: generates one for you
+    - text: ". Behind the scenes, your file is transformed into something equivalent to:"
+  - code [ref=e62]: "using System; internal class Program { private static void Main(string[] args) { Console.WriteLine(\"Hello, World!\"); } }"
+  - paragraph [ref=e63]:
+    - text: You can verify this on
+    - link "sharplab.io" [ref=e64] [cursor=pointer]:
+      - /url: https://sharplab.io
+    - text: — paste any top-level C# code and it decompiles to exactly this kind of structure. The hidden
+    - code [ref=e65]: Program
+    - text: class and synthetic
+    - code [ref=e66]: Main
+    - text: are real IL code in the compiled DLL.
+  - heading "The compiler picks the right Main signature" [level=3] [ref=e67]
+  - paragraph [ref=e68]:
+    - text: Here's the clever part. The compiler looks at what your code
+    - emphasis [ref=e69]: does
+    - text: "and picks a Main signature that fits:"
+  - table [ref=e70]:
+    - rowgroup [ref=e71]:
+      - row "Your top-level code uses... Compiler generates..." [ref=e72]:
+        - columnheader "Your top-level code uses..." [ref=e73]
+        - columnheader "Compiler generates..." [ref=e74]
+    - rowgroup [ref=e75]:
+      - row "No await static void Main(string[] args)" [ref=e76]:
+        - cell "No await" [ref=e77]:
+          - text: "No"
+          - code [ref=e78]: await
+        - cell "static void Main(string[] args)" [ref=e79]:
+          - code [ref=e80]: static void Main(string[] args)
+      - row "await anywhere static async Task Main(string[] args)" [ref=e81]:
+        - cell "await anywhere" [ref=e82]:
+          - code [ref=e83]: await
+          - text: anywhere
+        - cell "static async Task Main(string[] args)" [ref=e84]:
+          - code [ref=e85]: static async Task Main(string[] args)
+      - row "return 0; at the end static int Main(string[] args)" [ref=e86]:
+        - cell "return 0; at the end" [ref=e87]:
+          - code [ref=e88]: return 0;
+          - text: at the end
+        - cell "static int Main(string[] args)" [ref=e89]:
+          - code [ref=e90]: static int Main(string[] args)
+      - row "Both await and return 0; static async Task<int> Main(string[] args)" [ref=e91]:
+        - cell "Both await and return 0;" [ref=e92]:
+          - text: Both
+          - code [ref=e93]: await
+          - text: and
+          - code [ref=e94]: return 0;
+        - cell "static async Task<int> Main(string[] args)" [ref=e95]:
+          - code [ref=e96]: static async Task<int> Main(string[] args)
+  - paragraph [ref=e97]:
+    - text: "This means: the very moment you add a single"
+    - code [ref=e98]: await
+    - text: to Program.cs, the compiler silently switches the generated
+    - code [ref=e99]: Main
+    - text: from
+    - code [ref=e100]: static void
+    - text: to
+    - code [ref=e101]: static async Task
+    - text: . You didn't write a line of configuration. No
+    - code [ref=e102]: async
+    - text: keyword at the top. No
+    - code [ref=e103]: Task
+    - text: return. The compiler
+    - strong [ref=e104]: inferred it all from the presence of await
+    - text: .
+  - generic [ref=e105]: Read It Like English Top-level statements = "write your Main method body without typing the Main method." The compiler picks the right signature based on what it sees inside.
+  - heading "Scoping other methods with top-level statements" [level=3] [ref=e106]
+  - paragraph [ref=e107]:
+    - text: "You can still declare classes and methods — there's just one ordering rule:"
+    - strong [ref=e108]: top-level statements must come before any type declarations in the file
+    - text: .
+  - code [ref=e110]: "using System; // Top-level statements first Console.WriteLine(\"hi\"); Foo.Bar(); // Local function — lives INSIDE the synthesized Main void HelperFunction() { Console.WriteLine(\"I'm a local function inside Main\"); } // Type declaration — lives OUTSIDE Main, at the namespace level public static class Foo { public static void Bar() => Console.WriteLine(\"I'm a real static method\"); }"
+  - paragraph [ref=e111]: "The reverse ordering fails:"
+  - code [ref=e113]: "public static class Foo { ... } Console.WriteLine(\"hi\"); // ❌ compile error — top-level after a type is illegal"
+  - paragraph [ref=e114]: The compiler needs a clear boundary to decide "where does the hidden Main end?". Once it sees a type declaration, the top-level region is over.
+  - 'heading "3. Mystery #2 — State Machines" [level=2] [ref=e115]'
+  - paragraph [ref=e116]: "Now the bigger mystery. Take this method:"
+  - code [ref=e118]: "async Task FetchDataAsync() { Console.WriteLine(\"Starting...\"); var data = await httpClient.GetStringAsync(url); Console.WriteLine($\"Got: {data}\"); }"
+  - paragraph [ref=e119]:
+    - text: At the
+    - code [ref=e120]: await
+    - text: line, this method needs to
+    - emphasis [ref=e121]: pause
+    - text: ", release its thread back to the thread pool, and"
+    - emphasis [ref=e122]: resume
+    - text: only when the HTTP call finishes. But methods don't work that way in C# — a method either runs to completion or throws an exception. There's no native "pause here" instruction.
+  - paragraph [ref=e123]:
+    - text: So how does it work? The compiler
+    - strong [ref=e124]: rewrites your method as a state machine
+    - text: .
+  - heading "What a state machine is" [level=3] [ref=e125]
+  - paragraph [ref=e126]:
+    - text: "A state machine is a well-known CS concept: a data structure with a current"
+    - emphasis [ref=e127]: state
+    - text: and rules for transitioning between states when events happen. You've probably seen them in videogames — an enemy might be in state
+    - code [ref=e128]: Idle
+    - text: ", and when the player enters range, it transitions to"
+    - code [ref=e129]: Chasing
+    - text: . When health hits zero, it transitions to
+    - code [ref=e130]: Dead
+    - text: .
+  - generic [ref=e131]: "Videogame State Machine: Async State Machine: ┌──────┐ sees player ┌──────┐ ┌─────┐ │ Idle │ ───────────────> │Chase │ │ -1 │ initial entry └──────┘ └──────┘ └──┬──┘ ^ │ │ runs code up to first await │ lost │ in range v │ v ┌─────┐ │ ┌──────┐ │ 0 │ suspended, waiting for Task └───────────────────── │Attack│ └──┬──┘ └──────┘ │ Task completes, MoveNext called v ┌─────┐ │ 1 │ runs code between awaits └──┬──┘ v ┌─────┐ │ -2 │ done └─────┘"
+  - paragraph [ref=e132]:
+    - text: Both are state machines. The difference is
+    - strong [ref=e133]: who designs them
+    - text: and
+    - strong [ref=e134]: what the states mean
+    - text: ":"
+  - table [ref=e135]:
+    - rowgroup [ref=e136]:
+      - row "Videogame state machine Async state machine" [ref=e137]:
+        - columnheader "Videogame state machine" [ref=e138]
+        - columnheader "Async state machine" [ref=e139]
+    - rowgroup [ref=e140]:
+      - row "You design it by hand Compiler generates it from your async method" [ref=e141]:
+        - cell "You design it by hand" [ref=e142]
+        - cell "Compiler generates it from your async method" [ref=e143]:
+          - text: Compiler generates it from your
+          - code [ref=e144]: async
+          - text: method
+      - 'row "States have semantic meaning (Idle, Walking, Dead) States are mechanical checkpoints (\"the code between await #0 and #1\")" [ref=e145]':
+        - cell "States have semantic meaning (Idle, Walking, Dead)" [ref=e146]:
+          - text: States have semantic meaning (
+          - code [ref=e147]: Idle
+          - text: ","
+          - code [ref=e148]: Walking
+          - text: ","
+          - code [ref=e149]: Dead
+          - text: )
+        - 'cell "States are mechanical checkpoints (\"the code between await #0 and #1\")" [ref=e150]'
+      - row "Transitions triggered by game events (input, collisions) Transitions triggered only by Task completion" [ref=e151]:
+        - cell "Transitions triggered by game events (input, collisions)" [ref=e152]
+        - cell "Transitions triggered only by Task completion" [ref=e153]
+      - row "The state is the abstraction you care about The state is an implementation detail you never see" [ref=e154]:
+        - cell "The state is the abstraction you care about" [ref=e155]:
+          - text: The state is the
+          - emphasis [ref=e156]: abstraction you care about
+        - cell "The state is an implementation detail you never see" [ref=e157]:
+          - text: The state is an
+          - emphasis [ref=e158]: implementation detail you never see
+  - generic [ref=e159]: "Metaphor If you've built a state machine for a Unity NPC, you've built the same thing the compiler builds for async — same pattern, different purpose. Async is a state machine with a single question driving transitions: \"did the Task I was waiting on finish yet?\""
+  - heading "What the compiler actually generates" [level=3] [ref=e160]
+  - paragraph [ref=e161]:
+    - text: Here's a simplified version of what
+    - code [ref=e162]: FetchDataAsync
+    - text: becomes after compilation. The original single method is transformed into a
+    - emphasis [ref=e163]: stub
+    - text: plus a
+    - emphasis [ref=e164]: generated struct
+    - text: ":"
+  - code [ref=e166]: "// Your method becomes a stub that kicks off the state machine Task FetchDataAsync() { var sm = new FetchDataAsyncStateMachine(); sm.builder = AsyncTaskMethodBuilder.Create(); sm.state = -1; sm.builder.Start(ref sm); return sm.builder.Task; } // The state machine — compiler-generated, never written by you [CompilerGenerated] struct FetchDataAsyncStateMachine : IAsyncStateMachine { public int state; // where are we in the method? public AsyncTaskMethodBuilder builder; // tracks the Task to return public TaskAwaiter<string> awaiter; // the current Task we're waiting on public string data; // local variable, hoisted to a field public void MoveNext() { switch (state) { case -1: // first entry into the method Console.WriteLine(\"Starting...\"); awaiter = httpClient.GetStringAsync(url).GetAwaiter(); if (!awaiter.IsCompleted) { state = 0; builder.AwaitUnsafeOnCompleted(ref awaiter, ref this); return; // SUSPEND HERE — release the thread } goto case 0; case 0: // resumed after the await completed data = awaiter.GetResult(); Console.WriteLine($\"Got: {data}\"); builder.SetResult(); return; } } }"
+  - paragraph [ref=e167]: "What to notice:"
+  - list [ref=e168]:
+    - listitem [ref=e169]:
+      - strong [ref=e170]:
+        - text: Your local variable
+        - code [ref=e171]: data
+        - text: became a field
+      - text: on the struct ("hoisted"). It has to live beyond the method's stack frame because the method can be paused and resumed.
+    - listitem [ref=e172]:
+      - strong [ref=e173]: The state variable
+      - text: tracks which chunk of original code to run next. It starts at
+      - code [ref=e174]: "-1"
+      - text: (not yet started), and each
+      - code [ref=e175]: await
+      - text: adds a new case.
+    - listitem [ref=e176]:
+      - strong [ref=e177]:
+        - text: When the Task isn't done yet,
+        - code [ref=e178]: MoveNext
+        - text: returns early.
+      - text: This is the "pause" — the method literally returns, freeing the thread. The state machine is now dormant, its current state saved in the
+      - code [ref=e179]: state
+      - text: field.
+    - listitem [ref=e180]:
+      - strong [ref=e181]:
+        - text: When the awaited Task completes, the runtime calls
+        - code [ref=e182]: MoveNext
+        - text: again.
+      - text: The
+      - code [ref=e183]: switch
+      - text: sees
+      - code [ref=e184]: state == 0
+      - text: and jumps to the "resumed" branch, continuing where it left off.
+    - listitem [ref=e185]:
+      - strong [ref=e186]: The whole thing is one struct
+      - text: ", not a class — structs live on the stack when possible, which saves allocations for synchronous completions."
+  - generic [ref=e187]:
+    - text: Common Confusion The compiler does this transformation
+    - strong [ref=e188]: every time
+    - text: you write
+    - code [ref=e189]: async
+    - text: ", whether or not the method actually has any awaits. Even an"
+    - code [ref=e190]: async
+    - text: method with no
+    - code [ref=e191]: await
+    - text: at all gets the full state machine treatment. That's where the next section comes in.
+  - heading "4. The Cost of Unused Async" [level=2] [ref=e192]
+  - paragraph [ref=e193]: "Consider these two methods. They're functionally identical — both produce a Task that's already completed when returned:"
+  - code [ref=e195]: "// Version A — async keyword, no awaits async Task SyncyFoo() { Console.WriteLine(\"hi\"); } // Version B — return Task.CompletedTask directly Task SyncyFoo() { Console.WriteLine(\"hi\"); return Task.CompletedTask; }"
+  - paragraph [ref=e196]:
+    - text: At the call site, they behave identically — both return a completed Task, both can be
+    - code [ref=e197]: await
+    - text: ed, both produce no errors. But the compiled output is dramatically different.
+  - heading "Version A — compiled" [level=3] [ref=e198]
+  - code [ref=e200]: "// A struct is generated struct SyncyFooStateMachine : IAsyncStateMachine { public int state; public AsyncTaskMethodBuilder builder; public void MoveNext() { try { Console.WriteLine(\"hi\"); } catch (Exception ex) { state = -2; builder.SetException(ex); return; } state = -2; builder.SetResult(); } public void SetStateMachine(IAsyncStateMachine sm) { } } // Your original method becomes a stub Task SyncyFoo() { var sm = new SyncyFooStateMachine(); sm.builder = AsyncTaskMethodBuilder.Create(); sm.state = -1; sm.builder.Start(ref sm); return sm.builder.Task; }"
+  - heading "Version B — compiled" [level=3] [ref=e201]
+  - code [ref=e203]: "Task SyncyFoo() { Console.WriteLine(\"hi\"); return Task.CompletedTask; }"
+  - paragraph [ref=e204]: That's it. Version B compiles to exactly what you wrote. Same two lines. No state machine, no builder, no struct.
+  - heading "The measurable difference" [level=3] [ref=e205]
+  - table [ref=e206]:
+    - rowgroup [ref=e207]:
+      - 'row "Aspect async Task Foo() { ... } Task Foo() { ...; return Task.CompletedTask; }" [ref=e208]':
+        - columnheader "Aspect" [ref=e209]
+        - 'columnheader "async Task Foo() { ... }" [ref=e210]'
+        - 'columnheader "Task Foo() { ...; return Task.CompletedTask; }" [ref=e211]'
+    - rowgroup [ref=e212]:
+      - row "State machine struct Generated None" [ref=e213]:
+        - cell "State machine struct" [ref=e214]
+        - cell "Generated" [ref=e215]
+        - cell "None" [ref=e216]
+      - row "AsyncTaskMethodBuilder allocation Created None" [ref=e217]:
+        - cell "AsyncTaskMethodBuilder allocation" [ref=e218]
+        - cell "Created" [ref=e219]
+        - cell "None" [ref=e220]
+      - row "Task allocation Sometimes (builder may cache) Singleton Task.CompletedTask" [ref=e221]:
+        - cell "Task allocation" [ref=e222]
+        - cell "Sometimes (builder may cache)" [ref=e223]
+        - cell "Singleton Task.CompletedTask" [ref=e224]:
+          - text: Singleton
+          - code [ref=e225]: Task.CompletedTask
+      - row "Method call indirection Builder.Start → MoveNext Direct execution" [ref=e226]:
+        - cell "Method call indirection" [ref=e227]
+        - cell "Builder.Start → MoveNext" [ref=e228]
+        - cell "Direct execution" [ref=e229]
+      - row "JIT inlining Harder (state machine boundary) Full inlining possible" [ref=e230]:
+        - cell "JIT inlining" [ref=e231]
+        - cell "Harder (state machine boundary)" [ref=e232]
+        - cell "Full inlining possible" [ref=e233]
+      - row "Debugging stack traces Noisy (shows state machine frames) Clean" [ref=e234]:
+        - cell "Debugging stack traces" [ref=e235]
+        - cell "Noisy (shows state machine frames)" [ref=e236]
+        - cell "Clean" [ref=e237]
+  - paragraph [ref=e238]: For one call, the difference is nanoseconds. For a web API handling millions of requests, or an ORM building thousands of query plans per second, or a hot game loop — it adds up measurably.
+  - heading "5. The Three Sentinel Tasks" [level=2] [ref=e239]
+  - paragraph [ref=e240]:
+    - text: When you don't have any actual async work to do but still need to return a
+    - code [ref=e241]: Task
+    - text: ", use one of these three pre-built sentinels:"
+  - table [ref=e242]:
+    - rowgroup [ref=e243]:
+      - row "Return type Sentinel Use case" [ref=e244]:
+        - columnheader "Return type" [ref=e245]
+        - columnheader "Sentinel" [ref=e246]
+        - columnheader "Use case" [ref=e247]
+    - rowgroup [ref=e248]:
+      - row "Task Task.CompletedTask Method did its work synchronously, no result" [ref=e249]:
+        - cell "Task" [ref=e250]:
+          - code [ref=e251]: Task
+        - cell "Task.CompletedTask" [ref=e252]:
+          - code [ref=e253]: Task.CompletedTask
+        - cell "Method did its work synchronously, no result" [ref=e254]
+      - row "Task<T> Task.FromResult(value) Method did its work synchronously, here's the value" [ref=e255]:
+        - cell "Task<T>" [ref=e256]:
+          - code [ref=e257]: Task<T>
+        - cell "Task.FromResult(value)" [ref=e258]:
+          - code [ref=e259]: Task.FromResult(value)
+        - cell "Method did its work synchronously, here's the value" [ref=e260]
+      - row "Task or Task<T> Task.FromException(ex) Method failed synchronously, here's the error" [ref=e261]:
+        - cell "Task or Task<T>" [ref=e262]:
+          - code [ref=e263]: Task
+          - text: or
+          - code [ref=e264]: Task<T>
+        - cell "Task.FromException(ex)" [ref=e265]:
+          - code [ref=e266]: Task.FromException(ex)
+        - cell "Method failed synchronously, here's the error" [ref=e267]
+  - code [ref=e269]: "public Task ClearCache() { _cache.Clear(); return Task.CompletedTask; } public Task<int> GetCachedCount() { return Task.FromResult(_cache.Count); } public Task<User> GetUserOrFail(int id) { if (id < 0) return Task.FromException<User>(new ArgumentException(\"Invalid id\")); return Task.FromResult(_users[id]); }"
+  - generic [ref=e270]:
+    - text: Golden Rule Only add the
+    - code [ref=e271]: async
+    - text: keyword to a method if that method actually uses
+    - code [ref=e272]: await
+    - text: . If it doesn't, return a Task directly and use one of the sentinel tasks. The compiler cannot tell that your
+    - code [ref=e273]: async
+    - text: method has no awaits — it generates the state machine regardless.
+  - heading "6. Awaiting an Already-Completed Task" [level=2] [ref=e274]
+  - paragraph [ref=e275]:
+    - text: "One more optimization worth knowing: when you"
+    - code [ref=e276]: await
+    - text: a Task that's
+    - emphasis [ref=e277]: already completed
+    - text: (like
+    - code [ref=e278]: Task.CompletedTask
+    - text: or a Task returned from a method that ran synchronously), the runtime detects this and
+    - strong [ref=e279]: skips the suspension entirely
+    - text: . No continuation is scheduled. No thread switch happens. Execution just continues on the same thread, synchronously.
+  - code [ref=e281]: "async Task Caller() { await SyncWorker(); // If SyncWorker returns Task.CompletedTask... Console.WriteLine(\"hi\"); // ...this runs immediately, same thread, no reschedule }"
+  - paragraph [ref=e282]:
+    - text: This is why mixing sync and async freely has very low cost in C#. The overhead of
+    - code [ref=e283]: await
+    - text: only kicks in when the Task is genuinely incomplete. For completed Tasks, it's essentially a couple of branch predictions and a function call.
+  - generic [ref=e284]: Read It Like English "Await that Task" really means "check if the Task is already done; if yes, keep going; if no, schedule the rest of this method to run when the Task finishes, then return." The fast path is just two checks and a branch.
+  - heading "7. Key Takeaways" [level=2] [ref=e285]
+  - list [ref=e286]:
+    - listitem [ref=e287]:
+      - strong [ref=e288]: Top-level statements
+      - text: are a compile-time transformation. The compiler generates a hidden
+      - code [ref=e289]: Program
+      - text: class and a
+      - code [ref=e290]: Main
+      - text: method, then stuffs your top-level code inside.
+    - listitem [ref=e291]:
+      - strong [ref=e292]: The compiler picks the right Main signature
+      - text: based on what your code does. Use
+      - code [ref=e293]: await
+      - text: → get
+      - code [ref=e294]: async Task Main
+      - text: . Use
+      - code [ref=e295]: return 0
+      - text: → get
+      - code [ref=e296]: int Main
+      - text: . Both → get
+      - code [ref=e297]: async Task<int> Main
+      - text: .
+    - listitem [ref=e298]:
+      - strong [ref=e299]: Top-level statements must come before type declarations
+      - text: . Local functions can live in top-level code; actual classes must come after.
+    - listitem [ref=e300]:
+      - strong [ref=e301]: async/await is 100% syntactic sugar
+      - text: . The CLR has no concept of it. The compiler rewrites every
+      - code [ref=e302]: async
+      - text: method as a state machine struct with a
+      - code [ref=e303]: MoveNext
+      - text: method and a state field.
+    - listitem [ref=e304]:
+      - strong [ref=e305]: Local variables get "hoisted"
+      - text: to fields on the state machine struct because they need to survive suspension.
+    - listitem [ref=e306]:
+      - strong [ref=e307]: State machines are the same CS concept
+      - text: as videogame FSMs. The difference is that async state machines are generated mechanically, with meaningless intermediate states, driven purely by Task completion events.
+    - listitem [ref=e308]:
+      - strong [ref=e309]:
+        - text: An
+        - code [ref=e310]: async
+        - text: method with no
+        - code [ref=e311]: await
+        - text: still pays the full cost
+      - text: of state machine generation. Prefer returning
+      - code [ref=e312]: Task.CompletedTask
+      - text: directly for sync work.
+    - listitem [ref=e313]:
+      - strong [ref=e314]: The three sentinel tasks
+      - text: —
+      - code [ref=e315]: Task.CompletedTask
+      - text: ","
+      - code [ref=e316]: Task.FromResult(x)
+      - text: ","
+      - code [ref=e317]: Task.FromException(ex)
+      - text: — let you fulfill a Task-returning contract with zero async overhead.
+    - listitem [ref=e318]:
+      - strong [ref=e319]: Awaiting a completed Task is nearly free
+      - text: . The runtime detects synchronous completion and skips the continuation machinery entirely.
+    - listitem [ref=e320]:
+      - strong [ref=e321]: Verify any of this yourself
+      - text: "on"
+      - link "sharplab.io" [ref=e322] [cursor=pointer]:
+        - /url: https://sharplab.io
+      - text: — paste C# code, see exactly what the compiler generates. It's one of the best tools for dissolving "magic" in the language.

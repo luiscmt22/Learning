@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CSharp_Equality_Guide</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.callout {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-2);
+  padding: 12px 16px;
+  margin: 14px 0;
+  border-radius: 0 6px 6px 0;
+}
+.callout.warn { border-left-color: var(--warn); }
+.callout.ok   { border-left-color: var(--ok); }
+.callout.bad  { border-left-color: var(--bad); }
+.kw   { color: #c792ea; }
+.type { color: #82aaff; }
+.str  { color: #c3e88d; }
+.num  { color: #f78c6c; }
+.cmt  { color: #6c7a96; font-style: italic; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 01-Basics</div>
+  <h1>Equality in C#: Equals, GetHashCode, IEquatable, IEqualityComparer</h1>
+  <div class="meta">A practical guide to value vs reference equality, the equality contract, and custom comparers (with <code>StringComparer</code>).</div>
+</header>
+
+<h2 id="1-the-default-behavior">1. The default behavior: reference vs value</h2>
+<p>By default, C# compares two things differently depending on whether they're a <strong>reference type</strong> (class) or a <strong>value type</strong> (struct, primitive).</p>
+
+<h3>Classes &mdash; reference equality</h3>
+<p>For a class, <code class="il">==</code> and <code class="il">Equals</code> ask &ldquo;are these the <em>same object in memory</em>?&rdquo; &mdash; not &ldquo;do they have the same values?&rdquo;</p>
+<pre><code><span class="kw">public class</span> <span class="type">Point</span>
+{
+    <span class="kw">public int</span> X { <span class="kw">get</span>; }
+    <span class="kw">public int</span> Y { <span class="kw">get</span>; }
+    <span class="kw">public</span> <span class="type">Point</span>(<span class="kw">int</span> x, <span class="kw">int</span> y) { X = x; Y = y; }
+}
+
+<span class="kw">var</span> a = <span class="kw">new</span> <span class="type">Point</span>(<span class="num">1</span>, <span class="num">2</span>);
+<span class="kw">var</span> b = <span class="kw">new</span> <span class="type">Point</span>(<span class="num">1</span>, <span class="num">2</span>);
+
+<span class="type">Console</span>.WriteLine(a == b);        <span class="cmt">// False</span>
+<span class="type">Console</span>.WriteLine(a.Equals(b));   <span class="cmt">// False</span></code></pre>
+<p>Both return <code class="il">False</code> because <code class="il">a</code> and <code class="il">b</code> are two distinct objects, even though their fields are identical.</p>
+
+<h3>Structs and primitives &mdash; value equality (sort of)</h3>
+<p>Value types compare field-by-field by default, but via reflection &mdash; slow and box-prone. You almost always want to override <code class="il">Equals</code> on structs too.</p>
+
+<h2 id="2-the-equals-contract">2. The Equals / GetHashCode contract</h2>
+<p>When you want value equality on a class, you must do <strong>two things together</strong>:</p>
+<ol>
+  <li>Override <code class="il">Equals(object?)</code> to compare by content.</li>
+  <li>Override <code class="il">GetHashCode()</code> so equal objects produce equal hashes.</li>
+</ol>
+
+<div class="callout warn">
+<strong>The rule:</strong> if <code class="il">a.Equals(b)</code> is <code class="il">true</code>, then <code class="il">a.GetHashCode() == b.GetHashCode()</code> <em>must</em> be true. Violating this breaks <code class="il">Dictionary</code>, <code class="il">HashSet</code>, LINQ <code class="il">Distinct</code>, and many other things in subtle ways.
+</div>
+
+<pre><code><span class="kw">public class</span> <span class="type">Point</span>
+{
+    <span class="kw">public int</span> X { <span class="kw">get</span>; }
+    <span class="kw">public int</span> Y { <span class="kw">get</span>; }
+    <span class="kw">public</span> <span class="type">Point</span>(<span class="kw">int</span> x, <span class="kw">int</span> y) { X = x; Y = y; }
+
+    <span class="kw">public override bool</span> <span class="type">Equals</span>(<span class="kw">object</span>? obj)
+    {
+        <span class="kw">if</span> (obj <span class="kw">is not</span> <span class="type">Point</span> other) <span class="kw">return false</span>;
+        <span class="kw">return</span> X == other.X &amp;&amp; Y == other.Y;
+    }
+
+    <span class="kw">public override int</span> <span class="type">GetHashCode</span>() =&gt; <span class="type">HashCode</span>.Combine(X, Y);
+}</code></pre>
+
+<p><code class="il">HashCode.Combine</code> does the bit-mixing for you &mdash; just pass the fields that participate in equality.</p>
+
+<h3 id="2-1-pattern-match">Reading <code class="il">obj is not Point other</code></h3>
+<p>That single line does three things:</p>
+<ul>
+  <li><strong>Type test</strong> &mdash; is <code class="il">obj</code> actually a <code class="il">Point</code>?</li>
+  <li><strong>Declaration pattern</strong> &mdash; if so, give me a variable <code class="il">other</code> already cast to <code class="il">Point</code>.</li>
+  <li><strong>Negation</strong> &mdash; <code class="il">not</code> inverts the test.</li>
+</ul>
+<p>The pre-C# 7 equivalent was uglier:</p>
+<pre><code><span class="kw">if</span> (obj == <span class="kw">null</span> || obj.GetType() != <span class="kw">typeof</span>(<span class="type">Point</span>)) <span class="kw">return false</span>;
+<span class="kw">var</span> other = (<span class="type">Point</span>)obj;   <span class="cmt">// redundant cast</span></code></pre>
+
+<h2 id="3-iequatable">3. <code class="il">IEquatable&lt;T&gt;</code> &mdash; the strongly-typed overload</h2>
+<p>The inherited <code class="il">Equals</code> takes an <code class="il">object</code>. That means every call must:</p>
+<ul>
+  <li><strong>Box</strong> value types (allocation on the heap).</li>
+  <li><strong>Cast</strong> reference types (runtime type check).</li>
+</ul>
+<p><code class="il">IEquatable&lt;T&gt;</code> adds a second <code class="il">Equals</code> with the real type as parameter, sidestepping both:</p>
+
+<pre><code><span class="kw">public class</span> <span class="type">Point</span> : <span class="type">IEquatable</span>&lt;<span class="type">Point</span>&gt;
+{
+    <span class="kw">public int</span> X { <span class="kw">get</span>; }
+    <span class="kw">public int</span> Y { <span class="kw">get</span>; }
+    <span class="kw">public</span> <span class="type">Point</span>(<span class="kw">int</span> x, <span class="kw">int</span> y) { X = x; Y = y; }
+
+    <span class="cmt">// A &mdash; strongly typed, the real logic</span>
+    <span class="kw">public bool</span> <span class="type">Equals</span>(<span class="type">Point</span>? other)
+    {
+        <span class="kw">if</span> (other <span class="kw">is null</span>) <span class="kw">return false</span>;
+        <span class="kw">return</span> X == other.X &amp;&amp; Y == other.Y;
+    }
+
+    <span class="cmt">// B &mdash; overrides object.Equals, delegates to A</span>
+    <span class="kw">public override bool</span> <span class="type">Equals</span>(<span class="kw">object</span>? obj) =&gt; <span class="type">Equals</span>(obj <span class="kw">as</span> <span class="type">Point</span>);
+
+    <span class="kw">public override int</span> <span class="type">GetHashCode</span>() =&gt; <span class="type">HashCode</span>.Combine(X, Y);
+}</code></pre>
+
+<h3 id="3-1-b-to-a">B &rarr; A: the delegation pattern</h3>
+<div class="diagram-box"><pre>External callers
+      &#9474;
+      &#9500;&#9472; knows it's a Point  &mdash;&mdash;&mdash;&#9658;  A  (direct, no cast, no box)
+      &#9474;
+      &#9492;&#9472; only sees object    &mdash;&mdash;&mdash;&#9658;  B  &mdash;delegates&#9658;  A</pre></div>
+<p>A and B are <em>two separate methods that both exist</em>. They don't replace each other; B is a thin adapter that funnels <code class="il">object</code>-typed callers into A. <code class="il">obj as Point</code> is a safe cast &mdash; returns <code class="il">null</code> on mismatch instead of throwing, which A handles with its <code class="il">other is null</code> check.</p>
+
+<h3 id="3-2-operators">Operators <code class="il">==</code> and <code class="il">!=</code></h3>
+<p>For <strong>classes</strong>, <code class="il">==</code> still uses reference equality even after you override <code class="il">Equals</code>. To make <code class="il">a == b</code> mean value equality, overload the operators:</p>
+
+<pre><code><span class="kw">public static bool operator</span> ==(<span class="type">Point</span>? a, <span class="type">Point</span>? b) =&gt;
+    a?.Equals(b) ?? b <span class="kw">is null</span>;
+
+<span class="kw">public static bool operator</span> !=(<span class="type">Point</span>? a, <span class="type">Point</span>? b) =&gt; !(a == b);</code></pre>
+
+<p>The line <code class="il">a?.Equals(b) ?? b is null</code> reads as:</p>
+<ul>
+  <li>If <code class="il">a</code> is not null &rarr; call <code class="il">a.Equals(b)</code>.</li>
+  <li>If <code class="il">a</code> is null &rarr; result is <code class="il">b is null</code> (both null counts as equal).</li>
+</ul>
+
+<h2 id="4-iequalitycomparer">4. <code class="il">IEqualityComparer&lt;T&gt;</code> &mdash; equality from the outside</h2>
+<p>Sometimes the type itself shouldn't define equality &mdash; or you need <em>different</em> equality rules in different contexts. <code class="il">IEqualityComparer&lt;T&gt;</code> lets you supply equality logic as a separate object.</p>
+
+<p>Concrete example from your own <code class="il">Chapter2</code>:</p>
+<pre><code><span class="kw">internal class</span> <span class="type">CaseInsensitiveCharComparer</span> : <span class="type">IEqualityComparer</span>&lt;<span class="kw">char</span>&gt;
+{
+    <span class="kw">public bool</span> <span class="type">Equals</span>(<span class="kw">char</span> x, <span class="kw">char</span> y)
+        =&gt; <span class="kw">char</span>.ToUpper(x) == <span class="kw">char</span>.ToUpper(y);
+
+    <span class="kw">public int</span> <span class="type">GetHashCode</span>(<span class="kw">char</span> input)
+        =&gt; <span class="kw">char</span>.ToUpper(input).GetHashCode();
+}</code></pre>
+
+<div class="tbl-wrap"><table>
+<thead><tr><th>Interface</th><th>Lives on</th><th>Used by</th></tr></thead>
+<tbody>
+<tr><td><code class="il">IEquatable&lt;T&gt;</code></td><td>The type itself</td><td>LINQ, collections (when no comparer is given)</td></tr>
+<tr><td><code class="il">IEqualityComparer&lt;T&gt;</code></td><td>A separate object</td><td>Dictionaries, sets, LINQ &mdash; when you pass one in</td></tr>
+</tbody>
+</table></div>
+
+<h2 id="5-stringcomparer">5. <code class="il">StringComparer</code> &mdash; the built-in flavors</h2>
+<p><code class="il">StringComparer</code> is a set of ready-made <code class="il">IEqualityComparer&lt;string&gt;</code> implementations exposed as static properties. You almost never need to write one yourself for strings.</p>
+
+<div class="tbl-wrap"><table>
+<thead><tr><th>Flavor</th><th>Compares</th><th>Use for</th></tr></thead>
+<tbody>
+<tr><td><code class="il">Ordinal</code></td><td>Byte-exact, case-sensitive</td><td>Default for IDs, keys, filenames</td></tr>
+<tr><td><code class="il">OrdinalIgnoreCase</code></td><td>Byte-exact, case-insensitive</td><td>IDs/keys where casing shouldn't matter</td></tr>
+<tr><td><code class="il">InvariantCulture</code></td><td>Culture-neutral linguistic rules</td><td>Cross-machine sorting/comparison</td></tr>
+<tr><td><code class="il">InvariantCultureIgnoreCase</code></td><td>Same, case-insensitive</td><td>Same, case-insensitive</td></tr>
+<tr><td><code class="il">CurrentCulture</code></td><td>User locale rules</td><td>User-facing text comparison (rare)</td></tr>
+<tr><td><code class="il">CurrentCultureIgnoreCase</code></td><td>Same, case-insensitive</td><td>Same, case-insensitive</td></tr>
+</tbody>
+</table></div>
+
+<div class="callout">
+<strong>Rule of thumb:</strong> for anything that's <em>not user-facing prose</em> &mdash; IDs, keys, file paths, config names &mdash; use <code class="il">Ordinal</code> or <code class="il">OrdinalIgnoreCase</code>. They're the fastest and free of locale surprises.
+</div>
+
+<h2 id="6-dictionary-and-the-comparer">6. How <code class="il">Dictionary</code> uses a comparer</h2>
+<p>A <code class="il">Dictionary&lt;TKey, TValue&gt;</code> does two things with each key on every lookup:</p>
+<ol>
+  <li><code class="il">comparer.GetHashCode(key)</code> &mdash; to find the bucket.</li>
+  <li><code class="il">comparer.Equals(key, storedKey)</code> &mdash; to confirm the match.</li>
+</ol>
+<p>When you build it, you can install a comparer that changes those two operations forever:</p>
+
+<pre><code><span class="kw">var</span> dict = <span class="kw">new</span> <span class="type">Dictionary</span>&lt;<span class="kw">string</span>, <span class="type">StoryNode</span>&gt;(<span class="type">StringComparer</span>.OrdinalIgnoreCase);
+dict[<span class="str">&quot;Start&quot;</span>] = node;
+dict[<span class="str">&quot;start&quot;</span>];   <span class="cmt">// works &mdash; case-insensitive lookup</span>
+dict[<span class="str">&quot;START&quot;</span>];   <span class="cmt">// also works</span></code></pre>
+
+<div class="callout warn">
+<strong>Important:</strong> the key is <em>stored as-is</em> &mdash; nothing is &ldquo;normalized.&rdquo; If you add <code class="il">&quot;Start&quot;</code>, the dictionary literally stores the string <code class="il">&quot;Start&quot;</code>. The comparer only changes how <strong>future lookups</strong> are matched against stored keys.
+</div>
+
+<h3 id="6-1-todictionary">With <code class="il">ToDictionary</code></h3>
+<pre><code><span class="kw">var</span> comparison = <span class="type">StringComparer</span>.OrdinalIgnoreCase;
+
+_nodes = nodes.ToDictionary(n =&gt; n.Id, comparison);</code></pre>
+<p>That uses the overload:</p>
+<pre><code><span class="type">Dictionary</span>&lt;TKey, TSource&gt; <span class="type">ToDictionary</span>&lt;TSource, TKey&gt;(
+    <span class="kw">this</span> <span class="type">IEnumerable</span>&lt;TSource&gt; source,
+    <span class="type">Func</span>&lt;TSource, TKey&gt; keySelector,
+    <span class="type">IEqualityComparer</span>&lt;TKey&gt;? comparer)</code></pre>
+<ul>
+  <li><code class="il">source</code> &mdash; the collection (supplied by the extension-method dot).</li>
+  <li><code class="il">keySelector</code> &mdash; how to extract the key from each item.</li>
+  <li><code class="il">comparer</code> &mdash; installed in the resulting dictionary; runs on every later lookup.</li>
+</ul>
+
+<h2 id="7-shortcut-records">7. The shortcut: <code class="il">record</code></h2>
+<p>If you want value equality for free, declare a <code class="il">record</code> &mdash; the compiler writes <code class="il">Equals</code>, <code class="il">GetHashCode</code>, <code class="il">IEquatable&lt;T&gt;</code>, and the operators for you:</p>
+
+<pre><code><span class="kw">public record</span> <span class="type">Point</span>(<span class="kw">int</span> X, <span class="kw">int</span> Y);   <span class="cmt">// equality by X and Y, automatically</span></code></pre>
+
+<div class="callout warn">
+<strong>Gotcha:</strong> the auto-generated equality still uses <em>reference</em> equality for array and collection properties. <code class="il">string[]</code> doesn't compare structurally even in records &mdash; you'd still need <code class="il">SequenceEqual</code> or a custom equality method.
+</div>
+
+<h2 id="8-checklist">8. Checklist for adding equality to a class</h2>
+<ol>
+  <li>Decide: does equality belong on the type (<code class="il">IEquatable&lt;T&gt;</code>) or outside it (<code class="il">IEqualityComparer&lt;T&gt;</code>)?</li>
+  <li>If on the type:
+    <ul>
+      <li>Implement <code class="il">IEquatable&lt;T&gt;</code> and write <code class="il">Equals(T?)</code> &mdash; the real logic.</li>
+      <li>Override <code class="il">Equals(object?)</code> &mdash; delegate to the typed one.</li>
+      <li>Override <code class="il">GetHashCode()</code> using <code class="il">HashCode.Combine(...)</code> over the same fields you compared.</li>
+      <li>Optional: overload <code class="il">==</code> and <code class="il">!=</code> if you want operator-level value equality.</li>
+    </ul>
+  </li>
+  <li>If outside the type: implement <code class="il">IEqualityComparer&lt;T&gt;</code> &mdash; pass it into the collection/LINQ call.</li>
+  <li>For strings as keys, reach for <code class="il">StringComparer.Ordinal[IgnoreCase]</code> first &mdash; don't roll your own.</li>
+  <li>If you don't need a class identity, consider a <code class="il">record</code> instead.</li>
+</ol>
+
+<h2 id="9-references">9. Where this fits in your Learning folder</h2>
+<ul>
+  <li><code class="il">Chapter2/EnigmaSimulator.Domain/Utilities/CaseInsensitiveCharComparer.cs</code> &mdash; concrete <code class="il">IEqualityComparer&lt;char&gt;</code>.</li>
+  <li><code class="il">_Organized/01-Basics/CSharp_Generics_Guide.html</code> &mdash; high-level interface table (page that mentions <code class="il">IEquatable&lt;T&gt;</code> and <code class="il">IEqualityComparer&lt;T&gt;</code> in passing).</li>
+  <li>Several Chapter projects (4, 9, 10) use <code class="il">StringComparer</code> for case-insensitive dictionary keys &mdash; good reference for real usage.</li>
+</ul>
+
+</div>
+</body>
+</html>

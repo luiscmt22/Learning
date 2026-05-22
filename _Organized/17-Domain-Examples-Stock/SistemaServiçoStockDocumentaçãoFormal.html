@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SistemaServiçoStockDocumentaçãoFormal</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 17-Domain-Examples-Stock</div>
+  <h1>SistemaServiçoStockDocumentaçãoFormal</h1>
+  <div class="meta">Source: <code>Education/Stock/PT/SistemaServiçoStockDocumentaçãoFormal.docx</code> &middot; <a href="SistemaServiçoStockDocumentaçãoFormal.docx">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<div class="dup-banner"><strong>Same-stem variants</strong> (likely same content, different format): <code>Education/Stock/PT/SistemaServiçoStockDocumentaçãoFormal.pdf</code></div><p>Sistema de Serviço de Stock - Documentação Técnica</p>
+<p>Índice</p>
+<p>Visão Geral do Sistema</p>
+<p>Arquitetura</p>
+<p>Serviços Principais</p>
+<p>Estratégia de Cache</p>
+<p>Integração com Base de Dados</p>
+<p>Integração UI</p>
+<p>Otimização de Performance</p>
+<p>Referência da API</p>
+<p>Configuração</p>
+<p>Monitorização e Resolução de Problemas</p>
+<p>Visão Geral do Sistema</p>
+<p>Objetivo</p>
+<p>O Sistema de Serviço de Stock fornece rastreamento de inventário em tempo real de alta performance com mecanismos inteligentes de cache para minimizar a carga da base de dados mantendo a precisão dos dados.</p>
+<p>Funcionalidades Principais</p>
+<p>Consultas de níveis de stock em tempo real com precisão temporal</p>
+<p>Rastreamento histórico de movimentos de stock</p>
+<p>Cache multi-camada com expiração inteligente</p>
+<p>Pré-carregamento de tarefas assíncronas para resposta instantânea percebida</p>
+<p>Integração de funções SQL Server para cálculos complexos</p>
+<p>Cache eficiente em memória com expiração graduada</p>
+<p>Filosofia da Arquitetura</p>
+<p>O sistema implementa um Padrão Decorator com separação de responsabilidades:</p>
+<p>Camada de Serviço Principal: Lógica de negócio e operações de base de dados</p>
+<p>Camada de Cache: Gestão de memória e invalidação de cache</p>
+<p>Camada UI: Apresentação e interação do utilizador</p>
+<p>Arquitetura</p>
+<p>Diagrama de Arquitetura do Sistema</p>
+<p>┌──────────────────────────────────────────────────────────┐</p>
+<p>│                    Camada de Apresentação                │</p>
+<p>│                   (ArtigoDetalhe.razor)                  │</p>
+<p>│  ┌──────────────────────────────────────────────────┐    │</p>
+<p>│  │  Tarefas Pré-carregadas │  Componentes MudBlazor │    │</p>
+<p>│  │  Gestão de Estado       │  Handlers de Eventos   │    │</p>
+<p>│  └────────────────────┬─────────────────────────────┘    │</p>
+<p>└───────────────────────┼──────────────────────────────────┘</p>
+<p>│</p>
+<p>┌───────────────────────▼──────────────────────────────────┐</p>
+<p>│                     Camada de Serviços                   │</p>
+<p>│  ┌─────────────────────────────────────────────────┐     │</p>
+<p>│  │            Interface IStockService              │     │</p>
+<p>│  └──────────────────┬──────────────────────────────┘     │</p>
+<p>│           ┌─────────▼─────────┐                          │</p>
+<p>│           │ CachedStockService│ ← Decorator              │</p>
+<p>│           │   (IMemoryCache)  │                          │</p>
+<p>│           └─────────┬─────────┘                          │</p>
+<p>│           ┌─────────▼─────────┐                          │</p>
+<p>│           │   StockService    │ ← Implementação Base     │</p>
+<p>│           └─────────┬─────────┘                          │</p>
+<p>└───────────────────────┼──────────────────────────────────┘</p>
+<p>│</p>
+<p>┌───────────────────────▼──────────────────────────────────┐</p>
+<p>│                  Camada de Acesso a Dados                │</p>
+<p>│  ┌──────────────────────────────────────────────────┐    │</p>
+<p>│  │  Entity Framework  │  Funções SQL                │    │</p>
+<p>│  │  BioBragaContext   │  fn_ArtigoStockByDate       │    │</p>
+<p>│  │                    │  fn_ArtigoUsedInFluxo       │    │</p>
+<p>│  └──────────────────────────────────────────────────┘    │</p>
+<p>└──────────────────────────────────────────────────────────┘</p>
+<p>Fluxo de Interação de Componentes</p>
+<p>sequenceDiagram</p>
+<p>participant UI as Camada UI</p>
+<p>participant CS as ServiçoCache</p>
+<p>participant MC as MemóriaCache</p>
+<p>participant SS as ServiçoStock</p>
+<p>participant BD as BaseDados</p>
+<p>UI-&gt;&gt;CS: GetArticleStockByDateAsync(123, &quot;2024-01-15&quot;)</p>
+<p>CS-&gt;&gt;MC: Verifica chave cache &quot;stock_123_20240115&quot;</p>
+<p>alt Cache Hit</p>
+<p>MC--&gt;&gt;CS: Devolve ArtigoStock em cache</p>
+<p>CS--&gt;&gt;UI: Devolve imediatamente</p>
+<p>else Cache Miss</p>
+<p>CS-&gt;&gt;SS: GetArticleStockByDateAsync(123, &quot;2024-01-15&quot;)</p>
+<p>SS-&gt;&gt;BD: Executa fn_ArtigoStockByDate</p>
+<p>BD--&gt;&gt;SS: Devolve dados stock</p>
+<p>SS--&gt;&gt;CS: Devolve ArtigoStock</p>
+<p>CS-&gt;&gt;MC: Guarda com expiração</p>
+<p>CS--&gt;&gt;UI: Devolve ArtigoStock</p>
+<p>end</p>
+<p>Serviços Principais</p>
+<p>Interface IStockService</p>
+<p>public interface IStockService</p>
+<p>{</p>
+<p>// Consulta de stock temporal</p>
+<p>Task&lt;ArtigoStock?&gt; GetArticleStockByDateAsync(int artigoId, DateTime date);</p>
+<p>// Recuperação de histórico de movimentos</p>
+<p>Task&lt;List&lt;StockMov&gt;&gt; GetStockMovementsAsync(</p>
+<p>int artigoId,</p>
+<p>DateTime? startDate = null,</p>
+<p>DateTime? endDate = null);</p>
+<p>// Cálculo de totais agregados</p>
+<p>Task&lt;(decimal entradas, decimal saidas)&gt; GetStockTotalsAsync(</p>
+<p>int artigoId,</p>
+<p>DateTime? startDate = null,</p>
+<p>DateTime? endDate = null);</p>
+<p>// Verificação de fluxo de linha de documento</p>
+<p>Task&lt;decimal&gt; CheckFluxoAsync(int artigoId, DateTime date, int linhaId);</p>
+<p>}</p>
+<p>Implementação StockService</p>
+<p>GetArticleStockByDateAsync</p>
+<p>public async Task&lt;ArtigoStock?&gt; GetArticleStockByDateAsync(int artigoId, DateTime date)</p>
+<p>{</p>
+<p>// Crítico: Adicionar um dia para inclusão de fim de dia</p>
+<p>var dateWithTime = date.Date.AddDays(1);</p>
+<p>await using var dbContext = await _contextFactory.CreateDbContextAsync();</p>
+<p>await using var connection = dbContext.Database.GetDbConnection();</p>
+<p>await connection.OpenAsync();</p>
+<p>// Chamada direta de função SQL para performance</p>
+<p>await using var command = connection.CreateCommand();</p>
+<p>command.CommandText = &quot;SELECT * FROM dbo.fn_ArtigoStockByDate(@ArtigoId, @Date)&quot;;</p>
+<p>command.CommandType = CommandType.Text;</p>
+<p>// Parâmetros fortemente tipados previnem SQL injection</p>
+<p>command.Parameters.Add(new SqlParameter(&quot;@ArtigoId&quot;, SqlDbType.Int) { Value = artigoId });</p>
+<p>command.Parameters.Add(new SqlParameter(&quot;@Date&quot;, SqlDbType.DateTime) { Value = dateWithTime });</p>
+<p>await using var reader = await command.ExecuteReaderAsync();</p>
+<p>if (await reader.ReadAsync())</p>
+<p>{</p>
+<p>return new ArtigoStock</p>
+<p>{</p>
+<p>ArtigoId = reader.GetInt32(reader.GetOrdinal(&quot;ARTIGO_ID&quot;)),</p>
+<p>Entrada = reader.GetDecimal(reader.GetOrdinal(&quot;ENTRADA&quot;)),</p>
+<p>Saida = reader.GetDecimal(reader.GetOrdinal(&quot;SAIDA&quot;)),</p>
+<p>Stock = reader.GetDecimal(reader.GetOrdinal(&quot;STOCK&quot;))</p>
+<p>};</p>
+<p>}</p>
+<p>return null;</p>
+<p>}</p>
+<p>GetStockMovementsAsync</p>
+<p>public async Task&lt;List&lt;StockMov&gt;&gt; GetStockMovementsAsync(</p>
+<p>int artigoId,</p>
+<p>DateTime? startDate = null,</p>
+<p>DateTime? endDate = null)</p>
+<p>{</p>
+<p>using var dbContext = await _contextFactory.CreateDbContextAsync();</p>
+<p>// Join LINQ complexo para rastreamento de movimentos</p>
+<p>var query = dbContext.CrmDocumentoDetalhes</p>
+<p>.Join(dbContext.CrmDocumentos,</p>
+<p>detalhe =&gt; detalhe.Documentoid,</p>
+<p>doc =&gt; doc.Id,</p>
+<p>(detalhe, doc) =&gt; new { detalhe, doc })</p>
+<p>.Join(dbContext.CrmTipoDocumentos,</p>
+<p>x =&gt; x.doc.Tipodocumentoid,</p>
+<p>tipo =&gt; tipo.Id,</p>
+<p>(x, tipo) =&gt; new { x.detalhe, x.doc, tipo })</p>
+<p>.Join(dbContext.CrmSerieDocumentos,</p>
+<p>x =&gt; x.doc.Serieid,</p>
+<p>serie =&gt; serie.Id,</p>
+<p>(x, serie) =&gt; new { x.detalhe, x.doc, x.tipo, serie })</p>
+<p>.Where(x =&gt; x.detalhe.ArtigoId == artigoId &amp;&amp; x.tipo.Movstocks == true);</p>
+<p>// Filtragem dinâmica por data</p>
+<p>if (startDate.HasValue)</p>
+<p>query = query.Where(x =&gt; x.doc.Data &gt;= startDate.Value.Date);</p>
+<p>if (endDate.HasValue)</p>
+<p>query = query.Where(x =&gt; x.doc.Data &lt;= endDate.Value.Date.AddDays(1).AddSeconds(-1));</p>
+<p>return await query</p>
+<p>.Select(x =&gt; new StockMov</p>
+<p>{</p>
+<p>ArtigoId = x.detalhe.ArtigoId,</p>
+<p>doc = x.doc,</p>
+<p>docdetalhe = x.detalhe,</p>
+<p>doctipo = x.tipo,</p>
+<p>docserie = x.serie</p>
+<p>})</p>
+<p>.OrderByDescending(s =&gt; s.doc.Data)</p>
+<p>.ToListAsync();</p>
+<p>}</p>
+<p>Estratégia de Cache</p>
+<p>Arquitetura de Cache Multi-Camada</p>
+<p>Geração de Chave de Cache</p>
+<p>// Padrão: {tipo}_{identificador}_{data}</p>
+<p>var cacheKey = $&quot;stock_{artigoId}_{date:yyyyMMdd}&quot;;</p>
+<p>Estratégia de Expiração Graduada</p>
+<p>public async Task&lt;ArtigoStock?&gt; GetArticleStockByDateAsync(int artigoId, DateTime date)</p>
+<p>{</p>
+<p>var cacheKey = $&quot;stock_{artigoId}_{date:yyyyMMdd}&quot;;</p>
+<p>// Cache L1: Verificação de Memória</p>
+<p>if (_cache.TryGetValue&lt;ArtigoStock&gt;(cacheKey, out var cachedStock))</p>
+<p>{</p>
+<p>_logger.LogDebug(&quot;Stock cache hit para artigo {ArtigoId} na data {Date}&quot;,</p>
+<p>artigoId, date);</p>
+<p>return cachedStock;</p>
+<p>}</p>
+<p>// L2: Consulta Base de Dados</p>
+<p>var stock = await _innerService.GetArticleStockByDateAsync(artigoId, date);</p>
+<p>if (stock != null)</p>
+<p>{</p>
+<p>// Expiração inteligente baseada na idade dos dados</p>
+<p>var cacheExpiration = date.Date &lt; DateTime.Today.AddDays(-7)</p>
+<p>? TimeSpan.FromHours(1)      // Histórico: 1 hora</p>
+<p>: TimeSpan.FromMinutes(5);   // Recente: 5 minutos</p>
+<p>_cache.Set(cacheKey, stock, cacheExpiration);</p>
+<p>}</p>
+<p>return stock;</p>
+<p>}</p>
+<p>Matriz de Decisão de Cache</p>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Tipo de Query</th>
+<th>Duração Cache</th>
+<th>Justificação</th>
+</tr></thead><tbody>
+<tr>
+<td>Stock Histórico (&gt;7 dias)</td>
+<td>1 hora</td>
+<td>Dados são imutáveis</td>
+</tr>
+<tr>
+<td>Stock Recente (&lt;7 dias)</td>
+<td>5 minutos</td>
+<td>Pode ainda mudar</td>
+</tr>
+<tr>
+<td>Stock Atual (hoje)</td>
+<td>5 minutos</td>
+<td>Transações ativas</td>
+</tr>
+<tr>
+<td>Movimentos Filtrados</td>
+<td>Não em cache</td>
+<td>Muito específico</td>
+</tr>
+<tr>
+<td>Totais Desde Sempre</td>
+<td>5 minutos</td>
+<td>Frequentemente acedido</td>
+</tr>
+<tr>
+<td>Fluxo de Documento</td>
+<td>Não em cache</td>
+<td>Específico da transação</td>
+</tr>
+</tbody></table></div>
+<p>Padrões de Invalidação de Cache</p>
+<p>Expiração Baseada em Tempo</p>
+<p>var cacheOptions = new MemoryCacheEntryOptions</p>
+<p>{</p>
+<p>AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5),</p>
+<p>SlidingExpiration = TimeSpan.FromMinutes(2)</p>
+<p>};</p>
+<p>Invalidação Manual (Extensão)</p>
+<p>public void InvalidateStockCache(int artigoId)</p>
+<p>{</p>
+<p>var pattern = $&quot;stock_{artigoId}_*&quot;;</p>
+<p>// Remove todas as entradas de cache para este artigo</p>
+<p>_cache.Remove(pattern);</p>
+<p>}</p>
+<p>Integração com Base de Dados</p>
+<p>Funções SQL Server</p>
+<p>fn_ArtigoStockByDate</p>
+<p>-- Assinatura da função (implícita)</p>
+<p>CREATE FUNCTION dbo.fn_ArtigoStockByDate</p>
+<p>(</p>
+<p>@ArtigoId INT,</p>
+<p>@Date DATETIME</p>
+<p>)</p>
+<p>RETURNS TABLE</p>
+<p>AS</p>
+<p>RETURN</p>
+<p>(</p>
+<p>SELECT</p>
+<p>@ArtigoId as ARTIGO_ID,</p>
+<p>ISNULL(SUM(CASE WHEN t.Entradasaida = &#x27;E&#x27; THEN d.Quantidade END), 0) as ENTRADA,</p>
+<p>ISNULL(SUM(CASE WHEN t.Entradasaida = &#x27;S&#x27; THEN d.Quantidade END), 0) as SAIDA,</p>
+<p>ISNULL(SUM(CASE WHEN t.Entradasaida = &#x27;E&#x27; THEN d.Quantidade</p>
+<p>WHEN t.Entradasaida = &#x27;S&#x27; THEN -d.Quantidade END), 0) as STOCK</p>
+<p>FROM CrmDocumentoDetalhes d</p>
+<p>JOIN CrmDocumentos doc ON d.Documentoid = doc.Id</p>
+<p>JOIN CrmTipoDocumentos t ON doc.Tipodocumentoid = t.Id</p>
+<p>WHERE d.ArtigoId = @ArtigoId</p>
+<p>AND doc.Data &lt; @Date</p>
+<p>AND t.Movstocks = 1</p>
+<p>)</p>
+<p>fn_ArtigoUsedInFluxo</p>
+<p>-- Verifica fluxo de stock para linhas de documento específicas</p>
+<p>CREATE FUNCTION dbo.fn_ArtigoUsedInFluxo</p>
+<p>(</p>
+<p>@ArtigoId INT,</p>
+<p>@LinhaId INT,</p>
+<p>@Date DATETIME</p>
+<p>)</p>
+<p>RETURNS TABLE</p>
+<p>AS</p>
+<p>RETURN</p>
+<p>(</p>
+<p>-- Lógica complexa de cálculo de fluxo</p>
+<p>SELECT ... as STOCK</p>
+<p>)</p>
+<p>Gestão de Conexões</p>
+<p>// Usando IDbContextFactory para pool de conexões</p>
+<p>private readonly IDbContextFactory&lt;BioBragaContext&gt; _contextFactory;</p>
+<p>public async Task&lt;T&gt; ExecuteWithContextAsync&lt;T&gt;(Func&lt;BioBragaContext, Task&lt;T&gt;&gt; operation)</p>
+<p>{</p>
+<p>await using var context = await _contextFactory.CreateDbContextAsync();</p>
+<p>return await operation(context);</p>
+<p>}</p>
+<p>Integração UI</p>
+<p>Estratégia de Pré-Carregamento em ArtigoDetalhe.razor</p>
+<p>Fase de Inicialização</p>
+<p>protected override async Task OnInitializedAsync()</p>
+<p>{</p>
+<p>// ... outra inicialização ...</p>
+<p>// Começa a pré-carregar dados de stock se gestão de stock está ativa</p>
+<p>if (artigo != null &amp;&amp; artigo.TemGestao == true)</p>
+<p>{</p>
+<p>// Fire and forget - começa a carregar em segundo plano</p>
+<p>_stockSummaryTask = StockService.GetCurrentStockAsync(artigo.Id);</p>
+<p>}</p>
+<p>}</p>
+<p>Ativação do Separador</p>
+<p>private async Task OnStockTabClick()</p>
+<p>{</p>
+<p>if (stockTabFirstLoad &amp;&amp; artigo != null)</p>
+<p>{</p>
+<p>isLoadingStock = true;</p>
+<p>StateHasChanged();</p>
+<p>try</p>
+<p>{</p>
+<p>// Se pré-carregado, isto completa imediatamente</p>
+<p>if (_stockSummaryTask != null)</p>
+<p>{</p>
+<p>currentStock = await _stockSummaryTask;</p>
+<p>}</p>
+<p>else</p>
+<p>{</p>
+<p>// Fallback se não pré-carregado</p>
+<p>currentStock = await StockService.GetCurrentStockAsync(artigo.Id);</p>
+<p>}</p>
+<p>// Atualiza estatísticas</p>
+<p>if (currentStock != null)</p>
+<p>{</p>
+<p>stat_stock_e = currentStock.Entrada;</p>
+<p>stat_stock_s = currentStock.Saida;</p>
+<p>}</p>
+<p>}</p>
+<p>finally</p>
+<p>{</p>
+<p>isLoadingStock = false;</p>
+<p>stockTabFirstLoad = false;</p>
+<p>StateHasChanged();</p>
+<p>}</p>
+<p>}</p>
+<p>}</p>
+<p>Filtragem por Data com Gestão de Tarefas</p>
+<p>private async Task ShowStockHistory()</p>
+<p>{</p>
+<p>showStockHistory = true;</p>
+<p>// Padrão de reutilização inteligente de tarefas</p>
+<p>if (stocklist == null || !stocklist.Any() || isFiltered)</p>
+<p>{</p>
+<p>isLoadingHistory = true;</p>
+<p>StateHasChanged();</p>
+<p>try</p>
+<p>{</p>
+<p>if (isFiltered)</p>
+<p>{</p>
+<p>// Cria nova tarefa filtrada</p>
+<p>_stockMovementsTask = StockService.GetStockMovementsAsync(</p>
+<p>artigo.Id, filterStartDate, filterEndDate);</p>
+<p>// Cálculo paralelo de totais</p>
+<p>var totalsTask = StockService.GetStockTotalsAsync(</p>
+<p>artigo.Id, filterStartDate, filterEndDate);</p>
+<p>// Aguarda ambos</p>
+<p>stocklist = await _stockMovementsTask;</p>
+<p>var (entradas, saidas) = await totalsTask;</p>
+<p>stat_stock_e = entradas;</p>
+<p>stat_stock_s = saidas;</p>
+<p>}</p>
+<p>else</p>
+<p>{</p>
+<p>// Reutiliza ou cria tarefa não filtrada</p>
+<p>if (_stockMovementsTask == null)</p>
+<p>{</p>
+<p>_stockMovementsTask = StockService.GetStockMovementsAsync(artigo.Id);</p>
+<p>}</p>
+<p>stocklist = await _stockMovementsTask;</p>
+<p>}</p>
+<p>}</p>
+<p>finally</p>
+<p>{</p>
+<p>isLoadingHistory = false;</p>
+<p>StateHasChanged();</p>
+<p>}</p>
+<p>}</p>
+<p>}</p>
+<p>Otimização de Performance</p>
+<p>Técnicas de Otimização</p>
+<ol>
+<li>Pré-Carregamento de Tarefas</li>
+</ol>
+<p>// Inicia operações custosas antes de serem necessárias</p>
+<p>private Task&lt;ArtigoStock&gt; _stockSummaryTask;</p>
+<p>private Task&lt;List&lt;StockMov&gt;&gt; _stockMovementsTask;</p>
+<p>// Inicializa no carregamento da página</p>
+<p>_stockSummaryTask = StockService.GetCurrentStockAsync(artigo.Id);</p>
+<p>// Usa quando necessário (já completo ou quase completo)</p>
+<p>var result = await _stockSummaryTask;</p>
+<ol>
+<li>Pool de Conexões</li>
+</ol>
+<p>// IDbContextFactory mantém pool de conexões</p>
+<p>services.AddDbContextFactory&lt;BioBragaContext&gt;(options =&gt;</p>
+<p>options.UseSqlServer(connectionString, sqlOptions =&gt;</p>
+<p>sqlOptions.EnableRetryOnFailure()));</p>
+<ol>
+<li>Otimização de Queries</li>
+</ol>
+<p>// Query única com joins em vez de múltiplas queries</p>
+<p>var query = context.CrmDocumentoDetalhes</p>
+<p>.Join(...) // Todos os joins numa query</p>
+<p>.Where(...)</p>
+<p>.Select(...) // Projeta apenas campos necessários</p>
+<p>.AsNoTracking(); // Otimização read-only</p>
+<ol>
+<li>Expiração Graduada de Cache</li>
+</ol>
+<p>// Cache mais longo para dados estáveis</p>
+<p>var expiration = IsHistoricalData(date)</p>
+<p>? TimeSpan.FromHours(1)</p>
+<p>: TimeSpan.FromMinutes(5);</p>
+<p>Métricas de Performance</p>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Operação</th>
+<th>Sem Cache</th>
+<th>Com Cache</th>
+<th>Melhoria</th>
+</tr></thead><tbody>
+<tr>
+<td>Query Stock Atual</td>
+<td>2000ms</td>
+<td>1ms</td>
+<td>99,95%</td>
+</tr>
+<tr>
+<td>Stock Histórico</td>
+<td>1500ms</td>
+<td>1ms</td>
+<td>99,93%</td>
+</tr>
+<tr>
+<td>Lista Movimentos (50 itens)</td>
+<td>3000ms</td>
+<td>2ms</td>
+<td>99,93%</td>
+</tr>
+<tr>
+<td>Query Filtrada</td>
+<td>2500ms</td>
+<td>2500ms</td>
+<td>N/A (não em cache)</td>
+</tr>
+</tbody></table></div>
+<p>Gestão de Memória</p>
+<p>// Configurar limites de tamanho de cache</p>
+<p>services.AddMemoryCache(options =&gt;</p>
+<p>{</p>
+<p>options.SizeLimit = 1000; // Máximo de entradas</p>
+<p>options.CompactionPercentage = 0.25; // Compacta 25% quando atinge limite</p>
+<p>});</p>
+<p>// Definir tamanho para entradas de cache</p>
+<p>var cacheOptions = new MemoryCacheEntryOptions</p>
+<p>{</p>
+<p>Size = 1, // Cada entrada conta como 1 para o limite</p>
+<p>Priority = CacheItemPriority.Normal</p>
+<p>};</p>
+<p>Referência da API</p>
+<p>Métodos de Extensão</p>
+<p>public static class StockServiceExtensions</p>
+<p>{</p>
+<p>/// &lt;summary&gt;</p>
+<p>/// Obtém stock atual (de hoje)</p>
+<p>/// &lt;/summary&gt;</p>
+<p>public static Task&lt;ArtigoStock?&gt; GetCurrentStockAsync(</p>
+<p>this IStockService stockService, int artigoId)</p>
+<p>{</p>
+<p>return stockService.GetArticleStockByDateAsync(artigoId, DateTime.Today);</p>
+<p>}</p>
+<p>/// &lt;summary&gt;</p>
+<p>/// Verifica se há stock suficiente disponível</p>
+<p>/// &lt;/summary&gt;</p>
+<p>public static async Task&lt;bool&gt; HasSufficientStockAsync(</p>
+<p>this IStockService stockService,</p>
+<p>int artigoId,</p>
+<p>decimal requiredQuantity,</p>
+<p>DateTime date)</p>
+<p>{</p>
+<p>var stock = await stockService.GetArticleStockByDateAsync(artigoId, date);</p>
+<p>return stock?.Stock &gt;= requiredQuantity;</p>
+<p>}</p>
+<p>}</p>
+<p>Objetos de Transferência de Dados</p>
+<p>public class ArtigoStock</p>
+<p>{</p>
+<p>public int ArtigoId { get; set; }</p>
+<p>public decimal Entrada { get; set; }    // Total de entradas</p>
+<p>public decimal Saida { get; set; }      // Total de saídas</p>
+<p>public decimal Stock { get; set; }      // Saldo atual</p>
+<p>}</p>
+<p>public class StockMov</p>
+<p>{</p>
+<p>public int? ArtigoId { get; set; }</p>
+<p>public CrmDocumento doc { get; set; }</p>
+<p>public CrmDocumentoDetalhe docdetalhe { get; set; }</p>
+<p>public CrmTipoDocumento doctipo { get; set; }</p>
+<p>public CrmSerieDocumento docserie { get; set; }</p>
+<p>}</p>
+<p>Configuração</p>
+<p>Registo de Serviços</p>
+<p>Configuração Básica</p>
+<p>// Program.cs</p>
+<p>builder.Services.AddDbContextFactory&lt;BioBragaContext&gt;(options =&gt;</p>
+<p>options.UseSqlServer(connectionString));</p>
+<p>builder.Services.AddScoped&lt;IStockService, StockService&gt;();</p>
+<p>builder.Services.AddMemoryCache();</p>
+<p>Configuração Avançada com Cache</p>
+<p>// Registar com decorator de cache</p>
+<p>builder.Services.AddScoped&lt;StockService&gt;();</p>
+<p>builder.Services.AddScoped&lt;IStockService&gt;(provider =&gt;</p>
+<p>{</p>
+<p>var innerService = provider.GetRequiredService&lt;StockService&gt;();</p>
+<p>var cache = provider.GetRequiredService&lt;IMemoryCache&gt;();</p>
+<p>var logger = provider.GetRequiredService&lt;ILogger&lt;CachedStockService&gt;&gt;();</p>
+<p>return new CachedStockService(innerService, cache, logger);</p>
+<p>});</p>
+<p>// Configurar opções de cache</p>
+<p>builder.Services.AddMemoryCache(options =&gt;</p>
+<p>{</p>
+<p>options.SizeLimit = 1000;</p>
+<p>options.CompactionPercentage = 0.25;</p>
+<p>options.ExpirationScanFrequency = TimeSpan.FromMinutes(5);</p>
+<p>});</p>
+<p>Definições de Configuração</p>
+<p>{</p>
+<p>&quot;ConnectionStrings&quot;: {</p>
+<p>&quot;DefaultConnection&quot;: &quot;Server=...;Database=BioBraga;...&quot;</p>
+<p>},</p>
+<p>&quot;Caching&quot;: {</p>
+<p>&quot;StockCacheMinutes&quot;: 5,</p>
+<p>&quot;HistoricalCacheHours&quot;: 1,</p>
+<p>&quot;EnableCaching&quot;: true</p>
+<p>},</p>
+<p>&quot;Performance&quot;: {</p>
+<p>&quot;EnablePreloading&quot;: true,</p>
+<p>&quot;MaxConcurrentQueries&quot;: 10</p>
+<p>}</p>
+<p>}</p>
+<p>Monitorização e Resolução de Problemas</p>
+<p>Estratégia de Logging</p>
+<p>// Logging estruturado para monitorização</p>
+<p>_logger.LogInformation(&quot;Query de stock executada&quot;, new</p>
+<p>{</p>
+<p>ArticleId = artigoId,</p>
+<p>Date = date,</p>
+<p>CacheHit = fromCache,</p>
+<p>ExecutionTime = stopwatch.ElapsedMilliseconds</p>
+<p>});</p>
+<p>Health Checks</p>
+<p>public class StockServiceHealthCheck : IHealthCheck</p>
+<p>{</p>
+<p>public async Task&lt;HealthCheckResult&gt; CheckHealthAsync(</p>
+<p>HealthCheckContext context,</p>
+<p>CancellationToken cancellationToken = default)</p>
+<p>{</p>
+<p>try</p>
+<p>{</p>
+<p>// Testar conexão à base de dados</p>
+<p>var testStock = await _stockService.GetCurrentStockAsync(1);</p>
+<p>// Verificar cache</p>
+<p>var cacheStats = _memoryCache.GetCurrentStatistics();</p>
+<p>return HealthCheckResult.Healthy(&quot;Serviço de stock operacional&quot;, new Dictionary&lt;string, object&gt;</p>
+<p>{</p>
+<p>[&quot;CacheHitRate&quot;] = cacheStats.TotalHits / (double)cacheStats.TotalMisses,</p>
+<p>[&quot;CacheEntries&quot;] = cacheStats.CurrentEntryCount</p>
+<p>});</p>
+<p>}</p>
+<p>catch (Exception ex)</p>
+<p>{</p>
+<p>return HealthCheckResult.Unhealthy(&quot;Falha no serviço de stock&quot;, ex);</p>
+<p>}</p>
+<p>}</p>
+<p>}</p>
+<p>Monitorização de Performance</p>
+<p>// Adicionar contadores de performance</p>
+<p>services.AddSingleton&lt;IMetrics, MetricsCollector&gt;();</p>
+<p>// No serviço</p>
+<p>public async Task&lt;ArtigoStock?&gt; GetArticleStockByDateAsync(int artigoId, DateTime date)</p>
+<p>{</p>
+<p>using var activity = Activity.StartActivity(&quot;StockQuery&quot;);</p>
+<p>activity?.SetTag(&quot;article.id&quot;, artigoId);</p>
+<p>activity?.SetTag(&quot;query.date&quot;, date);</p>
+<p>// ... implementação ...</p>
+<p>_metrics.RecordQueryTime(activity.Duration);</p>
+<p>}</p>
+<p>Problemas Comuns e Soluções</p>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Problema</th>
+<th>Sintomas</th>
+<th>Solução</th>
+</tr></thead><tbody>
+<tr>
+<td>Pressão de Memória de Cache</td>
+<td>Alto uso de memória, respostas lentas</td>
+<td>Reduzir duração de cache ou implementar limites de tamanho</td>
+</tr>
+<tr>
+<td>Dados Desatualizados</td>
+<td>Utilizadores veem stock desatualizado</td>
+<td>Reduzir tempo de expiração de cache ou adicionar refresh manual</td>
+</tr>
+<tr>
+<td>Queries Filtradas Lentas</td>
+<td>Queries de intervalo de data são lentas</td>
+<td>Considerar implementar estratégia de cache baseada em intervalo</td>
+</tr>
+<tr>
+<td>Exaustão de Pool de Conexões</td>
+<td>Exceções de timeout</td>
+<td>Aumentar tamanho do pool ou otimizar execução de query</td>
+</tr>
+</tbody></table></div>
+<p>Helpers de Debug</p>
+<p>// Endpoint de inspeção de cache</p>
+<p>[HttpGet(&quot;api/debug/cache-stats&quot;)]</p>
+<p>public IActionResult GetCacheStats()</p>
+<p>{</p>
+<p>var stats = _memoryCache.GetCurrentStatistics();</p>
+<p>return Ok(new</p>
+<p>{</p>
+<p>stats.CurrentEntryCount,</p>
+<p>stats.TotalHits,</p>
+<p>stats.TotalMisses,</p>
+<p>HitRate = stats.TotalHits / (double)(stats.TotalHits + stats.TotalMisses)</p>
+<p>});</p>
+<p>}</p>
+<p>Boas Práticas</p>
+<p>Fazer ✅</p>
+<p>Usar sempre IDbContextFactory para operações de base de dados</p>
+<p>Implementar expiração graduada de cache baseada na estabilidade dos dados</p>
+<p>Pré-carregar operações custosas quando possível</p>
+<p>Usar logging estruturado para debugging</p>
+<p>Monitorizar taxas de hit de cache</p>
+<p>Não Fazer ❌</p>
+<p>Não guardar queries filtradas em cache (muito específicas)</p>
+<p>Não guardar dados mutáveis por longos períodos</p>
+<p>Não esquecer de lidar graciosamente com cache misses</p>
+<p>Não usar operações síncronas de base de dados</p>
+<p>Não ignorar avisos de pressão de memória</p>
+<p>Melhorias Futuras</p>
+<p>Melhorias Propostas</p>
+<p>Integração Redis: Cache distribuído para deployments multi-servidor</p>
+<p>Suporte GraphQL: Fetching de dados mais eficiente para queries complexas</p>
+<p>Invalidação Orientada a Eventos: Atualizações de cache em tempo real via SignalR</p>
+<p>Pré-Carregamento Preditivo: Predição baseada em ML do comportamento do utilizador</p>
+<p>Compressão: Comprimir objetos grandes em cache para poupar memória</p>
+</div>
+</body>
+</html>

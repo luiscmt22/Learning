@@ -1,0 +1,1128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CSharp_Generics_Guide</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 01-Basics</div>
+  <h1>CSharp_Generics_Guide</h1>
+  <div class="meta">Source: <code>Education/Basics/CSharp_Generics_Guide.md</code> &middot; <a href="CSharp_Generics_Guide.md">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<div class="dup-banner"><strong>Same-stem variants</strong> (likely same content, different format): <code>Education/Basics/CSharp_Generics_Guide.pdf</code></div><h1 id="generics-in-c">Generics in C#</h1>
+<h2 id="a-comprehensive-guide">A Comprehensive Guide</h2>
+<hr>
+<h1 id="part-i-historical-context">Part I: Historical Context</h1>
+<h2 id="chapter-1-the-world-before-generics">Chapter 1: The World Before Generics</h2>
+<h3 id="1-1-the-problem-of-type-safety">1.1 The Problem of Type Safety</h3>
+<p>Before generics were introduced, developers faced a fundamental tension in programming: <strong>flexibility versus type safety</strong>.</p>
+<p>Imagine you&#x27;re building a collection to store items. You want it to be reusable—capable of storing integers today, strings tomorrow, and custom <code class="il">Employee</code> objects next week. In the early days of C# (versions 1.0 and 1.1), you had two imperfect options.</p>
+<h4 id="option-a-create-type-specific-collections">Option A: Create Type-Specific Collections</h4>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">IntegerList</span>
+{
+    <span class="kw">private</span> <span class="kw">int</span>[] _items;
+    <span class="kw">public</span> <span class="kw">void</span> <span class="type">Add</span>(<span class="kw">int</span> item) { <span class="cmt">/* ... */</span> }
+    <span class="kw">public</span> <span class="kw">int</span> <span class="type">Get</span>(<span class="kw">int</span> index) { <span class="cmt">/* ... */</span> }
+}
+
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">StringList</span>
+{
+    <span class="kw">private</span> <span class="kw">string</span>[] _items;
+    <span class="kw">public</span> <span class="kw">void</span> <span class="type">Add</span>(<span class="kw">string</span> item) { <span class="cmt">/* ... */</span> }
+    <span class="kw">public</span> <span class="kw">string</span> <span class="type">Get</span>(<span class="kw">int</span> index) { <span class="cmt">/* ... */</span> }
+}
+
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">EmployeeList</span>
+{
+    <span class="kw">private</span> <span class="type">Employee</span>[] _items;
+    <span class="kw">public</span> <span class="kw">void</span> <span class="type">Add</span>(<span class="type">Employee</span> item) { <span class="cmt">/* ... */</span> }
+    <span class="kw">public</span> <span class="type">Employee</span> <span class="type">Get</span>(<span class="kw">int</span> index) { <span class="cmt">/* ... */</span> }
+}</code></pre>
+<p>This approach provided <strong>type safety</strong>—the compiler would catch errors like adding a string to an <code class="il">IntegerList</code>. However, it was utterly <strong>impractical</strong>. For every type you needed to store, you had to write an entirely new collection class. Code duplication ran rampant.</p>
+<h4 id="option-b-use-system-object">Option B: Use <code class="il">System.Object</code></h4>
+<p>The .NET Framework offered a seemingly elegant solution: since every type in .NET inherits from <code class="il">System.Object</code>, you could create a single collection that stores objects:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">ArrayList</span>
+{
+    <span class="kw">private</span> <span class="kw">object</span>[] _items;
+    
+    <span class="kw">public</span> <span class="kw">void</span> <span class="type">Add</span>(<span class="kw">object</span> item) { <span class="cmt">/* ... */</span> }
+    <span class="kw">public</span> <span class="kw">object</span> <span class="type">Get</span>(<span class="kw">int</span> index) { <span class="cmt">/* ... */</span> }
+}</code></pre>
+<p>This was the approach taken by <code class="il">System.Collections.ArrayList</code>, and it worked—sort of. You could store anything:</p>
+<pre><code class="lang-csharp"><span class="type">ArrayList</span> list = <span class="kw">new</span> <span class="type">ArrayList</span>();
+list.<span class="type">Add</span>(<span class="num">42</span>);
+list.<span class="type">Add</span>(<span class="str">&quot;Hello&quot;</span>);
+list.<span class="type">Add</span>(<span class="kw">new</span> <span class="type">Employee</span>(<span class="str">&quot;Alice&quot;</span>));</code></pre>
+<p>But this flexibility came at a severe cost.</p>
+<h3 id="1-2-the-two-penalties-of-object-based-collections">1.2 The Two Penalties of Object-Based Collections</h3>
+<h4 id="penalty-1-boxing-and-unboxing-performance">Penalty #1: Boxing and Unboxing (Performance)</h4>
+<p>In .NET, types are divided into two categories:</p>
+<ul>
+<li><strong>Value types</strong> (e.g., <code class="il">int</code>, <code class="il">double</code>, <code class="il">bool</code>, <code class="il">struct</code>) — stored directly on the stack</li>
+<li><strong>Reference types</strong> (e.g., <code class="il">string</code>, classes) — stored on the heap, with a reference on the stack</li>
+</ul>
+<p>When you store a value type in an <code class="il">object</code>-based collection, the runtime must perform <strong>boxing</strong>: wrapping the value in an object on the heap.</p>
+<pre><code class="lang-csharp"><span class="type">ArrayList</span> numbers = <span class="kw">new</span> <span class="type">ArrayList</span>();
+numbers.<span class="type">Add</span>(<span class="num">42</span>);  <span class="cmt">// Boxing occurs here: int → object</span></code></pre>
+<p>When retrieving, <strong>unboxing</strong> occurs:</p>
+<pre><code class="lang-csharp"><span class="kw">int</span> <span class="kw">value</span> = (<span class="kw">int</span>)numbers[<span class="num">0</span>];  <span class="cmt">// Unboxing: object → int</span></code></pre>
+<p>Boxing and unboxing are expensive operations. They involve:</p>
+<ul>
+<li>Memory allocation on the heap</li>
+<li>Copying data between stack and heap</li>
+<li>Additional garbage collection pressure</li>
+</ul>
+<p>In tight loops processing thousands of items, this overhead was devastating to performance.</p>
+<h4 id="penalty-2-loss-of-type-safety-correctness">Penalty #2: Loss of Type Safety (Correctness)</h4>
+<p>With <code class="il">object</code>-based collections, the compiler had no way to enforce what types were stored:</p>
+<pre><code class="lang-csharp"><span class="type">ArrayList</span> list = <span class="kw">new</span> <span class="type">ArrayList</span>();
+list.<span class="type">Add</span>(<span class="num">1</span>);
+list.<span class="type">Add</span>(<span class="num">2</span>);
+list.<span class="type">Add</span>(<span class="str">&quot;three&quot;</span>);  <span class="cmt">// Compiles fine!</span>
+
+<span class="kw">foreach</span> (<span class="kw">object</span> item <span class="kw">in</span> list)
+{
+    <span class="kw">int</span> number = (<span class="kw">int</span>)item;  <span class="cmt">// Runtime exception on &quot;three&quot;!</span>
+}</code></pre>
+<p>Errors that should have been caught at compile time now exploded at runtime—sometimes in production, sometimes in edge cases that testing missed. This violated a core principle of strongly-typed languages: <strong>catch errors as early as possible</strong>.</p>
+<h3 id="1-3-the-industry-response">1.3 The Industry Response</h3>
+<p>The limitations of object-based collections were not unique to C#. The Java community faced identical challenges, and in 2004, Java 5.0 introduced generics. C++ had long offered templates, a compile-time mechanism for generic programming.</p>
+<p>Microsoft and the C# team, led by Anders Hejlsberg, recognized that a robust generics implementation was essential. However, they made a crucial design decision that differentiated C# generics from Java&#x27;s approach.</p>
+<hr>
+<h1 id="part-ii-the-advent-of-generics">Part II: The Advent of Generics</h1>
+<h2 id="chapter-2-generics-arrive-in-c-2-0">Chapter 2: Generics Arrive in C# 2.0</h2>
+<p>In November 2005, C# 2.0 was released alongside .NET Framework 2.0. Generics were the flagship feature.</p>
+<h3 id="2-1-the-core-concept">2.1 The Core Concept</h3>
+<p>A <strong>generic</strong> is a type or method that is parameterized by one or more type parameters. Instead of committing to a specific type, you define a &quot;placeholder&quot; that gets filled in when the generic is used.</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">List</span>&lt;T&gt;
+{
+    <span class="kw">private</span> T[] _items;
+    
+    <span class="kw">public</span> <span class="kw">void</span> <span class="type">Add</span>(T item) { <span class="cmt">/* ... */</span> }
+    <span class="kw">public</span> T <span class="type">Get</span>(<span class="kw">int</span> index) { <span class="cmt">/* ... */</span> }
+}</code></pre>
+<p>The <code class="il">&lt;T&gt;</code> is a <strong>type parameter</strong>. By convention:</p>
+<ul>
+<li><code class="il">T</code> — Type (general purpose)</li>
+<li><code class="il">TKey</code>, <code class="il">TValue</code> — for key-value scenarios</li>
+<li><code class="il">TInput</code>, <code class="il">TOutput</code> — for transformation scenarios</li>
+<li><code class="il">TEntity</code> — for entity/model scenarios</li>
+</ul>
+<p>When you use the generic, you provide a <strong>type argument</strong>:</p>
+<pre><code class="lang-csharp"><span class="type">List</span>&lt;<span class="kw">int</span>&gt; numbers = <span class="kw">new</span> <span class="type">List</span>&lt;<span class="kw">int</span>&gt;();
+<span class="type">List</span>&lt;<span class="kw">string</span>&gt; names = <span class="kw">new</span> <span class="type">List</span>&lt;<span class="kw">string</span>&gt;();
+<span class="type">List</span>&lt;<span class="type">Employee</span>&gt; employees = <span class="kw">new</span> <span class="type">List</span>&lt;<span class="type">Employee</span>&gt;();</code></pre>
+<p>Each of these is a <strong>constructed type</strong>—a specific version of the generic with concrete types substituted for the parameters.</p>
+<h3 id="2-2-the-benefits-realized">2.2 The Benefits Realized</h3>
+<h4 id="benefit-1-type-safety-restored">Benefit #1: Type Safety Restored</h4>
+<p>The compiler now enforces type correctness:</p>
+<pre><code class="lang-csharp"><span class="type">List</span>&lt;<span class="kw">int</span>&gt; numbers = <span class="kw">new</span> <span class="type">List</span>&lt;<span class="kw">int</span>&gt;();
+numbers.<span class="type">Add</span>(<span class="num">1</span>);
+numbers.<span class="type">Add</span>(<span class="num">2</span>);
+numbers.<span class="type">Add</span>(<span class="str">&quot;three&quot;</span>);  <span class="cmt">// Compile error! Cannot convert string to int</span></code></pre>
+<p>Errors are caught immediately, in your IDE, before the code ever runs.</p>
+<h4 id="benefit-2-no-boxing-for-value-types">Benefit #2: No Boxing for Value Types</h4>
+<p>The .NET runtime generates specialized versions of generic types for value types. When you use <code class="il">List&lt;int&gt;</code>, the runtime creates a version that works directly with integers—no boxing required.</p>
+<pre><code class="lang-csharp"><span class="type">List</span>&lt;<span class="kw">int</span>&gt; numbers = <span class="kw">new</span> <span class="type">List</span>&lt;<span class="kw">int</span>&gt;();
+numbers.<span class="type">Add</span>(<span class="num">42</span>);  <span class="cmt">// No boxing! Stored directly as int</span>
+<span class="kw">int</span> <span class="kw">value</span> = numbers[<span class="num">0</span>];  <span class="cmt">// No unboxing! Retrieved directly as int</span></code></pre>
+<p>Performance-critical code could now use collections without the overhead.</p>
+<h4 id="benefit-3-code-reuse-without-sacrifice">Benefit #3: Code Reuse Without Sacrifice</h4>
+<p>A single generic class serves infinite use cases:</p>
+<pre><code class="lang-csharp"><span class="cmt">// One implementation, infinite applications</span>
+<span class="type">List</span>&lt;<span class="kw">int</span>&gt; integers = <span class="kw">new</span> <span class="type">List</span>&lt;<span class="kw">int</span>&gt;();
+<span class="type">List</span>&lt;<span class="kw">string</span>&gt; strings = <span class="kw">new</span> <span class="type">List</span>&lt;<span class="kw">string</span>&gt;();
+<span class="type">List</span>&lt;<span class="type">Customer</span>&gt; customers = <span class="kw">new</span> <span class="type">List</span>&lt;<span class="type">Customer</span>&gt;();
+<span class="type">List</span>&lt;<span class="type">List</span>&lt;<span class="kw">int</span>&gt;&gt; matrix = <span class="kw">new</span> <span class="type">List</span>&lt;<span class="type">List</span>&lt;<span class="kw">int</span>&gt;&gt;();  <span class="cmt">// Generics can nest!</span></code></pre>
+<h3 id="2-3-reification-c-s-secret-weapon">2.3 Reification: C#&#x27;s Secret Weapon</h3>
+<p>Here lies a critical distinction between C# and Java generics.</p>
+<p><strong>Java uses type erasure</strong>: generic type information exists only at compile time. At runtime, a <code class="il">List&lt;String&gt;</code> and a <code class="il">List&lt;Integer&gt;</code> are both just <code class="il">List</code>. This was done for backward compatibility with older JVMs but limits what generics can do.</p>
+<p><strong>C# uses reification</strong>: generic type information is preserved at runtime. The CLR (Common Language Runtime) knows the difference between <code class="il">List&lt;int&gt;</code> and <code class="il">List&lt;string&gt;</code>. This enables:</p>
+<pre><code class="lang-csharp"><span class="cmt">// You can check generic types at runtime</span>
+<span class="type">Type</span> listType = <span class="kw">typeof</span>(<span class="type">List</span>&lt;<span class="kw">int</span>&gt;);
+<span class="type">Console</span>.<span class="type">WriteLine</span>(listType.<span class="type">IsGenericType</span>);  <span class="cmt">// True</span>
+<span class="type">Console</span>.<span class="type">WriteLine</span>(listType.<span class="type">GetGenericArguments</span>()[<span class="num">0</span>]);  <span class="cmt">// System.Int32</span>
+
+<span class="cmt">// You can create generic types dynamically</span>
+<span class="type">Type</span> openType = <span class="kw">typeof</span>(<span class="type">List</span>&lt;&gt;);
+<span class="type">Type</span> closedType = openType.<span class="type">MakeGenericType</span>(<span class="kw">typeof</span>(<span class="kw">string</span>));
+<span class="kw">object</span> instance = <span class="type">Activator</span>.<span class="type">CreateInstance</span>(closedType);</code></pre>
+<p>This design decision makes C# generics more powerful and enables sophisticated scenarios in frameworks like Entity Framework, dependency injection containers, and serialization libraries.</p>
+<hr>
+<h1 id="part-iii-mastering-generic-syntax">Part III: Mastering Generic Syntax</h1>
+<h2 id="chapter-3-generic-classes-and-structures">Chapter 3: Generic Classes and Structures</h2>
+<h3 id="3-1-defining-a-generic-class">3.1 Defining a Generic Class</h3>
+<p>Let&#x27;s build a practical example—a generic <code class="il">Result&lt;T&gt;</code> type for handling operation outcomes:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">Result</span>&lt;T&gt;
+{
+    <span class="kw">public</span> <span class="kw">bool</span> <span class="type">IsSuccess</span> { <span class="kw">get</span>; }
+    <span class="kw">public</span> T <span class="type">Value</span> { <span class="kw">get</span>; }
+    <span class="kw">public</span> <span class="kw">string</span> <span class="type">Error</span> { <span class="kw">get</span>; }
+    
+    <span class="kw">private</span> <span class="type">Result</span>(<span class="kw">bool</span> isSuccess, T <span class="kw">value</span>, <span class="kw">string</span> error)
+    {
+        <span class="type">IsSuccess</span> = isSuccess;
+        <span class="type">Value</span> = <span class="kw">value</span>;
+        <span class="type">Error</span> = error;
+    }
+    
+    <span class="kw">public</span> <span class="kw">static</span> <span class="type">Result</span>&lt;T&gt; <span class="type">Success</span>(T <span class="kw">value</span>)
+    {
+        <span class="kw">return</span> <span class="kw">new</span> <span class="type">Result</span>&lt;T&gt;(<span class="kw">true</span>, <span class="kw">value</span>, <span class="kw">null</span>);
+    }
+    
+    <span class="kw">public</span> <span class="kw">static</span> <span class="type">Result</span>&lt;T&gt; <span class="type">Failure</span>(<span class="kw">string</span> error)
+    {
+        <span class="kw">return</span> <span class="kw">new</span> <span class="type">Result</span>&lt;T&gt;(<span class="kw">false</span>, <span class="kw">default</span>, error);
+    }
+}</code></pre>
+<p>Usage:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="type">Result</span>&lt;<span class="type">Employee</span>&gt; <span class="type">GetEmployee</span>(<span class="kw">int</span> id)
+{
+    <span class="kw">var</span> employee = _database.<span class="type">Find</span>(id);
+    
+    <span class="kw">if</span> (employee == <span class="kw">null</span>)
+        <span class="kw">return</span> <span class="type">Result</span>&lt;<span class="type">Employee</span>&gt;.<span class="type">Failure</span>(<span class="str">&quot;Employee not found&quot;</span>);
+    
+    <span class="kw">return</span> <span class="type">Result</span>&lt;<span class="type">Employee</span>&gt;.<span class="type">Success</span>(employee);
+}
+
+<span class="cmt">// Calling code</span>
+<span class="kw">var</span> result = <span class="type">GetEmployee</span>(<span class="num">42</span>);
+<span class="kw">if</span> (result.<span class="type">IsSuccess</span>)
+{
+    <span class="type">Console</span>.<span class="type">WriteLine</span>(result.<span class="type">Value</span>.<span class="type">Name</span>);
+}
+<span class="kw">else</span>
+{
+    <span class="type">Console</span>.<span class="type">WriteLine</span>(result.<span class="type">Error</span>);
+}</code></pre>
+<h3 id="3-2-multiple-type-parameters">3.2 Multiple Type Parameters</h3>
+<p>Generics can have multiple type parameters:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">Pair</span>&lt;<span class="type">TFirst</span>, <span class="type">TSecond</span>&gt;
+{
+    <span class="kw">public</span> <span class="type">TFirst</span> <span class="type">First</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public</span> <span class="type">TSecond</span> <span class="type">Second</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+    
+    <span class="kw">public</span> <span class="type">Pair</span>(<span class="type">TFirst</span> first, <span class="type">TSecond</span> second)
+    {
+        <span class="type">First</span> = first;
+        <span class="type">Second</span> = second;
+    }
+}
+
+<span class="cmt">// Usage</span>
+<span class="kw">var</span> pair = <span class="kw">new</span> <span class="type">Pair</span>&lt;<span class="kw">string</span>, <span class="kw">int</span>&gt;(<span class="str">&quot;Age&quot;</span>, <span class="num">30</span>);
+<span class="kw">var</span> coordinate = <span class="kw">new</span> <span class="type">Pair</span>&lt;<span class="kw">double</span>, <span class="kw">double</span>&gt;(<span class="num">45.5</span>, <span class="num">122.7</span>);</code></pre>
+<p>The <code class="il">System.Collections.Generic.Dictionary&lt;TKey, TValue&gt;</code> is a prime example from the framework.</p>
+<h3 id="3-3-generic-structs">3.3 Generic Structs</h3>
+<p>Value types can also be generic:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">struct</span> <span class="type">Point</span>&lt;T&gt;
+{
+    <span class="kw">public</span> T X { <span class="kw">get</span>; }
+    <span class="kw">public</span> T Y { <span class="kw">get</span>; }
+    
+    <span class="kw">public</span> <span class="type">Point</span>(T x, T y)
+    {
+        X = x;
+        Y = y;
+    }
+}
+
+<span class="cmt">// Usage</span>
+<span class="type">Point</span>&lt;<span class="kw">int</span>&gt; pixelPoint = <span class="kw">new</span> <span class="type">Point</span>&lt;<span class="kw">int</span>&gt;(<span class="num">100</span>, <span class="num">200</span>);
+<span class="type">Point</span>&lt;<span class="kw">double</span>&gt; precisePoint = <span class="kw">new</span> <span class="type">Point</span>&lt;<span class="kw">double</span>&gt;(<span class="num">3.14159</span>, <span class="num">2.71828</span>);</code></pre>
+<hr>
+<h2 id="chapter-4-generic-methods">Chapter 4: Generic Methods</h2>
+<h3 id="4-1-methods-with-type-parameters">4.1 Methods with Type Parameters</h3>
+<p>Methods can be generic independently of their containing class:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">Utilities</span>
+{
+    <span class="kw">public</span> <span class="kw">static</span> <span class="kw">void</span> <span class="type">Swap</span>&lt;T&gt;(<span class="kw">ref</span> T a, <span class="kw">ref</span> T b)
+    {
+        T temp = a;
+        a = b;
+        b = temp;
+    }
+}
+
+<span class="cmt">// Usage</span>
+<span class="kw">int</span> x = <span class="num">5</span>, y = <span class="num">10</span>;
+<span class="type">Utilities</span>.<span class="type">Swap</span>&lt;<span class="kw">int</span>&gt;(<span class="kw">ref</span> x, <span class="kw">ref</span> y);  <span class="cmt">// x = 10, y = 5</span>
+
+<span class="kw">string</span> first = <span class="str">&quot;Hello&quot;</span>, second = <span class="str">&quot;World&quot;</span>;
+<span class="type">Utilities</span>.<span class="type">Swap</span>&lt;<span class="kw">string</span>&gt;(<span class="kw">ref</span> first, <span class="kw">ref</span> second);  <span class="cmt">// Swapped!</span></code></pre>
+<h3 id="4-2-type-inference">4.2 Type Inference</h3>
+<p>The compiler can often infer type arguments:</p>
+<pre><code class="lang-csharp"><span class="kw">int</span> x = <span class="num">5</span>, y = <span class="num">10</span>;
+<span class="type">Utilities</span>.<span class="type">Swap</span>(<span class="kw">ref</span> x, <span class="kw">ref</span> y);  <span class="cmt">// Compiler infers &lt;int&gt;</span>
+
+<span class="kw">string</span> a = <span class="str">&quot;Hello&quot;</span>, b = <span class="str">&quot;World&quot;</span>;
+<span class="type">Utilities</span>.<span class="type">Swap</span>(<span class="kw">ref</span> a, <span class="kw">ref</span> b);  <span class="cmt">// Compiler infers &lt;string&gt;</span></code></pre>
+<p>This makes generic methods feel as natural as non-generic ones.</p>
+<h3 id="4-3-generic-methods-in-non-generic-classes">4.3 Generic Methods in Non-Generic Classes</h3>
+<p>A common pattern in utility classes:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">static</span> <span class="kw">class</span> <span class="type">CollectionExtensions</span>
+{
+    <span class="kw">public</span> <span class="kw">static</span> <span class="kw">bool</span> <span class="type">IsEmpty</span>&lt;T&gt;(<span class="kw">this</span> <span class="type">ICollection</span>&lt;T&gt; collection)
+    {
+        <span class="kw">return</span> collection == <span class="kw">null</span> || collection.<span class="type">Count</span> == <span class="num">0</span>;
+    }
+    
+    <span class="kw">public</span> <span class="kw">static</span> T <span class="type">FirstOrDefault</span>&lt;T&gt;(<span class="kw">this</span> <span class="type">IEnumerable</span>&lt;T&gt; source, T defaultValue)
+    {
+        <span class="kw">foreach</span> (T item <span class="kw">in</span> source)
+            <span class="kw">return</span> item;
+        <span class="kw">return</span> defaultValue;
+    }
+}
+
+<span class="cmt">// Usage</span>
+<span class="type">List</span>&lt;<span class="kw">int</span>&gt; numbers = <span class="kw">new</span> <span class="type">List</span>&lt;<span class="kw">int</span>&gt;();
+<span class="kw">bool</span> empty = numbers.<span class="type">IsEmpty</span>();  <span class="cmt">// True</span>
+
+<span class="kw">int</span> first = numbers.<span class="type">FirstOrDefault</span>(-<span class="num">1</span>);  <span class="cmt">// Returns -1</span></code></pre>
+<hr>
+<h2 id="chapter-5-generic-interfaces">Chapter 5: Generic Interfaces</h2>
+<h3 id="5-1-defining-generic-interfaces">5.1 Defining Generic Interfaces</h3>
+<p>Interfaces can be parameterized just like classes:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">interface</span> <span class="type">IRepository</span>&lt;<span class="type">TEntity</span>&gt; <span class="kw">where</span> <span class="type">TEntity</span> : <span class="kw">class</span>
+{
+    <span class="type">TEntity</span> <span class="type">GetById</span>(<span class="kw">int</span> id);
+    <span class="type">IEnumerable</span>&lt;<span class="type">TEntity</span>&gt; <span class="type">GetAll</span>();
+    <span class="kw">void</span> <span class="type">Add</span>(<span class="type">TEntity</span> entity);
+    <span class="kw">void</span> <span class="type">Update</span>(<span class="type">TEntity</span> entity);
+    <span class="kw">void</span> <span class="type">Delete</span>(<span class="type">TEntity</span> entity);
+}</code></pre>
+<h3 id="5-2-implementing-generic-interfaces">5.2 Implementing Generic Interfaces</h3>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">EmployeeRepository</span> : <span class="type">IRepository</span>&lt;<span class="type">Employee</span>&gt;
+{
+    <span class="kw">private</span> <span class="kw">readonly</span> <span class="type">AppDbContext</span> _context;
+    
+    <span class="kw">public</span> <span class="type">EmployeeRepository</span>(<span class="type">AppDbContext</span> context)
+    {
+        _context = context;
+    }
+    
+    <span class="kw">public</span> <span class="type">Employee</span> <span class="type">GetById</span>(<span class="kw">int</span> id) =&gt; _context.<span class="type">Employees</span>.<span class="type">Find</span>(id);
+    <span class="kw">public</span> <span class="type">IEnumerable</span>&lt;<span class="type">Employee</span>&gt; <span class="type">GetAll</span>() =&gt; _context.<span class="type">Employees</span>.<span class="type">ToList</span>();
+    <span class="kw">public</span> <span class="kw">void</span> <span class="type">Add</span>(<span class="type">Employee</span> entity) =&gt; _context.<span class="type">Employees</span>.<span class="type">Add</span>(entity);
+    <span class="kw">public</span> <span class="kw">void</span> <span class="type">Update</span>(<span class="type">Employee</span> entity) =&gt; _context.<span class="type">Employees</span>.<span class="type">Update</span>(entity);
+    <span class="kw">public</span> <span class="kw">void</span> <span class="type">Delete</span>(<span class="type">Employee</span> entity) =&gt; _context.<span class="type">Employees</span>.<span class="type">Remove</span>(entity);
+}</code></pre>
+<h3 id="5-3-key-generic-interfaces-in-net">5.3 Key Generic Interfaces in .NET</h3>
+<p>The .NET Base Class Library is rich with generic interfaces:</p>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Interface</th>
+<th>Purpose</th>
+</tr></thead><tbody>
+<tr>
+<td><code class="il">IEnumerable&lt;T&gt;</code></td>
+<td>Iteration over a sequence</td>
+</tr>
+<tr>
+<td><code class="il">ICollection&lt;T&gt;</code></td>
+<td>Sized, modifiable collection</td>
+</tr>
+<tr>
+<td><code class="il">IList&lt;T&gt;</code></td>
+<td>Indexed access</td>
+</tr>
+<tr>
+<td><code class="il">IDictionary&lt;TKey, TValue&gt;</code></td>
+<td>Key-value mapping</td>
+</tr>
+<tr>
+<td><code class="il">IComparable&lt;T&gt;</code></td>
+<td>Type-safe comparison</td>
+</tr>
+<tr>
+<td><code class="il">IEquatable&lt;T&gt;</code></td>
+<td>Type-safe equality</td>
+</tr>
+<tr>
+<td><code class="il">IComparer&lt;T&gt;</code></td>
+<td>External comparison logic</td>
+</tr>
+<tr>
+<td><code class="il">IEqualityComparer&lt;T&gt;</code></td>
+<td>External equality logic</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h1 id="part-iv-constraints-controlling-generic-flexibility">Part IV: Constraints — Controlling Generic Flexibility</h1>
+<h2 id="chapter-6-the-need-for-constraints">Chapter 6: The Need for Constraints</h2>
+<h3 id="6-1-the-problem-too-much-freedom">6.1 The Problem: Too Much Freedom</h3>
+<p>Consider this innocent-looking generic method:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">static</span> T <span class="type">Max</span>&lt;T&gt;(T a, T b)
+{
+    <span class="kw">if</span> (a &gt; b)  <span class="cmt">// Compile error!</span>
+        <span class="kw">return</span> a;
+    <span class="kw">return</span> b;
+}</code></pre>
+<p>This won&#x27;t compile. Why? The compiler knows nothing about <code class="il">T</code>. It could be <code class="il">int</code>, which supports <code class="il">&gt;</code>, or it could be <code class="il">Employee</code>, which might not. Without knowing what operations <code class="il">T</code> supports, the compiler must reject the code.</p>
+<h3 id="6-2-constraints-to-the-rescue">6.2 Constraints to the Rescue</h3>
+<p>Constraints tell the compiler: &quot;I promise <code class="il">T</code> will have certain capabilities.&quot;</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">static</span> T <span class="type">Max</span>&lt;T&gt;(T a, T b) <span class="kw">where</span> T : <span class="type">IComparable</span>&lt;T&gt;
+{
+    <span class="kw">if</span> (a.<span class="type">CompareTo</span>(b) &gt; <span class="num">0</span>)
+        <span class="kw">return</span> a;
+    <span class="kw">return</span> b;
+}</code></pre>
+<p>Now the compiler knows <code class="il">T</code> implements <code class="il">IComparable&lt;T&gt;</code>, which guarantees the <code class="il">CompareTo</code> method exists.</p>
+<hr>
+<h2 id="chapter-7-types-of-constraints">Chapter 7: Types of Constraints</h2>
+<h3 id="7-1-reference-type-constraint-class">7.1 Reference Type Constraint (<code class="il">class</code>)</h3>
+<p>Restricts <code class="il">T</code> to reference types (classes, interfaces, delegates, arrays):</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">EntityCache</span>&lt;T&gt; <span class="kw">where</span> T : <span class="kw">class</span>
+{
+    <span class="kw">private</span> T _cached;
+    
+    <span class="kw">public</span> T <span class="type">GetOrDefault</span>()
+    {
+        <span class="kw">return</span> _cached;  <span class="cmt">// Can be null</span>
+    }
+}</code></pre>
+<h3 id="7-2-value-type-constraint-struct">7.2 Value Type Constraint (<code class="il">struct</code>)</h3>
+<p>Restricts <code class="il">T</code> to non-nullable value types:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">struct</span> <span class="type">Nullable</span>&lt;T&gt; <span class="kw">where</span> T : <span class="kw">struct</span>
+{
+    <span class="kw">private</span> <span class="kw">readonly</span> T _value;
+    <span class="kw">private</span> <span class="kw">readonly</span> <span class="kw">bool</span> _hasValue;
+    
+    <span class="cmt">// This is essentially how System.Nullable&lt;T&gt; works</span>
+}</code></pre>
+<h3 id="7-3-constructor-constraint-new">7.3 Constructor Constraint (<code class="il">new()</code>)</h3>
+<p>Requires <code class="il">T</code> to have a public parameterless constructor:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">static</span> T <span class="type">CreateInstance</span>&lt;T&gt;() <span class="kw">where</span> T : <span class="kw">new</span>()
+{
+    <span class="kw">return</span> <span class="kw">new</span> T();  <span class="cmt">// Now this is valid!</span>
+}
+
+<span class="cmt">// Usage</span>
+<span class="kw">var</span> employee = <span class="type">CreateInstance</span>&lt;<span class="type">Employee</span>&gt;();  <span class="cmt">// Works if Employee has parameterless ctor</span></code></pre>
+<h3 id="7-4-base-class-constraint">7.4 Base Class Constraint</h3>
+<p>Restricts <code class="il">T</code> to a specific class or its descendants:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">AnimalShelter</span>&lt;T&gt; <span class="kw">where</span> T : <span class="type">Animal</span>
+{
+    <span class="kw">private</span> <span class="type">List</span>&lt;T&gt; _animals = <span class="kw">new</span> <span class="type">List</span>&lt;T&gt;();
+    
+    <span class="kw">public</span> <span class="kw">void</span> <span class="type">Admit</span>(T animal)
+    {
+        animal.<span class="type">Feed</span>();  <span class="cmt">// Valid: Animal has Feed() method</span>
+        _animals.<span class="type">Add</span>(animal);
+    }
+}
+
+<span class="cmt">// Usage</span>
+<span class="kw">var</span> dogShelter = <span class="kw">new</span> <span class="type">AnimalShelter</span>&lt;<span class="type">Dog</span>&gt;();  <span class="cmt">// Dog : Animal</span>
+<span class="kw">var</span> catShelter = <span class="kw">new</span> <span class="type">AnimalShelter</span>&lt;<span class="type">Cat</span>&gt;();  <span class="cmt">// Cat : Animal</span>
+<span class="cmt">// var carShelter = new AnimalShelter&lt;Car&gt;();  // Error: Car doesn&#x27;t inherit Animal</span></code></pre>
+<h3 id="7-5-interface-constraint">7.5 Interface Constraint</h3>
+<p>Restricts <code class="il">T</code> to types implementing specific interfaces:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">SortedCollection</span>&lt;T&gt; <span class="kw">where</span> T : <span class="type">IComparable</span>&lt;T&gt;
+{
+    <span class="kw">private</span> <span class="type">List</span>&lt;T&gt; _items = <span class="kw">new</span> <span class="type">List</span>&lt;T&gt;();
+    
+    <span class="kw">public</span> <span class="kw">void</span> <span class="type">Add</span>(T item)
+    {
+        <span class="kw">int</span> index = _items.<span class="type">BinarySearch</span>(item);  <span class="cmt">// Uses IComparable&lt;T&gt;</span>
+        <span class="kw">if</span> (index &lt; <span class="num">0</span>) index = ~index;
+        _items.<span class="type">Insert</span>(index, item);
+    }
+}</code></pre>
+<h3 id="7-6-multiple-constraints">7.6 Multiple Constraints</h3>
+<p>Constraints can be combined:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">Repository</span>&lt;<span class="type">TEntity</span>&gt; 
+    <span class="kw">where</span> <span class="type">TEntity</span> : <span class="kw">class</span>, <span class="type">IEntity</span>, <span class="kw">new</span>()
+{
+    <span class="kw">public</span> <span class="type">TEntity</span> <span class="type">Create</span>()
+    {
+        <span class="kw">var</span> entity = <span class="kw">new</span> <span class="type">TEntity</span>();  <span class="cmt">// new() constraint</span>
+        entity.<span class="type">Id</span> = <span class="type">GenerateId</span>();    <span class="cmt">// IEntity constraint</span>
+        <span class="kw">return</span> entity;               <span class="cmt">// class constraint allows null checks</span>
+    }
+}</code></pre>
+<h3 id="7-7-the-notnull-constraint-c-8-0">7.7 The <code class="il">notnull</code> Constraint (C# 8.0+)</h3>
+<p>In nullable reference type contexts, ensures <code class="il">T</code> cannot be null:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">NonNullCache</span>&lt;T&gt; <span class="kw">where</span> T : notnull
+{
+    <span class="kw">private</span> <span class="type">Dictionary</span>&lt;<span class="kw">string</span>, T&gt; _cache = <span class="kw">new</span>();
+    
+    <span class="kw">public</span> <span class="kw">void</span> <span class="type">Set</span>(<span class="kw">string</span> key, T <span class="kw">value</span>)
+    {
+        _cache[key] = <span class="kw">value</span>;  <span class="cmt">// value is guaranteed non-null</span>
+    }
+}</code></pre>
+<h3 id="7-8-the-unmanaged-constraint-c-7-3">7.8 The <code class="il">unmanaged</code> Constraint (C# 7.3+)</h3>
+<p>Restricts to unmanaged types (primitives and structs containing only unmanaged types):</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">unsafe</span> <span class="kw">void</span> <span class="type">ProcessBuffer</span>&lt;T&gt;(T* buffer, <span class="kw">int</span> length) <span class="kw">where</span> T : unmanaged
+{
+    <span class="cmt">// Can use pointer arithmetic with T</span>
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; length; i++)
+    {
+        <span class="type">Process</span>(buffer[i]);
+    }
+}</code></pre>
+<hr>
+<h2 id="chapter-8-constraint-combinations-and-rules">Chapter 8: Constraint Combinations and Rules</h2>
+<h3 id="8-1-constraint-ordering">8.1 Constraint Ordering</h3>
+<p>When specifying multiple constraints, they must appear in a specific order:</p>
+<ol>
+<li><code class="il">class</code> or <code class="il">struct</code> (mutually exclusive)</li>
+<li>Base class name (if any)</li>
+<li>Interface names</li>
+<li><code class="il">new()</code> (must be last)</li>
+</ol>
+<pre><code class="lang-csharp"><span class="cmt">// Correct order</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">Example</span>&lt;T&gt; 
+    <span class="kw">where</span> T : <span class="kw">class</span>, <span class="type">BaseClass</span>, <span class="type">IInterface1</span>, <span class="type">IInterface2</span>, <span class="kw">new</span>()
+{ }</code></pre>
+<h3 id="8-2-constraints-on-multiple-type-parameters">8.2 Constraints on Multiple Type Parameters</h3>
+<p>Each type parameter can have its own constraints:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">Mapper</span>&lt;<span class="type">TSource</span>, <span class="type">TDestination</span>&gt;
+    <span class="kw">where</span> <span class="type">TSource</span> : <span class="kw">class</span>
+    <span class="kw">where</span> <span class="type">TDestination</span> : <span class="kw">class</span>, <span class="kw">new</span>()
+{
+    <span class="kw">public</span> <span class="type">TDestination</span> <span class="type">Map</span>(<span class="type">TSource</span> source)
+    {
+        <span class="kw">var</span> destination = <span class="kw">new</span> <span class="type">TDestination</span>();
+        <span class="cmt">// Map properties...</span>
+        <span class="kw">return</span> destination;
+    }
+}</code></pre>
+<hr>
+<h1 id="part-v-advanced-topics">Part V: Advanced Topics</h1>
+<h2 id="chapter-9-covariance-and-contravariance">Chapter 9: Covariance and Contravariance</h2>
+<h3 id="9-1-the-variance-problem">9.1 The Variance Problem</h3>
+<p>Consider this scenario:</p>
+<pre><code class="lang-csharp"><span class="kw">class</span> <span class="type">Animal</span> { }
+<span class="kw">class</span> <span class="type">Dog</span> : <span class="type">Animal</span> { }
+
+<span class="type">List</span>&lt;<span class="type">Dog</span>&gt; dogs = <span class="kw">new</span> <span class="type">List</span>&lt;<span class="type">Dog</span>&gt;();
+<span class="type">List</span>&lt;<span class="type">Animal</span>&gt; animals = dogs;  <span class="cmt">// Compile error! Why?</span></code></pre>
+<p>Intuitively, since every <code class="il">Dog</code> is an <code class="il">Animal</code>, a list of dogs should be usable as a list of animals. But consider:</p>
+<pre><code class="lang-csharp">animals.<span class="type">Add</span>(<span class="kw">new</span> <span class="type">Cat</span>());  <span class="cmt">// This would corrupt the dog list!</span></code></pre>
+<p>This is why <code class="il">List&lt;T&gt;</code> doesn&#x27;t allow such assignments. But sometimes variance is safe...</p>
+<h3 id="9-2-covariance-out-keyword">9.2 Covariance (<code class="il">out</code> keyword)</h3>
+<p><strong>Covariance</strong> allows a generic type to preserve the inheritance relationship of its type argument. It&#x27;s safe when the type parameter is only used in <strong>output</strong> positions:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">interface</span> <span class="type">IProducer</span>&lt;<span class="kw">out</span> T&gt;
+{
+    T <span class="type">Produce</span>();  <span class="cmt">// T only appears as output (return type)</span>
+}
+
+<span class="kw">class</span> <span class="type">AnimalProducer</span> : <span class="type">IProducer</span>&lt;<span class="type">Animal</span>&gt;
+{
+    <span class="kw">public</span> <span class="type">Animal</span> <span class="type">Produce</span>() =&gt; <span class="kw">new</span> <span class="type">Animal</span>();
+}
+
+<span class="kw">class</span> <span class="type">DogProducer</span> : <span class="type">IProducer</span>&lt;<span class="type">Dog</span>&gt;
+{
+    <span class="kw">public</span> <span class="type">Dog</span> <span class="type">Produce</span>() =&gt; <span class="kw">new</span> <span class="type">Dog</span>();
+}
+
+<span class="cmt">// Now this is valid:</span>
+<span class="type">IProducer</span>&lt;<span class="type">Animal</span>&gt; producer = <span class="kw">new</span> <span class="type">DogProducer</span>();
+<span class="type">Animal</span> animal = producer.<span class="type">Produce</span>();  <span class="cmt">// Safe! We get a Dog, which is an Animal</span></code></pre>
+<p><code class="il">IEnumerable&lt;T&gt;</code> is covariant:</p>
+<pre><code class="lang-csharp"><span class="type">IEnumerable</span>&lt;<span class="type">Dog</span>&gt; dogs = <span class="kw">new</span> <span class="type">List</span>&lt;<span class="type">Dog</span>&gt;();
+<span class="type">IEnumerable</span>&lt;<span class="type">Animal</span>&gt; animals = dogs;  <span class="cmt">// Valid! IEnumerable only produces items</span></code></pre>
+<h3 id="9-3-contravariance-in-keyword">9.3 Contravariance (<code class="il">in</code> keyword)</h3>
+<p><strong>Contravariance</strong> reverses the inheritance relationship. It&#x27;s safe when the type parameter is only used in <strong>input</strong> positions:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">interface</span> <span class="type">IConsumer</span>&lt;<span class="kw">in</span> T&gt;
+{
+    <span class="kw">void</span> <span class="type">Consume</span>(T item);  <span class="cmt">// T only appears as input (parameter)</span>
+}
+
+<span class="kw">class</span> <span class="type">AnimalConsumer</span> : <span class="type">IConsumer</span>&lt;<span class="type">Animal</span>&gt;
+{
+    <span class="kw">public</span> <span class="kw">void</span> <span class="type">Consume</span>(<span class="type">Animal</span> animal) =&gt; <span class="type">Console</span>.<span class="type">WriteLine</span>(<span class="str">&quot;Fed an animal&quot;</span>);
+}
+
+<span class="cmt">// Now this is valid:</span>
+<span class="type">IConsumer</span>&lt;<span class="type">Dog</span>&gt; dogConsumer = <span class="kw">new</span> <span class="type">AnimalConsumer</span>();
+dogConsumer.<span class="type">Consume</span>(<span class="kw">new</span> <span class="type">Dog</span>());  <span class="cmt">// Safe! AnimalConsumer can handle any Animal</span></code></pre>
+<p><code class="il">Action&lt;T&gt;</code> and <code class="il">IComparer&lt;T&gt;</code> are contravariant:</p>
+<pre><code class="lang-csharp"><span class="type">Action</span>&lt;<span class="type">Animal</span>&gt; feedAnimal = a =&gt; <span class="type">Console</span>.<span class="type">WriteLine</span>($<span class="str">&quot;Feeding {a}&quot;</span>);
+<span class="type">Action</span>&lt;<span class="type">Dog</span>&gt; feedDog = feedAnimal;  <span class="cmt">// Valid! Something that handles Animals can handle Dogs</span>
+feedDog(<span class="kw">new</span> <span class="type">Dog</span>());</code></pre>
+<h3 id="9-4-invariance">9.4 Invariance</h3>
+<p>When a type parameter appears in both input and output positions, variance is not possible:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">interface</span> <span class="type">ITransformer</span>&lt;T&gt;
+{
+    T <span class="type">Transform</span>(T input);  <span class="cmt">// T is both input and output</span>
+}
+<span class="cmt">// ITransformer&lt;T&gt; is invariant</span></code></pre>
+<hr>
+<h2 id="chapter-10-static-members-in-generic-types">Chapter 10: Static Members in Generic Types</h2>
+<h3 id="10-1-static-fields-are-per-constructed-type">10.1 Static Fields Are Per Constructed Type</h3>
+<p>A critical detail often overlooked:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">Counter</span>&lt;T&gt;
+{
+    <span class="kw">public</span> <span class="kw">static</span> <span class="kw">int</span> <span class="type">Count</span> = <span class="num">0</span>;
+    
+    <span class="kw">public</span> <span class="type">Counter</span>()
+    {
+        <span class="type">Count</span>++;
+    }
+}
+
+<span class="cmt">// Usage</span>
+<span class="kw">var</span> intCounter1 = <span class="kw">new</span> <span class="type">Counter</span>&lt;<span class="kw">int</span>&gt;();
+<span class="kw">var</span> intCounter2 = <span class="kw">new</span> <span class="type">Counter</span>&lt;<span class="kw">int</span>&gt;();
+<span class="kw">var</span> stringCounter = <span class="kw">new</span> <span class="type">Counter</span>&lt;<span class="kw">string</span>&gt;();
+
+<span class="type">Console</span>.<span class="type">WriteLine</span>(<span class="type">Counter</span>&lt;<span class="kw">int</span>&gt;.<span class="type">Count</span>);     <span class="cmt">// 2</span>
+<span class="type">Console</span>.<span class="type">WriteLine</span>(<span class="type">Counter</span>&lt;<span class="kw">string</span>&gt;.<span class="type">Count</span>);  <span class="cmt">// 1</span></code></pre>
+<p>Each constructed type (<code class="il">Counter&lt;int&gt;</code>, <code class="il">Counter&lt;string&gt;</code>) has its own static field. They are completely independent.</p>
+<h3 id="10-2-static-constructors">10.2 Static Constructors</h3>
+<p>Static constructors also run once per constructed type:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">TypeLogger</span>&lt;T&gt;
+{
+    <span class="kw">static</span> <span class="type">TypeLogger</span>()
+    {
+        <span class="type">Console</span>.<span class="type">WriteLine</span>($<span class="str">&quot;TypeLogger&lt;{typeof(T).Name}&gt; initialized&quot;</span>);
+    }
+}
+
+<span class="cmt">// Using TypeLogger&lt;int&gt; and TypeLogger&lt;string&gt; prints two messages</span></code></pre>
+<hr>
+<h2 id="chapter-11-generic-type-inference">Chapter 11: Generic Type Inference</h2>
+<h3 id="11-1-how-inference-works">11.1 How Inference Works</h3>
+<p>The compiler examines method arguments to infer type parameters:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">static</span> <span class="type">List</span>&lt;T&gt; <span class="type">CreateList</span>&lt;T&gt;(T first, T second)
+{
+    <span class="kw">return</span> <span class="kw">new</span> <span class="type">List</span>&lt;T&gt; { first, second };
+}
+
+<span class="cmt">// Compiler infers T from arguments</span>
+<span class="kw">var</span> ints = <span class="type">CreateList</span>(<span class="num">1</span>, <span class="num">2</span>);           <span class="cmt">// List&lt;int&gt;</span>
+<span class="kw">var</span> strings = <span class="type">CreateList</span>(<span class="str">&quot;a&quot;</span>, <span class="str">&quot;b&quot;</span>);    <span class="cmt">// List&lt;string&gt;</span></code></pre>
+<h3 id="11-2-inference-limitations">11.2 Inference Limitations</h3>
+<p>Inference only works from arguments, not return types:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">static</span> T <span class="type">Parse</span>&lt;T&gt;(<span class="kw">string</span> <span class="kw">value</span>) { <span class="cmt">/* ... */</span> }
+
+<span class="cmt">// This won&#x27;t work:</span>
+<span class="kw">int</span> number = <span class="type">Parse</span>(<span class="str">&quot;42&quot;</span>);  <span class="cmt">// Error: Cannot infer T</span>
+
+<span class="cmt">// You must specify:</span>
+<span class="kw">int</span> number = <span class="type">Parse</span>&lt;<span class="kw">int</span>&gt;(<span class="str">&quot;42&quot;</span>);</code></pre>
+<h3 id="11-3-complex-inference">11.3 Complex Inference</h3>
+<p>The compiler can infer through multiple levels:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">static</span> <span class="type">TResult</span> <span class="type">Select</span>&lt;<span class="type">TSource</span>, <span class="type">TResult</span>&gt;(
+    <span class="type">TSource</span> source, 
+    <span class="type">Func</span>&lt;<span class="type">TSource</span>, <span class="type">TResult</span>&gt; selector)
+{
+    <span class="kw">return</span> selector(source);
+}
+
+<span class="cmt">// Both TSource and TResult are inferred</span>
+<span class="kw">string</span> result = <span class="type">Select</span>(<span class="num">42</span>, n =&gt; n.<span class="type">ToString</span>());  
+<span class="cmt">// TSource = int, TResult = string</span></code></pre>
+<hr>
+<h2 id="chapter-12-reflection-and-generics">Chapter 12: Reflection and Generics</h2>
+<h3 id="12-1-examining-generic-types-at-runtime">12.1 Examining Generic Types at Runtime</h3>
+<pre><code class="lang-csharp"><span class="type">Type</span> listType = <span class="kw">typeof</span>(<span class="type">List</span>&lt;<span class="kw">int</span>&gt;);
+
+<span class="type">Console</span>.<span class="type">WriteLine</span>(listType.<span class="type">IsGenericType</span>);           <span class="cmt">// True</span>
+<span class="type">Console</span>.<span class="type">WriteLine</span>(listType.<span class="type">IsConstructedGenericType</span>); <span class="cmt">// True</span>
+
+<span class="type">Type</span>[] args = listType.<span class="type">GetGenericArguments</span>();
+<span class="type">Console</span>.<span class="type">WriteLine</span>(args[<span class="num">0</span>]);  <span class="cmt">// System.Int32</span>
+
+<span class="type">Type</span> definition = listType.<span class="type">GetGenericTypeDefinition</span>();
+<span class="type">Console</span>.<span class="type">WriteLine</span>(definition);  <span class="cmt">// System.Collections.Generic.List`1[T]</span></code></pre>
+<h3 id="12-2-open-vs-closed-generic-types">12.2 Open vs. Closed Generic Types</h3>
+<pre><code class="lang-csharp"><span class="type">Type</span> openType = <span class="kw">typeof</span>(<span class="type">Dictionary</span>&lt;,&gt;);   <span class="cmt">// Open: no type arguments</span>
+<span class="type">Type</span> closedType = <span class="kw">typeof</span>(<span class="type">Dictionary</span>&lt;<span class="kw">string</span>, <span class="kw">int</span>&gt;);  <span class="cmt">// Closed: fully specified</span>
+
+<span class="type">Console</span>.<span class="type">WriteLine</span>(openType.<span class="type">IsGenericTypeDefinition</span>);    <span class="cmt">// True</span>
+<span class="type">Console</span>.<span class="type">WriteLine</span>(closedType.<span class="type">IsGenericTypeDefinition</span>);  <span class="cmt">// False</span></code></pre>
+<h3 id="12-3-creating-generic-types-dynamically">12.3 Creating Generic Types Dynamically</h3>
+<pre><code class="lang-csharp"><span class="type">Type</span> openList = <span class="kw">typeof</span>(<span class="type">List</span>&lt;&gt;);
+<span class="type">Type</span> closedList = openList.<span class="type">MakeGenericType</span>(<span class="kw">typeof</span>(<span class="kw">string</span>));
+<span class="kw">object</span> instance = <span class="type">Activator</span>.<span class="type">CreateInstance</span>(closedList);
+
+<span class="cmt">// instance is now a List&lt;string&gt;</span>
+<span class="kw">var</span> list = (<span class="type">List</span>&lt;<span class="kw">string</span>&gt;)instance;
+list.<span class="type">Add</span>(<span class="str">&quot;Dynamic!&quot;</span>);</code></pre>
+<h3 id="12-4-invoking-generic-methods-via-reflection">12.4 Invoking Generic Methods via Reflection</h3>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">Processor</span>
+{
+    <span class="kw">public</span> <span class="kw">void</span> <span class="type">Process</span>&lt;T&gt;(T item)
+    {
+        <span class="type">Console</span>.<span class="type">WriteLine</span>($<span class="str">&quot;Processing {typeof(T).Name}: {item}&quot;</span>);
+    }
+}
+
+<span class="cmt">// Invoke via reflection</span>
+<span class="kw">var</span> processor = <span class="kw">new</span> <span class="type">Processor</span>();
+<span class="type">MethodInfo</span> openMethod = <span class="kw">typeof</span>(<span class="type">Processor</span>).<span class="type">GetMethod</span>(<span class="str">&quot;Process&quot;</span>);
+<span class="type">MethodInfo</span> closedMethod = openMethod.<span class="type">MakeGenericMethod</span>(<span class="kw">typeof</span>(<span class="kw">int</span>));
+closedMethod.<span class="type">Invoke</span>(processor, <span class="kw">new</span> <span class="kw">object</span>[] { <span class="num">42</span> });</code></pre>
+<hr>
+<h1 id="part-vi-patterns-and-best-practices">Part VI: Patterns and Best Practices</h1>
+<h2 id="chapter-13-common-generic-patterns">Chapter 13: Common Generic Patterns</h2>
+<h3 id="13-1-the-repository-pattern">13.1 The Repository Pattern</h3>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">interface</span> <span class="type">IRepository</span>&lt;<span class="type">TEntity</span>&gt; <span class="kw">where</span> <span class="type">TEntity</span> : <span class="kw">class</span>, <span class="type">IEntity</span>
+{
+    <span class="type">Task</span>&lt;<span class="type">TEntity</span>?&gt; <span class="type">GetByIdAsync</span>(<span class="kw">int</span> id);
+    <span class="type">Task</span>&lt;<span class="type">IReadOnlyList</span>&lt;<span class="type">TEntity</span>&gt;&gt; <span class="type">GetAllAsync</span>();
+    <span class="type">Task</span>&lt;<span class="type">TEntity</span>&gt; <span class="type">AddAsync</span>(<span class="type">TEntity</span> entity);
+    <span class="type">Task</span> <span class="type">UpdateAsync</span>(<span class="type">TEntity</span> entity);
+    <span class="type">Task</span> <span class="type">DeleteAsync</span>(<span class="type">TEntity</span> entity);
+}
+
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">Repository</span>&lt;<span class="type">TEntity</span>&gt; : <span class="type">IRepository</span>&lt;<span class="type">TEntity</span>&gt; 
+    <span class="kw">where</span> <span class="type">TEntity</span> : <span class="kw">class</span>, <span class="type">IEntity</span>
+{
+    <span class="kw">protected</span> <span class="kw">readonly</span> <span class="type">DbContext</span> _context;
+    <span class="kw">protected</span> <span class="kw">readonly</span> <span class="type">DbSet</span>&lt;<span class="type">TEntity</span>&gt; _dbSet;
+    
+    <span class="kw">public</span> <span class="type">Repository</span>(<span class="type">DbContext</span> context)
+    {
+        _context = context;
+        _dbSet = context.<span class="type">Set</span>&lt;<span class="type">TEntity</span>&gt;();
+    }
+    
+    <span class="kw">public</span> <span class="kw">virtual</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="type">TEntity</span>?&gt; <span class="type">GetByIdAsync</span>(<span class="kw">int</span> id)
+    {
+        <span class="kw">return</span> <span class="kw">await</span> _dbSet.<span class="type">FindAsync</span>(id);
+    }
+    
+    <span class="kw">public</span> <span class="kw">virtual</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="type">IReadOnlyList</span>&lt;<span class="type">TEntity</span>&gt;&gt; <span class="type">GetAllAsync</span>()
+    {
+        <span class="kw">return</span> <span class="kw">await</span> _dbSet.<span class="type">ToListAsync</span>();
+    }
+    
+    <span class="cmt">// ... other implementations</span>
+}</code></pre>
+<h3 id="13-2-the-factory-pattern">13.2 The Factory Pattern</h3>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">interface</span> <span class="type">IFactory</span>&lt;<span class="kw">out</span> T&gt;
+{
+    T <span class="type">Create</span>();
+}
+
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">ServiceFactory</span>&lt;T&gt; : <span class="type">IFactory</span>&lt;T&gt; <span class="kw">where</span> T : <span class="kw">class</span>, <span class="kw">new</span>()
+{
+    <span class="kw">public</span> T <span class="type">Create</span>() =&gt; <span class="kw">new</span> T();
+}
+
+<span class="cmt">// With parameters using Func&lt;T&gt;</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">ConfigurableFactory</span>&lt;T&gt;
+{
+    <span class="kw">private</span> <span class="kw">readonly</span> <span class="type">Func</span>&lt;T&gt; _creator;
+    
+    <span class="kw">public</span> <span class="type">ConfigurableFactory</span>(<span class="type">Func</span>&lt;T&gt; creator)
+    {
+        _creator = creator;
+    }
+    
+    <span class="kw">public</span> T <span class="type">Create</span>() =&gt; _creator();
+}</code></pre>
+<h3 id="13-3-the-specification-pattern">13.3 The Specification Pattern</h3>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">interface</span> <span class="type">ISpecification</span>&lt;T&gt;
+{
+    <span class="kw">bool</span> <span class="type">IsSatisfiedBy</span>(T entity);
+    <span class="type">Expression</span>&lt;<span class="type">Func</span>&lt;T, <span class="kw">bool</span>&gt;&gt; <span class="type">ToExpression</span>();
+}
+
+<span class="kw">public</span> <span class="kw">abstract</span> <span class="kw">class</span> <span class="type">Specification</span>&lt;T&gt; : <span class="type">ISpecification</span>&lt;T&gt;
+{
+    <span class="kw">public</span> <span class="kw">bool</span> <span class="type">IsSatisfiedBy</span>(T entity)
+    {
+        <span class="kw">return</span> <span class="type">ToExpression</span>().<span class="type">Compile</span>()(entity);
+    }
+    
+    <span class="kw">public</span> <span class="kw">abstract</span> <span class="type">Expression</span>&lt;<span class="type">Func</span>&lt;T, <span class="kw">bool</span>&gt;&gt; <span class="type">ToExpression</span>();
+    
+    <span class="kw">public</span> <span class="type">Specification</span>&lt;T&gt; <span class="type">And</span>(<span class="type">Specification</span>&lt;T&gt; other)
+    {
+        <span class="kw">return</span> <span class="kw">new</span> <span class="type">AndSpecification</span>&lt;T&gt;(<span class="kw">this</span>, other);
+    }
+    
+    <span class="kw">public</span> <span class="type">Specification</span>&lt;T&gt; <span class="type">Or</span>(<span class="type">Specification</span>&lt;T&gt; other)
+    {
+        <span class="kw">return</span> <span class="kw">new</span> <span class="type">OrSpecification</span>&lt;T&gt;(<span class="kw">this</span>, other);
+    }
+}
+
+<span class="cmt">// Usage</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">ActiveEmployeeSpecification</span> : <span class="type">Specification</span>&lt;<span class="type">Employee</span>&gt;
+{
+    <span class="kw">public</span> <span class="kw">override</span> <span class="type">Expression</span>&lt;<span class="type">Func</span>&lt;<span class="type">Employee</span>, <span class="kw">bool</span>&gt;&gt; <span class="type">ToExpression</span>()
+    {
+        <span class="kw">return</span> e =&gt; e.<span class="type">IsActive</span> &amp;&amp; e.<span class="type">TerminationDate</span> == <span class="kw">null</span>;
+    }
+}</code></pre>
+<h3 id="13-4-the-result-either-pattern">13.4 The Result/Either Pattern</h3>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">Result</span>&lt;<span class="type">TSuccess</span>, <span class="type">TFailure</span>&gt;
+{
+    <span class="kw">public</span> <span class="type">TSuccess</span>? <span class="type">Success</span> { <span class="kw">get</span>; }
+    <span class="kw">public</span> <span class="type">TFailure</span>? <span class="type">Failure</span> { <span class="kw">get</span>; }
+    <span class="kw">public</span> <span class="kw">bool</span> <span class="type">IsSuccess</span> { <span class="kw">get</span>; }
+    
+    <span class="kw">private</span> <span class="type">Result</span>(<span class="type">TSuccess</span> success)
+    {
+        <span class="type">Success</span> = success;
+        <span class="type">IsSuccess</span> = <span class="kw">true</span>;
+    }
+    
+    <span class="kw">private</span> <span class="type">Result</span>(<span class="type">TFailure</span> failure)
+    {
+        <span class="type">Failure</span> = failure;
+        <span class="type">IsSuccess</span> = <span class="kw">false</span>;
+    }
+    
+    <span class="kw">public</span> <span class="kw">static</span> <span class="type">Result</span>&lt;<span class="type">TSuccess</span>, <span class="type">TFailure</span>&gt; <span class="type">Ok</span>(<span class="type">TSuccess</span> <span class="kw">value</span>) =&gt; <span class="kw">new</span>(<span class="kw">value</span>);
+    <span class="kw">public</span> <span class="kw">static</span> <span class="type">Result</span>&lt;<span class="type">TSuccess</span>, <span class="type">TFailure</span>&gt; <span class="type">Fail</span>(<span class="type">TFailure</span> error) =&gt; <span class="kw">new</span>(error);
+    
+    <span class="kw">public</span> <span class="type">TResult</span> <span class="type">Match</span>&lt;<span class="type">TResult</span>&gt;(
+        <span class="type">Func</span>&lt;<span class="type">TSuccess</span>, <span class="type">TResult</span>&gt; onSuccess,
+        <span class="type">Func</span>&lt;<span class="type">TFailure</span>, <span class="type">TResult</span>&gt; onFailure)
+    {
+        <span class="kw">return</span> <span class="type">IsSuccess</span> ? onSuccess(<span class="type">Success</span>!) : onFailure(<span class="type">Failure</span>!);
+    }
+}
+
+<span class="cmt">// Usage</span>
+<span class="kw">public</span> <span class="type">Result</span>&lt;<span class="type">Employee</span>, <span class="kw">string</span>&gt; <span class="type">CreateEmployee</span>(<span class="kw">string</span> name, <span class="kw">string</span> email)
+{
+    <span class="kw">if</span> (<span class="kw">string</span>.<span class="type">IsNullOrEmpty</span>(name))
+        <span class="kw">return</span> <span class="type">Result</span>&lt;<span class="type">Employee</span>, <span class="kw">string</span>&gt;.<span class="type">Fail</span>(<span class="str">&quot;Name is required&quot;</span>);
+    
+    <span class="kw">if</span> (!<span class="type">IsValidEmail</span>(email))
+        <span class="kw">return</span> <span class="type">Result</span>&lt;<span class="type">Employee</span>, <span class="kw">string</span>&gt;.<span class="type">Fail</span>(<span class="str">&quot;Invalid email format&quot;</span>);
+    
+    <span class="kw">var</span> employee = <span class="kw">new</span> <span class="type">Employee</span> { <span class="type">Name</span> = name, <span class="type">Email</span> = email };
+    <span class="kw">return</span> <span class="type">Result</span>&lt;<span class="type">Employee</span>, <span class="kw">string</span>&gt;.<span class="type">Ok</span>(employee);
+}
+
+<span class="cmt">// Consuming</span>
+<span class="kw">var</span> result = <span class="type">CreateEmployee</span>(<span class="str">&quot;Alice&quot;</span>, <span class="str">&quot;alice@example.com&quot;</span>);
+<span class="kw">var</span> message = result.<span class="type">Match</span>(
+    onSuccess: emp =&gt; $<span class="str">&quot;Created employee: {emp.Name}&quot;</span>,
+    onFailure: err =&gt; $<span class="str">&quot;Error: {err}&quot;</span>
+);</code></pre>
+<hr>
+<h2 id="chapter-14-best-practices">Chapter 14: Best Practices</h2>
+<h3 id="14-1-naming-conventions">14.1 Naming Conventions</h3>
+<ul>
+<li>Single type parameter: <code class="il">T</code></li>
+<li>Multiple parameters: Descriptive names starting with <code class="il">T</code></li>
+</ul>
+<pre><code class="lang-csharp"><span class="cmt">// Good</span>
+<span class="type">Dictionary</span>&lt;<span class="type">TKey</span>, <span class="type">TValue</span>&gt;
+<span class="type">Func</span>&lt;<span class="type">TInput</span>, <span class="type">TOutput</span>&gt;
+<span class="type">IRepository</span>&lt;<span class="type">TEntity</span>&gt;
+
+<span class="cmt">// Avoid</span>
+<span class="type">Dictionary</span>&lt;K, V&gt;  <span class="cmt">// Not immediately clear</span>
+<span class="type">List</span>&lt;<span class="type">Type</span>&gt;        <span class="cmt">// Confusing with System.Type</span></code></pre>
+<h3 id="14-2-prefer-generic-collections">14.2 Prefer Generic Collections</h3>
+<p>Always prefer <code class="il">System.Collections.Generic</code> over <code class="il">System.Collections</code>:</p>
+<pre><code class="lang-csharp"><span class="cmt">// Good</span>
+<span class="type">List</span>&lt;<span class="type">Employee</span>&gt; employees = <span class="kw">new</span>();
+<span class="type">Dictionary</span>&lt;<span class="kw">string</span>, <span class="kw">int</span>&gt; scores = <span class="kw">new</span>();
+
+<span class="cmt">// Avoid</span>
+<span class="type">ArrayList</span> employees = <span class="kw">new</span>();  <span class="cmt">// Boxing, no type safety</span>
+<span class="type">Hashtable</span> scores = <span class="kw">new</span>();     <span class="cmt">// Boxing, no type safety</span></code></pre>
+<h3 id="14-3-use-constraints-judiciously">14.3 Use Constraints Judiciously</h3>
+<p>Add constraints only when necessary:</p>
+<pre><code class="lang-csharp"><span class="cmt">// Over-constrained: Do we really need all these?</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">Repository</span>&lt;T&gt; 
+    <span class="kw">where</span> T : <span class="kw">class</span>, <span class="type">IEntity</span>, <span class="type">IValidatable</span>, <span class="type">IAuditable</span>, <span class="kw">new</span>()
+
+<span class="cmt">// Better: Only what&#x27;s actually used</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">Repository</span>&lt;T&gt; <span class="kw">where</span> T : <span class="kw">class</span>, <span class="type">IEntity</span></code></pre>
+<h3 id="14-4-consider-variance-when-designing-interfaces">14.4 Consider Variance When Designing Interfaces</h3>
+<p>If your interface only produces <code class="il">T</code>, make it covariant:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">interface</span> <span class="type">IReadOnlyRepository</span>&lt;<span class="kw">out</span> <span class="type">TEntity</span>&gt;
+{
+    <span class="type">TEntity</span> <span class="type">GetById</span>(<span class="kw">int</span> id);
+    <span class="type">IEnumerable</span>&lt;<span class="type">TEntity</span>&gt; <span class="type">GetAll</span>();
+}</code></pre>
+<p>If it only consumes <code class="il">T</code>, make it contravariant:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">interface</span> <span class="type">IValidator</span>&lt;<span class="kw">in</span> T&gt;
+{
+    <span class="kw">bool</span> <span class="type">Validate</span>(T item);
+}</code></pre>
+<h3 id="14-5-avoid-excessive-generic-nesting">14.5 Avoid Excessive Generic Nesting</h3>
+<pre><code class="lang-csharp"><span class="cmt">// Hard to read</span>
+<span class="type">Dictionary</span>&lt;<span class="kw">string</span>, <span class="type">List</span>&lt;<span class="type">Tuple</span>&lt;<span class="kw">int</span>, <span class="type">Dictionary</span>&lt;<span class="kw">string</span>, <span class="kw">object</span>&gt;&gt;&gt;&gt; data;
+
+<span class="cmt">// Better: Create meaningful types</span>
+<span class="kw">class</span> <span class="type">UserData</span> { <span class="cmt">/* ... */</span> }
+<span class="type">Dictionary</span>&lt;<span class="kw">string</span>, <span class="type">UserData</span>&gt; data;</code></pre>
+<hr>
+<h1 id="part-vii-generics-in-the-net-ecosystem">Part VII: Generics in the .NET Ecosystem</h1>
+<h2 id="chapter-15-generics-in-entity-framework-core">Chapter 15: Generics in Entity Framework Core</h2>
+<h3 id="15-1-dbset-lt-t-gt">15.1 DbSet&amp;lt;T&amp;gt;</h3>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">AppDbContext</span> : <span class="type">DbContext</span>
+{
+    <span class="kw">public</span> <span class="type">DbSet</span>&lt;<span class="type">Employee</span>&gt; <span class="type">Employees</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public</span> <span class="type">DbSet</span>&lt;<span class="type">Department</span>&gt; <span class="type">Departments</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+}
+
+<span class="cmt">// DbSet&lt;T&gt; provides generic query and change tracking</span>
+<span class="kw">var</span> employees = <span class="kw">await</span> context.<span class="type">Employees</span>
+    .<span class="type">Where</span>(e =&gt; e.<span class="type">IsActive</span>)
+    .<span class="type">ToListAsync</span>();</code></pre>
+<h3 id="15-2-generic-configuration">15.2 Generic Configuration</h3>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">abstract</span> <span class="kw">class</span> <span class="type">BaseEntityConfiguration</span>&lt;T&gt; : <span class="type">IEntityTypeConfiguration</span>&lt;T&gt;
+    <span class="kw">where</span> T : <span class="type">BaseEntity</span>
+{
+    <span class="kw">public</span> <span class="kw">virtual</span> <span class="kw">void</span> <span class="type">Configure</span>(<span class="type">EntityTypeBuilder</span>&lt;T&gt; builder)
+    {
+        builder.<span class="type">HasKey</span>(e =&gt; e.<span class="type">Id</span>);
+        builder.<span class="type">Property</span>(e =&gt; e.<span class="type">CreatedAt</span>).<span class="type">IsRequired</span>();
+        builder.<span class="type">Property</span>(e =&gt; e.<span class="type">UpdatedAt</span>).<span class="type">IsRequired</span>();
+    }
+}
+
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">EmployeeConfiguration</span> : <span class="type">BaseEntityConfiguration</span>&lt;<span class="type">Employee</span>&gt;
+{
+    <span class="kw">public</span> <span class="kw">override</span> <span class="kw">void</span> <span class="type">Configure</span>(<span class="type">EntityTypeBuilder</span>&lt;<span class="type">Employee</span>&gt; builder)
+    {
+        <span class="kw">base</span>.<span class="type">Configure</span>(builder);
+        builder.<span class="type">Property</span>(e =&gt; e.<span class="type">Name</span>).<span class="type">HasMaxLength</span>(<span class="num">100</span>);
+    }
+}</code></pre>
+<hr>
+<h2 id="chapter-16-generics-in-dependency-injection">Chapter 16: Generics in Dependency Injection</h2>
+<h3 id="16-1-generic-service-registration">16.1 Generic Service Registration</h3>
+<pre><code class="lang-csharp"><span class="cmt">// Register open generic</span>
+services.<span class="type">AddScoped</span>(<span class="kw">typeof</span>(<span class="type">IRepository</span>&lt;&gt;), <span class="kw">typeof</span>(<span class="type">Repository</span>&lt;&gt;));
+
+<span class="cmt">// Now any IRepository&lt;T&gt; resolves to Repository&lt;T&gt;</span>
+<span class="cmt">// IRepository&lt;Employee&gt; → Repository&lt;Employee&gt;</span>
+<span class="cmt">// IRepository&lt;Product&gt; → Repository&lt;Product&gt;</span></code></pre>
+<h3 id="16-2-generic-decorators">16.2 Generic Decorators</h3>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">CachingRepository</span>&lt;T&gt; : <span class="type">IRepository</span>&lt;T&gt; <span class="kw">where</span> T : <span class="kw">class</span>, <span class="type">IEntity</span>
+{
+    <span class="kw">private</span> <span class="kw">readonly</span> <span class="type">IRepository</span>&lt;T&gt; _inner;
+    <span class="kw">private</span> <span class="kw">readonly</span> <span class="type">IMemoryCache</span> _cache;
+    
+    <span class="kw">public</span> <span class="type">CachingRepository</span>(<span class="type">IRepository</span>&lt;T&gt; inner, <span class="type">IMemoryCache</span> cache)
+    {
+        _inner = inner;
+        _cache = cache;
+    }
+    
+    <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;T?&gt; <span class="type">GetByIdAsync</span>(<span class="kw">int</span> id)
+    {
+        <span class="kw">string</span> key = $<span class="str">&quot;{typeof(T).Name}_{id}&quot;</span>;
+        <span class="kw">return</span> <span class="kw">await</span> _cache.<span class="type">GetOrCreateAsync</span>(key, 
+            entry =&gt; _inner.<span class="type">GetByIdAsync</span>(id));
+    }
+}
+
+<span class="cmt">// Registration with decoration (using Scrutor)</span>
+services.<span class="type">Decorate</span>(<span class="kw">typeof</span>(<span class="type">IRepository</span>&lt;&gt;), <span class="kw">typeof</span>(<span class="type">CachingRepository</span>&lt;&gt;));</code></pre>
+<hr>
+<h2 id="chapter-17-generics-in-blazor">Chapter 17: Generics in Blazor</h2>
+<h3 id="17-1-generic-components">17.1 Generic Components</h3>
+<pre><code class="lang-csharp">@typeparam <span class="type">TItem</span>
+
+&lt;ul&gt;
+    <span class="kw">@foreach</span> (<span class="kw">var</span> item <span class="kw">in</span> <span class="type">Items</span>)
+    {
+        &lt;li&gt;<span class="type">@ItemTemplate</span>(item)&lt;/li&gt;
+    }
+&lt;/ul&gt;
+
+@code {
+    [<span class="type">Parameter</span>] <span class="kw">public</span> <span class="type">IEnumerable</span>&lt;<span class="type">TItem</span>&gt; <span class="type">Items</span> { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="kw">default</span>!;
+    [<span class="type">Parameter</span>] <span class="kw">public</span> <span class="type">RenderFragment</span>&lt;<span class="type">TItem</span>&gt; <span class="type">ItemTemplate</span> { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="kw">default</span>!;
+}</code></pre>
+<p>Usage:</p>
+<pre><code class="lang-razor">&lt;<span class="type">GenericList</span> <span class="type">Items</span>=<span class="str">&quot;employees&quot;</span> <span class="type">Context</span>=<span class="str">&quot;emp&quot;</span>&gt;
+    &lt;<span class="type">ItemTemplate</span>&gt;
+        &lt;span&gt;@emp.<span class="type">Name</span> - @emp.<span class="type">Department</span>&lt;/span&gt;
+    &lt;/<span class="type">ItemTemplate</span>&gt;
+&lt;/<span class="type">GenericList</span>&gt;</code></pre>
+<h3 id="17-2-generic-component-constraints">17.2 Generic Component Constraints</h3>
+<pre><code class="lang-csharp">@typeparam <span class="type">TEntity</span> <span class="kw">where</span> <span class="type">TEntity</span> : <span class="type">IEntity</span>
+
+&lt;<span class="type">MudTable</span> <span class="type">Items</span>=<span class="str">&quot;@Items&quot;</span> <span class="type">Hover</span>=<span class="str">&quot;true&quot;</span>&gt;
+    &lt;<span class="type">HeaderContent</span>&gt;
+        &lt;<span class="type">MudTh</span>&gt;<span class="type">ID</span>&lt;/<span class="type">MudTh</span>&gt;
+        &lt;<span class="type">MudTh</span>&gt;<span class="type">Actions</span>&lt;/<span class="type">MudTh</span>&gt;
+    &lt;/<span class="type">HeaderContent</span>&gt;
+    &lt;<span class="type">RowTemplate</span>&gt;
+        &lt;<span class="type">MudTd</span>&gt;@context.<span class="type">Id</span>&lt;/<span class="type">MudTd</span>&gt;  @* <span class="type">IEntity</span> guarantees <span class="type">Id</span> exists *@
+        &lt;<span class="type">MudTd</span>&gt;
+            &lt;<span class="type">MudIconButton</span> <span class="type">Icon</span>=<span class="str">&quot;@Icons.Material.Filled.Edit&quot;</span> 
+                          <span class="type">OnClick</span>=<span class="str">&quot;() =&gt; Edit(context)&quot;</span> /&gt;
+        &lt;/<span class="type">MudTd</span>&gt;
+    &lt;/<span class="type">RowTemplate</span>&gt;
+&lt;/<span class="type">MudTable</span>&gt;
+
+@code {
+    [<span class="type">Parameter</span>] <span class="kw">public</span> <span class="type">IEnumerable</span>&lt;<span class="type">TEntity</span>&gt; <span class="type">Items</span> { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="kw">default</span>!;
+    [<span class="type">Parameter</span>] <span class="kw">public</span> <span class="type">EventCallback</span>&lt;<span class="type">TEntity</span>&gt; <span class="type">OnEdit</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+    
+    <span class="kw">private</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">Edit</span>(<span class="type">TEntity</span> entity) =&gt; <span class="kw">await</span> <span class="type">OnEdit</span>.<span class="type">InvokeAsync</span>(entity);
+}</code></pre>
+<hr>
+<h1 id="appendix-a-quick-reference">Appendix A: Quick Reference</h1>
+<h2 id="constraint-syntax-summary">Constraint Syntax Summary</h2>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Constraint</th>
+<th>Meaning</th>
+</tr></thead><tbody>
+<tr>
+<td><code class="il">where T : class</code></td>
+<td>T must be a reference type</td>
+</tr>
+<tr>
+<td><code class="il">where T : struct</code></td>
+<td>T must be a non-nullable value type</td>
+</tr>
+<tr>
+<td><code class="il">where T : new()</code></td>
+<td>T must have a parameterless constructor</td>
+</tr>
+<tr>
+<td><code class="il">where T : BaseClass</code></td>
+<td>T must inherit from BaseClass</td>
+</tr>
+<tr>
+<td><code class="il">where T : IInterface</code></td>
+<td>T must implement IInterface</td>
+</tr>
+<tr>
+<td><code class="il">where T : notnull</code></td>
+<td>T must be non-nullable (C# 8+)</td>
+</tr>
+<tr>
+<td><code class="il">where T : unmanaged</code></td>
+<td>T must be an unmanaged type (C# 7.3+)</td>
+</tr>
+<tr>
+<td><code class="il">where T : U</code></td>
+<td>T must derive from type parameter U</td>
+</tr>
+</tbody></table></div>
+<h2 id="variance-summary">Variance Summary</h2>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Keyword</th>
+<th>Name</th>
+<th>Direction</th>
+<th>Safe When</th>
+</tr></thead><tbody>
+<tr>
+<td><code class="il">out</code></td>
+<td>Covariance</td>
+<td>Child → Parent</td>
+<td>T is only returned</td>
+</tr>
+<tr>
+<td><code class="il">in</code></td>
+<td>Contravariance</td>
+<td>Parent → Child</td>
+<td>T is only accepted</td>
+</tr>
+<tr>
+<td>(none)</td>
+<td>Invariance</td>
+<td>No conversion</td>
+<td>T is both input and output</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h1 id="appendix-b-further-reading">Appendix B: Further Reading</h1>
+<ol>
+<li><strong>C# Language Specification</strong> — The official reference for generic syntax and semantics</li>
+<li><strong>&quot;CLR via C#&quot; by Jeffrey Richter</strong> — Deep dive into how generics work at the runtime level</li>
+<li><strong>&quot;C# in Depth&quot; by Jon Skeet</strong> — Excellent coverage of generic evolution across C# versions</li>
+<li><strong>Microsoft Docs: Generic Classes</strong> — https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/generics/</li>
+<li><strong>Entity Framework Core Documentation</strong> — Practical examples of generics in ORM contexts</li>
+</ol>
+<hr>
+<p><em>This guide was written as an educational resource for .NET developers seeking to master generics. Understanding generics deeply will improve your ability to write reusable, type-safe, and performant code.</em></p>
+</div>
+</body>
+</html>

@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Deep Dive: Generics, Builders & Everything In Between</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --surface: #16213e;
+            --surface2: #0f3460;
+            --accent: #e94560;
+            --accent2: #533483;
+            --text: #eee;
+            --text-muted: #aab;
+            --success: #4ecca3;
+            --warning: #f0a500;
+            --code-bg: #0d1117;
+            --border: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            padding: 2rem;
+            max-width: 920px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+
+        h2 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin: 2.5rem 0 1rem 0;
+            padding-bottom: 0.3rem;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        h3 {
+            color: var(--success);
+            font-size: 1.2rem;
+            margin: 1.8rem 0 0.8rem 0;
+        }
+
+        h4 {
+            color: var(--warning);
+            font-size: 1.05rem;
+            margin: 1.2rem 0 0.5rem 0;
+        }
+
+        p { margin-bottom: 1rem; }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.2rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        code {
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9rem;
+        }
+
+        p code, li code, td code {
+            background: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .keyword { color: #569cd6; }
+        .type { color: #4ec9b0; }
+        .string { color: #ce9178; }
+        .comment { color: #6a9955; }
+        .method { color: #dcdcaa; }
+        .number { color: #b5cea8; }
+        .param { color: #9cdcfe; }
+        .arrow { color: #e94560; font-weight: bold; }
+
+        .callout {
+            border-radius: 8px;
+            padding: 1.2rem 1.5rem;
+            margin: 1.5rem 0;
+            border-left: 4px solid;
+        }
+
+        .callout-metaphor {
+            background: rgba(83, 52, 131, 0.2);
+            border-color: var(--accent2);
+        }
+        .callout-metaphor::before {
+            content: "Metaphor";
+            display: block;
+            font-weight: bold;
+            color: var(--accent2);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-english {
+            background: rgba(78, 204, 163, 0.1);
+            border-color: var(--success);
+        }
+        .callout-english::before {
+            content: "Read It Like English";
+            display: block;
+            font-weight: bold;
+            color: var(--success);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-warning {
+            background: rgba(240, 165, 0, 0.1);
+            border-color: var(--warning);
+        }
+        .callout-warning::before {
+            content: "Common Confusion";
+            display: block;
+            font-weight: bold;
+            color: var(--warning);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-rule {
+            background: rgba(233, 69, 96, 0.1);
+            border-color: var(--accent);
+        }
+        .callout-rule::before {
+            content: "Golden Rule";
+            display: block;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-tldr {
+            background: rgba(86, 156, 214, 0.15);
+            border-color: #569cd6;
+        }
+        .callout-tldr::before {
+            content: "TL;DR";
+            display: block;
+            font-weight: bold;
+            color: #569cd6;
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-your-code {
+            background: rgba(78, 204, 163, 0.05);
+            border-color: #4ecca3;
+        }
+        .callout-your-code::before {
+            content: "From Your Codebase";
+            display: block;
+            font-weight: bold;
+            color: #4ecca3;
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        .comparison > div {
+            background: var(--surface);
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid var(--border);
+        }
+        .comparison h4 { margin-top: 0; }
+
+        .diagram {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'Cascadia Code', 'Fira Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.8;
+            overflow-x: auto;
+            white-space: pre;
+            color: var(--text-muted);
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(233, 69, 96, 0.1), rgba(83, 52, 131, 0.1));
+            border: 1px solid var(--accent2);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .quiz {
+            background: var(--surface);
+            border: 1px solid var(--accent2);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        .quiz h4 { margin-top: 0; color: var(--accent2); }
+        .quiz details { margin-top: 0.8rem; }
+        .quiz summary { cursor: pointer; color: var(--success); font-weight: bold; }
+        .quiz details > p, .quiz details > pre {
+            margin-top: 0.5rem;
+            padding-left: 1rem;
+            border-left: 2px solid var(--success);
+        }
+
+        ul, ol { margin: 0.5rem 0 1rem 1.5rem; }
+        li { margin-bottom: 0.4rem; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        th, td {
+            border: 1px solid var(--border);
+            padding: 0.6rem 1rem;
+            text-align: left;
+        }
+        th {
+            background: var(--surface);
+            color: var(--success);
+        }
+        td { background: var(--code-bg); }
+
+        .toc {
+            background: var(--surface);
+            border-radius: 8px;
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            border: 1px solid var(--border);
+        }
+        .toc h3 { margin-top: 0; color: var(--text); }
+        .toc a { color: var(--success); text-decoration: none; }
+        .toc a:hover { text-decoration: underline; }
+        .toc ol { margin-bottom: 0; }
+        .toc li { margin-bottom: 0.3rem; }
+
+        hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 3rem 0;
+        }
+
+        .step {
+            background: var(--surface);
+            border-radius: 8px;
+            padding: 1rem 1.2rem;
+            margin: 0.8rem 0;
+            border: 1px solid var(--border);
+            position: relative;
+        }
+        .step-label {
+            font-size: 0.8rem;
+            color: var(--warning);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.3rem;
+        }
+
+        @media (max-width: 700px) {
+            .comparison { grid-template-columns: 1fr; }
+            body { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+<div style="background:rgba(7,9,15,0.94);border-bottom:1px solid #1f2940;padding:12px 24px;font:13px/1.4 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;position:fixed;top:0;left:0;right:0;z-index:99999;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);display:flex;align-items:center;gap:10px;color:#94a3bf;box-sizing:border-box;min-height:48px;"><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;">Learning</a><span style="color:#5f6b86;">›</span><a href="../_Hub.html" style="color:#94a3bf;text-decoration:none;">CORE</a><span style="color:#5f6b86;">›</span><a href="_Category.html" style="color:#94a3bf;text-decoration:none;">C# Language</a><span style="color:#5f6b86;">›</span><span style="color:#e9eef8;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">C# Deep Dive: Generics, Builders &amp; Everything In Between</span><a href="csharp-generics-and-functional-builders.html" download style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">↓ Download</a><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">All docs</a></div><div style="height:48px;"></div><div style="background:linear-gradient(135deg,#0a0e1a 0%,#11182a 100%);border:1px solid #1f2940;border-radius:14px;padding:24px 28px;margin:20px;font:15px/1.7 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;color:#e9eef8;box-shadow:0 12px 40px rgba(0,0,0,0.35);"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.6px;color:#6aa6ff;font-weight:600;margin-bottom:8px;">▸ Curated · Concept · Language</div><div style="font-size:24px;font-weight:700;color:#e9eef8;margin-bottom:10px;letter-spacing:-0.02em;line-height:1.2;">C# Deep Dive: Generics, Builders &amp; Everything In Between</div><div style="font-size:16px;color:#94a3bf;margin-bottom:18px;line-height:1.5;">A nine-part walkthrough that builds up from generic type parameters to a full functional builder pattern, weaving together constraints, recursive generics, interface masking, extension methods, delegates as data, and Aggregate.</div><div style="font-style:italic;border-left:3px solid #6aa6ff;padding:6px 0 6px 16px;margin:14px 0;color:#e9eef8;">If you have ever stared at where TSelf : FunctionalBuilder&lt;TSubject, TSelf&gt; and felt like you were reading a C# tongue-twister, this is the doc that finally makes you hear the music in it. Every weird angle bracket is doing a job, and once you see the jobs, the whole thing reads like prose.</div><div style="background:rgba(106,166,255,0.06);border:1px solid rgba(106,166,255,0.20);border-radius:10px;padding:14px 18px;margin:14px 0;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#6aa6ff;margin-bottom:6px;font-weight:600;">Executive summary</div><div style="font-size:14px;color:#e9eef8;line-height:1.6;">This deep dive teaches the C# generics machinery by progressively assembling a Functional Builder pattern. It starts from the simplest Box&lt;T&gt; idea, then layers on constraints (where T : new()), recursive generics for fluent chaining (class Child : Parent&lt;Child&gt;), interface return types as &#x27;masks&#x27; that enforce method ordering, extension methods, delegates stored in lists, and finally LINQ&#x27;s Aggregate as the assembly line that runs every stored action against a fresh instance. The payoff is understanding why FunctionalBuilder&lt;TSubject, TSelf&gt; is the way it is, and being able to read every line of it.</div></div><div style="background:rgba(184,106,255,0.06);border:1px solid rgba(184,106,255,0.25);border-radius:10px;padding:14px 18px;margin:14px 0;display:flex;gap:12px;"><div style="font-size:20px;flex-shrink:0;">💡</div><div style="flex:1;font-size:14px;color:#e9eef8;line-height:1.6;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#b86aff;margin-bottom:4px;font-weight:700;">Metaphor</div>Generics are a shipping label with a blank field, constraints are the fine print under the blank, recursive generics are a relay race where the parent always hands the baton back to the right team, interfaces are masks that hide every face except the one you want the caller to see, and Aggregate is the factory assembly line that walks a blank chassis past every station until a finished car rolls out the other end.</div></div><div style="margin-top:14px;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#5f6b86;margin-bottom:8px;font-weight:600;">Key concepts</div><div><span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">generic type parameters</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">where T : new() constraint</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">recursive generics (CRTP/F-bounded polymorphism)</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">interface as method-ordering mask</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">extension methods</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">delegates as data</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">LINQ Aggregate as fold</span></div></div><div style="margin-top:18px;padding-top:14px;border-top:1px solid #1f2940;font-size:11px;color:#5f6b86;">↑ Curated overlay added by render_curated.py · the original document follows below</div></div>
+
+    <h1>Generics, Builders &<br>Everything In Between</h1>
+    <p class="subtitle">From Class&lt;T&gt; to Functional Builders &mdash; a complete walkthrough using your codebase</p>
+
+    <nav class="toc">
+        <h3>Table of Contents</h3>
+        <ol>
+            <li><a href="#part1">Part 1: Generics &mdash; "A Class with a Blank"</a></li>
+            <li><a href="#part2">Part 2: Constraints &mdash; "Not Just Any Blank"</a></li>
+            <li><a href="#part3">Part 3: Recursive Generics &mdash; "Tell Me Who You Are"</a></li>
+            <li><a href="#part4">Part 4: Returning Interfaces &mdash; "You Can Only See This Much"</a></li>
+            <li><a href="#part5">Part 5: Extension Methods &mdash; "Adding Methods From Outside"</a></li>
+            <li><a href="#part6">Part 6: Delegates as Data &mdash; "Storing Behavior in a List"</a></li>
+            <li><a href="#part7">Part 7: The Functional Builder &mdash; "Putting It All Together"</a></li>
+            <li><a href="#part8">Part 8: Aggregate &mdash; "The Assembly Line"</a></li>
+            <li><a href="#part9">Part 9: Practice Exercises</a></li>
+        </ol>
+    </nav>
+
+    <!-- ============================================================ -->
+    <!-- PART 1: GENERICS                                             -->
+    <!-- ============================================================ -->
+    <h2 id="part1">Part 1: Generics</h2>
+    <p><em>"A class with a blank to fill in later"</em></p>
+
+    <div class="callout callout-metaphor">
+        <p>Think of a generic class like a <strong>form with a blank field</strong>.</p>
+        <p>A <code>Box&lt;T&gt;</code> is like a shipping label that says: <em>"Contents: ________"</em>. When you create <code>Box&lt;int&gt;</code>, you fill in the blank with "int". The box doesn't care what's inside &mdash; it just needs to know so it can handle it properly.</p>
+    </div>
+
+    <h3>The Simplest Generic</h3>
+
+<pre><code><span class="keyword">public class</span> <span class="type">Box</span>&lt;<span class="type">T</span>&gt;
+{
+    <span class="keyword">public</span> <span class="type">T</span> Content { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+}</code></pre>
+
+    <p><code>T</code> is not a real type. It's a <strong>placeholder</strong> that becomes real when you use the class:</p>
+
+<pre><code><span class="keyword">var</span> <span class="param">intBox</span> = <span class="keyword">new</span> <span class="type">Box</span>&lt;<span class="keyword">int</span>&gt;();          <span class="comment">// T = int    → Content is an int</span>
+<span class="keyword">var</span> <span class="param">strBox</span> = <span class="keyword">new</span> <span class="type">Box</span>&lt;<span class="keyword">string</span>&gt;();       <span class="comment">// T = string → Content is a string</span>
+<span class="keyword">var</span> <span class="param">pBox</span>   = <span class="keyword">new</span> <span class="type">Box</span>&lt;<span class="type">Person</span>&gt;();       <span class="comment">// T = Person → Content is a Person</span></code></pre>
+
+    <div class="callout callout-english">
+        <p><code>Box&lt;T&gt;</code> &rarr; <em>"A Box that holds <strong>something</strong>, and that something is called T."</em></p>
+        <p><code>Box&lt;int&gt;</code> &rarr; <em>"A Box where T is int."</em></p>
+        <p><code>Box&lt;Person&gt;</code> &rarr; <em>"A Box where T is Person."</em></p>
+    </div>
+
+    <h3>You Already Use This Every Day</h3>
+
+<pre><code><span class="type">List</span>&lt;<span class="keyword">int</span>&gt;                <span class="comment">// "A list where T is int"</span>
+<span class="type">List</span>&lt;<span class="keyword">string</span>&gt;             <span class="comment">// "A list where T is string"</span>
+<span class="type">List</span>&lt;<span class="type">HtmlElement</span>&gt;        <span class="comment">// "A list where T is HtmlElement"</span>
+<span class="type">HashSet</span>&lt;(<span class="type">Person</span>, <span class="type">Relationship</span>, <span class="type">Person</span>)&gt;  <span class="comment">// "A hashset where T is that tuple"</span></code></pre>
+
+    <p><code>List&lt;T&gt;</code> is just a class that said: <em>"I'm a list, but I don't know what I hold yet &mdash; you tell me."</em></p>
+
+    <h3>Multiple Type Parameters</h3>
+    <p>A class can have more than one blank:</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">Pair</span>&lt;<span class="type">TFirst</span>, <span class="type">TSecond</span>&gt;
+{
+    <span class="keyword">public</span> <span class="type">TFirst</span> First { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public</span> <span class="type">TSecond</span> Second { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+}
+
+<span class="keyword">var</span> <span class="param">pair</span> = <span class="keyword">new</span> <span class="type">Pair</span>&lt;<span class="keyword">string</span>, <span class="keyword">int</span>&gt;();   <span class="comment">// First is string, Second is int</span>
+<span class="param">pair</span>.First = <span class="string">"age"</span>;
+<span class="param">pair</span>.Second = <span class="number">25</span>;</code></pre>
+
+    <div class="callout callout-english">
+        <p><code>Pair&lt;string, int&gt;</code> &rarr; <em>"A Pair where the first thing is a string and the second thing is an int."</em></p>
+    </div>
+
+    <h3>Why Not Just Use <code>object</code>?</h3>
+
+    <div class="comparison">
+        <div>
+            <h4>Without Generics (object)</h4>
+<pre><code><span class="keyword">public class</span> <span class="type">Box</span>
+{
+    <span class="keyword">public object</span> Content { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+}
+
+<span class="keyword">var</span> <span class="param">box</span> = <span class="keyword">new</span> <span class="type">Box</span>();
+box.Content = <span class="number">42</span>;
+
+<span class="comment">// Have to cast — could crash at runtime!</span>
+<span class="keyword">string</span> <span class="param">s</span> = (<span class="keyword">string</span>)box.Content; <span class="comment">// BOOM</span></code></pre>
+        </div>
+        <div>
+            <h4>With Generics</h4>
+<pre><code><span class="keyword">public class</span> <span class="type">Box</span>&lt;<span class="type">T</span>&gt;
+{
+    <span class="keyword">public</span> <span class="type">T</span> Content { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+}
+
+<span class="keyword">var</span> <span class="param">box</span> = <span class="keyword">new</span> <span class="type">Box</span>&lt;<span class="keyword">int</span>&gt;();
+box.Content = <span class="number">42</span>;
+
+<span class="comment">// Compiler stops you BEFORE running</span>
+<span class="keyword">string</span> <span class="param">s</span> = box.Content; <span class="comment">// Compile error!</span></code></pre>
+        </div>
+    </div>
+
+    <p>Generics give you: <strong>write once, fully type-safe</strong>. No casting, no runtime crashes.</p>
+
+    <div class="callout callout-tldr">
+        <p><strong>Generic</strong> = a class/method with a type placeholder (<code>T</code>) that gets filled in when you use it. It lets you write code once that works with many types, without losing compile-time safety.</p>
+    </div>
+
+    <hr>
+
+    <!-- ============================================================ -->
+    <!-- PART 2: CONSTRAINTS                                          -->
+    <!-- ============================================================ -->
+    <h2 id="part2">Part 2: Constraints</h2>
+    <p><em>"Not just any blank &mdash; I have requirements"</em></p>
+
+    <div class="callout callout-metaphor">
+        <p>If a generic is a form with a blank, a <strong>constraint</strong> is the fine print next to the blank: <em>"Must be at least 18 years old"</em> or <em>"Must have a valid ID."</em></p>
+        <p>It restricts what you're allowed to fill in.</p>
+    </div>
+
+    <h3>The Syntax</h3>
+
+<pre><code><span class="keyword">public class</span> <span class="type">Repo</span>&lt;<span class="type">T</span>&gt; <span class="keyword">where</span> <span class="type">T</span> : <span class="keyword">class</span>
+<span class="comment">//                      ↑ "T must be a reference type (not int, bool, etc.)"</span>
+
+<span class="keyword">public class</span> <span class="type">Sorter</span>&lt;<span class="type">T</span>&gt; <span class="keyword">where</span> <span class="type">T</span> : <span class="type">IComparable</span>&lt;<span class="type">T</span>&gt;
+<span class="comment">//                         ↑ "T must implement IComparable"</span>
+
+<span class="keyword">public class</span> <span class="type">Zoo</span>&lt;<span class="type">T</span>&gt; <span class="keyword">where</span> <span class="type">T</span> : <span class="type">Animal</span>
+<span class="comment">//                      ↑ "T must be Animal or a subclass of Animal"</span>
+
+<span class="keyword">public class</span> <span class="type">Factory</span>&lt;<span class="type">T</span>&gt; <span class="keyword">where</span> <span class="type">T</span> : <span class="keyword">new</span>()
+<span class="comment">//                          ↑ "T must have a parameterless constructor"</span>
+
+<span class="keyword">public class</span> <span class="type">Wrapper</span>&lt;<span class="type">T</span>&gt; <span class="keyword">where</span> <span class="type">T</span> : <span class="keyword">struct</span>
+<span class="comment">//                          ↑ "T must be a value type (int, bool, double, enums, custom structs)"</span></code></pre>
+
+    <h3>Reference Types vs Value Types</h3>
+    <p><code>class</code> and <code>struct</code> constraints are mutually exclusive &mdash; you pick one or neither:</p>
+
+    <table>
+        <tr><th>Constraint</th><th>Allows</th><th>Examples</th></tr>
+        <tr><td><code>where T : class</code></td><td>Reference types only</td><td><code>string</code>, <code>Person</code>, <code>List&lt;int&gt;</code>, any class</td></tr>
+        <tr><td><code>where T : struct</code></td><td>Value types only</td><td><code>int</code>, <code>bool</code>, <code>double</code>, <code>DateTime</code>, enums, custom structs</td></tr>
+    </table>
+
+<pre><code><span class="keyword">public class</span> <span class="type">RefOnly</span>&lt;<span class="type">T</span>&gt; <span class="keyword">where</span> <span class="type">T</span> : <span class="keyword">class</span> { }
+<span class="keyword">public class</span> <span class="type">ValOnly</span>&lt;<span class="type">T</span>&gt; <span class="keyword">where</span> <span class="type">T</span> : <span class="keyword">struct</span> { }
+
+<span class="type">RefOnly</span>&lt;<span class="keyword">string</span>&gt; ok1;      <span class="comment">// string is a reference type ✓</span>
+<span class="type">RefOnly</span>&lt;<span class="keyword">int</span>&gt; fail1;       <span class="comment">// int is a value type ✗ COMPILE ERROR</span>
+
+<span class="type">ValOnly</span>&lt;<span class="keyword">int</span>&gt; ok2;         <span class="comment">// int is a value type ✓</span>
+<span class="type">ValOnly</span>&lt;<span class="keyword">string</span>&gt; fail2;    <span class="comment">// string is a reference type ✗ COMPILE ERROR</span></code></pre>
+
+    <p><strong>Note:</strong> The <code>struct</code> constraint also guarantees <code>T</code> is non-nullable &mdash; you can't pass <code>int?</code> (<code>Nullable&lt;int&gt;</code>). If you want to allow both reference and value types but require neither to be null, C# 8+ has <code>where T : notnull</code>.</p>
+
+    <div class="callout callout-english">
+        <p><code>where T : Animal</code> &rarr; <em>"T can be anything, <strong>as long as</strong> it's an Animal or a subclass of Animal."</em></p>
+        <p><code>where T : new()</code> &rarr; <em>"T must have a parameterless constructor, so I can do <code>new T()</code>."</em></p>
+    </div>
+
+    <h3>Why Constraints Matter</h3>
+    <p>Without constraints, the compiler only knows <code>T</code> is "some type" &mdash; it can't assume anything about what <code>T</code> can do:</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">Factory</span>&lt;<span class="type">T</span>&gt;
+{
+    <span class="keyword">public</span> <span class="type">T</span> <span class="method">Create</span>()
+    {
+        <span class="keyword">return new</span> <span class="type">T</span>();  <span class="comment">// ERROR! What if T doesn't have a constructor?</span>
+    }
+}
+
+<span class="comment">// With the constraint, the compiler trusts you:</span>
+<span class="keyword">public class</span> <span class="type">Factory</span>&lt;<span class="type">T</span>&gt; <span class="keyword">where</span> <span class="type">T</span> : <span class="keyword">new</span>()
+{
+    <span class="keyword">public</span> <span class="type">T</span> <span class="method">Create</span>()
+    {
+        <span class="keyword">return new</span> <span class="type">T</span>();  <span class="comment">// OK! The constraint guarantees T has a constructor.</span>
+    }
+}</code></pre>
+
+    <div class="callout callout-your-code">
+        <p>In your <code>FunctionalBuilder&lt;TSubject, TSelf&gt;</code>:</p>
+        <p><code>where TSubject : new()</code> &mdash; this is why <code>Build()</code> can do <code>new TSubject()</code>. Without it, the compiler would say: <em>"I don't know if TSubject has a parameterless constructor!"</em></p>
+    </div>
+
+    <h3>Multiple Constraints</h3>
+    <p>You can stack them, and you can constrain multiple type parameters:</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">FunctionalBuilder</span>&lt;<span class="type">TSubject</span>, <span class="type">TSelf</span>&gt;
+    <span class="keyword">where</span> <span class="type">TSelf</span> : <span class="type">FunctionalBuilder</span>&lt;<span class="type">TSubject</span>, <span class="type">TSelf</span>&gt;   <span class="comment">// constraint on TSelf</span>
+    <span class="keyword">where</span> <span class="type">TSubject</span> : <span class="keyword">new</span>()                                <span class="comment">// constraint on TSubject</span></code></pre>
+
+    <div class="callout callout-english">
+        <p>Read it as: <em>"TSelf must extend FunctionalBuilder, <strong>AND</strong> TSubject must have a parameterless constructor."</em></p>
+    </div>
+
+    <div class="callout callout-tldr">
+        <p><strong>Constraint</strong> = a restriction on what types can fill in a generic parameter. It tells the compiler <em>"T isn't just anything &mdash; it has these guarantees"</em>, which unlocks operations that need those guarantees (like <code>new T()</code>).</p>
+    </div>
+
+    <hr>
+
+    <!-- ============================================================ -->
+    <!-- PART 3: RECURSIVE GENERICS                                   -->
+    <!-- ============================================================ -->
+    <h2 id="part3">Part 3: Recursive Generics</h2>
+    <p><em>"Tell me who you are, so I can return you"</em></p>
+
+    <div class="callout callout-metaphor">
+        <p>Imagine a <strong>relay race</strong>. The baton-passing rule says: <em>"When you hand off the baton, it must go back to the same team."</em></p>
+        <p>The parent class holds the baton (the return type). It says: <em>"I'll pass the baton, but I need to know which team you're on."</em> The child says: <em>"I'm on team PersonJobBuilder."</em> Now the parent can hand the baton back to the right team.</p>
+    </div>
+
+    <h3>The Problem</h3>
+    <p>In fluent builders, every method returns <code>this</code> so you can chain. But with inheritance, the parent returns <strong>itself</strong>, not the child:</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">PersonInfoBuilder</span>
+{
+    <span class="keyword">public</span> <span class="type">PersonInfoBuilder</span> <span class="method">Called</span>(<span class="keyword">string</span> <span class="param">name</span>) <span class="comment">// returns PersonInfoBuilder</span>
+    {
+        person.name = name;
+        <span class="keyword">return this</span>;
+    }
+}
+
+<span class="keyword">public class</span> <span class="type">PersonJobBuilder</span> : <span class="type">PersonInfoBuilder</span>
+{
+    <span class="keyword">public</span> <span class="type">PersonJobBuilder</span> <span class="method">WorksAsA</span>(<span class="keyword">string</span> <span class="param">position</span>) { ... }
+}
+
+<span class="comment">// THE PROBLEM:</span>
+<span class="keyword">new</span> <span class="type">PersonJobBuilder</span>()
+    .<span class="method">Called</span>(<span class="string">"John"</span>)      <span class="comment">// returns PersonInfoBuilder ← NOT PersonJobBuilder!</span>
+    .<span class="method">WorksAsA</span>(<span class="string">"dev"</span>)    <span class="comment">// COMPILE ERROR! PersonInfoBuilder has no WorksAsA()</span></code></pre>
+
+    <h3>The Solution</h3>
+
+<pre><code><span class="keyword">public class</span> <span class="type">PersonInfoBuilder</span>&lt;<span class="type">TSelf</span>&gt;
+    <span class="keyword">where</span> <span class="type">TSelf</span> : <span class="type">PersonInfoBuilder</span>&lt;<span class="type">TSelf</span>&gt;
+{
+    <span class="keyword">public</span> <span class="type">TSelf</span> <span class="method">Called</span>(<span class="keyword">string</span> <span class="param">name</span>)   <span class="comment">// returns TSelf — whatever the child is!</span>
+    {
+        person.name = name;
+        <span class="keyword">return</span> (<span class="type">TSelf</span>)<span class="keyword">this</span>;
+    }
+}</code></pre>
+
+    <p>The child fills in the blank with <strong>itself</strong>:</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">PersonJobBuilder</span> : <span class="type">PersonInfoBuilder</span>&lt;<span class="type">PersonJobBuilder</span>&gt;
+<span class="comment">//                                                    ↑ TSelf = me!</span></code></pre>
+
+    <p>Now <code>Called()</code> returns <code>PersonJobBuilder</code> (because TSelf = PersonJobBuilder), and the chain works:</p>
+
+<pre><code><span class="keyword">new</span> <span class="type">PersonJobBuilder</span>()
+    .<span class="method">Called</span>(<span class="string">"John"</span>)      <span class="comment">// TSelf = PersonJobBuilder → returns PersonJobBuilder!</span>
+    .<span class="method">WorksAsA</span>(<span class="string">"dev"</span>)    <span class="comment">// Works! Still on PersonJobBuilder.</span>
+    .<span class="method">Build</span>()</code></pre>
+
+    <div class="diagram">
+    The pattern:   class Child : Parent&lt;Child&gt;
+
+    The child passes ITSELF as the type argument.
+    The parent uses it as the return type.
+
+    Parent says:  "Whoever inherits me, tell me your type."
+    Child says:   "TSelf is me."
+    Parent says:  "Great, I'll return you."
+    </div>
+
+    <div class="callout callout-warning">
+        <p>The generic <code>&lt;TSelf&gt;</code> is NOT about "working with data of type TSelf." It's a trick to let the parent class <strong>return the child's type</strong> without knowing which child it is. It's purely about return types for fluent chaining.</p>
+    </div>
+
+    <div class="callout callout-tldr">
+        <p><strong>Recursive generic</strong> = <code>class Child : Parent&lt;Child&gt;</code>. The child passes itself as the type argument so the parent can return the child's type. This keeps fluent method chains working across inheritance.</p>
+    </div>
+
+    <hr>
+
+    <!-- ============================================================ -->
+    <!-- PART 4: RETURNING INTERFACES                                 -->
+    <!-- ============================================================ -->
+    <h2 id="part4">Part 4: Returning Interfaces</h2>
+    <p><em>"You can only see this much"</em></p>
+
+    <div class="callout callout-metaphor">
+        <p>Imagine a person who is simultaneously a <strong>driver</strong>, a <strong>mechanic</strong>, and a <strong>salesman</strong>. They're all the same person.</p>
+        <p>When you return them as <code>IDriver</code>, the caller can only ask them to drive. They can't ask about car repairs or prices &mdash; even though the person <em>knows</em> how to do those things. The interface acts as a <strong>mask</strong> that hides everything except one role.</p>
+    </div>
+
+    <h3>The Core Idea</h3>
+    <p>You can't instantiate an interface. But you CAN return <strong>an object that implements it</strong>. The return type just controls what the caller can <strong>see</strong>.</p>
+
+<pre><code><span class="keyword">public interface</span> <span class="type">ISpecifyCarType</span>
+{
+    <span class="type">ISpecifyWheelSize</span> <span class="method">OfType</span>(<span class="type">CarType</span> type);   <span class="comment">// returns "something that can specify wheels"</span>
+}
+
+<span class="keyword">public interface</span> <span class="type">ISpecifyWheelSize</span>
+{
+    <span class="type">IBuildCar</span> <span class="method">WithWheels</span>(<span class="keyword">int</span> size);            <span class="comment">// returns "something that can build"</span>
+}
+
+<span class="keyword">public interface</span> <span class="type">IBuildCar</span>
+{
+    <span class="type">Car</span> <span class="method">Build</span>();                               <span class="comment">// returns the finished car</span>
+}</code></pre>
+
+    <div class="callout callout-your-code">
+        <p>Your <code>CarBuilder.Impl</code> class implements all three interfaces. But each method returns <code>this</code> typed as the <strong>next</strong> interface:</p>
+<pre><code><span class="keyword">private class</span> <span class="type">Impl</span> : <span class="type">ISpecifyCarType</span>, <span class="type">ISpecifyWheelSize</span>, <span class="type">IBuildCar</span>
+{
+    <span class="keyword">public</span> <span class="type">ISpecifyWheelSize</span> <span class="method">OfType</span>(<span class="type">CarType</span> type)
+    {
+        car.Type = type;
+        <span class="keyword">return this</span>;    <span class="comment">// same object, but caller only sees ISpecifyWheelSize</span>
+    }
+}</code></pre>
+    </div>
+
+    <h3>How It Enforces Order</h3>
+
+    <div class="diagram">
+    CarBuilder.Create()         → returns ISpecifyCarType
+                                  You can ONLY call: .OfType()
+
+    .OfType(CarType.Sedan)      → returns ISpecifyWheelSize
+                                  You can ONLY call: .WithWheels()
+
+    .WithWheels(18)             → returns IBuildCar
+                                  You can ONLY call: .Build()
+
+    .Build()                    → returns Car (done!)
+    </div>
+
+    <p>Try calling them out of order:</p>
+
+<pre><code><span class="type">CarBuilder</span>.<span class="method">Create</span>().<span class="method">Build</span>();          <span class="comment">// ERROR: ISpecifyCarType has no Build()</span>
+<span class="type">CarBuilder</span>.<span class="method">Create</span>().<span class="method">WithWheels</span>(<span class="number">18</span>);   <span class="comment">// ERROR: ISpecifyCarType has no WithWheels()</span></code></pre>
+
+    <div class="diagram">
+    What the object IS:          What you can SEE at each step:
+
+    ┌─────────────────────┐
+    │        Impl         │
+    │                     │
+    │   .OfType()         │ ◄── ISpecifyCarType shows only this
+    │   .WithWheels()     │ ◄── ISpecifyWheelSize shows only this
+    │   .Build()          │ ◄── IBuildCar shows only this
+    │                     │
+    └─────────────────────┘
+
+    Same object, three different "masks."
+    Each mask reveals only the next step.
+    </div>
+
+    <div class="callout callout-tldr">
+        <p><strong>Returning an interface</strong> = returning an object, but the caller only sees the methods defined on that interface. Use this to <strong>restrict what's available</strong> at each step. The object has all methods; the interface is a mask.</p>
+    </div>
+
+    <hr>
+
+    <!-- ============================================================ -->
+    <!-- PART 5: EXTENSION METHODS                                    -->
+    <!-- ============================================================ -->
+    <h2 id="part5">Part 5: Extension Methods</h2>
+    <p><em>"Adding methods from outside a class"</em></p>
+
+    <div class="callout callout-metaphor">
+        <p>Imagine a <strong>toolbox</strong> (a class). It's sealed shut &mdash; you can't put new tools inside. But you can <strong>attach a tool to the outside</strong> using a magnet. Anyone holding the toolbox can use it as if it were built in.</p>
+        <p>Extension methods are those magnetic tools.</p>
+    </div>
+
+    <h3>The Syntax</h3>
+
+<pre><code><span class="keyword">public static class</span> <span class="type">PersonBuilderExtensions</span>
+{
+    <span class="keyword">public static</span> <span class="type">PersonBuilder</span> <span class="method">WithPosition</span>(
+        <span class="keyword">this</span> <span class="type">PersonBuilder</span> <span class="param">builder</span>,   <span class="comment">// ← "this" = extension method</span>
+        <span class="keyword">string</span> <span class="param">position</span>)
+    {
+        <span class="keyword">return</span> builder.<span class="method">Do</span>(<span class="param">p</span> <span class="arrow">=></span> p.position = position);
+    }
+}</code></pre>
+
+    <p>The <code>this</code> before the first parameter is the magic word. It tells C#: <em>"this method can be called AS IF it were a method on PersonBuilder."</em></p>
+
+    <div class="comparison">
+        <div>
+            <h4>Called as static method</h4>
+<pre><code><span class="type">PersonBuilderExtensions</span>
+    .<span class="method">WithPosition</span>(builder, <span class="string">"dev"</span>);</code></pre>
+        </div>
+        <div>
+            <h4>Called as extension method</h4>
+<pre><code>builder.<span class="method">WithPosition</span>(<span class="string">"dev"</span>);
+
+<span class="comment">// looks like it belongs to
+// PersonBuilder, but it doesn't!</span></code></pre>
+        </div>
+    </div>
+
+    <p>These two are <strong>identical</strong>. The compiler rewrites the second into the first.</p>
+
+    <h3>Rules for Extension Methods</h3>
+    <ul>
+        <li>Must be in a <code>static class</code></li>
+        <li>Must be a <code>static</code> method</li>
+        <li>First parameter must have <code>this</code> keyword</li>
+        <li>The type after <code>this</code> determines what type the method "attaches" to</li>
+    </ul>
+
+    <h3>Why This Matters for Builders</h3>
+    <p><code>PersonBuilder</code> is <code>sealed</code> &mdash; you can't inherit from it. Without extension methods, the only way to add new builder steps is to modify the class itself. Extensions let you <strong>add methods without touching the original</strong>:</p>
+
+<pre><code><span class="comment">// Anyone, anywhere, can write this:</span>
+<span class="keyword">public static</span> <span class="type">PersonBuilder</span> <span class="method">WithAge</span>(<span class="keyword">this</span> <span class="type">PersonBuilder</span> <span class="param">builder</span>, <span class="keyword">int</span> <span class="param">age</span>)
+    <span class="arrow">=></span> builder.<span class="method">Do</span>(<span class="param">p</span> <span class="arrow">=></span> p.age = age);
+
+<span class="comment">// And now this works:</span>
+<span class="keyword">new</span> <span class="type">PersonBuilder</span>().<span class="method">Called</span>(<span class="string">"John"</span>).<span class="method">WithAge</span>(<span class="number">30</span>).<span class="method">Build</span>();</code></pre>
+
+    <div class="callout callout-your-code">
+        <p><strong>LINQ works exactly this way!</strong></p>
+        <p><code>.Where()</code>, <code>.Select()</code>, <code>.OrderBy()</code>, <code>.Aggregate()</code> &mdash; none of these are on <code>List&lt;T&gt;</code>. They're all extension methods defined in <code>System.Linq</code>. That's why you need <code>using System.Linq;</code> &mdash; without it, the compiler can't find them.</p>
+    </div>
+
+    <div class="callout callout-tldr">
+        <p><strong>Extension method</strong> = a static method with <code>this</code> on the first parameter, letting you call it like it's a member of that type. Adds functionality without modifying the original class.</p>
+    </div>
+
+    <hr>
+
+    <!-- ============================================================ -->
+    <!-- PART 6: DELEGATES AS DATA                                    -->
+    <!-- ============================================================ -->
+    <h2 id="part6">Part 6: Delegates as Data</h2>
+    <p><em>"Storing behavior in a list"</em></p>
+
+    <div class="callout callout-metaphor">
+        <p>Think of a <strong>recipe book</strong>. Each page is an instruction: <em>"chop onions"</em>, <em>"add salt"</em>, <em>"stir for 5 minutes."</em></p>
+        <p>The recipe book doesn't DO anything by itself. It just <strong>collects instructions</strong>. The cooking only happens when someone reads the book and follows each step.</p>
+        <p>A <code>List&lt;Func&lt;Person, Person&gt;&gt;</code> is that recipe book. Each function is a page. <code>Build()</code> is the cook.</p>
+    </div>
+
+    <h3>Functions as Values</h3>
+    <p>In C#, functions can be stored in variables, put in lists, and passed around:</p>
+
+<pre><code><span class="comment">// A single function stored in a variable</span>
+<span class="type">Func</span>&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt; <span class="param">doubler</span> = <span class="param">x</span> <span class="arrow">=></span> x * <span class="number">2</span>;
+
+<span class="comment">// A LIST of functions!</span>
+<span class="keyword">var</span> <span class="param">operations</span> = <span class="keyword">new</span> <span class="type">List</span>&lt;<span class="type">Func</span>&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;&gt;();
+operations.<span class="method">Add</span>(<span class="param">x</span> <span class="arrow">=></span> x * <span class="number">2</span>);    <span class="comment">// add "double" to the list</span>
+operations.<span class="method">Add</span>(<span class="param">x</span> <span class="arrow">=></span> x + <span class="number">10</span>);   <span class="comment">// add "plus 10" to the list</span>
+operations.<span class="method">Add</span>(<span class="param">x</span> <span class="arrow">=></span> x / <span class="number">3</span>);    <span class="comment">// add "divide by 3" to the list</span>
+
+<span class="comment">// Run them all on a value:</span>
+<span class="keyword">int</span> <span class="param">result</span> = <span class="number">5</span>;
+<span class="keyword">foreach</span> (<span class="keyword">var</span> <span class="param">op</span> <span class="keyword">in</span> operations)
+{
+    result = <span class="method">op</span>(result);   <span class="comment">// 5 → 10 → 20 → 6</span>
+}</code></pre>
+
+    <h3>The Action → Func Wrapping</h3>
+    <p>The builder stores <code>Func&lt;Person, Person&gt;</code> (takes a Person, returns a Person). But it's more convenient for callers to use <code>Action&lt;Person&gt;</code> (takes a Person, returns nothing). So the builder <strong>wraps</strong> each Action:</p>
+
+    <div class="comparison">
+        <div>
+            <h4>What the caller provides</h4>
+<pre><code><span class="type">Action</span>&lt;<span class="type">Person</span>&gt;
+
+<span class="param">p</span> <span class="arrow">=></span> p.name = <span class="string">"John"</span>
+<span class="comment">// sets name, returns NOTHING</span></code></pre>
+        </div>
+        <div>
+            <h4>What the list needs</h4>
+<pre><code><span class="type">Func</span>&lt;<span class="type">Person</span>, <span class="type">Person</span>&gt;
+
+<span class="param">p</span> <span class="arrow">=></span> { p.name = <span class="string">"John"</span>; <span class="keyword">return</span> p; }
+<span class="comment">// sets name, returns the person</span></code></pre>
+        </div>
+    </div>
+
+    <p>The <code>AddAction</code> method bridges the gap:</p>
+
+<pre><code><span class="keyword">private</span> <span class="type">TSelf</span> <span class="method">AddAction</span>(<span class="type">Action</span>&lt;<span class="type">TSubject</span>&gt; <span class="param">action</span>)
+{
+    actions.<span class="method">Add</span>(<span class="param">s</span> <span class="arrow">=></span>       <span class="comment">// "given a subject s..."</span>
+    {
+        <span class="method">action</span>(s);       <span class="comment">// "run the action on s" (e.g., set s.name = "John")</span>
+        <span class="keyword">return</span> s;        <span class="comment">// "hand s back" (so the next function gets it)</span>
+    });
+    <span class="keyword">return</span> (<span class="type">TSelf</span>)<span class="keyword">this</span>;
+}</code></pre>
+
+    <div class="callout callout-english">
+        <p><code>action(s)</code> &mdash; <em>"I can call <code>action</code> with <code>s</code> because <code>action</code> is an <code>Action&lt;Person&gt;</code> &mdash; a variable holding a method that takes a Person."</em></p>
+        <p>Calling a delegate is just like calling a method: <code>action(s)</code> = <em>"run whatever method <code>action</code> is pointing to, and pass it <code>s</code>."</em></p>
+    </div>
+
+    <h3>The Key Insight: Nothing Runs Yet</h3>
+
+<pre><code><span class="keyword">new</span> <span class="type">PersonBuilder</span>()
+    .<span class="method">Called</span>(<span class="string">"John"</span>)          <span class="comment">// adds a recipe: "set name to John"</span>
+    .<span class="method">WithPosition</span>(<span class="string">"dev"</span>)    <span class="comment">// adds a recipe: "set position to dev"</span>
+    <span class="comment">// At this point: NO Person exists. Just two recipes in a list.</span>
+    .<span class="method">Build</span>();               <span class="comment">// NOW a Person is created and recipes are executed.</span></code></pre>
+
+    <div class="callout callout-tldr">
+        <p><strong>Writing a lambda doesn't execute it.</strong> It's like writing a note: <em>"when you get a package, open it."</em> The note sits in a list until <code>Build()</code> actually hands out the package. <code>.Called("John")</code> writes the note. <code>.Build()</code> runs it.</p>
+    </div>
+
+    <hr>
+
+    <!-- ============================================================ -->
+    <!-- PART 7: THE FUNCTIONAL BUILDER                               -->
+    <!-- ============================================================ -->
+    <h2 id="part7">Part 7: The Functional Builder</h2>
+    <p><em>"Putting it all together"</em></p>
+
+    <p>Now let's see how all the pieces combine in your actual code:</p>
+
+    <h3>The Generic Base Class</h3>
+
+<pre><code><span class="keyword">public abstract class</span> <span class="type">FunctionalBuilder</span>&lt;<span class="type">TSubject</span>, <span class="type">TSelf</span>&gt;
+    <span class="keyword">where</span> <span class="type">TSelf</span> : <span class="type">FunctionalBuilder</span>&lt;<span class="type">TSubject</span>, <span class="type">TSelf</span>&gt;   <span class="comment">// recursive generic (Part 3)</span>
+    <span class="keyword">where</span> <span class="type">TSubject</span> : <span class="keyword">new</span>()                                <span class="comment">// constraint (Part 2)</span>
+{
+    <span class="keyword">private readonly</span> <span class="type">List</span>&lt;<span class="type">Func</span>&lt;<span class="type">TSubject</span>, <span class="type">TSubject</span>&gt;&gt; <span class="param">actions</span> = [];  <span class="comment">// delegates as data (Part 6)</span>
+
+    <span class="keyword">private</span> <span class="type">TSelf</span> <span class="method">AddAction</span>(<span class="type">Action</span>&lt;<span class="type">TSubject</span>&gt; <span class="param">action</span>)  <span class="comment">// Action→Func wrapping (Part 6)</span>
+    {
+        actions.<span class="method">Add</span>(<span class="param">s</span> <span class="arrow">=></span> { <span class="method">action</span>(s); <span class="keyword">return</span> s; });
+        <span class="keyword">return</span> (<span class="type">TSelf</span>)<span class="keyword">this</span>;                              <span class="comment">// returns child type (Part 3)</span>
+    }
+
+    <span class="keyword">public</span> <span class="type">TSelf</span> <span class="method">Do</span>(<span class="type">Action</span>&lt;<span class="type">TSubject</span>&gt; <span class="param">action</span>) <span class="arrow">=></span> <span class="method">AddAction</span>(action);
+    <span class="keyword">public</span> <span class="type">TSubject</span> <span class="method">Build</span>() <span class="arrow">=></span> actions.<span class="method">Aggregate</span>(<span class="keyword">new</span> <span class="type">TSubject</span>(), (<span class="param">s</span>, <span class="param">f</span>) <span class="arrow">=></span> <span class="method">f</span>(s));  <span class="comment">// Part 8</span>
+}</code></pre>
+
+    <table>
+        <tr><th>Type Parameter</th><th>Means</th><th>For PersonBuilder</th><th>For CarBuilder</th></tr>
+        <tr><td><code>TSubject</code></td><td>"What am I building?"</td><td><code>Person</code></td><td><code>Car</code></td></tr>
+        <tr><td><code>TSelf</code></td><td>"What's the concrete builder?"</td><td><code>PersonBuilder</code></td><td><code>CarBuilder</code></td></tr>
+    </table>
+
+    <h3>The Concrete Builders</h3>
+
+<pre><code><span class="comment">// PersonBuilder fills in both blanks:</span>
+<span class="keyword">public sealed class</span> <span class="type">PersonBuilder</span>
+    : <span class="type">FunctionalBuilder</span>&lt;<span class="type">Person</span>, <span class="type">PersonBuilder</span>&gt;
+<span class="comment">//                      ↑ TSubject    ↑ TSelf</span>
+{
+    <span class="keyword">public</span> <span class="type">PersonBuilder</span> <span class="method">Called</span>(<span class="keyword">string</span> <span class="param">name</span>)
+        <span class="arrow">=></span> <span class="method">Do</span>(<span class="param">p</span> <span class="arrow">=></span> p.name = name);   <span class="comment">// Do() is inherited from base class!</span>
+}
+
+<span class="comment">// CarBuilder fills in the SAME blanks, different types:</span>
+<span class="keyword">public class</span> <span class="type">CarBuilder</span>
+    : <span class="type">FunctionalBuilder</span>&lt;<span class="type">Car</span>, <span class="type">CarBuilder</span>&gt;
+<span class="comment">//                      ↑ TSubject  ↑ TSelf</span>
+{
+    <span class="keyword">public</span> <span class="type">CarBuilder</span> <span class="method">WithMake</span>(<span class="keyword">string</span> <span class="param">make</span>) <span class="arrow">=></span> <span class="method">Do</span>(<span class="param">c</span> <span class="arrow">=></span> c.Make = make);
+    <span class="keyword">public</span> <span class="type">CarBuilder</span> <span class="method">WithModel</span>(<span class="keyword">string</span> <span class="param">model</span>) <span class="arrow">=></span> <span class="method">Do</span>(<span class="param">c</span> <span class="arrow">=></span> c.Model = model);
+}</code></pre>
+
+    <h3>What the Base Class Looks Like After Substitution</h3>
+    <p>When <code>PersonBuilder</code> fills in the blanks, mentally replace every <code>TSubject</code> with <code>Person</code> and every <code>TSelf</code> with <code>PersonBuilder</code>:</p>
+
+<pre><code><span class="comment">// What PersonBuilder inherits (after mental substitution):</span>
+
+<span class="keyword">private readonly</span> <span class="type">List</span>&lt;<span class="type">Func</span>&lt;<span class="type">Person</span>, <span class="type">Person</span>&gt;&gt; <span class="param">actions</span> = [];
+<span class="comment">//                         ↑ TSubject = Person</span>
+
+<span class="keyword">private</span> <span class="type">PersonBuilder</span> <span class="method">AddAction</span>(<span class="type">Action</span>&lt;<span class="type">Person</span>&gt; <span class="param">action</span>)
+<span class="comment">//      ↑ TSelf = PersonBuilder              ↑ TSubject = Person</span>
+
+<span class="keyword">public</span> <span class="type">PersonBuilder</span> <span class="method">Do</span>(<span class="type">Action</span>&lt;<span class="type">Person</span>&gt; <span class="param">action</span>) ...
+<span class="keyword">public</span> <span class="type">Person</span> <span class="method">Build</span>() <span class="arrow">=></span> actions.<span class="method">Aggregate</span>(<span class="keyword">new</span> <span class="type">Person</span>(), ...);
+<span class="comment">//     ↑ TSubject = Person                     ↑ new() constraint allows this</span></code></pre>
+
+    <h3>Extensions Add Even More Methods</h3>
+
+<pre><code><span class="comment">// Without modifying PersonBuilder or FunctionalBuilder:</span>
+<span class="keyword">public static</span> <span class="type">PersonBuilder</span> <span class="method">WithPosition</span>(
+    <span class="keyword">this</span> <span class="type">PersonBuilder</span> <span class="param">builder</span>,     <span class="comment">// extension method (Part 5)</span>
+    <span class="keyword">string</span> <span class="param">position</span>)
+{
+    <span class="keyword">return</span> builder.<span class="method">Do</span>(<span class="param">p</span> <span class="arrow">=></span> p.position = position);
+}</code></pre>
+
+    <h3>The Full Chain</h3>
+
+<pre><code><span class="keyword">var</span> <span class="param">person</span> = <span class="keyword">new</span> <span class="type">PersonBuilder</span>()       <span class="comment">// creates a builder with an empty actions list</span>
+    .<span class="method">Called</span>(<span class="string">"John Doe"</span>)               <span class="comment">// adds recipe: "set name" (method on PersonBuilder)</span>
+    .<span class="method">Do</span>(<span class="param">p</span> <span class="arrow">=></span> p.gender = <span class="string">"Masculine"</span>) <span class="comment">// adds recipe: "set gender" (inherited from base)</span>
+    .<span class="method">WithPosition</span>(<span class="string">"Software Engineer"</span>) <span class="comment">// adds recipe: "set position" (extension method)</span>
+    .<span class="method">Build</span>();                          <span class="comment">// creates Person, runs ALL recipes on it</span></code></pre>
+
+    <div class="callout callout-tldr">
+        <p>The Functional Builder combines: <strong>generics</strong> (reusable base), <strong>recursive generics</strong> (fluent chaining), <strong>constraints</strong> (<code>new()</code>), <strong>delegates as data</strong> (actions list), and <strong>extension methods</strong> (add steps from outside).</p>
+    </div>
+
+    <hr>
+
+    <!-- ============================================================ -->
+    <!-- PART 8: AGGREGATE                                            -->
+    <!-- ============================================================ -->
+    <h2 id="part8">Part 8: Aggregate</h2>
+    <p><em>"The assembly line"</em></p>
+
+    <div class="callout callout-metaphor">
+        <p>Imagine a <strong>factory assembly line</strong>. A blank car frame enters at one end. At station 1, someone adds the engine. At station 2, someone paints it. At station 3, someone adds wheels. The same car passes through every station, getting modified at each one, and comes out finished at the end.</p>
+        <p><code>Aggregate</code> is that assembly line.</p>
+    </div>
+
+    <h3>The Signature</h3>
+
+<pre><code>actions.<span class="method">Aggregate</span>(
+    <span class="keyword">new</span> <span class="type">TSubject</span>(),        <span class="comment">// seed: the starting value (blank car frame)</span>
+    (<span class="param">s</span>, <span class="param">f</span>) <span class="arrow">=></span> <span class="method">f</span>(s)          <span class="comment">// for each action: apply it to s, result becomes new s</span>
+)</code></pre>
+
+    <table>
+        <tr><th>Parameter</th><th>What it is</th><th>In your builder</th></tr>
+        <tr><td><code>seed</code></td><td>The starting value</td><td><code>new Person()</code> &mdash; a fresh, empty person</td></tr>
+        <tr><td><code>s</code></td><td>The accumulated result (carries forward)</td><td>The Person being built up</td></tr>
+        <tr><td><code>f</code></td><td>The current item from the list</td><td>One function from the actions list</td></tr>
+        <tr><td><code>f(s)</code></td><td>Apply the function to the result</td><td>Run the recipe on the person</td></tr>
+    </table>
+
+    <h3>Concrete Trace</h3>
+    <p>For: <code>.Called("John").Do(p => p.position = "dev").Build()</code></p>
+
+    <div class="step">
+        <div class="step-label">Start</div>
+        <code>s = new Person()</code> &mdash; fresh, empty person
+    </div>
+    <div class="step">
+        <div class="step-label">Step 1</div>
+        <code>f = p => { p.name = "John"; return p; }</code><br>
+        <code>s = f(s)</code> &rarr; s.name is now "John"
+    </div>
+    <div class="step">
+        <div class="step-label">Step 2</div>
+        <code>f = p => { p.position = "dev"; return p; }</code><br>
+        <code>s = f(s)</code> &rarr; s.position is now "dev"
+    </div>
+    <div class="step">
+        <div class="step-label">Result</div>
+        <code>s = Person { name: "John", position: "dev" }</code>
+    </div>
+
+    <h3>Aggregate Without the Magic (Just a Loop)</h3>
+    <p>If <code>Aggregate</code> feels too abstract, this is the exact same thing:</p>
+
+<pre><code><span class="keyword">public</span> <span class="type">TSubject</span> <span class="method">Build</span>()
+{
+    <span class="keyword">var</span> <span class="param">s</span> = <span class="keyword">new</span> <span class="type">TSubject</span>();           <span class="comment">// the seed</span>
+    <span class="keyword">foreach</span> (<span class="keyword">var</span> <span class="param">f</span> <span class="keyword">in</span> actions)        <span class="comment">// walk through each function</span>
+    {
+        s = <span class="method">f</span>(s);                     <span class="comment">// apply it, carry result forward</span>
+    }
+    <span class="keyword">return</span> s;                          <span class="comment">// return the finished product</span>
+}
+
+<span class="comment">// Aggregate is just this loop compressed into one line:</span>
+<span class="keyword">public</span> <span class="type">TSubject</span> <span class="method">Build</span>() <span class="arrow">=></span> actions.<span class="method">Aggregate</span>(<span class="keyword">new</span> <span class="type">TSubject</span>(), (<span class="param">s</span>, <span class="param">f</span>) <span class="arrow">=></span> <span class="method">f</span>(s));</code></pre>
+
+    <h3>The Full Signature Explained</h3>
+
+<pre><code><span class="keyword">public static</span> <span class="type">TAccumulate</span> <span class="method">Aggregate</span>&lt;<span class="type">TSource</span>, <span class="type">TAccumulate</span>&gt;(
+    <span class="keyword">this</span> <span class="type">IEnumerable</span>&lt;<span class="type">TSource</span>&gt; <span class="param">source</span>,          <span class="comment">// the list to walk through</span>
+    <span class="type">TAccumulate</span> <span class="param">seed</span>,                          <span class="comment">// starting value</span>
+    <span class="type">Func</span>&lt;<span class="type">TAccumulate</span>, <span class="type">TSource</span>, <span class="type">TAccumulate</span>&gt; <span class="param">func</span>  <span class="comment">// how to combine</span>
+)</code></pre>
+
+    <table>
+        <tr><th>Type Parameter</th><th>Means</th><th>In your builder</th><th>In a simpler example</th></tr>
+        <tr>
+            <td><code>TSource</code></td>
+            <td>Type of items <strong>in the list</strong></td>
+            <td><code>Func&lt;Person, Person&gt;</code></td>
+            <td><code>string</code> (list of words)</td>
+        </tr>
+        <tr>
+            <td><code>TAccumulate</code></td>
+            <td>Type of the <strong>result</strong> being carried</td>
+            <td><code>Person</code></td>
+            <td><code>int</code> (a running total)</td>
+        </tr>
+    </table>
+
+    <p><strong>They can be different types!</strong> The list can hold one type and accumulate into another:</p>
+
+<pre><code><span class="keyword">var</span> <span class="param">words</span> = <span class="keyword">new</span> <span class="type">List</span>&lt;<span class="keyword">string</span>&gt; { <span class="string">"hello"</span>, <span class="string">"world"</span>, <span class="string">"foo"</span> };
+
+<span class="comment">// TSource = string (items in the list)</span>
+<span class="comment">// TAccumulate = int (the thing we're building up)</span>
+<span class="keyword">int</span> <span class="param">totalLength</span> = words.<span class="method">Aggregate</span>(
+    <span class="number">0</span>,                                   <span class="comment">// seed: start at 0</span>
+    (<span class="param">count</span>, <span class="param">word</span>) <span class="arrow">=></span> count + word.Length   <span class="comment">// add each word's length</span>
+);
+<span class="comment">// Step 0: count = 0</span>
+<span class="comment">// Step 1: count = 0 + 5 ("hello")  → 5</span>
+<span class="comment">// Step 2: count = 5 + 5 ("world")  → 10</span>
+<span class="comment">// Step 3: count = 10 + 3 ("foo")   → 13</span></code></pre>
+
+    <div class="callout callout-tldr">
+        <p><strong>Aggregate</strong> = walk a list, carry a value, combine them at each step. It's a loop in one line. The seed is the starting value, and the lambda says how to combine each list item with the running result.</p>
+    </div>
+
+    <hr>
+
+    <!-- ============================================================ -->
+    <!-- PART 9: EXERCISES                                            -->
+    <!-- ============================================================ -->
+    <h2 id="part9">Part 9: Practice Exercises</h2>
+
+    <div class="quiz">
+        <h4>Exercise 1: Read the Generics</h4>
+        <p>What are <code>TSubject</code> and <code>TSelf</code> in this declaration?</p>
+<pre><code><span class="keyword">public class</span> <span class="type">CarBuilder</span> : <span class="type">FunctionalBuilder</span>&lt;<span class="type">Car</span>, <span class="type">CarBuilder</span>&gt; { }</code></pre>
+        <details>
+            <summary>Show Answer</summary>
+            <p><code>TSubject = Car</code> (what we're building), <code>TSelf = CarBuilder</code> (the concrete builder type for fluent chaining). Every <code>Do()</code> call returns <code>CarBuilder</code>. Every <code>Build()</code> call returns <code>Car</code>.</p>
+        </details>
+    </div>
+
+    <div class="quiz">
+        <h4>Exercise 2: Trace the Aggregate</h4>
+        <p>What does this return?</p>
+<pre><code><span class="keyword">var</span> <span class="param">nums</span> = <span class="keyword">new</span> <span class="type">List</span>&lt;<span class="keyword">int</span>&gt; { <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span> };
+<span class="keyword">var</span> <span class="param">result</span> = nums.<span class="method">Aggregate</span>(<span class="number">10</span>, (<span class="param">acc</span>, <span class="param">n</span>) <span class="arrow">=></span> acc + n);</code></pre>
+        <details>
+            <summary>Show Answer</summary>
+            <p><strong>20</strong>. Trace: 10 → 10+1=11 → 11+2=13 → 13+3=16 → 16+4=20.<br>
+            The seed is 10, then each number in the list is added to the running total.</p>
+        </details>
+    </div>
+
+    <div class="quiz">
+        <h4>Exercise 3: Extension Method</h4>
+        <p>Write an extension method <code>WithYear</code> for <code>CarBuilder</code> that sets the car's year. (Don't look at your code!)</p>
+        <details>
+            <summary>Show Answer</summary>
+<pre><code><span class="keyword">public static</span> <span class="type">CarBuilder</span> <span class="method">WithYear</span>(<span class="keyword">this</span> <span class="type">CarBuilder</span> <span class="param">builder</span>, <span class="keyword">int</span> <span class="param">year</span>)
+    <span class="arrow">=></span> builder.<span class="method">Do</span>(<span class="param">c</span> <span class="arrow">=></span> c.Year = year);
+
+<span class="comment">// Or with full body syntax:</span>
+<span class="keyword">public static</span> <span class="type">CarBuilder</span> <span class="method">WithYear</span>(<span class="keyword">this</span> <span class="type">CarBuilder</span> <span class="param">builder</span>, <span class="keyword">int</span> <span class="param">year</span>)
+{
+    <span class="keyword">return</span> builder.<span class="method">Do</span>(<span class="param">c</span> <span class="arrow">=></span> c.Year = year);
+}</code></pre>
+        </details>
+    </div>
+
+    <div class="quiz">
+        <h4>Exercise 4: Identify the Concepts</h4>
+        <p>For each numbered comment, which concept from this guide is being used?</p>
+<pre><code><span class="keyword">public abstract class</span> <span class="type">FunctionalBuilder</span>&lt;<span class="type">TSubject</span>, <span class="type">TSelf</span>&gt;       <span class="comment">// 1.</span>
+    <span class="keyword">where</span> <span class="type">TSelf</span> : <span class="type">FunctionalBuilder</span>&lt;<span class="type">TSubject</span>, <span class="type">TSelf</span>&gt;          <span class="comment">// 2.</span>
+    <span class="keyword">where</span> <span class="type">TSubject</span> : <span class="keyword">new</span>()                                       <span class="comment">// 3.</span>
+{
+    <span class="keyword">private readonly</span> <span class="type">List</span>&lt;<span class="type">Func</span>&lt;<span class="type">TSubject</span>, <span class="type">TSubject</span>&gt;&gt; actions = []; <span class="comment">// 4.</span>
+    <span class="keyword">public</span> <span class="type">TSubject</span> <span class="method">Build</span>() <span class="arrow">=></span>
+        actions.<span class="method">Aggregate</span>(<span class="keyword">new</span> <span class="type">TSubject</span>(), (<span class="param">s</span>,<span class="param">f</span>) <span class="arrow">=></span> <span class="method">f</span>(s));        <span class="comment">// 5.</span>
+}</code></pre>
+        <details>
+            <summary>Show Answers</summary>
+            <p>1. <strong>Generics</strong> (Part 1) — two type parameters<br>
+            2. <strong>Recursive generic / constraint</strong> (Parts 2 &amp; 3) — TSelf must extend the builder itself<br>
+            3. <strong>Constraint</strong> (Part 2) — TSubject must have a parameterless constructor<br>
+            4. <strong>Delegates as data</strong> (Part 6) — storing functions in a list<br>
+            5. <strong>Aggregate</strong> (Part 8) — assembly line that runs all functions on a new TSubject</p>
+        </details>
+    </div>
+
+    <div class="quiz">
+        <h4>Exercise 5: Why Does <code>return (TSelf)this</code> Work?</h4>
+        <p>In <code>AddAction</code>, why is the cast <code>(TSelf)this</code> safe and not dangerous?</p>
+        <details>
+            <summary>Show Answer</summary>
+            <p>Because of the constraint <code>where TSelf : FunctionalBuilder&lt;TSubject, TSelf&gt;</code>. TSelf must be a subclass of FunctionalBuilder. And when you instantiate <code>new PersonBuilder()</code>, <code>this</code> IS a PersonBuilder at runtime. The cast just tells the compiler what it already is. The constraint guarantees no invalid type can sneak in.</p>
+        </details>
+    </div>
+
+    <hr>
+
+    <div class="highlight-box">
+        <strong>Quick Reference Card</strong><br><br>
+        <code>Class&lt;T&gt;</code> = class with a type placeholder, filled in later<br>
+        <code>where T : X</code> = restrict what T can be<br>
+        <code>class Child : Parent&lt;Child&gt;</code> = recursive generic, for fluent return types<br>
+        <code>IFoo Method()</code> = returns an object, but caller only sees IFoo's methods<br>
+        <code>this Type param</code> = extension method, adds methods from outside<br>
+        <code>List&lt;Func&lt;...&gt;&gt;</code> = storing functions as data (recipe book)<br>
+        <code>.Aggregate(seed, (acc, item) => ...)</code> = assembly line loop in one line
+    </div>
+
+</body>
+</html>

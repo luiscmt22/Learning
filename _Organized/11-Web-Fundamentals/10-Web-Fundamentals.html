@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>10-Web-Fundamentals</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 11-Web-Fundamentals</div>
+  <h1>10-Web-Fundamentals</h1>
+  <div class="meta">Source: <code>Education/10-Web-Fundamentals.md</code> &middot; <a href="10-Web-Fundamentals.md">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<h1 id="web-fundamentals-for-net-developers">Web Fundamentals for .NET Developers</h1>
+<p>A practical guide to understanding how your Blazor Server app serves content.</p>
+<hr>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol>
+<li><a href="#static-vs-dynamic-content" target="_blank">Static vs Dynamic Content</a></li>
+<li><a href="#the-wwwroot-folder" target="_blank">The wwwroot Folder</a></li>
+<li><a href="#kestrel-web-server" target="_blank">Kestrel Web Server</a></li>
+<li><a href="#browser-caching" target="_blank">Browser Caching</a></li>
+<li><a href="#cache-busting" target="_blank">Cache Busting</a></li>
+<li><a href="#the-request-pipeline" target="_blank">The Request Pipeline</a></li>
+</ol>
+<hr>
+<h2 id="static-vs-dynamic-content">Static vs Dynamic Content</h2>
+<h3 id="static-files">Static Files</h3>
+<p>Files served <strong>exactly as they are on disk</strong>. No code runs, no database queries, no user-specific changes.</p>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>File Type</th>
+<th>Examples</th>
+<th>Characteristics</th>
+</tr></thead><tbody>
+<tr>
+<td>JavaScript</td>
+<td><code class="il">.js</code></td>
+<td>Browser executes client-side</td>
+</tr>
+<tr>
+<td>Stylesheets</td>
+<td><code class="il">.css</code></td>
+<td>Browser applies styles</td>
+</tr>
+<tr>
+<td>Images</td>
+<td><code class="il">.png</code>, <code class="il">.jpg</code>, <code class="il">.svg</code></td>
+<td>Browser displays</td>
+</tr>
+<tr>
+<td>Fonts</td>
+<td><code class="il">.woff2</code>, <code class="il">.ttf</code></td>
+<td>Browser renders text</td>
+</tr>
+<tr>
+<td>Documents</td>
+<td><code class="il">.pdf</code>, <code class="il">.html</code></td>
+<td>Browser displays/downloads</td>
+</tr>
+</tbody></table></div>
+<h3 id="dynamic-content">Dynamic Content</h3>
+<p>Content <strong>generated by code</strong> at request time. Can vary by user, time, database state, etc.</p>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Source</th>
+<th>Examples</th>
+<th>Characteristics</th>
+</tr></thead><tbody>
+<tr>
+<td>Razor Components</td>
+<td><code class="il">.razor</code></td>
+<td>C# code generates HTML</td>
+</tr>
+<tr>
+<td>API Controllers</td>
+<td><code class="il">/api/*</code></td>
+<td>C# returns JSON/data</td>
+</tr>
+<tr>
+<td>Razor Pages</td>
+<td><code class="il">.cshtml</code></td>
+<td>C# + HTML templating</td>
+</tr>
+</tbody></table></div>
+<h3 id="key-insight">Key Insight</h3>
+<pre><code class="lang-text">Static:  Browser asks for /js/app.js → Server sends file bytes → Done
+Dynamic: Browser asks for /dashboard → Server runs C# → Queries DB → Renders HTML → Sends result</code></pre>
+<hr>
+<h2 id="the-wwwroot-folder">The wwwroot Folder</h2>
+<p>The <code class="il">wwwroot</code> folder is special in ASP.NET Core. It&#x27;s the <strong>only</strong> folder that&#x27;s publicly accessible by default.</p>
+<h3 id="structure">Structure</h3>
+<div class="diagram-box"><pre>YourProject/
+├── wwwroot/                 ← PUBLIC (accessible via HTTP)
+│   ├── js/
+│   │   └── script.js        → GET /js/script.js
+│   ├── css/
+│   │   └── app.css          → GET /css/app.css
+│   ├── images/
+│   │   └── logo.png         → GET /images/logo.png
+│   └── favicon.ico          → GET /favicon.ico
+│
+├── Pages/                   ← PRIVATE (not directly accessible)
+├── Services/                ← PRIVATE
+├── Models/                  ← PRIVATE
+└── appsettings.json         ← PRIVATE (never expose!)</pre></div>
+<h3 id="url-mapping">URL Mapping</h3>
+<p>The <code class="il">wwwroot</code> folder itself is <strong>not</strong> part of the URL:</p>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>File Path</th>
+<th>URL</th>
+</tr></thead><tbody>
+<tr>
+<td><code class="il">wwwroot/js/app.js</code></td>
+<td><code class="il">/js/app.js</code></td>
+</tr>
+<tr>
+<td><code class="il">wwwroot/css/site.css</code></td>
+<td><code class="il">/css/site.css</code></td>
+</tr>
+<tr>
+<td><code class="il">wwwroot/images/photo.png</code></td>
+<td><code class="il">/images/photo.png</code></td>
+</tr>
+</tbody></table></div>
+<h3 id="security-note">Security Note</h3>
+<p>Never put sensitive files in <code class="il">wwwroot</code>:</p>
+<ul>
+<li>❌ <code class="il">appsettings.json</code></li>
+<li>❌ <code class="il">.env</code> files</li>
+<li>❌ Connection strings</li>
+<li>❌ API keys</li>
+<li>❌ Source code (<code class="il">.cs</code>, <code class="il">.razor</code>)</li>
+</ul>
+<hr>
+<h2 id="kestrel-web-server">Kestrel Web Server</h2>
+<h3 id="what-is-kestrel">What is Kestrel?</h3>
+<p>Kestrel is the <strong>built-in web server</strong> that comes with .NET. It&#x27;s not a physical machine—it&#x27;s software that runs inside your application.</p>
+<h3 id="architecture-layers">Architecture Layers</h3>
+<div class="diagram-box"><pre>┌─────────────────────────────────────────────────────────────┐
+│  Physical Machine (your PC, cloud VM, container)            │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │  Operating System (Windows, Linux, macOS)              │ │
+│  │  ┌──────────────────────────────────────────────────┐  │ │
+│  │  │  Your Application (dotnet run / HRModule.exe)    │  │ │
+│  │  │  ┌────────────────────────────────────────────┐  │  │ │
+│  │  │  │  Kestrel Web Server                        │  │  │ │
+│  │  │  │  • Listens on ports (5000, 5001, 80, 443)  │  │  │ │
+│  │  │  │  • Receives HTTP/HTTPS requests            │  │  │ │
+│  │  │  │  • Routes to middleware pipeline           │  │  │ │
+│  │  │  └────────────────────────────────────────────┘  │  │ │
+│  │  └──────────────────────────────────────────────────┘  │ │
+│  └────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────┘</pre></div>
+<h3 id="when-you-run-dotnet-run">When You Run <code class="il">dotnet run</code></h3>
+<ol>
+<li>Your application starts</li>
+<li>Kestrel initializes inside your app</li>
+<li>Kestrel binds to configured ports (e.g., <code class="il">https://localhost:5001</code>)</li>
+<li>Kestrel waits for incoming HTTP requests</li>
+<li>Each request flows through the middleware pipeline</li>
+</ol>
+<h3 id="production-considerations">Production Considerations</h3>
+<p>In production, Kestrel often sits behind a <strong>reverse proxy</strong>:</p>
+<pre><code class="lang-text">Internet → Nginx/IIS/Azure → Kestrel → Your App
+           (reverse proxy)    (app server)</code></pre>
+<p>The reverse proxy handles:</p>
+<ul>
+<li>SSL termination</li>
+<li>Load balancing</li>
+<li>Request buffering</li>
+<li>Static file caching</li>
+</ul>
+<hr>
+<h2 id="browser-caching">Browser Caching</h2>
+<h3 id="why-browsers-cache">Why Browsers Cache</h3>
+<p>Downloading files is slow and uses bandwidth. Browsers store copies locally to:</p>
+<ul>
+<li>Speed up page loads</li>
+<li>Reduce server load</li>
+<li>Save user bandwidth</li>
+</ul>
+<h3 id="how-caching-works">How Caching Works</h3>
+<pre><code class="lang-text">First Visit:
+  Browser: GET /js/script.js
+  Server:  200 OK + file contents + Cache-Control: max-age=3600
+  Browser: Saves file with URL as key
+
+Second Visit (within 1 hour):
+  Browser: Checks cache for /js/script.js
+  Browser: Found! Uses cached version (no network request)</code></pre>
+<h3 id="cache-headers">Cache Headers</h3>
+<p>Servers control caching via HTTP headers:</p>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Header</th>
+<th>Example</th>
+<th>Meaning</th>
+</tr></thead><tbody>
+<tr>
+<td><code class="il">Cache-Control</code></td>
+<td><code class="il">max-age=31536000</code></td>
+<td>Cache for 1 year</td>
+</tr>
+<tr>
+<td><code class="il">Cache-Control</code></td>
+<td><code class="il">no-cache</code></td>
+<td>Always revalidate with server</td>
+</tr>
+<tr>
+<td><code class="il">Cache-Control</code></td>
+<td><code class="il">no-store</code></td>
+<td>Never cache</td>
+</tr>
+<tr>
+<td><code class="il">ETag</code></td>
+<td><code class="il">&quot;abc123&quot;</code></td>
+<td>File fingerprint for validation</td>
+</tr>
+<tr>
+<td><code class="il">Last-Modified</code></td>
+<td><code class="il">Wed, 01 Jan 2025</code></td>
+<td>When file last changed</td>
+</tr>
+</tbody></table></div>
+<h3 id="the-problem">The Problem</h3>
+<p>When you update <code class="il">script.js</code> on the server:</p>
+<ul>
+<li>Server has: New version</li>
+<li>Browser has: Old cached version</li>
+<li>Browser doesn&#x27;t know to fetch new version!</li>
+</ul>
+<hr>
+<h2 id="cache-busting">Cache Busting</h2>
+<h3 id="the-solution">The Solution</h3>
+<p>Trick the browser into thinking it&#x27;s a <strong>different file</strong>.</p>
+<h3 id="method-1-query-string-simple">Method 1: Query String (Simple)</h3>
+<pre><code class="lang-html">&lt;!-- Before update --&gt;
+&lt;script src=&quot;/js/script.js?v=1&quot;&gt;&lt;/script&gt;
+
+&lt;!-- After update --&gt;
+&lt;script src=&quot;/js/script.js?v=2&quot;&gt;&lt;/script&gt;</code></pre>
+<p><strong>How it works:</strong></p>
+<ul>
+<li>Browser sees <code class="il">/js/script.js?v=1</code> and <code class="il">/js/script.js?v=2</code> as different URLs</li>
+<li>Server ignores <code class="il">?v=2</code> and serves the same file</li>
+<li>Browser downloads fresh copy and caches under new URL</li>
+</ul>
+<p><strong>Pros:</strong> Simple, no build tools needed <strong>Cons:</strong> Manual version incrementing</p>
+<h3 id="method-2-file-hash-production">Method 2: File Hash (Production)</h3>
+<p>Build tools generate unique filenames based on file content:</p>
+<pre><code class="lang-html">&lt;!-- Before update --&gt;
+&lt;script src=&quot;/js/script.a1b2c3.js&quot;&gt;&lt;/script&gt;
+
+&lt;!-- After update (content changed, hash changed) --&gt;
+&lt;script src=&quot;/js/script.d4e5f6.js&quot;&gt;&lt;/script&gt;</code></pre>
+<p><strong>Pros:</strong> Automatic, optimal caching (cache forever, new content = new URL) <strong>Cons:</strong> Requires build tooling (webpack, esbuild, etc.)</p>
+<h3 id="method-3-asp-net-core-tag-helper">Method 3: ASP.NET Core Tag Helper</h3>
+<pre><code class="lang-html">&lt;script src=&quot;~/js/script.js&quot; asp-append-version=&quot;true&quot;&gt;&lt;/script&gt;</code></pre>
+<p>Renders as:</p>
+<pre><code class="lang-html">&lt;script src=&quot;/js/script.js?v=SHA256HashOfFile&quot;&gt;&lt;/script&gt;</code></pre>
+<p><strong>Pros:</strong> Automatic, built into ASP.NET Core <strong>Cons:</strong> Only works in Razor views/pages</p>
+<hr>
+<h2 id="the-request-pipeline">The Request Pipeline</h2>
+<h3 id="middleware-concept">Middleware Concept</h3>
+<p>ASP.NET Core processes requests through a <strong>pipeline</strong> of middleware. Each middleware can:</p>
+<ol>
+<li>Handle the request and return a response</li>
+<li>Pass the request to the next middleware</li>
+<li>Do something before AND after the next middleware</li>
+</ol>
+<h3 id="visual-pipeline">Visual Pipeline</h3>
+<div class="diagram-box"><pre>Request                                                    Response
+   │                                                          ▲
+   ▼                                                          │
+┌──────────────────────────────────────────────────────────────┐
+│  UseHttpsRedirection()                                       │
+│  Redirects HTTP → HTTPS                                      │
+└──────────────────────────────────────────────────────────────┘
+   │                                                          ▲
+   ▼                                                          │
+┌──────────────────────────────────────────────────────────────┐
+│  UseStaticFiles()                                            │
+│  If URL matches wwwroot file → serve it → STOP               │
+│  Otherwise → pass to next middleware                         │
+└──────────────────────────────────────────────────────────────┘
+   │                                                          ▲
+   ▼                                                          │
+┌──────────────────────────────────────────────────────────────┐
+│  UseRouting()                                                │
+│  Determines which endpoint matches the URL                   │
+└──────────────────────────────────────────────────────────────┘
+   │                                                          ▲
+   ▼                                                          │
+┌──────────────────────────────────────────────────────────────┐
+│  UseAuthentication() / UseAuthorization()                    │
+│  Validates user identity and permissions                     │
+└──────────────────────────────────────────────────────────────┘
+   │                                                          ▲
+   ▼                                                          │
+┌──────────────────────────────────────────────────────────────┐
+│  MapBlazorHub() / MapControllers() / MapRazorPages()         │
+│  Your application code runs here                             │
+└──────────────────────────────────────────────────────────────┘</pre></div>
+<h3 id="static-files-example">Static Files Example</h3>
+<pre><code class="lang-text">GET /js/face/script.js
+
+1. UseHttpsRedirection: &quot;Already HTTPS, pass through&quot;
+2. UseStaticFiles: &quot;Checking wwwroot/js/face/script.js...&quot;
+   Found! Read file, send to browser, DONE.
+   (Later middleware never runs)
+
+GET /dashboard
+
+1. UseHttpsRedirection: &quot;Already HTTPS, pass through&quot;
+2. UseStaticFiles: &quot;Checking wwwroot/dashboard...&quot;
+   Not found. Pass to next middleware.
+3. UseRouting: &quot;Matches Blazor route /dashboard&quot;
+4. UseAuthentication: &quot;User is logged in&quot;
+5. UseAuthorization: &quot;User has permission&quot;
+6. MapBlazorHub: Render Dashboard.razor component</code></pre>
+<h3 id="order-matters">Order Matters!</h3>
+<pre><code class="lang-csharp"><span class="cmt">// Program.cs - ORDER IS CRITICAL</span>
+
+app.<span class="type">UseHttpsRedirection</span>();     <span class="cmt">// 1. Redirect HTTP to HTTPS first</span>
+app.<span class="type">UseStaticFiles</span>();          <span class="cmt">// 2. Serve static files (fast path)</span>
+app.<span class="type">UseRouting</span>();              <span class="cmt">// 3. Match routes</span>
+app.<span class="type">UseAuthentication</span>();       <span class="cmt">// 4. Who is the user?</span>
+app.<span class="type">UseAuthorization</span>();        <span class="cmt">// 5. Can they access this?</span>
+app.<span class="type">MapBlazorHub</span>();            <span class="cmt">// 6. Handle Blazor</span>
+app.<span class="type">MapFallbackToPage</span>(<span class="str">&quot;/_Host&quot;</span>); <span class="cmt">// 7. Fallback for SPA routing</span></code></pre>
+<p>If you put <code class="il">UseAuthentication()</code> before <code class="il">UseStaticFiles()</code>, you&#x27;d require login to see CSS/JS files!</p>
+<hr>
+<h2 id="quick-reference">Quick Reference</h2>
+<h3 id="common-paths">Common Paths</h3>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>What</th>
+<th>Path</th>
+</tr></thead><tbody>
+<tr>
+<td>Static files root</td>
+<td><code class="il">wwwroot/</code></td>
+</tr>
+<tr>
+<td>JavaScript</td>
+<td><code class="il">wwwroot/js/</code></td>
+</tr>
+<tr>
+<td>CSS</td>
+<td><code class="il">wwwroot/css/</code></td>
+</tr>
+<tr>
+<td>Images</td>
+<td><code class="il">wwwroot/images/</code></td>
+</tr>
+</tbody></table></div>
+<h3 id="common-issues">Common Issues</h3>
+<p><strong>Problem:</strong> CSS/JS changes not appearing <strong>Solution:</strong> Cache busting (<code class="il">?v=2</code>) or hard refresh (Ctrl+F5)</p>
+<p><strong>Problem:</strong> 404 for static files <strong>Solution:</strong> Check file exists in <code class="il">wwwroot/</code>, check <code class="il">app.UseStaticFiles()</code> is called</p>
+<p><strong>Problem:</strong> Static files require authentication <strong>Solution:</strong> Ensure <code class="il">UseStaticFiles()</code> comes before <code class="il">UseAuthentication()</code></p>
+<hr>
+<h2 id="further-reading">Further Reading</h2>
+<ul>
+<li><a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/static-files" target="_blank">ASP.NET Core Static Files</a></li>
+<li><a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware" target="_blank">ASP.NET Core Middleware</a></li>
+<li><a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/servers/kestrel" target="_blank">Kestrel Web Server</a></li>
+</ul>
+</div>
+</body>
+</html>

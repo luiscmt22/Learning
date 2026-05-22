@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>07-Facial-Recognition-Architecture-ForDummies</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 19-For-Dummies</div>
+  <h1>07-Facial-Recognition-Architecture-ForDummies</h1>
+  <div class="meta">Source: <code>Education/ForDummies/07-Facial-Recognition-Architecture-ForDummies.md</code> &middot; <a href="07-Facial-Recognition-Architecture-ForDummies.md">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<h1 id="facial-recognition-for-dummies">Facial Recognition - For Dummies</h1>
+<blockquote>How does the app know it&#x27;s YOU?</blockquote>
+<h2 id="the-simple-explanation">The Simple Explanation</h2>
+<p>When you look at a camera and the app says &quot;Welcome, João!&quot;, how does it know?</p>
+<h3 id="step-1-your-phone-sees-your-face">Step 1: Your Phone Sees Your Face</h3>
+<p>The camera on your phone/tablet captures your face.</p>
+<div class="diagram-box"><pre>     📷
+      │
+      │  &quot;I see a face!&quot;
+      ▼
+   ┌─────────┐
+   │  😀     │
+   │  Your   │
+   │  Face   │
+   └─────────┘</pre></div>
+<h3 id="step-2-math-turns-your-face-into-numbers">Step 2: Math Turns Your Face Into Numbers</h3>
+<p>A special program (face-api.js) looks at your face and measures things like:</p>
+<ul>
+<li>Distance between your eyes</li>
+<li>Shape of your nose</li>
+<li>Width of your jaw</li>
+<li>Position of your mouth</li>
+<li>...and 124 more measurements!</li>
+</ul>
+<pre><code class="lang-text">   😀 Your Face
+      │
+      │  &quot;Let me measure this...&quot;
+      ▼
+   [0.12, -0.45, 0.78, 0.23, -0.11, ...]
+
+   (128 numbers that describe YOUR unique face)</code></pre>
+<p>Think of it like a fingerprint, but with numbers!</p>
+<h3 id="step-3-the-server-compares">Step 3: The Server Compares</h3>
+<p>The server has a &quot;phonebook&quot; of faces:</p>
+<pre><code class="lang-text">   📖 Face Phonebook:
+
+   João Silva:   [0.12, -0.45, 0.78, ...]
+   Maria Santos: [0.34, 0.12, -0.56, ...]
+   Pedro Costa:  [-0.23, 0.89, 0.11, ...]</code></pre>
+<p>When your numbers arrive, the server checks:</p>
+<pre><code class="lang-text">   Your numbers: [0.12, -0.45, 0.78, ...]
+
+   João&#x27;s numbers: [0.12, -0.45, 0.78, ...]
+
+   ✓ Almost identical! You must be João!</code></pre>
+<h3 id="step-4-welcome">Step 4: Welcome!</h3>
+<div class="diagram-box"><pre>   ┌─────────────────────────┐
+   │      Welcome!           │
+   │                         │
+   │   👤 João Silva         │
+   │                         │
+   │   [Check-In] [Break]    │
+   └─────────────────────────┘</pre></div>
+<h2 id="why-does-it-need-10-tries">Why Does It Need 10 Tries?</h2>
+<p>The camera checks your face 10 times in a row to make sure:</p>
+<pre><code class="lang-text">   Try 1:  😀 → [numbers] ✓ Looks like João
+   Try 2:  😀 → [numbers] ✓ Still looks like João
+   Try 3:  😀 → [numbers] ✓ Yep, João
+   ...
+   Try 10: 😀 → [numbers] ✓ Definitely João!</code></pre>
+<p>This prevents mistakes and makes sure someone isn&#x27;t holding up a photo!</p>
+<h2 id="why-is-it-secure">Why Is It Secure?</h2>
+<h3 id="what-stays-on-your-phone">What STAYS on Your Phone:</h3>
+<ul>
+<li>Your actual face image 📷</li>
+<li>The camera video 🎥</li>
+</ul>
+<h3 id="what-goes-to-the-server">What GOES to the Server:</h3>
+<ul>
+<li>Just the 128 numbers 🔢</li>
+<li>(No one can rebuild your face from numbers!)</li>
+</ul>
+<pre><code class="lang-text">   ❌ Photo never sent
+   ✅ Only math numbers sent</code></pre>
+<p>It&#x27;s like sending your height and weight instead of a photo - no one can draw your face from &quot;180cm, 75kg&quot;!</p>
+<h2 id="visual-flow">Visual Flow</h2>
+<pre><code class="lang-text">   YOU → 📷 Camera → 🧮 Math → 📤 Numbers → 🔍 Server → ✅ &quot;João!&quot;
+                                    │
+                                    │
+                              (not your photo!)</code></pre>
+<h2 id="in-real-life">In Real Life</h2>
+<div class="diagram-box"><pre>   ┌───────────────────────────────────────┐
+   │                                       │
+   │     &quot;Olá! Olhe para a câmara...&quot;     │
+   │                                       │
+   │        ┌─────────────────┐           │
+   │        │     📷          │           │
+   │        │    (Your face)  │           │
+   │        └─────────────────┘           │
+   │                                       │
+   │     [========⬜⬜] 8/10               │
+   │     &quot;A verificar...&quot;                 │
+   │                                       │
+   └───────────────────────────────────────┘
+
+   ... 2 seconds later ...
+
+   ┌───────────────────────────────────────┐
+   │                                       │
+   │        Bem-vindo, João!              │
+   │                                       │
+   │        👤 João Silva                 │
+   │        Check-in: 08:45               │
+   │                                       │
+   │   [🟢 Check-In]  [☕ Pausa]           │
+   │                                       │
+   └───────────────────────────────────────┘</pre></div>
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ol>
+<li><strong>Your face → Numbers</strong> (128 measurements)</li>
+<li><strong>Numbers sent to server</strong> (not your photo!)</li>
+<li><strong>Server compares numbers</strong> (like matching fingerprints)</li>
+<li><strong>10 checks for accuracy</strong> (no photos allowed!)</li>
+<li><strong>Privacy protected</strong> (can&#x27;t rebuild face from numbers)</li>
+</ol>
+<hr>
+<p><em>For the technical details, see <a href="../07-Facial-Recognition-Architecture.md" target="_blank">07-Facial-Recognition-Architecture.md</a></em></p>
+</div>
+</body>
+</html>

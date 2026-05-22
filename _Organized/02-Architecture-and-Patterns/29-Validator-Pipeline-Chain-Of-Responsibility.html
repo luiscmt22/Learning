@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutorial #29 — Validator Pipeline: Chain of Responsibility & Strategy Pattern</title>
+    <style>
+        :root{--bg:#1a1a2e;--surface:#16213e;--surface2:#0f3460;--accent:#e94560;--accent2:#533483;--text:#eee;--text-muted:#aab;--success:#4ecca3;--warning:#f0a500;--code-bg:#0d1117;--border:#333}*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;padding:2rem;max-width:900px;margin:0 auto}h1{text-align:center;font-size:2.2rem;margin-bottom:.5rem;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}.subtitle{text-align:center;color:var(--text-muted);margin-bottom:3rem;font-size:1.1rem}h2{color:var(--accent);font-size:1.6rem;margin:2.5rem 0 1rem 0;padding-bottom:.3rem;border-bottom:2px solid var(--accent)}h3{color:var(--success);font-size:1.2rem;margin:1.8rem 0 .8rem 0}h4{color:var(--warning);font-size:1.05rem;margin:1.2rem 0 .5rem 0}p{margin-bottom:1rem}pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1.2rem;overflow-x:auto;margin:1rem 0;font-size:.9rem;line-height:1.5}code{font-family:'Cascadia Code','Fira Code','Consolas',monospace;font-size:.9rem}p code,li code{background:var(--code-bg);padding:.15rem .4rem;border-radius:4px;border:1px solid var(--border)}.keyword{color:#569cd6}.type{color:#4ec9b0}.string{color:#ce9178}.comment{color:#6a9955}.method{color:#dcdcaa}.number{color:#b5cea8}.param{color:#9cdcfe}.callout{border-radius:8px;padding:1.2rem 1.5rem;margin:1.5rem 0;border-left:4px solid}.callout-metaphor{background:rgba(83,52,131,.2);border-color:var(--accent2)}.callout-metaphor::before{content:"Metaphor";display:block;font-weight:bold;color:var(--accent2);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}.callout-english{background:rgba(78,204,163,.1);border-color:var(--success)}.callout-english::before{content:"Read It Like English";display:block;font-weight:bold;color:var(--success);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}.callout-warning{background:rgba(240,165,0,.1);border-color:var(--warning)}.callout-warning::before{content:"Common Confusion";display:block;font-weight:bold;color:var(--warning);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}.callout-rule{background:rgba(233,69,96,.1);border-color:var(--accent)}.callout-rule::before{content:"Golden Rule";display:block;font-weight:bold;color:var(--accent);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}ul,ol{margin:.5rem 0 1rem 1.5rem}li{margin-bottom:.3rem}table{width:100%;border-collapse:collapse;margin:1rem 0}th,td{border:1px solid var(--border);padding:.6rem 1rem;text-align:left}th{background:var(--surface2);color:var(--success)}td{background:var(--surface)}.diagram{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1.5rem;margin:1.5rem 0;font-family:'Cascadia Code',monospace;font-size:.85rem;line-height:1.6;white-space:pre;overflow-x:auto}
+    </style>
+</head>
+<body>
+
+<h1>Tutorial #29 — Validator Pipeline</h1>
+<p class="subtitle">Chain of Responsibility & Strategy Pattern in GivingCare</p>
+
+<!-- ============================================================ -->
+<h2>1. The Problem: Monolithic Validation</h2>
+
+<p>Imagine a service method that validates whether an employee can check in. Without any design pattern, you end up with a single method that does <strong>everything</strong>:</p>
+
+<pre><code><span class="comment">// BAD: One giant method that validates everything</span>
+<span class="keyword">public</span> (<span class="keyword">bool</span> CanCheckIn, <span class="keyword">string</span>? BlockReason) <span class="method">CanPerformCheckIn</span>(
+    <span class="type">CheckInContext</span> <span class="param">context</span>,
+    <span class="keyword">bool</span> <span class="param">locationObtained</span>)
+{
+    <span class="comment">// Check 1: Already checked in?</span>
+    <span class="keyword">if</span> (<span class="param">context</span>.HasActiveCheckIn)
+        <span class="keyword">return</span> (<span class="keyword">false</span>, <span class="string">"Already checked in"</span>);
+
+    <span class="comment">// Check 2: Has a schedule?</span>
+    <span class="keyword">if</span> (<span class="param">context</span>.IsJobBound)
+    {
+        <span class="keyword">if</span> (<span class="param">context</span>.TodayJobSchedules.Count == <span class="number">0</span>)
+            <span class="keyword">return</span> (<span class="keyword">false</span>, <span class="string">"No job schedule"</span>);
+        <span class="comment">// ... 20 more lines of schedule resolution ...</span>
+    }
+    <span class="keyword">else</span>
+    {
+        <span class="comment">// ... 40 more lines for non-job-bound employees ...</span>
+    }
+
+    <span class="comment">// Check 3: Too early?</span>
+    <span class="keyword">var</span> scheduled = <span class="method">GetScheduledStartTime</span>(<span class="param">context</span>);
+    <span class="keyword">if</span> (scheduled.HasValue)
+    {
+        <span class="keyword">var</span> earliest = scheduled.Value.<span class="method">AddMinutes</span>(-tolerance);
+        <span class="keyword">if</span> (DateTime.Now &lt; earliest)
+            <span class="keyword">return</span> (<span class="keyword">false</span>, <span class="string">$"Too early. Check in from {earliest:HH:mm}"</span>);
+    }
+
+    <span class="comment">// Check 4: Geolocation?</span>
+    <span class="keyword">if</span> (<span class="param">context</span>.RequiresGeolocation)
+    {
+        <span class="keyword">if</span> (!<span class="param">locationObtained</span>)
+            <span class="keyword">return</span> (<span class="keyword">false</span>, <span class="string">"Getting location..."</span>);
+        <span class="keyword">if</span> (!<span class="param">context</span>.IsWithinGeofence)
+            <span class="keyword">return</span> (<span class="keyword">false</span>, <span class="string">"Outside authorized area"</span>);
+    }
+
+    <span class="keyword">return</span> (<span class="keyword">true</span>, <span class="keyword">null</span>);
+}</code></pre>
+
+<p>This method has <strong>four responsibilities</strong>. Adding a fifth check means modifying this method (violating <strong>Open/Closed Principle</strong>). Testing any single check requires setting up the entire context. And if two developers add checks at the same time, they get merge conflicts.</p>
+
+<p>The clean alternative: <strong>separate each check into its own class</strong>, then run them in a pipeline.</p>
+
+<!-- ============================================================ -->
+<h2>2. Chain of Responsibility Pattern</h2>
+
+<p>Instead of one method with four <code>if</code> blocks, we create <strong>four validator classes</strong>. A service loops through them in order. The first failure stops the chain.</p>
+
+<div class="diagram">Request --> [ActiveCheckIn] --> [ScheduleSource] --> [TimeWindow] --> [Geolocation] --> Allowed
+               Order=10          Order=20          Order=30         Order=40
+
+            "Already checked in"  "No schedule"    "Too early"    "Outside geofence"
+            (stops here)          (stops here)     (stops here)   (stops here)</div>
+
+<p>Each validator answers one question. If the answer is "fail", the pipeline stops immediately and returns the failure message. If all four pass, the check-in is allowed.</p>
+
+<div class="callout callout-metaphor">
+    The validator pipeline is like airport security. You go through checkpoints in order: ticket check, ID verification, bag scan, metal detector. If any checkpoint fails, you're stopped. You don't get to skip to the metal detector.
+</div>
+
+<!-- ============================================================ -->
+<h2>3. The Interface — ICheckInValidator</h2>
+
+<p>Every check-in validator implements this interface. It lives at <code>Services/CheckIn/Validators/ICheckInValidator.cs</code>:</p>
+
+<pre><code><span class="keyword">public interface</span> <span class="type">ICheckInValidator</span>
+{
+    <span class="comment">/// Execution order (lower = earlier). Allows pipeline ordering.</span>
+    <span class="keyword">int</span> Order { <span class="keyword">get</span>; }
+
+    <span class="comment">/// Validates the check-in context. Returns Ok or Fail with message.</span>
+    <span class="type">CheckInValidationResult</span> <span class="method">Validate</span>(<span class="type">CheckInContext</span> <span class="param">context</span>, <span class="type">CheckInValidationOptions</span> <span class="param">options</span>);
+}</code></pre>
+
+<p>Two properties, one method. That's it. The <code>Order</code> property determines the validator's position in the pipeline. The <code>Validate</code> method receives the context (all the data loaded about the employee's schedule, attendance, location) and returns a result.</p>
+
+<h3>The Result Record</h3>
+
+<pre><code><span class="keyword">public record</span> <span class="type">CheckInValidationResult</span>(<span class="keyword">bool</span> IsValid, <span class="keyword">string</span>? Message)
+{
+    <span class="keyword">public static</span> <span class="type">CheckInValidationResult</span> <span class="method">Ok</span>() => <span class="keyword">new</span>(<span class="keyword">true</span>, <span class="keyword">null</span>);
+    <span class="keyword">public static</span> <span class="type">CheckInValidationResult</span> <span class="method">Fail</span>(<span class="keyword">string</span> <span class="param">message</span>) => <span class="keyword">new</span>(<span class="keyword">false</span>, <span class="param">message</span>);
+}</code></pre>
+
+<p>A <code>record</code> with two static factory methods. Validators return either <code>CheckInValidationResult.Ok()</code> or <code>CheckInValidationResult.Fail("reason")</code>. Clean, unambiguous, no exceptions for control flow.</p>
+
+<h3>The Options Record</h3>
+
+<pre><code><span class="keyword">public record</span> <span class="type">CheckInValidationOptions</span>(
+    <span class="keyword">bool</span> LocationObtained,
+    <span class="keyword">int</span> EarlyCheckInToleranceMinutes
+);</code></pre>
+
+<p>Configuration values that come from <code>AttendanceSettings</code> are bundled into this options record so each validator has access to them without needing to inject the settings service directly.</p>
+
+<!-- ============================================================ -->
+<h2>4. The Four Check-In Validators</h2>
+
+<h3>4.1 ActiveCheckInValidator (Order = 10)</h3>
+<p>The simplest validator. Blocks double check-ins.</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">ActiveCheckInValidator</span> : <span class="type">ICheckInValidator</span>
+{
+    <span class="keyword">public int</span> Order => <span class="number">10</span>;
+
+    <span class="keyword">public</span> <span class="type">CheckInValidationResult</span> <span class="method">Validate</span>(<span class="type">CheckInContext</span> <span class="param">context</span>, <span class="type">CheckInValidationOptions</span> <span class="param">options</span>)
+    {
+        <span class="keyword">if</span> (<span class="param">context</span>.HasActiveCheckIn)
+            <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Fail</span>(<span class="string">"Ja tem um check-in ativo. Faca check-out primeiro."</span>);
+
+        <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Ok</span>();
+    }
+}</code></pre>
+
+<p>One property, one check. If the employee already has an active check-in (no checkout yet), block them. Otherwise, pass.</p>
+
+<h3>4.2 ScheduleSourceValidator (Order = 20)</h3>
+<p>The most complex validator. Resolves <em>which</em> schedule the employee should check into.</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">ScheduleSourceValidator</span> : <span class="type">ICheckInValidator</span>
+{
+    <span class="keyword">public int</span> Order => <span class="number">20</span>;
+
+    <span class="keyword">public</span> <span class="type">CheckInValidationResult</span> <span class="method">Validate</span>(<span class="type">CheckInContext</span> <span class="param">context</span>, <span class="type">CheckInValidationOptions</span> <span class="param">options</span>)
+    {
+        <span class="keyword">return</span> <span class="param">context</span>.IsJobBound
+            ? <span class="method">ValidateJobBound</span>(<span class="param">context</span>)
+            : <span class="method">ValidateNonJobBound</span>(<span class="param">context</span>, <span class="param">options</span>);
+    }
+
+    <span class="keyword">private</span> <span class="type">CheckInValidationResult</span> <span class="method">ValidateJobBound</span>(<span class="type">CheckInContext</span> <span class="param">context</span>)
+    {
+        <span class="comment">// Job-bound employee MUST have at least one JobSchedule today</span>
+        <span class="keyword">if</span> (<span class="param">context</span>.TodayJobSchedules.Count == <span class="number">0</span>)
+            <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Fail</span>(<span class="string">"Sem agendamento de obra para hoje"</span>);
+
+        <span class="comment">// All schedules already used?</span>
+        <span class="keyword">if</span> (<span class="param">context</span>.NextAvailableJobSchedule == <span class="keyword">null</span>)
+            <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Fail</span>(<span class="string">"Ja completou todos os turnos agendados para hoje"</span>);
+
+        <span class="param">context</span>.ResolvedSource = <span class="type">ScheduleSourceType</span>.JobSchedule;
+        <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Ok</span>();
+    }
+
+    <span class="keyword">private</span> <span class="type">CheckInValidationResult</span> <span class="method">ValidateNonJobBound</span>(
+        <span class="type">CheckInContext</span> <span class="param">context</span>, <span class="type">CheckInValidationOptions</span> <span class="param">options</span>)
+    {
+        <span class="keyword">var</span> now = DateTime.Now;
+        <span class="keyword">var</span> hasEmployeeSchedule = <span class="param">context</span>.TodayEmployeeSchedule != <span class="keyword">null</span>
+                                  &amp;&amp; !<span class="param">context</span>.HasUsedEmployeeSchedule;
+        <span class="keyword">var</span> hasJobSchedule = <span class="param">context</span>.NextAvailableJobSchedule != <span class="keyword">null</span>;
+
+        <span class="comment">// Get time windows for both schedules</span>
+        <span class="keyword">var</span> employeeWindow = hasEmployeeSchedule
+            ? <span class="method">GetEmployeeScheduleWindow</span>(<span class="param">context</span>, <span class="param">options</span>) : <span class="keyword">null</span>;
+        <span class="keyword">var</span> jobWindow = hasJobSchedule
+            ? <span class="method">GetJobScheduleWindow</span>(<span class="param">context</span>, <span class="param">options</span>) : <span class="keyword">null</span>;
+
+        <span class="comment">// Case 1: Both schedules exist - pick based on current time</span>
+        <span class="keyword">if</span> (hasEmployeeSchedule &amp;&amp; hasJobSchedule)
+        {
+            <span class="keyword">if</span> (employeeWindow != <span class="keyword">null</span> &amp;&amp; <span class="method">IsWithinWindow</span>(now, employeeWindow.Value))
+            {
+                <span class="param">context</span>.ResolvedSource = <span class="type">ScheduleSourceType</span>.EmployeeSchedule;
+                <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Ok</span>();
+            }
+            <span class="keyword">if</span> (jobWindow != <span class="keyword">null</span> &amp;&amp; <span class="method">IsWithinWindow</span>(now, jobWindow.Value))
+            {
+                <span class="param">context</span>.ResolvedSource = <span class="type">ScheduleSourceType</span>.JobSchedule;
+                <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Ok</span>();
+            }
+            <span class="comment">// Not in either window - pick the next upcoming one</span>
+            <span class="comment">// (TimeWindowValidator will show "too early" if needed)</span>
+        }
+
+        <span class="comment">// Case 2: Only JobSchedule</span>
+        <span class="keyword">if</span> (hasJobSchedule)
+        { <span class="param">context</span>.ResolvedSource = <span class="type">ScheduleSourceType</span>.JobSchedule; <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Ok</span>(); }
+
+        <span class="comment">// Case 3: Only EmployeeSchedule</span>
+        <span class="keyword">if</span> (hasEmployeeSchedule)
+        { <span class="param">context</span>.ResolvedSource = <span class="type">ScheduleSourceType</span>.EmployeeSchedule; <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Ok</span>(); }
+
+        <span class="comment">// Case 4: Free check-in (no schedule at all)</span>
+        <span class="keyword">if</span> (<span class="param">context</span>.HasNoSchedule)
+        { <span class="param">context</span>.ResolvedSource = <span class="type">ScheduleSourceType</span>.Free; <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Ok</span>(); }
+
+        <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Fail</span>(<span class="string">"Ja completou o turno de hoje"</span>);
+    }
+}</code></pre>
+
+<p>This validator has a <strong>side effect</strong>: it sets <code>context.ResolvedSource</code>. The next validators (TimeWindow, Geolocation) depend on knowing which schedule was resolved. This is intentional -- the context acts as shared state flowing through the pipeline.</p>
+
+<h3>4.3 TimeWindowValidator (Order = 30)</h3>
+<p>Checks if it's too early to check in based on the resolved schedule.</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">TimeWindowValidator</span> : <span class="type">ICheckInValidator</span>
+{
+    <span class="keyword">public int</span> Order => <span class="number">30</span>;
+
+    <span class="keyword">public</span> <span class="type">CheckInValidationResult</span> <span class="method">Validate</span>(<span class="type">CheckInContext</span> <span class="param">context</span>, <span class="type">CheckInValidationOptions</span> <span class="param">options</span>)
+    {
+        <span class="comment">// Free shifts have no time constraint</span>
+        <span class="keyword">if</span> (<span class="param">context</span>.ResolvedSource == <span class="type">ScheduleSourceType</span>.Free)
+            <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Ok</span>();
+
+        <span class="keyword">var</span> scheduledStart = <span class="method">GetScheduledStartTime</span>(<span class="param">context</span>);
+        <span class="keyword">if</span> (!scheduledStart.HasValue)
+            <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Ok</span>();
+
+        <span class="keyword">var</span> earliestAllowed = <span class="method">CalculateEarliestAllowed</span>(scheduledStart.Value, <span class="param">options</span>);
+
+        <span class="keyword">if</span> (DateTime.Now &lt; earliestAllowed)
+            <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Fail</span>(
+                <span class="string">$"Demasiado cedo. Pode fazer check-in a partir das {earliestAllowed:HH:mm}"</span>);
+
+        <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Ok</span>();
+    }
+
+    <span class="keyword">private</span> <span class="type">DateTime</span> <span class="method">CalculateEarliestAllowed</span>(
+        <span class="type">TimeSpan</span> <span class="param">scheduledStart</span>, <span class="type">CheckInValidationOptions</span> <span class="param">options</span>)
+    {
+        <span class="keyword">return</span> DateTime.Today
+            .<span class="method">Add</span>(<span class="param">scheduledStart</span>)
+            .<span class="method">AddMinutes</span>(-<span class="param">options</span>.EarlyCheckInToleranceMinutes);
+    }
+
+    <span class="keyword">private</span> <span class="type">TimeSpan</span>? <span class="method">GetScheduledStartTime</span>(<span class="type">CheckInContext</span> <span class="param">context</span>)
+    {
+        <span class="keyword">return</span> <span class="param">context</span>.ResolvedSource <span class="keyword">switch</span>
+        {
+            <span class="type">ScheduleSourceType</span>.JobSchedule =>
+                <span class="param">context</span>.NextAvailableJobSchedule?.CheckInTime,
+            <span class="type">ScheduleSourceType</span>.EmployeeSchedule =>
+                <span class="method">GetEmployeeScheduleStart</span>(<span class="param">context</span>),
+            _ => <span class="keyword">null</span>
+        };
+    }
+}</code></pre>
+
+<p>Notice how this validator <strong>depends on the output of ScheduleSourceValidator</strong> (it reads <code>context.ResolvedSource</code>). This is why ordering matters -- Order 30 runs after Order 20.</p>
+
+<h3>4.4 GeolocationValidator (Order = 40)</h3>
+<p>Validates that the employee is within the geofence (if required).</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">GeolocationValidator</span> : <span class="type">ICheckInValidator</span>
+{
+    <span class="keyword">public int</span> Order => <span class="number">40</span>;
+
+    <span class="keyword">public</span> <span class="type">CheckInValidationResult</span> <span class="method">Validate</span>(<span class="type">CheckInContext</span> <span class="param">context</span>, <span class="type">CheckInValidationOptions</span> <span class="param">options</span>)
+    {
+        <span class="comment">// Skip if geolocation not required for this employee</span>
+        <span class="keyword">if</span> (!<span class="param">context</span>.RequiresGeolocation)
+            <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Ok</span>();
+
+        <span class="comment">// Location not yet obtained (still acquiring GPS)</span>
+        <span class="keyword">if</span> (!<span class="param">options</span>.LocationObtained)
+            <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Fail</span>(<span class="string">"A obter localizacao..."</span>);
+
+        <span class="comment">// No valid geofence target (Location/Job missing coordinates)</span>
+        <span class="keyword">if</span> (!<span class="param">context</span>.TargetLatitude.HasValue || !<span class="param">context</span>.TargetLongitude.HasValue)
+            <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Fail</span>(
+                <span class="string">"Localizacao de trabalho sem coordenadas GPS configuradas"</span>);
+
+        <span class="comment">// Outside geofence</span>
+        <span class="keyword">if</span> (!<span class="param">context</span>.IsWithinGeofence)
+        {
+            <span class="keyword">var</span> distanceOutside = <span class="param">context</span>.DistanceToLocation - <span class="param">context</span>.GeofenceRadius;
+            <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Fail</span>(
+                <span class="string">$"Fora da area autorizada ({distanceOutside:F0}m fora)"</span>);
+        }
+
+        <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Ok</span>();
+    }
+}</code></pre>
+
+<p>This is the last gate. If geolocation is required and the employee is outside the geofence, the check-in is blocked. The message even tells them how many meters they are outside.</p>
+
+<!-- ============================================================ -->
+<h2>5. The Service That Chains Them</h2>
+
+<p>The <code>CheckInValidationService</code> receives <strong>all validators</strong> via dependency injection, orders them, and runs them sequentially:</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">CheckInValidationService</span> : <span class="type">ICheckInValidationService</span>
+{
+    <span class="keyword">private readonly</span> <span class="type">IEnumerable</span>&lt;<span class="type">ICheckInValidator</span>&gt; <span class="param">_validators</span>;
+    <span class="keyword">private readonly</span> <span class="type">AttendanceConfiguration</span> <span class="param">_config</span>;
+    <span class="keyword">private readonly</span> <span class="type">ILogger</span>&lt;<span class="type">CheckInValidationService</span>&gt; <span class="param">_logger</span>;
+
+    <span class="keyword">public</span> <span class="method">CheckInValidationService</span>(
+        <span class="comment">// ... other dependencies ...</span>
+        <span class="type">IEnumerable</span>&lt;<span class="type">ICheckInValidator</span>&gt; <span class="param">validators</span>,
+        <span class="type">AttendanceConfiguration</span> <span class="param">config</span>,
+        <span class="type">ILogger</span>&lt;<span class="type">CheckInValidationService</span>&gt; <span class="param">logger</span>)
+    {
+        <span class="comment">// Sort validators ONCE in the constructor</span>
+        <span class="param">_validators</span> = <span class="param">validators</span>.<span class="method">OrderBy</span>(v => v.Order);
+        <span class="param">_config</span> = <span class="param">config</span>;
+        <span class="param">_logger</span> = <span class="param">logger</span>;
+    }
+
+    <span class="keyword">public</span> (<span class="keyword">bool</span> CanCheckIn, <span class="keyword">string</span>? BlockReason) <span class="method">CanPerformCheckIn</span>(
+        <span class="type">CheckInContext</span> <span class="param">context</span>,
+        <span class="keyword">bool</span> <span class="param">locationObtained</span>)
+    {
+        <span class="keyword">var</span> options = <span class="keyword">new</span> <span class="type">CheckInValidationOptions</span>(
+            LocationObtained: <span class="param">locationObtained</span>,
+            EarlyCheckInToleranceMinutes: <span class="param">_config</span>.EarlyCheckInToleranceMinutes
+        );
+
+        <span class="comment">// Run validators in order - first failure stops the chain</span>
+        <span class="keyword">foreach</span> (<span class="keyword">var</span> validator <span class="keyword">in</span> <span class="param">_validators</span>)
+        {
+            <span class="keyword">var</span> result = validator.<span class="method">Validate</span>(<span class="param">context</span>, options);
+            <span class="keyword">if</span> (!result.IsValid)
+            {
+                <span class="param">_logger</span>.<span class="method">LogDebug</span>(
+                    <span class="string">"Check-in blocked by {Validator}: {Reason}"</span>,
+                    validator.<span class="method">GetType</span>().Name,
+                    result.Message);
+                <span class="keyword">return</span> (<span class="keyword">false</span>, result.Message);
+            }
+        }
+
+        <span class="keyword">return</span> (<span class="keyword">true</span>, <span class="keyword">null</span>);
+    }
+}</code></pre>
+
+<div class="callout callout-english">
+    <code>_validators.OrderBy(v => v.Order)</code> reads as: "Sort the validators by their priority, then run them one by one. Stop at the first failure."
+</div>
+
+<p>The key insight: this <code>foreach</code> loop <strong>never changes</strong>. When you add a new validator, this method stays exactly the same. That is the Open/Closed Principle in action -- open for extension (new validators), closed for modification (this loop).</p>
+
+<!-- ============================================================ -->
+<h2>6. The Check-Out Pipeline (Same Pattern, Different Rules)</h2>
+
+<p>Check-out uses the exact same pattern but with a different interface and different validators. The interface at <code>Services/CheckOut/Validators/ICheckOutValidator.cs</code>:</p>
+
+<pre><code><span class="keyword">public interface</span> <span class="type">ICheckOutValidator</span>
+{
+    <span class="keyword">int</span> Order { <span class="keyword">get</span>; }
+    <span class="type">CheckOutValidationResult</span> <span class="method">Validate</span>(<span class="type">CheckOutContext</span> <span class="param">context</span>, <span class="type">CheckOutValidationOptions</span> <span class="param">options</span>);
+}
+
+<span class="keyword">public record</span> <span class="type">CheckOutValidationResult</span>(<span class="keyword">bool</span> IsValid, <span class="keyword">string</span>? Message)
+{
+    <span class="keyword">public static</span> <span class="type">CheckOutValidationResult</span> <span class="method">Ok</span>() => <span class="keyword">new</span>(<span class="keyword">true</span>, <span class="keyword">null</span>);
+    <span class="keyword">public static</span> <span class="type">CheckOutValidationResult</span> <span class="method">Fail</span>(<span class="keyword">string</span> <span class="param">message</span>) => <span class="keyword">new</span>(<span class="keyword">false</span>, <span class="param">message</span>);
+}
+
+<span class="keyword">public record</span> <span class="type">CheckOutValidationOptions</span>(
+    <span class="keyword">bool</span> LocationObtained,
+    <span class="keyword">decimal</span> Latitude,
+    <span class="keyword">decimal</span> Longitude
+);</code></pre>
+
+<h3>Three Check-Out Validators</h3>
+
+<h4>AttendanceExistsValidator (Order = 10)</h4>
+<pre><code><span class="keyword">public class</span> <span class="type">AttendanceExistsValidator</span> : <span class="type">ICheckOutValidator</span>
+{
+    <span class="keyword">public int</span> Order => <span class="number">10</span>;
+
+    <span class="keyword">public</span> <span class="type">CheckOutValidationResult</span> <span class="method">Validate</span>(<span class="type">CheckOutContext</span> <span class="param">context</span>, <span class="type">CheckOutValidationOptions</span> <span class="param">options</span>)
+    {
+        <span class="keyword">if</span> (<span class="param">context</span>.Attendance == <span class="keyword">null</span>)
+            <span class="keyword">return</span> <span class="type">CheckOutValidationResult</span>.<span class="method">Fail</span>(<span class="string">"Registo de assiduidade nao encontrado."</span>);
+
+        <span class="keyword">if</span> (<span class="param">context</span>.IsAlreadyCheckedOut)
+            <span class="keyword">return</span> <span class="type">CheckOutValidationResult</span>.<span class="method">Fail</span>(
+                <span class="string">$"Ja fez check-out as {context.Attendance.CheckOutTime:HH:mm}."</span>);
+
+        <span class="keyword">return</span> <span class="type">CheckOutValidationResult</span>.<span class="method">Ok</span>();
+    }
+}</code></pre>
+
+<h4>BreakStatusValidator (Order = 20)</h4>
+<pre><code><span class="keyword">public class</span> <span class="type">BreakStatusValidator</span> : <span class="type">ICheckOutValidator</span>
+{
+    <span class="keyword">public int</span> Order => <span class="number">20</span>;
+
+    <span class="keyword">public</span> <span class="type">CheckOutValidationResult</span> <span class="method">Validate</span>(<span class="type">CheckOutContext</span> <span class="param">context</span>, <span class="type">CheckOutValidationOptions</span> <span class="param">options</span>)
+    {
+        <span class="keyword">if</span> (<span class="param">context</span>.IsOnBreak)
+            <span class="keyword">return</span> <span class="type">CheckOutValidationResult</span>.<span class="method">Fail</span>(<span class="string">"Termine a pausa antes de fazer check-out."</span>);
+
+        <span class="keyword">return</span> <span class="type">CheckOutValidationResult</span>.<span class="method">Ok</span>();
+    }
+}</code></pre>
+
+<h4>GeolocationValidator (Order = 30) -- The Interesting One</h4>
+<pre><code><span class="keyword">public class</span> <span class="type">GeolocationValidator</span> : <span class="type">ICheckOutValidator</span>
+{
+    <span class="keyword">private readonly</span> <span class="type">IGeofenceService</span> <span class="param">_geofenceService</span>;
+
+    <span class="keyword">public</span> <span class="method">GeolocationValidator</span>(<span class="type">IGeofenceService</span> <span class="param">geofenceService</span>)
+    {
+        <span class="param">_geofenceService</span> = <span class="param">geofenceService</span>;
+    }
+
+    <span class="keyword">public int</span> Order => <span class="number">30</span>;
+
+    <span class="keyword">public</span> <span class="type">CheckOutValidationResult</span> <span class="method">Validate</span>(<span class="type">CheckOutContext</span> <span class="param">context</span>, <span class="type">CheckOutValidationOptions</span> <span class="param">options</span>)
+    {
+        <span class="keyword">if</span> (!<span class="param">context</span>.RequiresGeolocation)
+        {
+            <span class="param">context</span>.IsValidLocation = <span class="keyword">true</span>;
+            <span class="keyword">return</span> <span class="type">CheckOutValidationResult</span>.<span class="method">Ok</span>();
+        }
+
+        <span class="keyword">if</span> (!<span class="param">options</span>.LocationObtained)
+            <span class="keyword">return</span> <span class="type">CheckOutValidationResult</span>.<span class="method">Fail</span>(<span class="string">"A obter localizacao..."</span>);
+
+        <span class="keyword">if</span> (!<span class="param">context</span>.TargetLatitude.HasValue || !<span class="param">context</span>.TargetLongitude.HasValue)
+        {
+            <span class="param">context</span>.IsValidLocation = <span class="keyword">false</span>;
+            <span class="param">context</span>.GeofenceMessage = <span class="string">"Localizacao sem coordenadas GPS"</span>;
+            <span class="keyword">return</span> <span class="type">CheckOutValidationResult</span>.<span class="method">Ok</span>();  <span class="comment">// &lt;-- ALLOWS checkout!</span>
+        }
+
+        <span class="keyword">var</span> distance = <span class="param">_geofenceService</span>.<span class="method">CalculateDistance</span>(
+            <span class="param">options</span>.Latitude, <span class="param">options</span>.Longitude,
+            <span class="param">context</span>.TargetLatitude.Value, <span class="param">context</span>.TargetLongitude.Value);
+
+        <span class="param">context</span>.Distance = (<span class="keyword">decimal</span>)distance;
+        <span class="param">context</span>.IsValidLocation = distance &lt;= <span class="param">context</span>.GeofenceRadius;
+
+        <span class="comment">// ALWAYS returns Ok() -- just records if outside geofence for audit</span>
+        <span class="keyword">return</span> <span class="type">CheckOutValidationResult</span>.<span class="method">Ok</span>();
+    }
+}</code></pre>
+
+<p><strong>Key difference from check-in:</strong> The check-out geolocation validator <strong>always returns <code>Ok()</code></strong>. It records whether the employee was inside or outside the geofence (populating <code>context.IsValidLocation</code> and <code>context.Distance</code>), but it never blocks the check-out. This is a business rule: you should always be able to leave work, even if your GPS is wrong. The audit trail records the discrepancy.</p>
+
+<p>The <code>CheckOutValidationService</code> chains them with the exact same <code>foreach</code> loop:</p>
+
+<pre><code><span class="keyword">public</span> (<span class="keyword">bool</span> CanCheckOut, <span class="keyword">string</span>? BlockReason) <span class="method">CanPerformCheckOut</span>(
+    <span class="type">CheckOutContext</span> <span class="param">context</span>,
+    <span class="type">CheckOutValidationOptions</span> <span class="param">options</span>)
+{
+    <span class="keyword">foreach</span> (<span class="keyword">var</span> validator <span class="keyword">in</span> <span class="param">_validators</span>)
+    {
+        <span class="keyword">var</span> result = validator.<span class="method">Validate</span>(<span class="param">context</span>, <span class="param">options</span>);
+        <span class="keyword">if</span> (!result.IsValid)
+            <span class="keyword">return</span> (<span class="keyword">false</span>, result.Message);
+    }
+    <span class="keyword">return</span> (<span class="keyword">true</span>, <span class="keyword">null</span>);
+}</code></pre>
+
+<!-- ============================================================ -->
+<h2>7. DI Registration -- How It All Connects</h2>
+
+<p>In <code>Program.cs</code>, all validators are registered for the <strong>same interface</strong>:</p>
+
+<pre><code><span class="comment">// Check-in validators (SOLID: each validator has one responsibility)</span>
+builder.Services.<span class="method">AddTransient</span>&lt;<span class="type">ICheckInValidator</span>, <span class="type">ActiveCheckInValidator</span>&gt;();
+builder.Services.<span class="method">AddTransient</span>&lt;<span class="type">ICheckInValidator</span>, <span class="type">ScheduleSourceValidator</span>&gt;();
+builder.Services.<span class="method">AddTransient</span>&lt;<span class="type">ICheckInValidator</span>, <span class="type">TimeWindowValidator</span>&gt;();
+builder.Services.<span class="method">AddTransient</span>&lt;<span class="type">ICheckInValidator</span>, <span class="type">GeolocationValidator</span>&gt;();
+
+<span class="comment">// Check-out validators (SOLID: each validator has one responsibility)</span>
+builder.Services.<span class="method">AddTransient</span>&lt;<span class="type">ICheckOutValidator</span>, <span class="type">AttendanceExistsValidator</span>&gt;();
+builder.Services.<span class="method">AddTransient</span>&lt;<span class="type">ICheckOutValidator</span>, <span class="type">BreakStatusValidator</span>&gt;();
+builder.Services.<span class="method">AddTransient</span>&lt;<span class="type">ICheckOutValidator</span>, <span class="type">GeolocationValidator</span>&gt;();</code></pre>
+
+<p>The magic: when you register <strong>multiple implementations</strong> for the same interface, .NET DI collects them all into <code>IEnumerable&lt;T&gt;</code>. So when <code>CheckInValidationService</code> asks for <code>IEnumerable&lt;ICheckInValidator&gt;</code>, it receives all four validators automatically.</p>
+
+<p>Why <code>AddTransient</code>? Validators are cheap, stateless objects. They are created fresh each time they are needed, with no shared state between requests. This is the recommended DI lifetime for validators and resolvers that participate in pipelines.</p>
+
+<!-- ============================================================ -->
+<h2>8. Strategy Pattern -- Schedule Conflict Detection</h2>
+
+<p>While the Chain of Responsibility pattern runs <strong>all validators in sequence</strong>, the Strategy pattern <strong>picks one implementation</strong> based on a key. GivingCare uses this for schedule conflict detection, where employees and equipment use different database tables and different conflict rules.</p>
+
+<h3>The Strategy Interface</h3>
+
+<pre><code><span class="keyword">public interface</span> <span class="type">IScheduleConflictStrategy</span>
+{
+    <span class="comment">/// The entity type this strategy handles (e.g., "Employee", "Equipment")</span>
+    <span class="keyword">string</span> EntityType { <span class="keyword">get</span>; }
+
+    <span class="comment">/// Detects scheduling conflicts for an entity on a specific date</span>
+    <span class="type">Task</span>&lt;<span class="type">List</span>&lt;<span class="type">ScheduleConflict</span>&gt;&gt; <span class="method">GetScheduleConflictsAsync</span>(
+        <span class="keyword">int</span> <span class="param">entityId</span>, <span class="type">DateTime</span> <span class="param">date</span>, <span class="keyword">string</span> <span class="param">companyDatabase</span>);
+
+    <span class="comment">/// Gets detailed conflict analysis for a specific schedule</span>
+    <span class="type">Task</span>&lt;<span class="type">DetailedConflictInfo</span>&gt; <span class="method">GetDetailedConflictsAsync</span>(
+        <span class="keyword">int</span> <span class="param">entityId</span>, <span class="type">DateTime</span> <span class="param">scheduleDate</span>, <span class="type">DateTime</span> <span class="param">endDate</span>,
+        <span class="type">TimeSpan</span> <span class="param">startTime</span>, <span class="type">TimeSpan</span> <span class="param">endTime</span>,
+        <span class="keyword">int</span>? <span class="param">excludeScheduleId</span>, <span class="keyword">string</span> <span class="param">companyDatabase</span>,
+        <span class="type">ConflictSourceType</span>? <span class="param">excludeSourceType</span> = <span class="keyword">null</span>);
+
+    <span class="comment">/// Checks if adding a new schedule would create a conflict</span>
+    <span class="type">Task</span>&lt;<span class="keyword">bool</span>&gt; <span class="method">WouldCreateConflictAsync</span>(<span class="comment">/* ... */</span>);
+
+    <span class="comment">/// Advanced time-based overlap detection for cross-midnight shifts</span>
+    <span class="type">Task</span>&lt;<span class="keyword">bool</span>&gt; <span class="method">HasTimeOverlapAsync</span>(<span class="comment">/* ... */</span>);
+
+    <span class="comment">/// Calculates total hours scheduled for a date</span>
+    <span class="type">Task</span>&lt;<span class="keyword">decimal</span>&gt; <span class="method">CalculateDailyHoursAsync</span>(<span class="comment">/* ... */</span>);
+}</code></pre>
+
+<h3>The Router (ScheduleConflictDetector)</h3>
+
+<pre><code><span class="keyword">public class</span> <span class="type">ScheduleConflictDetector</span> : <span class="type">IScheduleConflictDetector</span>
+{
+    <span class="keyword">private readonly</span> <span class="type">IEnumerable</span>&lt;<span class="type">IScheduleConflictStrategy</span>&gt; <span class="param">_strategies</span>;
+    <span class="keyword">private readonly</span> <span class="type">ILogger</span>&lt;<span class="type">ScheduleConflictDetector</span>&gt; <span class="param">_logger</span>;
+
+    <span class="keyword">public</span> <span class="method">ScheduleConflictDetector</span>(
+        <span class="type">IEnumerable</span>&lt;<span class="type">IScheduleConflictStrategy</span>&gt; <span class="param">strategies</span>,
+        <span class="type">ILogger</span>&lt;<span class="type">ScheduleConflictDetector</span>&gt; <span class="param">logger</span>)
+    {
+        <span class="param">_strategies</span> = <span class="param">strategies</span>;
+        <span class="param">_logger</span> = <span class="param">logger</span>;
+    }
+
+    <span class="keyword">public async</span> <span class="type">Task</span>&lt;<span class="type">List</span>&lt;<span class="type">ScheduleConflict</span>&gt;&gt; <span class="method">GetScheduleConflictsAsync</span>(
+        <span class="keyword">string</span> <span class="param">entityType</span>, <span class="keyword">int</span> <span class="param">entityId</span>,
+        <span class="type">DateTime</span> <span class="param">date</span>, <span class="keyword">string</span> <span class="param">companyDatabase</span>)
+    {
+        <span class="keyword">var</span> strategy = <span class="method">GetStrategy</span>(<span class="param">entityType</span>);
+        <span class="keyword">return await</span> strategy.<span class="method">GetScheduleConflictsAsync</span>(<span class="param">entityId</span>, <span class="param">date</span>, <span class="param">companyDatabase</span>);
+    }
+
+    <span class="comment">/// Gets the appropriate strategy for the entity type.</span>
+    <span class="keyword">private</span> <span class="type">IScheduleConflictStrategy</span> <span class="method">GetStrategy</span>(<span class="keyword">string</span> <span class="param">entityType</span>)
+    {
+        <span class="keyword">var</span> strategy = <span class="param">_strategies</span>.<span class="method">FirstOrDefault</span>(s =>
+            s.EntityType.<span class="method">Equals</span>(<span class="param">entityType</span>, <span class="type">StringComparison</span>.OrdinalIgnoreCase));
+
+        <span class="keyword">if</span> (strategy == <span class="keyword">null</span>)
+        {
+            <span class="param">_logger</span>.<span class="method">LogError</span>(
+                <span class="string">"No conflict detection strategy registered for: {EntityType}"</span>,
+                <span class="param">entityType</span>);
+            <span class="keyword">throw new</span> <span class="type">ArgumentException</span>(
+                <span class="string">$"No conflict detection strategy registered for: {entityType}"</span>);
+        }
+
+        <span class="keyword">return</span> strategy;
+    }
+}</code></pre>
+
+<h3>Two Strategies</h3>
+
+<p><strong>EmployeeScheduleConflictStrategy</strong> (<code>EntityType = "Employee"</code>) queries <code>JobSchedule</code> and <code>EmployeeDaySchedule</code> tables, checks approved leave requests, and handles feature flags (Jobs module, Scheduling module).</p>
+
+<p><strong>EquipmentScheduleConflictStrategy</strong> (<code>EntityType = "Equipment"</code>) queries <code>JobEquipmentSchedule</code> table. Simpler because equipment does not have leave requests or employee day schedules.</p>
+
+<p>Registered in <code>Program.cs</code>:</p>
+
+<pre><code><span class="comment">// Schedule Conflict Detection (Agnostic - Strategy Pattern)</span>
+builder.Services.<span class="method">AddScoped</span>&lt;<span class="type">IScheduleConflictStrategy</span>, <span class="type">EmployeeScheduleConflictStrategy</span>&gt;();
+builder.Services.<span class="method">AddScoped</span>&lt;<span class="type">IScheduleConflictStrategy</span>, <span class="type">EquipmentScheduleConflictStrategy</span>&gt;();
+builder.Services.<span class="method">AddScoped</span>&lt;<span class="type">IScheduleConflictDetector</span>, <span class="type">ScheduleConflictDetector</span>&gt;();</code></pre>
+
+<p>Same <code>IEnumerable&lt;T&gt;</code> trick as validators. But instead of running all strategies, the detector picks <strong>one</strong> by matching <code>EntityType</code>.</p>
+
+<div class="diagram">Caller: "Check conflicts for Employee #42 on March 18"
+
+  ScheduleConflictDetector
+    |
+    +--> GetStrategy("Employee")
+    |        |
+    |        +--> EmployeeScheduleConflictStrategy  <-- EntityType matches!
+    |        +--> EquipmentScheduleConflictStrategy  <-- skipped
+    |
+    +--> strategy.GetScheduleConflictsAsync(42, date, db)
+
+
+Caller: "Check conflicts for Equipment #7 on March 18"
+
+  ScheduleConflictDetector
+    |
+    +--> GetStrategy("Equipment")
+    |        |
+    |        +--> EmployeeScheduleConflictStrategy   <-- skipped
+    |        +--> EquipmentScheduleConflictStrategy   <-- EntityType matches!
+    |
+    +--> strategy.GetScheduleConflictsAsync(7, date, db)</div>
+
+<!-- ============================================================ -->
+<h2>9. Chain vs Strategy -- When to Use Which</h2>
+
+<table>
+    <tr>
+        <th>Pattern</th>
+        <th>Use When</th>
+        <th>How It Works</th>
+        <th>GivingCare Example</th>
+    </tr>
+    <tr>
+        <td>Chain of Responsibility</td>
+        <td>Multiple sequential checks, any can veto</td>
+        <td>Ordered pipeline, first failure stops</td>
+        <td>Check-in/out validators</td>
+    </tr>
+    <tr>
+        <td>Strategy</td>
+        <td>Different algorithms for different contexts</td>
+        <td>Router picks one based on type/key</td>
+        <td>Employee vs Equipment conflict detection</td>
+    </tr>
+</table>
+
+<p><strong>Chain:</strong> "Run ALL of these in order. Any one can say no." -- Validators, middleware, approval workflows.</p>
+
+<p><strong>Strategy:</strong> "Run ONE of these based on a key." -- Entity-specific logic, export formats, calculation algorithms.</p>
+
+<p>Both patterns use the same DI mechanism (<code>IEnumerable&lt;T&gt;</code>), but the <em>consumption</em> is different:</p>
+
+<ul>
+    <li><strong>Chain:</strong> <code>foreach (var v in _validators) { ... }</code> -- iterates all</li>
+    <li><strong>Strategy:</strong> <code>_strategies.FirstOrDefault(s => s.EntityType == key)</code> -- picks one</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2>10. Adding a New Validator</h2>
+
+<p>Suppose you need a new rule: employees on probation cannot check in to jobs rated as "high risk." Here is the complete process:</p>
+
+<h3>Step 1: Create the validator class</h3>
+
+<pre><code><span class="keyword">public class</span> <span class="type">ProbationRiskValidator</span> : <span class="type">ICheckInValidator</span>
+{
+    <span class="keyword">public int</span> Order => <span class="number">25</span>;  <span class="comment">// After ScheduleSource(20), before TimeWindow(30)</span>
+
+    <span class="keyword">public</span> <span class="type">CheckInValidationResult</span> <span class="method">Validate</span>(
+        <span class="type">CheckInContext</span> <span class="param">context</span>,
+        <span class="type">CheckInValidationOptions</span> <span class="param">options</span>)
+    {
+        <span class="keyword">if</span> (!<span class="param">context</span>.Employee.IsOnProbation)
+            <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Ok</span>();
+
+        <span class="keyword">if</span> (<span class="param">context</span>.ResolvedSource != <span class="type">ScheduleSourceType</span>.JobSchedule)
+            <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Ok</span>();
+
+        <span class="keyword">if</span> (<span class="param">context</span>.NextAvailableJobSchedule?.Job?.RiskLevel == <span class="string">"High"</span>)
+            <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Fail</span>(
+                <span class="string">"Employees on probation cannot work high-risk jobs"</span>);
+
+        <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Ok</span>();
+    }
+}</code></pre>
+
+<h3>Step 2: Register in Program.cs</h3>
+
+<pre><code>builder.Services.<span class="method">AddTransient</span>&lt;<span class="type">ICheckInValidator</span>, <span class="type">ProbationRiskValidator</span>&gt;();</code></pre>
+
+<h3>Step 3: Done.</h3>
+
+<p>There is no step 3. The pipeline auto-discovers the new validator because it is registered as <code>ICheckInValidator</code>. The <code>CheckInValidationService</code> did not change. The other validators did not change. The <code>foreach</code> loop picks it up, sorts it by <code>Order = 25</code>, and it runs between ScheduleSource and TimeWindow.</p>
+
+<div class="diagram">BEFORE:  [ActiveCheckIn=10] --> [ScheduleSource=20] --> [TimeWindow=30] --> [Geolocation=40]
+
+AFTER:   [ActiveCheckIn=10] --> [ScheduleSource=20] --> [ProbationRisk=25] --> [TimeWindow=30] --> [Geolocation=40]
+                                                              ^
+                                                     New! Inserted at 25.</div>
+
+<div class="callout callout-warning">
+    Order = 10, 20, 30, 40 -- not 1, 2, 3, 4. The gaps are intentional. They let you insert a new validator at Order = 15 between existing ones without renumbering. This is the same convention used in BASIC line numbers, middleware pipelines, and database seed scripts.
+</div>
+
+<div class="callout callout-rule">
+    Each validator does ONE thing. If you find yourself writing "and also check..." inside a validator, you need a new validator. The <code>ProbationRiskValidator</code> checks probation + risk level -- that is one concern. If you also wanted to check certification, that would be a separate <code>CertificationValidator</code>.
+</div>
+
+<!-- ============================================================ -->
+<h2>Summary</h2>
+
+<p>The validator pipeline is one of the cleanest patterns in the GivingCare codebase. It uses three ingredients:</p>
+
+<ol>
+    <li><strong>An interface</strong> with an <code>Order</code> property and a <code>Validate</code> method</li>
+    <li><strong>Multiple implementations</strong>, each doing one thing</li>
+    <li><strong>DI registration</strong> via <code>IEnumerable&lt;T&gt;</code>, so the service gets all validators automatically</li>
+</ol>
+
+<p>The result: validation logic that is easy to test (each validator in isolation), easy to extend (add a class, register it), and impossible to accidentally break (existing validators never change).</p>
+
+<table>
+    <tr>
+        <th>File</th>
+        <th>Purpose</th>
+    </tr>
+    <tr>
+        <td><code>Services/CheckIn/Validators/ICheckInValidator.cs</code></td>
+        <td>Interface + Result + Options records</td>
+    </tr>
+    <tr>
+        <td><code>Services/CheckIn/Validators/ActiveCheckInValidator.cs</code></td>
+        <td>Order=10: blocks double check-ins</td>
+    </tr>
+    <tr>
+        <td><code>Services/CheckIn/Validators/ScheduleSourceValidator.cs</code></td>
+        <td>Order=20: resolves Job vs Employee vs Free</td>
+    </tr>
+    <tr>
+        <td><code>Services/CheckIn/Validators/TimeWindowValidator.cs</code></td>
+        <td>Order=30: checks timing tolerance</td>
+    </tr>
+    <tr>
+        <td><code>Services/CheckIn/Validators/GeolocationValidator.cs</code></td>
+        <td>Order=40: validates geofence</td>
+    </tr>
+    <tr>
+        <td><code>Services/CheckIn/CheckInValidationService.cs</code></td>
+        <td>The service that chains all check-in validators</td>
+    </tr>
+    <tr>
+        <td><code>Services/CheckOut/Validators/ICheckOutValidator.cs</code></td>
+        <td>Check-out interface + Result + Options</td>
+    </tr>
+    <tr>
+        <td><code>Services/CheckOut/Validators/AttendanceExistsValidator.cs</code></td>
+        <td>Order=10: attendance must exist</td>
+    </tr>
+    <tr>
+        <td><code>Services/CheckOut/Validators/BreakStatusValidator.cs</code></td>
+        <td>Order=20: must end break first</td>
+    </tr>
+    <tr>
+        <td><code>Services/CheckOut/Validators/GeolocationValidator.cs</code></td>
+        <td>Order=30: records location, never blocks</td>
+    </tr>
+    <tr>
+        <td><code>Services/CheckOut/CheckOutValidationService.cs</code></td>
+        <td>The service that chains all check-out validators</td>
+    </tr>
+    <tr>
+        <td><code>Services/Core/Scheduling/ConflictDetection/IScheduleConflictStrategy.cs</code></td>
+        <td>Strategy interface with EntityType routing key</td>
+    </tr>
+    <tr>
+        <td><code>Services/Core/Scheduling/ConflictDetection/ScheduleConflictDetector.cs</code></td>
+        <td>Router that picks one strategy per entity type</td>
+    </tr>
+    <tr>
+        <td><code>Program.cs</code></td>
+        <td>DI registration for all validators and strategies</td>
+    </tr>
+</table>
+
+</body>
+</html>

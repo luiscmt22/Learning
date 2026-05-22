@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutorial: Adding a New Category to Furnor</title>
+    <style>
+        :root {
+            --primary: #594AE2;
+            --primary-light: #7C6FF7;
+            --primary-dark: #3F2FC0;
+            --bg: #0d1117;
+            --bg-card: #161b22;
+            --bg-code: #1c2129;
+            --border: #30363d;
+            --text: #e6edf3;
+            --text-muted: #8b949e;
+            --accent-green: #3fb950;
+            --accent-red: #f85149;
+            --accent-yellow: #d29922;
+            --accent-blue: #58a6ff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            padding: 2rem;
+            max-width: 960px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: #fff;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-top: 3rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+            color: #fff;
+        }
+
+        h3 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-top: 2rem;
+            margin-bottom: 0.75rem;
+            color: var(--primary-light);
+        }
+
+        h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-top: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+
+        p { margin-bottom: 1rem; }
+
+        a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+        a:hover { text-decoration: underline; }
+
+        .header-meta {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .header-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+
+        /* Cards / Callouts */
+        .callout {
+            border-left: 4px solid var(--primary);
+            background: var(--bg-card);
+            padding: 1rem 1.25rem;
+            margin: 1.25rem 0;
+            border-radius: 0 6px 6px 0;
+            font-size: 0.95rem;
+        }
+        .callout.info    { border-left-color: var(--accent-blue); }
+        .callout.warning { border-left-color: var(--accent-yellow); }
+        .callout.success { border-left-color: var(--accent-green); }
+        .callout.danger  { border-left-color: var(--accent-red); }
+
+        .callout strong { color: #fff; }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.25rem 0;
+            font-size: 0.92rem;
+        }
+        th, td {
+            text-align: left;
+            padding: 0.6rem 1rem;
+            border: 1px solid var(--border);
+        }
+        th {
+            background: var(--bg-card);
+            font-weight: 600;
+            color: #fff;
+        }
+        td { background: var(--bg); }
+
+        /* Code */
+        code {
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.88em;
+            background: var(--bg-code);
+            padding: 0.15em 0.4em;
+            border-radius: 4px;
+            color: var(--primary-light);
+        }
+
+        pre {
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.25rem;
+            overflow-x: auto;
+            margin: 1rem 0 1.5rem;
+            position: relative;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+            color: var(--text);
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+
+        .lang-label {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--border);
+            color: var(--text-muted);
+            font-size: 0.72rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 0 8px 0 6px;
+            font-family: 'Segoe UI', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Syntax highlighting (basic) */
+        .kw  { color: #ff7b72; }   /* keywords */
+        .tp  { color: #79c0ff; }   /* types */
+        .str { color: #a5d6ff; }   /* strings */
+        .cm  { color: #8b949e; font-style: italic; }  /* comments */
+        .fn  { color: #d2a8ff; }   /* functions/methods */
+        .num { color: #79c0ff; }   /* numbers */
+        .prop { color: #ffa657; }  /* properties */
+
+        /* Steps */
+        .step-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            background: var(--primary);
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-right: 0.6rem;
+            flex-shrink: 0;
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            margin-top: 2.5rem;
+            margin-bottom: 0.75rem;
+        }
+        .step-header h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            color: #fff;
+        }
+
+        .file-path {
+            display: inline-block;
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-family: 'Cascadia Code', monospace;
+            font-size: 0.85rem;
+            color: var(--accent-blue);
+            margin-bottom: 0.75rem;
+        }
+
+        /* Checklist */
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+        .checklist li {
+            padding: 0.4rem 0;
+            padding-left: 1.75rem;
+            position: relative;
+        }
+        .checklist li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.6rem;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid var(--border);
+            border-radius: 3px;
+        }
+
+        /* Quick-ref card */
+        .quick-ref {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        .quick-ref h3 {
+            margin-top: 0;
+            color: #fff;
+        }
+
+        /* Tabs */
+        .tab-group {
+            display: flex;
+            gap: 0;
+            margin-top: 1rem;
+            border-bottom: 2px solid var(--border);
+        }
+        .tab {
+            padding: 0.5rem 1.25rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s;
+            background: none;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            font-family: inherit;
+        }
+        .tab.active, .tab:hover {
+            color: var(--primary-light);
+            border-bottom-color: var(--primary);
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Footer */
+        .footer {
+            margin-top: 4rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        /* Responsive */
+        @media (max-width: 700px) {
+            body { padding: 1rem; }
+            h1 { font-size: 1.5rem; }
+            pre { padding: 0.75rem; font-size: 0.82rem; }
+            table { font-size: 0.82rem; }
+            th, td { padding: 0.4rem 0.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<h1>Tutorial: Adding a New Category to Furnor</h1>
+<div class="header-meta">
+    <span>Audience: Developers of all skill levels</span>
+    <span>Time: 10 &ndash; 20 minutes</span>
+    <span>Last Updated: February 2026</span>
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2>Overview</h2>
+
+<p>This tutorial explains <strong>every single change</strong> required to add a new category to the Furnor system. Follow these steps exactly like a recipe.</p>
+
+<p>The system uses a <strong>configuration-driven architecture</strong> that minimizes code changes.
+<code>CategoryService</code> works generically with any entity type via EF Core, and <code>BaseContext</code> auto-registers category entities from the registry.
+Most components automatically discover new categories through configuration.</p>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2>Quick Reference: Files You MUST Modify</h2>
+
+<div class="quick-ref">
+    <table>
+        <thead>
+            <tr><th>Step</th><th>File</th><th>What to Add</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>1</td><td><code>Models/Artigo/Entities/Categories.cs</code></td><td>Entity class</td></tr>
+            <tr><td>2</td><td><code>Models/Artigo/Entities/DefaultMasterDataProvider.cs</code></td><td>Wizard registry config</td></tr>
+            <tr><td>3</td><td><code>Models/Artigo/CategoryConfigRegistry.cs</code></td><td>CRUD UI config</td></tr>
+            <tr><td>4</td><td><code>Models/Artigo/Entities/Article.cs</code></td><td>Code property</td></tr>
+            <tr><td>5</td><td><code>Migrations/</code></td><td>New migration file</td></tr>
+        </tbody>
+    </table>
+
+    <p style="margin-bottom:0"><strong>That's it!</strong> Only 5 files need changes. Everything else works automatically.</p>
+</div>
+
+<div class="callout info">
+    <strong>Two Registries Explained:</strong><br>
+    <code>DefaultMasterDataProvider.cs</code> &rarr; Used by Article Wizard (field selection)<br>
+    <code>CategoryConfigRegistry.cs</code> &rarr; Used by Category Management UI (CRUD pages)
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2>Step-by-Step Instructions</h2>
+
+<!-- STEP 1 -->
+<div class="step-header">
+    <span class="step-badge">1</span>
+    <h3>Create the Entity Class</h3>
+</div>
+<div class="file-path">Models/Artigo/Entities/Categories.cs</div>
+<p>Add your new class at the end of the file (before the closing brace).</p>
+
+<div class="tab-group">
+    <button class="tab active" onclick="switchTab(event, 's1-flat')">Flat Category</button>
+    <button class="tab" onclick="switchTab(event, 's1-hier')">Hierarchical Category</button>
+</div>
+
+<div id="s1-flat" class="tab-content active">
+    <pre><code><span class="cm">/// &lt;summary&gt;</span>
+<span class="cm">/// TipoArtigo - Article Type (PA, PI, MP).</span>
+<span class="cm">/// &lt;/summary&gt;</span>
+<span class="kw">public class</span> <span class="tp">ArticleType</span> : <span class="tp">CategoryBase</span>
+{
+    <span class="cm">// No extra properties needed for simple categories</span>
+}</code><span class="lang-label">C#</span></pre>
+</div>
+
+<div id="s1-hier" class="tab-content">
+    <pre><code><span class="cm">/// &lt;summary&gt;</span>
+<span class="cm">/// ParentExample - Parent category.</span>
+<span class="cm">/// &lt;/summary&gt;</span>
+<span class="kw">public class</span> <span class="tp">ParentExample</span> : <span class="tp">CategoryBase</span>
+{
+    <span class="cm">// Parent categories don't need extra properties</span>
+}
+
+<span class="cm">/// &lt;summary&gt;</span>
+<span class="cm">/// ChildExample - Child of ParentExample.</span>
+<span class="cm">/// &lt;/summary&gt;</span>
+<span class="kw">public class</span> <span class="tp">ChildExample</span> : <span class="tp">CategoryBase</span>
+{
+    <span class="cm">/// &lt;summary&gt;</span>
+    <span class="cm">/// Foreign key to parent (uses CODE, not ID).</span>
+    <span class="cm">/// &lt;/summary&gt;</span>
+    <span class="kw">public</span> <span class="tp">string</span> <span class="prop">ParentExampleCode</span> { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="tp">string</span>.<span class="prop">Empty</span>;
+}</code><span class="lang-label">C#</span></pre>
+
+    <div class="callout warning">
+        <strong>Note:</strong> Child categories use the parent's <strong>CODE</strong> as foreign key, not ID.
+    </div>
+</div>
+
+<hr>
+
+<!-- STEP 2 -->
+<div class="step-header">
+    <span class="step-badge">2</span>
+    <h3>Add to MasterData Registry</h3>
+</div>
+<div class="file-path">Models/Artigo/Entities/DefaultMasterDataProvider.cs</div>
+<p>Find the <code>GetConfigs()</code> method and add your configuration.</p>
+
+<div class="tab-group">
+    <button class="tab active" onclick="switchTab(event, 's2-flat')">Flat Category</button>
+    <button class="tab" onclick="switchTab(event, 's2-hier')">Hierarchical Category</button>
+</div>
+
+<div id="s2-flat" class="tab-content active">
+    <p>Add in the &ldquo;Flat Categories&rdquo; section (after line 140):</p>
+    <pre><code>[<span class="str">"TipoArtigo"</span>] = <span class="kw">new</span> <span class="tp">MasterDataConfig</span>
+{
+    <span class="prop">FieldName</span> = <span class="str">"TipoArtigo"</span>,
+    <span class="prop">EntityType</span> = <span class="kw">typeof</span>(<span class="tp">ArticleType</span>),
+    <span class="prop">CodeProperty</span> = <span class="str">"Code"</span>,
+    <span class="prop">DescriptionProperty</span> = <span class="str">"Description"</span>,
+    <span class="prop">ListPropertyName</span> = <span class="str">"articleTypeList"</span>,
+    <span class="prop">ProductPropertyName</span> = <span class="str">"ArticleTypeCode"</span>,  <span class="cm">// MUST match Article.cs property name!</span>
+    <span class="prop">DisplayOrder</span> = <span class="num">11</span>,
+    <span class="prop">HasDescriptionEN</span> = <span class="kw">true</span>
+},</code><span class="lang-label">C#</span></pre>
+</div>
+
+<div id="s2-hier" class="tab-content">
+    <h4>A) Add Parent (in &ldquo;Parent Entities&rdquo; section, lines 11-78):</h4>
+    <pre><code>[<span class="str">"ParentExample"</span>] = <span class="kw">new</span> <span class="tp">MasterDataConfig</span>
+{
+    <span class="prop">FieldName</span> = <span class="str">"ParentExample"</span>,
+    <span class="prop">EntityType</span> = <span class="kw">typeof</span>(<span class="tp">ParentExample</span>),
+    <span class="prop">CodeProperty</span> = <span class="str">"Code"</span>,
+    <span class="prop">DescriptionProperty</span> = <span class="str">"Description"</span>,
+    <span class="prop">ListPropertyName</span> = <span class="str">"parentExampleList"</span>,
+    <span class="prop">ProductPropertyName</span> = <span class="str">"ParentExampleCode"</span>,
+    <span class="prop">DisplayOrder</span> = <span class="num">11</span>,
+    <span class="prop">HasDescriptionEN</span> = <span class="kw">true</span>,
+    <span class="prop">ChildEntities</span> = <span class="kw">new</span>()
+    {
+        <span class="kw">new</span> <span class="tp">ChildEntityConfig</span>
+        {
+            <span class="prop">ChildFieldName</span> = <span class="str">"ChildExample"</span>,
+            <span class="prop">EntityType</span> = <span class="kw">typeof</span>(<span class="tp">ChildExample</span>),
+            <span class="prop">ParentKeyProperty</span> = <span class="str">"ParentExampleCode"</span>,
+            <span class="prop">ListPropertyName</span> = <span class="str">"childExampleList"</span>
+        }
+    }
+},</code><span class="lang-label">C#</span></pre>
+
+    <h4>B) Add Child (in &ldquo;Child Entities&rdquo; section, lines 80-137):</h4>
+    <pre><code>[<span class="str">"ChildExample"</span>] = <span class="kw">new</span> <span class="tp">MasterDataConfig</span>
+{
+    <span class="prop">FieldName</span> = <span class="str">"ChildExample"</span>,
+    <span class="prop">EntityType</span> = <span class="kw">typeof</span>(<span class="tp">ChildExample</span>),
+    <span class="prop">CodeProperty</span> = <span class="str">"Code"</span>,
+    <span class="prop">DescriptionProperty</span> = <span class="str">"Description"</span>,
+    <span class="prop">ListPropertyName</span> = <span class="str">"childExampleList"</span>,
+    <span class="prop">ProductPropertyName</span> = <span class="str">"ChildExampleCode"</span>,
+    <span class="prop">ParentFieldName</span> = <span class="str">"ParentExample"</span>,
+    <span class="prop">ParentKeyProperty</span> = <span class="str">"ParentExampleCode"</span>,
+    <span class="prop">DisplayOrder</span> = <span class="num">12</span>,
+    <span class="prop">HasDescriptionEN</span> = <span class="kw">true</span>
+},</code><span class="lang-label">C#</span></pre>
+</div>
+
+<hr>
+
+<!-- STEP 3 -->
+<div class="step-header">
+    <span class="step-badge">3</span>
+    <h3>Add to Category Config Registry (CRUD UI)</h3>
+</div>
+<div class="file-path">Models/Artigo/CategoryConfigRegistry.cs</div>
+<p>Find the <code>RegisterAllConfigs()</code> method and add your configuration.</p>
+
+<div class="callout info">
+    <strong>Why this file?</strong> This registry controls the Category Management UI (CRUD pages at <code>/artigo/categorias</code>).
+    It also drives auto-registration of entity types in <code>BaseContext.OnModelCreating</code>, so you do NOT need to add a DbSet property.
+</div>
+
+<div class="tab-group">
+    <button class="tab active" onclick="switchTab(event, 's3-flat')">Flat Category</button>
+    <button class="tab" onclick="switchTab(event, 's3-hier')">Hierarchical Category</button>
+</div>
+
+<div id="s3-flat" class="tab-content active">
+    <p>Add in the &ldquo;Simple categories&rdquo; section (after line 100):</p>
+    <pre><code><span class="fn">Register</span>(<span class="kw">new</span> <span class="tp">SimpleCategoryConfig</span>(
+    <span class="prop">displayName</span>: <span class="str">"TipoArtigo"</span>,
+    <span class="prop">entityType</span>: <span class="kw">typeof</span>(<span class="tp">ArticleType</span>),
+    <span class="prop">codeProperty</span>: <span class="str">"Code"</span>,
+    <span class="prop">descriptionProperty</span>: <span class="str">"Description"</span>,
+    <span class="prop">columns</span>: <span class="kw">new</span> <span class="tp">List</span>&lt;<span class="tp">ColumnConfig</span>&gt;
+    {
+        <span class="kw">new</span>() { <span class="prop">PropertyName</span> = <span class="str">"Code"</span>, <span class="prop">DisplayName</span> = <span class="str">"Codigo"</span>, <span class="prop">IsRequired</span> = <span class="kw">true</span> },
+        <span class="kw">new</span>() { <span class="prop">PropertyName</span> = <span class="str">"Description"</span>, <span class="prop">DisplayName</span> = <span class="str">"Descricao"</span>, <span class="prop">IsRequired</span> = <span class="kw">true</span> },
+        <span class="kw">new</span>() { <span class="prop">PropertyName</span> = <span class="str">"DescriptionEN"</span>, <span class="prop">DisplayName</span> = <span class="str">"Descricao (EN)"</span> }
+    },
+    <span class="prop">supportsMultiLanguage</span>: <span class="kw">true</span>));</code><span class="lang-label">C#</span></pre>
+</div>
+
+<div id="s3-hier" class="tab-content">
+    <p>Add in the &ldquo;Hierarchical categories&rdquo; section (after line 20):</p>
+    <pre><code><span class="cm">// ParentExample -&gt; ChildExample</span>
+<span class="kw">var</span> childExampleConfig = <span class="kw">new</span> <span class="tp">ChildCategoryConfig</span>(
+    <span class="prop">displayName</span>: <span class="str">"ChildExample"</span>,
+    <span class="prop">entityType</span>: <span class="kw">typeof</span>(<span class="tp">ChildExample</span>),
+    <span class="prop">codeProperty</span>: <span class="str">"Code"</span>,
+    <span class="prop">descriptionProperty</span>: <span class="str">"Description"</span>,
+    <span class="prop">parentKeyProperty</span>: <span class="str">"ParentExampleCode"</span>,
+    <span class="prop">supportsMultiLanguage</span>: <span class="kw">true</span>);
+
+<span class="fn">Register</span>(<span class="kw">new</span> <span class="tp">HierarchicalCategoryConfig</span>(
+    <span class="prop">displayName</span>: <span class="str">"ParentExample"</span>,
+    <span class="prop">entityType</span>: <span class="kw">typeof</span>(<span class="tp">ParentExample</span>),
+    <span class="prop">codeProperty</span>: <span class="str">"Code"</span>,
+    <span class="prop">descriptionProperty</span>: <span class="str">"Description"</span>,
+    <span class="prop">childConfig</span>: childExampleConfig,
+    <span class="prop">supportsMultiLanguage</span>: <span class="kw">true</span>));
+
+<span class="fn">Register</span>(childExampleConfig);</code><span class="lang-label">C#</span></pre>
+
+    <div class="callout warning">
+        <strong>Note:</strong> The <code>displayName</code> must match the key used in <code>DefaultMasterDataProvider.cs</code>!
+    </div>
+</div>
+
+<hr>
+
+<!-- STEP 4 -->
+<div class="step-header">
+    <span class="step-badge">4</span>
+    <h3>Add Property to Article Entity</h3>
+</div>
+<div class="file-path">Models/Artigo/Entities/Article.cs</div>
+<p>Add a property for the category code (around line 64, after existing codes):</p>
+
+<pre><code><span class="kw">#region</span> Category Codes
+
+<span class="cm">// ... existing properties ...</span>
+
+<span class="cm">/// &lt;summary&gt;</span>
+<span class="cm">/// Article type code (PA, PI, MP).</span>
+<span class="cm">/// &lt;/summary&gt;</span>
+<span class="kw">public</span> <span class="tp">string</span>? <span class="prop">ArticleTypeCode</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+
+<span class="kw">#endregion</span></code><span class="lang-label">C#</span></pre>
+
+<div class="callout danger">
+    <strong>CRITICAL:</strong> The property name MUST exactly match <code>ProductPropertyName</code> from Step 2!
+</div>
+
+<hr>
+
+<!-- STEP 5 -->
+<div class="step-header">
+    <span class="step-badge">5</span>
+    <h3>Create Database Migration</h3>
+</div>
+
+<p>Run this command in the terminal:</p>
+
+<pre><code>dotnet ef migrations add AddArticleType</code><span class="lang-label">bash</span></pre>
+
+<p>This creates a new migration file in the <code>Migrations/</code> folder.</p>
+
+<p><strong>Open the generated file</strong> and verify it contains:</p>
+
+<h4>1. Table creation for the new category:</h4>
+<pre><code>migrationBuilder.<span class="fn">CreateTable</span>(
+    <span class="prop">name</span>: <span class="str">"ArticleTypes"</span>,
+    <span class="prop">columns</span>: table =&gt; <span class="kw">new</span>
+    {
+        <span class="prop">Id</span> = table.<span class="fn">Column</span>&lt;<span class="tp">int</span>&gt;(<span class="prop">nullable</span>: <span class="kw">false</span>)
+            .<span class="fn">Annotation</span>(<span class="str">"SqlServer:Identity"</span>, <span class="str">"1, 1"</span>),
+        <span class="prop">Code</span> = table.<span class="fn">Column</span>&lt;<span class="tp">string</span>&gt;(<span class="prop">nullable</span>: <span class="kw">false</span>),
+        <span class="prop">Description</span> = table.<span class="fn">Column</span>&lt;<span class="tp">string</span>&gt;(<span class="prop">nullable</span>: <span class="kw">false</span>),
+        <span class="prop">DescriptionEN</span> = table.<span class="fn">Column</span>&lt;<span class="tp">string</span>&gt;(<span class="prop">nullable</span>: <span class="kw">true</span>),
+        <span class="prop">DescriptionFR</span> = table.<span class="fn">Column</span>&lt;<span class="tp">string</span>&gt;(<span class="prop">nullable</span>: <span class="kw">true</span>),
+        <span class="prop">IsActive</span> = table.<span class="fn">Column</span>&lt;<span class="tp">bool</span>&gt;(<span class="prop">nullable</span>: <span class="kw">false</span>, <span class="prop">defaultValue</span>: <span class="kw">true</span>)
+    },
+    <span class="prop">constraints</span>: table =&gt;
+    {
+        table.<span class="fn">PrimaryKey</span>(<span class="str">"PK_ArticleTypes"</span>, x =&gt; x.<span class="prop">Id</span>);
+    });</code><span class="lang-label">C#</span></pre>
+
+<h4>2. Column addition to Articles table:</h4>
+<pre><code>migrationBuilder.<span class="fn">AddColumn</span>&lt;<span class="tp">string</span>&gt;(
+    <span class="prop">name</span>: <span class="str">"ArticleTypeCode"</span>,
+    <span class="prop">table</span>: <span class="str">"Articles"</span>,
+    <span class="prop">nullable</span>: <span class="kw">true</span>);</code><span class="lang-label">C#</span></pre>
+
+<p><strong>Apply the migration:</strong></p>
+<pre><code>dotnet ef database update</code><span class="lang-label">bash</span></pre>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2>Verification Checklist</h2>
+
+<p>After completing all steps, verify:</p>
+
+<ul class="checklist">
+    <li>Entity class exists in <code>Categories.cs</code> (Step 1)</li>
+    <li>Config exists in <code>DefaultMasterDataProvider.cs</code> (Step 2)</li>
+    <li>Config exists in <code>CategoryConfigRegistry.cs</code> (Step 3)</li>
+    <li>Property exists in <code>Article.cs</code> (Step 4)</li>
+    <li>Migration was applied successfully (Step 5)</li>
+    <li><code>ProductPropertyName</code> exactly matches Article property name</li>
+    <li><code>displayName</code> is the same in both registry files</li>
+    <li>DisplayOrder doesn't conflict with existing categories</li>
+</ul>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2>Testing Your New Category</h2>
+
+<ol>
+    <li><strong>Start the application</strong></li>
+    <li><strong>Navigate to Category Management:</strong>
+        <ul>
+            <li>Go to: <code>/artigo/categorias</code></li>
+            <li>Your new category should appear in the list</li>
+        </ul>
+    </li>
+    <li><strong>Add Test Data:</strong>
+        <ul>
+            <li>Click on your category</li>
+            <li>Add a few test entries (e.g., PA, PI, MP for ArticleType)</li>
+        </ul>
+    </li>
+    <li><strong>Test in Article Wizard:</strong>
+        <ul>
+            <li>Create or edit a template to include your category</li>
+            <li>Use the wizard to generate articles</li>
+            <li>Verify your category appears in field selection</li>
+        </ul>
+    </li>
+    <li><strong>Verify Persistence:</strong>
+        <ul>
+            <li>Generate and save articles</li>
+            <li>Check the database to confirm the code is saved</li>
+        </ul>
+    </li>
+</ol>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2>Files That Work AUTOMATICALLY</h2>
+
+<p>These files require <strong>NO changes</strong> &mdash; they discover new categories through configuration:</p>
+
+<table>
+    <thead>
+        <tr><th>File</th><th>Why It Works Automatically</th></tr>
+    </thead>
+    <tbody>
+        <tr><td><code>CategoryListManager.cs</code></td><td>Loads categories dynamically via reflection</td></tr>
+        <tr><td><code>CategoryService.cs</code></td><td>Uses generic EF Core calls (<code>context.Add</code>, <code>context.FindAsync</code>, <code>Set&lt;T&gt;()</code>)</td></tr>
+        <tr><td><code>BaseContext.OnModelCreating</code></td><td>Auto-registers entity types from <code>CategoryConfigRegistry</code></td></tr>
+        <tr><td><code>GenericCategoryManager.razor</code></td><td>Renders any category from config</td></tr>
+        <tr><td><code>ArticleGenerationService.cs</code></td><td>Uses registry for field mapping</td></tr>
+        <tr><td><code>Step1_TemplateFieldSelection.razor</code></td><td>Iterates registry configs</td></tr>
+        <tr><td><code>ArticlePersistenceService.cs</code></td><td>Uses <code>GetProductPropertyName()</code> from registry</td></tr>
+    </tbody>
+</table>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2>OPTIONAL: Article Grid Filtering/Sorting</h2>
+
+<p>If you want to filter/sort articles by your new category in grid views, you'll need to update:</p>
+
+<div class="file-path">Services/Artigo/ArticleService.cs</div>
+
+<p>Add to the <code>ApplyFilter</code> method (around line 179):</p>
+<pre><code><span class="str">"articletypecode"</span> <span class="kw">or</span> <span class="str">"tipoartigo"</span> =&gt; query.<span class="fn">Where</span>(a =&gt; a.<span class="prop">ArticleTypeCode</span> == filterValue),</code><span class="lang-label">C#</span></pre>
+
+<p>Add to the <code>ApplySorting</code> method (around line 213):</p>
+<pre><code><span class="str">"articletypecode"</span> <span class="kw">or</span> <span class="str">"tipoartigo"</span> =&gt; descending
+    ? query.<span class="fn">OrderByDescending</span>(a =&gt; a.<span class="prop">ArticleTypeCode</span>)
+    : query.<span class="fn">OrderBy</span>(a =&gt; a.<span class="prop">ArticleTypeCode</span>),</code><span class="lang-label">C#</span></pre>
+
+<div class="callout info">
+    <strong>Note:</strong> This is optional. The category will work in the wizard and category management without this change.
+    This is only needed for article list filtering/sorting.
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2>OPTIONAL: Add DbSet for Typed Access</h2>
+
+<p>If another service needs direct typed access to your category (e.g., <code>context.MyCategories.Where(...)</code>),
+you can optionally add a DbSet property to <code>BaseContext.cs</code>:</p>
+
+<pre><code><span class="kw">public virtual</span> <span class="tp">DbSet</span>&lt;<span class="tp">ArticleType</span>&gt; <span class="prop">ArticleTypes</span> { <span class="kw">get</span>; <span class="kw">set</span>; }</code><span class="lang-label">C#</span></pre>
+
+<div class="callout info">
+    <strong>Note:</strong> This is NOT required for the category to work. <code>CategoryService</code> and the wizard work without it.
+    Only add this if you need typed queries from other services.
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2>Common Mistakes</h2>
+
+<table>
+    <thead>
+        <tr><th>Mistake</th><th>Symptom</th><th>Fix</th></tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>ProductPropertyName doesn't match Article property</td>
+            <td>Articles save but category code is null</td>
+            <td>Ensure exact match in spelling and casing</td>
+        </tr>
+        <tr>
+            <td>Wrong ParentKeyProperty for child</td>
+            <td>Child filtering doesn't work</td>
+            <td>Must match the FK property name exactly</td>
+        </tr>
+        <tr>
+            <td>DisplayOrder conflicts</td>
+            <td>Categories appear in wrong order</td>
+            <td>Use unique DisplayOrder values</td>
+        </tr>
+        <tr>
+            <td>Forgot migration</td>
+            <td>Table doesn't exist in database</td>
+            <td>Run <code>dotnet ef migrations add</code> and <code>update</code></td>
+        </tr>
+        <tr>
+            <td>displayName mismatch between registries</td>
+            <td>Category works in wizard but not CRUD (or vice-versa)</td>
+            <td>Use the same displayName in both files</td>
+        </tr>
+    </tbody>
+</table>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2>Complete Example: Adding ArticleType (PA/PI/MP)</h2>
+
+<h3>1. Categories.cs</h3>
+<pre><code><span class="kw">public class</span> <span class="tp">ArticleType</span> : <span class="tp">CategoryBase</span> { }</code><span class="lang-label">C#</span></pre>
+
+<h3>2. DefaultMasterDataProvider.cs</h3>
+<pre><code>[<span class="str">"TipoArtigo"</span>] = <span class="kw">new</span> <span class="tp">MasterDataConfig</span>
+{
+    <span class="prop">FieldName</span> = <span class="str">"TipoArtigo"</span>,
+    <span class="prop">EntityType</span> = <span class="kw">typeof</span>(<span class="tp">ArticleType</span>),
+    <span class="prop">CodeProperty</span> = <span class="str">"Code"</span>,
+    <span class="prop">DescriptionProperty</span> = <span class="str">"Description"</span>,
+    <span class="prop">ListPropertyName</span> = <span class="str">"articleTypeList"</span>,
+    <span class="prop">ProductPropertyName</span> = <span class="str">"ArticleTypeCode"</span>,
+    <span class="prop">DisplayOrder</span> = <span class="num">11</span>,
+    <span class="prop">HasDescriptionEN</span> = <span class="kw">true</span>
+},</code><span class="lang-label">C#</span></pre>
+
+<h3>3. CategoryConfigRegistry.cs</h3>
+<pre><code><span class="fn">Register</span>(<span class="kw">new</span> <span class="tp">SimpleCategoryConfig</span>(
+    <span class="prop">displayName</span>: <span class="str">"TipoArtigo"</span>,
+    <span class="prop">entityType</span>: <span class="kw">typeof</span>(<span class="tp">ArticleType</span>),
+    <span class="prop">codeProperty</span>: <span class="str">"Code"</span>,
+    <span class="prop">descriptionProperty</span>: <span class="str">"Description"</span>,
+    <span class="prop">columns</span>: <span class="kw">new</span> <span class="tp">List</span>&lt;<span class="tp">ColumnConfig</span>&gt;
+    {
+        <span class="kw">new</span>() { <span class="prop">PropertyName</span> = <span class="str">"Code"</span>, <span class="prop">DisplayName</span> = <span class="str">"Codigo"</span>, <span class="prop">IsRequired</span> = <span class="kw">true</span> },
+        <span class="kw">new</span>() { <span class="prop">PropertyName</span> = <span class="str">"Description"</span>, <span class="prop">DisplayName</span> = <span class="str">"Descricao"</span>, <span class="prop">IsRequired</span> = <span class="kw">true</span> },
+        <span class="kw">new</span>() { <span class="prop">PropertyName</span> = <span class="str">"DescriptionEN"</span>, <span class="prop">DisplayName</span> = <span class="str">"Descricao (EN)"</span> }
+    },
+    <span class="prop">supportsMultiLanguage</span>: <span class="kw">true</span>));</code><span class="lang-label">C#</span></pre>
+
+<h3>4. Article.cs</h3>
+<pre><code><span class="kw">public</span> <span class="tp">string</span>? <span class="prop">ArticleTypeCode</span> { <span class="kw">get</span>; <span class="kw">set</span>; }</code><span class="lang-label">C#</span></pre>
+
+<h3>5. Migration Command</h3>
+<pre><code>dotnet ef migrations add AddArticleType
+dotnet ef database update</code><span class="lang-label">bash</span></pre>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2>Need Help?</h2>
+
+<p>If something doesn't work:</p>
+<ol>
+    <li><strong>Check the browser console</strong> for JavaScript errors</li>
+    <li><strong>Check the terminal</strong> for .NET exceptions</li>
+    <li><strong>Verify all names match exactly</strong> (case-sensitive!)</li>
+    <li><strong>Ensure migration was applied</strong> (<code>dotnet ef database update</code>)</li>
+</ol>
+
+<hr>
+
+<div class="footer">
+    <p>This tutorial covers the complete category system as of February 2026.<br>
+    If the architecture changes, this document should be updated.</p>
+    <p>Furnor &mdash; Metallic Furniture Manufacturing</p>
+</div>
+
+<script>
+function switchTab(event, tabId) {
+    const group = event.target.closest('.tab-group') || event.target.parentElement;
+    const parent = group.parentElement;
+
+    // Deactivate all tabs in group
+    group.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+
+    // Find the tab-content siblings that follow this tab-group
+    let sibling = group.nextElementSibling;
+    while (sibling && !sibling.classList.contains('tab-group') && sibling.tagName !== 'HR') {
+        if (sibling.classList.contains('tab-content')) {
+            sibling.classList.remove('active');
+            if (sibling.id === tabId) {
+                sibling.classList.add('active');
+            }
+        }
+        sibling = sibling.nextElementSibling;
+    }
+}
+</script>
+
+</body>
+</html>

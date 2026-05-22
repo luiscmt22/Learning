@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>15-Notification-Recipient-Resolver-Pipeline-ForDummies</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 19-For-Dummies</div>
+  <h1>15-Notification-Recipient-Resolver-Pipeline-ForDummies</h1>
+  <div class="meta">Source: <code>Education/ForDummies/15-Notification-Recipient-Resolver-Pipeline-ForDummies.md</code> &middot; <a href="15-Notification-Recipient-Resolver-Pipeline-ForDummies.md">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<h1 id="notification-recipient-resolver-pipeline-for-dummies">Notification Recipient Resolver Pipeline - For Dummies</h1>
+<h2 id="the-problem">The Problem</h2>
+<p>When something happens in the HR system (employee checks in, document expires, birthday), we need to notify the right people. But who are &quot;the right people&quot;?</p>
+<ul>
+<li>The employee&#x27;s manager?</li>
+<li>HR administrators?</li>
+<li>Team leads?</li>
+<li>Department heads?</li>
+</ul>
+<p>And what if we want to add more recipient types later without breaking everything?</p>
+<h2 id="the-solution-a-pipeline-of-finders">The Solution: A Pipeline of &quot;Finders&quot;</h2>
+<p>Think of it like a <strong>relay race</strong> where each runner (resolver) finds some people to notify, then passes the baton to the next runner.</p>
+<div class="diagram-box"><pre>Event Happens (e.g., &quot;João checked in&quot;)
+         │
+         ▼
+┌─────────────────┐
+│ Manager Finder  │ → Finds João&#x27;s boss (Maria)
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ HR Admin Finder │ → Finds all HR admins (Carlos, Ana)
+└────────┬────────┘
+         │
+         ▼
+Final List: [Maria, Carlos, Ana] ← No duplicates!</pre></div>
+<h2 id="real-world-analogy">Real-World Analogy</h2>
+<p>Imagine you&#x27;re planning a surprise party for a coworker. You need to invite:</p>
+<ol>
+<li><strong>First</strong>, their direct boss (they should know)</li>
+<li><strong>Then</strong>, HR (they handle events)</li>
+<li><strong>Maybe later</strong>, their team members</li>
+</ol>
+<p>Each person you ask gives you names. You write them all down, but you cross out duplicates. At the end, you have your guest list.</p>
+<p>That&#x27;s exactly what this system does!</p>
+<h2 id="the-three-pieces">The Three Pieces</h2>
+<h3 id="1-the-context-the-who-and-where">1. The Context (The &quot;Who&quot; and &quot;Where&quot;)</h3>
+<pre><code class="lang-csharp"><span class="cmt">// &quot;We need to find recipients for THIS employee in THIS company&quot;</span>
+<span class="kw">var</span> context = <span class="kw">new</span> <span class="type">NotificationRecipientContext</span>(
+    <span class="type">EmployeeId</span>: <span class="num">42</span>,           <span class="cmt">// João&#x27;s ID</span>
+    <span class="type">CompanyDatabase</span>: <span class="str">&quot;acme&quot;</span>,  <span class="cmt">// Which company</span>
+    <span class="type">ExcludeUserId</span>: <span class="num">10</span>         <span class="cmt">// Don&#x27;t notify João himself</span>
+);</code></pre>
+<h3 id="2-the-finders-resolvers">2. The Finders (Resolvers)</h3>
+<p>Each finder knows how to find ONE type of recipient:</p>
+<pre><code class="lang-csharp"><span class="cmt">// Manager Finder - &quot;I find the employee&#x27;s boss&quot;</span>
+<span class="kw">class</span> <span class="type">ManagerRecipientResolver</span>
+{
+    <span class="kw">int</span> <span class="type">Order</span> =&gt; <span class="num">10</span>;  <span class="cmt">// I go first!</span>
+
+    <span class="cmt">// Returns: [Maria&#x27;s ID]</span>
+}
+
+<span class="cmt">// HR Admin Finder - &quot;I find all HR people&quot;</span>
+<span class="kw">class</span> <span class="type">HRAdminRecipientResolver</span>
+{
+    <span class="kw">int</span> <span class="type">Order</span> =&gt; <span class="num">20</span>;  <span class="cmt">// I go second</span>
+
+    <span class="cmt">// Returns: [Carlos&#x27;s ID, Ana&#x27;s ID]</span>
+}</code></pre>
+<h3 id="3-the-coordinator-service">3. The Coordinator (Service)</h3>
+<p>The coordinator runs all finders in order and combines the results:</p>
+<pre><code class="lang-csharp"><span class="cmt">// &quot;Run all finders, give me everyone who should be notified&quot;</span>
+<span class="kw">var</span> recipients = <span class="kw">await</span> recipientService.<span class="type">GetRecipientsAsync</span>(context);
+<span class="cmt">// Result: [Maria, Carlos, Ana]</span></code></pre>
+<h2 id="why-order-matters">Why Order Matters</h2>
+<p>The <code class="il">Order</code> property determines who runs first:</p>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Order</th>
+<th>Finder</th>
+<th>Why This Order?</th>
+</tr></thead><tbody>
+<tr>
+<td>10</td>
+<td>Manager</td>
+<td>Most important - direct supervisor</td>
+</tr>
+<tr>
+<td>20</td>
+<td>HR Admin</td>
+<td>Administrative oversight</td>
+</tr>
+<tr>
+<td>30+</td>
+<td>(Future)</td>
+<td>Additional people as needed</td>
+</tr>
+</tbody></table></div>
+<p>Lower number = runs earlier. Like priority in a queue.</p>
+<h2 id="adding-new-finders-the-magic-part">Adding New Finders (The Magic Part)</h2>
+<p>Want to also notify team leads? Just add a new finder:</p>
+<pre><code class="lang-csharp"><span class="kw">class</span> <span class="type">TeamLeadRecipientResolver</span>
+{
+    <span class="kw">int</span> <span class="type">Order</span> =&gt; <span class="num">15</span>;  <span class="cmt">// Between Manager (10) and HR (20)</span>
+
+    <span class="cmt">// Find team leads...</span>
+}
+
+<span class="cmt">// Register it</span>
+builder.<span class="type">Services</span>.<span class="type">AddTransient</span>&lt;<span class="type">INotificationRecipientResolver</span>, <span class="type">TeamLeadRecipientResolver</span>&gt;();</code></pre>
+<p><strong>That&#x27;s it!</strong> You didn&#x27;t touch the Manager finder or the HR finder. They don&#x27;t even know Team Lead exists. This is the <strong>Open/Closed Principle</strong> - open for extension, closed for modification.</p>
+<h2 id="before-vs-after">Before vs After</h2>
+<h3 id="before-hardcoded-bad">Before (Hardcoded - Bad)</h3>
+<pre><code class="lang-csharp"><span class="cmt">// Every time you add a recipient type, you modify this method</span>
+<span class="kw">public</span> <span class="type">List</span>&lt;<span class="kw">int</span>&gt; <span class="type">GetRecipients</span>(<span class="kw">int</span> employeeId)
+{
+    <span class="kw">var</span> recipients = <span class="kw">new</span> <span class="type">List</span>&lt;<span class="kw">int</span>&gt;();
+
+    <span class="cmt">// Find manager</span>
+    <span class="kw">var</span> managerId = <span class="type">GetManagerId</span>(employeeId);
+    <span class="kw">if</span> (managerId.<span class="type">HasValue</span>) recipients.<span class="type">Add</span>(managerId.<span class="type">Value</span>);
+
+    <span class="cmt">// Find HR admins</span>
+    <span class="kw">var</span> admins = <span class="type">GetHRAdminIds</span>();
+    recipients.<span class="type">AddRange</span>(admins);
+
+    <span class="cmt">// TODO: Add team leads... (requires modifying this method!)</span>
+    <span class="cmt">// TODO: Add department heads... (more modifications!)</span>
+
+    <span class="kw">return</span> recipients;
+}</code></pre>
+<h3 id="after-pipeline-good">After (Pipeline - Good)</h3>
+<pre><code class="lang-csharp"><span class="cmt">// Never needs to change - just add new resolvers</span>
+<span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="type">IReadOnlyList</span>&lt;<span class="kw">int</span>&gt;&gt; <span class="type">GetRecipientsAsync</span>(<span class="type">NotificationRecipientContext</span> context)
+{
+    <span class="kw">var</span> recipientIds = <span class="kw">new</span> <span class="type">HashSet</span>&lt;<span class="kw">int</span>&gt;();
+
+    <span class="kw">foreach</span> (<span class="kw">var</span> resolver <span class="kw">in</span> _resolvers.<span class="type">OrderBy</span>(r =&gt; r.<span class="type">Order</span>))
+    {
+        <span class="kw">var</span> ids = <span class="kw">await</span> resolver.<span class="type">GetRecipientUserIdsAsync</span>(context);
+        <span class="kw">foreach</span> (<span class="kw">var</span> id <span class="kw">in</span> ids)
+            recipientIds.<span class="type">Add</span>(id);
+    }
+
+    <span class="kw">return</span> recipientIds.<span class="type">ToList</span>();
+}</code></pre>
+<h2 id="where-it-s-used">Where It&#x27;s Used</h2>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Feature</th>
+<th>What Triggers It</th>
+</tr></thead><tbody>
+<tr>
+<td>NotificationSchedulerService</td>
+<td>Daily at 08:00 - birthdays, expiring docs/contracts</td>
+</tr>
+<tr>
+<td>AttendanceNotificationService</td>
+<td>When employee checks in</td>
+</tr>
+<tr>
+<td>LeaveApprovalService</td>
+<td>When leave is requested/approved</td>
+</tr>
+</tbody></table></div>
+<p>All these features use the <strong>same pipeline</strong> to find recipients. One system, many uses.</p>
+<h2 id="summary">Summary</h2>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Concept</th>
+<th>Explanation</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Context</strong></td>
+<td>&quot;Find recipients for this employee&quot;</td>
+</tr>
+<tr>
+<td><strong>Resolver</strong></td>
+<td>One finder that knows how to find one type of recipient</td>
+</tr>
+<tr>
+<td><strong>Order</strong></td>
+<td>Which finder runs first (lower = earlier)</td>
+</tr>
+<tr>
+<td><strong>Service</strong></td>
+<td>Runs all finders, combines results, removes duplicates</td>
+</tr>
+<tr>
+<td><strong>OCP</strong></td>
+<td>Add new finders without changing existing code</td>
+</tr>
+</tbody></table></div>
+<h2 id="file-locations">File Locations</h2>
+<div class="diagram-box"><pre>Services/Notifications/Resolvers/
+├── INotificationRecipientResolver.cs    # The &quot;contract&quot; - what a finder must do
+├── NotificationRecipientService.cs      # The coordinator
+├── ManagerRecipientResolver.cs          # Finder #1: finds managers
+└── HRAdminRecipientResolver.cs          # Finder #2: finds HR admins</pre></div>
+<hr>
+<p><strong>Remember</strong>: Each finder does ONE job. The coordinator combines them. Adding new finders is easy and safe!</p>
+</div>
+</body>
+</html>

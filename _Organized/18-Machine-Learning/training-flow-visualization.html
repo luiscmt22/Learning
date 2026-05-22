@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training Flow: From BetterGame to Neuron</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        h1, h2, h3 { color: #00d9ff; margin-bottom: 15px; }
+        h1 { text-align: center; font-size: 2em; margin-bottom: 30px; }
+        h2 { font-size: 1.5em; border-bottom: 2px solid #334155; padding-bottom: 10px; margin-top: 40px; }
+
+        .container { max-width: 1200px; margin: 0 auto; }
+
+        .highlight { color: #00ffcc; font-weight: bold; }
+        .keyword { color: #f59e0b; font-weight: bold; }
+        .error-color { color: #f87171; }
+        .success-color { color: #4ade80; }
+
+        /* Navigation tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            background: #1a1a2e;
+            border: 2px solid #334155;
+            color: #94a3b8;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        .tab:hover { border-color: #00d9ff; color: #00d9ff; }
+        .tab.active {
+            background: #00d9ff;
+            color: #0f0f1a;
+            border-color: #00d9ff;
+            font-weight: bold;
+        }
+
+        .section { display: none; }
+        .section.active { display: block; }
+
+        /* Level boxes */
+        .level-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .level {
+            background: linear-gradient(135deg, #16213e, #1a1a2e);
+            border-radius: 15px;
+            padding: 25px;
+            border-left: 5px solid;
+            position: relative;
+        }
+
+        .level-1 { border-left-color: #8b5cf6; }
+        .level-2 { border-left-color: #06b6d4; margin-left: 40px; }
+        .level-3 { border-left-color: #4ade80; margin-left: 80px; }
+
+        .level-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .level-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .level-1 .level-badge { background: #8b5cf6; color: white; }
+        .level-2 .level-badge { background: #06b6d4; color: white; }
+        .level-3 .level-badge { background: #4ade80; color: #0f0f1a; }
+
+        .level-title { font-size: 1.3em; color: #fff; }
+        .level-role { color: #94a3b8; font-style: italic; }
+
+        .code-box {
+            background: #0d1117;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.9em;
+            margin: 15px 0;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            border: 1px solid #30363d;
+        }
+
+        .code-comment { color: #8b949e; }
+        .code-keyword { color: #ff7b72; }
+        .code-method { color: #d2a8ff; }
+        .code-string { color: #a5d6ff; }
+        .code-number { color: #79c0ff; }
+
+        /* Animation flow */
+        .flow-diagram {
+            background: #0f172a;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+            overflow-x: auto;
+        }
+
+        .flow-step {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 15px 0;
+            padding: 15px;
+            background: #1a1a2e;
+            border-radius: 10px;
+            opacity: 0.4;
+            transition: all 0.5s;
+        }
+
+        .flow-step.active {
+            opacity: 1;
+            box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
+        }
+
+        .flow-step.complete {
+            opacity: 0.7;
+            border-left: 3px solid #4ade80;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #334155;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .flow-step.active .step-number { background: #00d9ff; color: #0f0f1a; }
+        .flow-step.complete .step-number { background: #4ade80; color: #0f0f1a; }
+
+        .step-content { flex: 1; }
+        .step-title { font-weight: bold; color: #00d9ff; }
+        .step-detail { color: #94a3b8; font-size: 0.9em; margin-top: 5px; }
+        .step-data {
+            background: #0d1117;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.85em;
+            margin-top: 8px;
+            display: inline-block;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: linear-gradient(135deg, #00d9ff, #00b4d8);
+            color: #0f0f1a;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover { transform: scale(1.05); box-shadow: 0 5px 20px rgba(0, 217, 255, 0.4); }
+        button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+        button.secondary { background: #334155; color: #e0e0e0; }
+
+        /* Comparison view */
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        @media (max-width: 900px) {
+            .comparison { grid-template-columns: 1fr; }
+            .level-2 { margin-left: 20px; }
+            .level-3 { margin-left: 40px; }
+        }
+
+        .comparison-box {
+            background: #16213e;
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid #334155;
+        }
+
+        .comparison-box h3 {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #334155;
+        }
+
+        .comparison-box.stochastic { border-color: #f59e0b; }
+        .comparison-box.stochastic h3 { color: #f59e0b; }
+        .comparison-box.batch { border-color: #4ade80; }
+        .comparison-box.batch h3 { color: #4ade80; }
+
+        /* Neuron visualization */
+        .neuron-viz {
+            background: #0f172a;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+        }
+
+        .weight-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 10px 0;
+            padding: 10px;
+            background: #1a1a2e;
+            border-radius: 8px;
+        }
+
+        .weight-label { width: 100px; color: #94a3b8; }
+        .weight-value {
+            font-family: monospace;
+            font-size: 1.1em;
+            font-weight: bold;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .weight-bar {
+            flex: 1;
+            height: 20px;
+            background: #334155;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .weight-fill {
+            height: 100%;
+            transition: width 0.5s, background 0.5s;
+            border-radius: 10px;
+        }
+
+        .weight-change {
+            font-family: monospace;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 0.85em;
+        }
+
+        .weight-change.positive { background: #166534; color: #4ade80; }
+        .weight-change.negative { background: #7f1d1d; color: #f87171; }
+        .weight-change.neutral { background: #334155; color: #94a3b8; }
+
+        /* Info boxes */
+        .info-box {
+            background: linear-gradient(135deg, #1e3a5f, #16213e);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #00d9ff;
+        }
+
+        .info-box.warning { border-left-color: #f59e0b; }
+        .info-box.success { border-left-color: #4ade80; }
+
+        /* Animated arrow */
+        .arrow-down {
+            text-align: center;
+            font-size: 30px;
+            color: #475569;
+            margin: 10px 0;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(5px); }
+        }
+
+        /* Data flow indicator */
+        .data-flow {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 15px;
+            background: #0d1117;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        .data-flow .label { color: #94a3b8; min-width: 100px; }
+        .data-flow .value { color: #00ffcc; }
+        .data-flow .arrow { color: #475569; }
+
+        /* Accumulator visualization */
+        .accumulator {
+            background: #0f172a;
+            border: 2px dashed #8b5cf6;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .accumulator-title {
+            color: #a78bfa;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .accumulator-row {
+            display: flex;
+            gap: 20px;
+            margin: 8px 0;
+            font-family: monospace;
+        }
+
+        .accumulator-label { color: #94a3b8; width: 150px; }
+        .accumulator-value { color: #e0e0e0; }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+            padding: 15px;
+            background: #16213e;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 5px;
+        }
+
+        /* Stack trace styles */
+        .stack-trace {
+            background: #0d1117;
+            border-radius: 10px;
+            padding: 20px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            margin: 20px 0;
+            border: 1px solid #30363d;
+        }
+
+        .stack-frame {
+            border-left: 3px solid #334155;
+            padding: 15px 20px;
+            margin: 5px 0;
+            background: #161b22;
+            border-radius: 0 8px 8px 0;
+            transition: all 0.3s;
+        }
+
+        .stack-frame.active {
+            border-left-color: #00d9ff;
+            background: #1e3a5f;
+            box-shadow: 0 0 15px rgba(0, 217, 255, 0.2);
+        }
+
+        .stack-frame.level-1 { margin-left: 0; }
+        .stack-frame.level-2 { margin-left: 30px; }
+        .stack-frame.level-3 { margin-left: 60px; }
+
+        .stack-frame.level-1.active { border-left-color: #8b5cf6; }
+        .stack-frame.level-2.active { border-left-color: #06b6d4; }
+        .stack-frame.level-3.active { border-left-color: #4ade80; }
+
+        .frame-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .frame-class {
+            color: #79c0ff;
+            font-weight: bold;
+        }
+
+        .frame-method {
+            color: #d2a8ff;
+        }
+
+        .frame-separator { color: #6e7681; }
+
+        .frame-params {
+            background: #0d1117;
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+
+        .param-row {
+            display: flex;
+            gap: 10px;
+            margin: 5px 0;
+        }
+
+        .param-name { color: #ffa657; min-width: 150px; }
+        .param-value { color: #a5d6ff; }
+        .param-type { color: #6e7681; font-size: 0.85em; }
+
+        .frame-action {
+            margin-top: 12px;
+            padding: 10px 15px;
+            background: rgba(0, 217, 255, 0.1);
+            border-radius: 6px;
+            border: 1px dashed #00d9ff;
+        }
+
+        .frame-action.executing { border-color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+        .frame-action.complete { border-color: #4ade80; background: rgba(74, 222, 128, 0.1); }
+
+        .call-indicator {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+
+        .call-indicator.calling { background: #f59e0b; color: #0f0f1a; }
+        .call-indicator.returning { background: #4ade80; color: #0f0f1a; }
+        .call-indicator.current { background: #00d9ff; color: #0f0f1a; }
+
+        .variables-panel {
+            background: #16213e;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid #334155;
+        }
+
+        .variables-title {
+            color: #00d9ff;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .var-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .var-item {
+            background: #0d1117;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #30363d;
+        }
+
+        .var-name { color: #ffa657; font-family: monospace; }
+        .var-value { color: #4ade80; font-family: monospace; margin-top: 5px; }
+        .var-changed { animation: flash 0.5s; }
+
+        @keyframes flash {
+            0%, 100% { background: #0d1117; }
+            50% { background: #1e3a5f; }
+        }
+
+        .timeline {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin: 20px 0;
+            padding: 15px;
+            background: #16213e;
+            border-radius: 10px;
+            overflow-x: auto;
+        }
+
+        .timeline-step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #334155;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9em;
+            flex-shrink: 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .timeline-step:hover { transform: scale(1.1); }
+        .timeline-step.past { background: #166534; color: #4ade80; }
+        .timeline-step.current { background: #00d9ff; color: #0f0f1a; transform: scale(1.2); }
+        .timeline-step.future { background: #334155; color: #64748b; }
+
+        .timeline-connector {
+            width: 20px;
+            height: 3px;
+            background: #334155;
+            flex-shrink: 0;
+        }
+
+        .timeline-connector.past { background: #4ade80; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 Training Flow: From BetterGame to Neuron</h1>
+
+        <div class="tabs">
+            <div class="tab active" onclick="showSection('overview')">1. The Big Picture</div>
+            <div class="tab" onclick="showSection('stochastic')">2. Stochastic Training</div>
+            <div class="tab" onclick="showSection('batch')">3. Batch Training</div>
+            <div class="tab" onclick="showSection('comparison')">4. Side-by-Side</div>
+            <div class="tab" onclick="showSection('neuron')">5. Inside the Neuron</div>
+            <div class="tab" onclick="showSection('stacktrace')">6. Stack Trace 🔍</div>
+        </div>
+
+        <!-- ============ SECTION 1: OVERVIEW ============ -->
+        <div class="section active" id="overview">
+            <h2>The Three Levels of Training</h2>
+
+            <p>Training flows through three levels, like a company hierarchy. Each level has ONE job and doesn't worry about the details of other levels.</p>
+
+            <div class="level-container">
+                <div class="level level-1">
+                    <div class="level-header">
+                        <span class="level-badge">LEVEL 1</span>
+                        <span class="level-title">BetterGame.TrainInitialNetwork()</span>
+                    </div>
+                    <div class="level-role">"The CEO" — Decides WHEN and HOW LONG to train</div>
+
+                    <div class="code-box"><span class="code-keyword">void</span> <span class="code-method">TrainInitialNetwork</span>()
+{
+    <span class="code-keyword">for</span> (int i = 0; error > expectedError; i++)  <span class="code-comment">// Keep going until good enough</span>
+    {
+        <span class="code-keyword">foreach</span> (var animal <span class="code-keyword">in</span> animals)           <span class="code-comment">// For each training example</span>
+        {
+            network.<span class="code-method">Train</span>(animal.features, expected, lr);  <span class="code-comment">// Delegate to Level 2</span>
+        }
+    }
+}</div>
+
+                    <div class="info-box">
+                        <strong>What this level knows:</strong> All animals, the target error, when to stop<br>
+                        <strong>What it DOESN'T know:</strong> How networks work internally, what weights are
+                    </div>
+                </div>
+
+                <div class="arrow-down">⬇️</div>
+
+                <div class="level level-2">
+                    <div class="level-header">
+                        <span class="level-badge">LEVEL 2</span>
+                        <span class="level-title">NeuralNetwork.Train()</span>
+                    </div>
+                    <div class="level-role">"The Manager" — Coordinates ONE training example across all layers</div>
+
+                    <div class="code-box"><span class="code-keyword">void</span> <span class="code-method">Train</span>(double[] inputs, double[] expected, double lr)
+{
+    <span class="code-comment">// 1. Forward pass — get predictions</span>
+    var hiddenOutputs = <span class="code-method">ComputeLayer</span>(inputs, hiddenLayer);
+    var finalOutputs = <span class="code-method">ComputeLayer</span>(hiddenOutputs, outputLayer);
+
+    <span class="code-comment">// 2. Calculate output errors (with sigmoid derivative)</span>
+    var outputErrors = <span class="code-comment">/* expected - actual, scaled */</span>;
+
+    <span class="code-comment">// 3. Backpropagate to get hidden errors</span>
+    var hiddenErrors = <span class="code-comment">/* sum of (outputError × weight) */</span>;
+
+    <span class="code-comment">// 4. Tell each neuron to update (delegate to Level 3)</span>
+    <span class="code-keyword">foreach</span> (neuron <span class="code-keyword">in</span> outputLayer)
+        neuron.<span class="code-method">Train</span>(hiddenOutputs, error, lr);
+    <span class="code-keyword">foreach</span> (neuron <span class="code-keyword">in</span> hiddenLayer)
+        neuron.<span class="code-method">Train</span>(inputs, error, lr);
+}</div>
+
+                    <div class="info-box">
+                        <strong>What this level knows:</strong> Layer structure, how errors flow backward, each neuron's error<br>
+                        <strong>What it DOESN'T know:</strong> The actual weight values inside neurons
+                    </div>
+                </div>
+
+                <div class="arrow-down">⬇️</div>
+
+                <div class="level level-3">
+                    <div class="level-header">
+                        <span class="level-badge">LEVEL 3</span>
+                        <span class="level-title">Neuron.Train()</span>
+                    </div>
+                    <div class="level-role">"The Worker" — Adjusts MY weights based on MY error</div>
+
+                    <div class="code-box"><span class="code-keyword">void</span> <span class="code-method">Train</span>(double[] inputs, double lr, double error)
+{
+    <span class="code-keyword">for</span> (int i = 0; i < Weights.Length; i++)
+    {
+        Weights[i] += lr * error * inputs[i];  <span class="code-comment">// Adjust each weight</span>
+    }
+    Bias += lr * error;  <span class="code-comment">// Adjust bias too</span>
+}</div>
+
+                    <div class="info-box success">
+                        <strong>What this level knows:</strong> My weights, the inputs I received, my error<br>
+                        <strong>What it DOESN'T know:</strong> Other neurons exist, what animal this is, the "big picture"
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>🎯 The Key Insight:</strong> Each level only talks to the level directly below it.
+                BetterGame never touches a Neuron directly. Neurons don't know BetterGame exists.
+                This separation makes the code manageable!
+            </div>
+        </div>
+
+        <!-- ============ SECTION 2: STOCHASTIC ============ -->
+        <div class="section" id="stochastic">
+            <h2>Stochastic Training (Current Method)</h2>
+
+            <p><span class="keyword">Stochastic</span> means "one at a time" — we update weights after EVERY single example.</p>
+
+            <div class="controls">
+                <button onclick="resetStochastic()">Reset</button>
+                <button onclick="stepStochastic()" id="stochasticBtn">Next Step</button>
+            </div>
+
+            <div class="flow-diagram" id="stochasticFlow">
+                <div class="flow-step" data-step="1">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <div class="step-title">BetterGame: Start training on Penguin</div>
+                        <div class="step-detail">Pass penguin's features to the network</div>
+                        <div class="step-data">inputs = [0, 2, 0, 2, 2, 0]</div>
+                    </div>
+                </div>
+
+                <div class="flow-step" data-step="2">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <div class="step-title">Network: Forward pass</div>
+                        <div class="step-detail">Calculate predictions for all outputs</div>
+                        <div class="step-data">outputs = [0.7, 0.2, 0.1, 0.3, 0.1, 0.2, 0.1, 0.1]</div>
+                    </div>
+                </div>
+
+                <div class="flow-step" data-step="3">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <div class="step-title">Network: Calculate errors</div>
+                        <div class="step-detail">expected - actual, scaled by sigmoid derivative</div>
+                        <div class="step-data">outputErrors = [<span class="success-color">+0.06</span>, <span class="error-color">-0.03</span>, <span class="error-color">-0.02</span>, ...]</div>
+                    </div>
+                </div>
+
+                <div class="flow-step" data-step="4">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <div class="step-title">Network: Backpropagate to hidden layer</div>
+                        <div class="step-detail">Calculate hidden neuron errors from output errors × weights</div>
+                        <div class="step-data">hiddenErrors = [+0.02, -0.01, +0.03, -0.02, +0.01, -0.01]</div>
+                    </div>
+                </div>
+
+                <div class="flow-step" data-step="5">
+                    <div class="step-number">5</div>
+                    <div class="step-content">
+                        <div class="step-title">Network → Each Neuron: Train!</div>
+                        <div class="step-detail">Each neuron adjusts its weights IMMEDIATELY</div>
+                        <div class="step-data">neuron.Train(inputs, learningRate=0.1, error=0.06)</div>
+                    </div>
+                </div>
+
+                <div class="flow-step" data-step="6" style="background: linear-gradient(135deg, #1e3a5f, #16213e);">
+                    <div class="step-number">6</div>
+                    <div class="step-content">
+                        <div class="step-title" style="color: #4ade80;">✓ Weights updated for Penguin!</div>
+                        <div class="step-detail">Network is now slightly better at recognizing penguins</div>
+                    </div>
+                </div>
+
+                <div class="flow-step" data-step="7">
+                    <div class="step-number">7</div>
+                    <div class="step-content">
+                        <div class="step-title">BetterGame: Now train on Dog</div>
+                        <div class="step-detail">REPEAT steps 2-6 with dog's features...</div>
+                        <div class="step-data">inputs = [0, 0, 2, 0, 2, 0]</div>
+                    </div>
+                </div>
+
+                <div class="flow-step" data-step="8" style="border: 2px solid #f59e0b;">
+                    <div class="step-number" style="background: #f59e0b;">!</div>
+                    <div class="step-content">
+                        <div class="step-title" style="color: #f59e0b;">⚠️ Problem: Weights adjusted AGAIN</div>
+                        <div class="step-detail">Dog's adjustments might UNDO some of what we learned from Penguin!</div>
+                        <div class="step-detail" style="margin-top: 10px;">This causes the "zigzagging" error you noticed.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-box warning">
+                <strong>The Zigzag Problem:</strong> Each animal pulls the weights in its own direction.
+                Training is like a tug-of-war where we keep switching who's pulling!
+            </div>
+        </div>
+
+        <!-- ============ SECTION 3: BATCH ============ -->
+        <div class="section" id="batch">
+            <h2>Batch Training (New Method)</h2>
+
+            <p><span class="highlight">Batch training</span> accumulates all the "votes" first, then makes ONE averaged adjustment.</p>
+
+            <div class="controls">
+                <button onclick="resetBatch()">Reset</button>
+                <button onclick="stepBatch()" id="batchBtn">Next Step</button>
+            </div>
+
+            <div class="flow-diagram" id="batchFlow">
+                <div class="flow-step" data-step="1">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <div class="step-title">Process Penguin (but DON'T update yet!)</div>
+                        <div class="step-detail">Forward pass → Calculate errors → <strong>Store gradients</strong></div>
+                        <div class="step-data">neuron.AccumulateGradients(inputs, error=+0.06)</div>
+                    </div>
+                </div>
+
+                <div class="flow-step" data-step="2">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <div class="step-title">Inside Neuron: Accumulate (don't apply!)</div>
+                        <div class="step-detail">_weightGradients[i] += error × inputs[i]</div>
+                        <div class="accumulator">
+                            <div class="accumulator-title">📦 Gradient Storage</div>
+                            <div class="accumulator-row">
+                                <span class="accumulator-label">_weightGradients:</span>
+                                <span class="accumulator-value">[<span class="success-color">+0.12</span>, +0.0, +0.0, +0.12, +0.12, +0.0]</span>
+                            </div>
+                            <div class="accumulator-row">
+                                <span class="accumulator-label">_biasGradient:</span>
+                                <span class="accumulator-value"><span class="success-color">+0.06</span></span>
+                            </div>
+                            <div class="accumulator-row">
+                                <span class="accumulator-label">_accumulatedCount:</span>
+                                <span class="accumulator-value">1</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flow-step" data-step="3">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <div class="step-title">Process Dog (still DON'T update!)</div>
+                        <div class="step-detail">Forward pass → Calculate errors → <strong>ADD to gradients</strong></div>
+                        <div class="step-data">neuron.AccumulateGradients(inputs, error=-0.04)</div>
+                    </div>
+                </div>
+
+                <div class="flow-step" data-step="4">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <div class="step-title">Inside Neuron: Accumulate more</div>
+                        <div class="step-detail">Dog's votes are ADDED to Penguin's votes</div>
+                        <div class="accumulator">
+                            <div class="accumulator-title">📦 Gradient Storage (after Dog)</div>
+                            <div class="accumulator-row">
+                                <span class="accumulator-label">_weightGradients:</span>
+                                <span class="accumulator-value">[+0.12, +0.0, <span class="error-color">-0.08</span>, +0.12, +0.04, +0.0]</span>
+                            </div>
+                            <div class="accumulator-row">
+                                <span class="accumulator-label">_biasGradient:</span>
+                                <span class="accumulator-value">+0.02 <span style="color: #94a3b8;">(0.06 + -0.04)</span></span>
+                            </div>
+                            <div class="accumulator-row">
+                                <span class="accumulator-label">_accumulatedCount:</span>
+                                <span class="accumulator-value">2</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flow-step" data-step="5">
+                    <div class="step-number">5</div>
+                    <div class="step-content">
+                        <div class="step-title">Process all other animals...</div>
+                        <div class="step-detail">Eagle, Shark, Cat, Whale, Bat, Salmon — all accumulate</div>
+                        <div class="step-data">_accumulatedCount = 8</div>
+                    </div>
+                </div>
+
+                <div class="flow-step" data-step="6" style="border: 2px solid #4ade80;">
+                    <div class="step-number" style="background: #4ade80; color: #0f0f1a;">✓</div>
+                    <div class="step-content">
+                        <div class="step-title" style="color: #4ade80;">NOW Apply Averaged Gradients!</div>
+                        <div class="step-detail">neuron.ApplyGradients(learningRate)</div>
+                        <div class="code-box" style="margin-top: 15px;">Weights[i] += learningRate × (_weightGradients[i] / _accumulatedCount)
+                                             ↑                    ↑
+                                         <span class="success-color">smooth step</span>          <span class="highlight">average of ALL votes</span></div>
+                    </div>
+                </div>
+
+                <div class="flow-step" data-step="7" style="background: linear-gradient(135deg, #1e3a5f, #16213e);">
+                    <div class="step-number">🎯</div>
+                    <div class="step-content">
+                        <div class="step-title" style="color: #4ade80;">One Balanced Update!</div>
+                        <div class="step-detail">Weights move in a direction that helps ALL animals, not just the last one.</div>
+                        <div class="step-detail" style="color: #00ffcc; margin-top: 10px;">No more zigzagging! ✨</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-box success">
+                <strong>The Key Difference:</strong><br>
+                <strong>Stochastic:</strong> Update → Update → Update → Update (zigzag!)<br>
+                <strong>Batch:</strong> Accumulate → Accumulate → Accumulate → Average & Update ONCE (smooth!)
+            </div>
+        </div>
+
+        <!-- ============ SECTION 4: COMPARISON ============ -->
+        <div class="section" id="comparison">
+            <h2>Side-by-Side: Weight #3 Over Time</h2>
+
+            <p>Watch how the same weight evolves differently with each method:</p>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #8b5cf6;"></div>
+                    <span>Penguin wants: +0.10</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #06b6d4;"></div>
+                    <span>Dog wants: -0.08</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f59e0b;"></div>
+                    <span>Eagle wants: +0.05</span>
+                </div>
+            </div>
+
+            <div class="comparison">
+                <div class="comparison-box stochastic">
+                    <h3>⚡ Stochastic (One-at-a-Time)</h3>
+
+                    <div class="neuron-viz">
+                        <div id="stochasticWeightViz">
+                            <div class="weight-row">
+                                <div class="weight-label">Initial:</div>
+                                <div class="weight-value" id="sw0">0.50</div>
+                                <div class="weight-bar"><div class="weight-fill" style="width: 50%; background: #64748b;"></div></div>
+                                <div class="weight-change neutral">—</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="controls">
+                        <button onclick="resetComparison()">Reset</button>
+                        <button onclick="stepStochasticComparison()" id="stochasticCompBtn">Train Next Animal</button>
+                    </div>
+
+                    <div id="stochasticLog" style="margin-top: 20px; font-family: monospace; font-size: 0.9em;">
+                        <div style="color: #94a3b8;">Click "Train Next Animal" to see the weight change...</div>
+                    </div>
+                </div>
+
+                <div class="comparison-box batch">
+                    <h3>📦 Batch (Accumulated)</h3>
+
+                    <div class="neuron-viz">
+                        <div id="batchWeightViz">
+                            <div class="weight-row">
+                                <div class="weight-label">Initial:</div>
+                                <div class="weight-value" id="bw0">0.50</div>
+                                <div class="weight-bar"><div class="weight-fill" style="width: 50%; background: #64748b;"></div></div>
+                                <div class="weight-change neutral">—</div>
+                            </div>
+                        </div>
+
+                        <div class="accumulator" id="batchAccumulator">
+                            <div class="accumulator-title">📦 Accumulated Gradient</div>
+                            <div class="accumulator-row">
+                                <span class="accumulator-label">Sum:</span>
+                                <span class="accumulator-value" id="batchSum">0.00</span>
+                            </div>
+                            <div class="accumulator-row">
+                                <span class="accumulator-label">Count:</span>
+                                <span class="accumulator-value" id="batchCount">0</span>
+                            </div>
+                            <div class="accumulator-row">
+                                <span class="accumulator-label">Average:</span>
+                                <span class="accumulator-value" id="batchAvg">—</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="controls">
+                        <button onclick="stepBatchComparison()" id="batchCompBtn">Accumulate Next</button>
+                        <button onclick="applyBatchComparison()" id="applyBatchBtn" disabled>Apply Average</button>
+                    </div>
+
+                    <div id="batchLog" style="margin-top: 20px; font-family: monospace; font-size: 0.9em;">
+                        <div style="color: #94a3b8;">Accumulate all animals, then apply once...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-box" id="comparisonInsight" style="display: none;">
+                <strong>📊 Result:</strong><br>
+                <span id="comparisonResult"></span>
+            </div>
+        </div>
+
+        <!-- ============ SECTION 5: INSIDE NEURON ============ -->
+        <div class="section" id="neuron">
+            <h2>Inside the Neuron: Method by Method</h2>
+
+            <p>Let's zoom in on exactly what happens inside a single neuron.</p>
+
+            <div class="level-container">
+                <div class="level level-3">
+                    <div class="level-header">
+                        <span class="level-badge">METHOD 1</span>
+                        <span class="level-title">Train() — Immediate Update</span>
+                    </div>
+
+                    <div class="code-box"><span class="code-keyword">public void</span> <span class="code-method">Train</span>(double[] inputs, double learningRate, double error)
+{
+    <span class="code-comment">// For each weight...</span>
+    <span class="code-keyword">for</span> (int i = 0; i < Weights.Length; i++)
+    {
+        <span class="code-comment">// Immediately change the weight!</span>
+        Weights[i] += learningRate * error * inputs[i];
+        <span class="code-comment">//              ↑ how fast    ↑ how wrong   ↑ how relevant</span>
+    }
+    Bias += learningRate * error;
+}</div>
+
+                    <div class="data-flow">
+                        <span class="label">Example:</span>
+                        <span class="value">Weight[2] = 0.50</span>
+                        <span class="arrow">→</span>
+                        <span class="value">0.50 + (0.1 × 0.06 × 2) = 0.512</span>
+                        <span class="arrow">→</span>
+                        <span class="value success-color">Weight[2] = 0.512 ✓</span>
+                    </div>
+                </div>
+
+                <div class="level level-3" style="border-left-color: #8b5cf6;">
+                    <div class="level-header">
+                        <span class="level-badge" style="background: #8b5cf6;">METHOD 2</span>
+                        <span class="level-title">AccumulateGradients() — Store for Later</span>
+                    </div>
+
+                    <div class="code-box"><span class="code-keyword">public void</span> <span class="code-method">AccumulateGradients</span>(double[] inputs, double error)
+{
+    <span class="code-comment">// For each weight...</span>
+    <span class="code-keyword">for</span> (int i = 0; i < Weights.Length; i++)
+    {
+        <span class="code-comment">// DON'T change the weight! Store the gradient instead.</span>
+        _weightGradients[i] += error * inputs[i];
+        <span class="code-comment">//                       ↑ Note: no learningRate here!</span>
+    }
+    _biasGradient += error;
+    _accumulatedCount++;  <span class="code-comment">// Remember we saw one more example</span>
+}</div>
+
+                    <div class="data-flow">
+                        <span class="label">Example:</span>
+                        <span class="value">_weightGradients[2] = 0.0</span>
+                        <span class="arrow">→</span>
+                        <span class="value">0.0 + (0.06 × 2) = 0.12</span>
+                        <span class="arrow">→</span>
+                        <span class="value" style="color: #a78bfa;">Stored! (not applied)</span>
+                    </div>
+
+                    <div class="info-box" style="margin-top: 15px; border-left-color: #8b5cf6;">
+                        <strong>Why no learningRate?</strong><br>
+                        We're just collecting "votes" right now. The learningRate is applied later when we actually update, so we can adjust how big a step to take.
+                    </div>
+                </div>
+
+                <div class="level level-3" style="border-left-color: #f59e0b;">
+                    <div class="level-header">
+                        <span class="level-badge" style="background: #f59e0b; color: #0f0f1a;">METHOD 3</span>
+                        <span class="level-title">ApplyGradients() — Average & Update</span>
+                    </div>
+
+                    <div class="code-box"><span class="code-keyword">public void</span> <span class="code-method">ApplyGradients</span>(double learningRate)
+{
+    <span class="code-keyword">if</span> (_accumulatedCount == 0) <span class="code-keyword">return</span>;  <span class="code-comment">// Nothing to apply</span>
+
+    <span class="code-keyword">for</span> (int i = 0; i < Weights.Length; i++)
+    {
+        <span class="code-comment">// NOW we update, using the AVERAGE gradient</span>
+        Weights[i] += learningRate * (_weightGradients[i] / _accumulatedCount);
+        <span class="code-comment">//                               ↑ sum of votes    ↑ number of voters</span>
+        _weightGradients[i] = 0;  <span class="code-comment">// Reset for next batch</span>
+    }
+
+    Bias += learningRate * (_biasGradient / _accumulatedCount);
+    _biasGradient = 0;
+    _accumulatedCount = 0;
+}</div>
+
+                    <div class="data-flow">
+                        <span class="label">After 3 animals:</span>
+                        <span class="value">_weightGradients[2] = 0.21</span>
+                        <span class="arrow">→</span>
+                        <span class="value">Average = 0.21 / 3 = 0.07</span>
+                    </div>
+                    <div class="data-flow">
+                        <span class="label">Apply:</span>
+                        <span class="value">Weight[2] = 0.50</span>
+                        <span class="arrow">→</span>
+                        <span class="value">0.50 + (0.1 × 0.07) = 0.507</span>
+                        <span class="arrow">→</span>
+                        <span class="value success-color">Weight[2] = 0.507 ✓</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-box success">
+                <strong>🎯 Summary:</strong><br><br>
+                <table style="width: 100%; text-align: left;">
+                    <tr>
+                        <th style="padding: 8px; color: #00d9ff;">Method</th>
+                        <th style="padding: 8px; color: #00d9ff;">When to Use</th>
+                        <th style="padding: 8px; color: #00d9ff;">What it Does</th>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px;"><code>Train()</code></td>
+                        <td style="padding: 8px;">Stochastic (one-at-a-time)</td>
+                        <td style="padding: 8px;">Calculate & apply immediately</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px;"><code>AccumulateGradients()</code></td>
+                        <td style="padding: 8px;">Batch training, step 1</td>
+                        <td style="padding: 8px;">Store the vote, don't apply</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px;"><code>ApplyGradients()</code></td>
+                        <td style="padding: 8px;">Batch training, step 2</td>
+                        <td style="padding: 8px;">Average votes & apply once</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============ SECTION 6: STACK TRACE ============ -->
+        <div class="section" id="stacktrace">
+            <h2>🔍 Live Stack Trace: Training One Animal</h2>
+
+            <p>Step through the code like a debugger. Watch the <span class="highlight">call stack</span> grow and shrink as methods call each other.</p>
+
+            <div class="controls">
+                <button onclick="resetStackTrace()">Reset</button>
+                <button onclick="stepStackTrace()" id="stackBtn">Step Into (F11)</button>
+                <button onclick="runToEnd()" class="secondary">Run to End</button>
+            </div>
+
+            <div class="timeline" id="timeline">
+                <!-- Generated by JS -->
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <h3 style="margin-bottom: 15px;">📚 Call Stack</h3>
+                    <div class="stack-trace" id="callStack">
+                        <div style="color: #6e7681; text-align: center; padding: 40px;">
+                            Click "Step Into" to begin...
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 style="margin-bottom: 15px;">📊 Variables</h3>
+                    <div class="variables-panel" id="variablesPanel">
+                        <div class="var-grid" id="varGrid">
+                            <div class="var-item">
+                                <div class="var-name">animal</div>
+                                <div class="var-value" id="var-animal">—</div>
+                            </div>
+                            <div class="var-item">
+                                <div class="var-name">inputs[]</div>
+                                <div class="var-value" id="var-inputs">—</div>
+                            </div>
+                            <div class="var-item">
+                                <div class="var-name">hiddenOutputs[]</div>
+                                <div class="var-value" id="var-hidden">—</div>
+                            </div>
+                            <div class="var-item">
+                                <div class="var-name">finalOutputs[]</div>
+                                <div class="var-value" id="var-outputs">—</div>
+                            </div>
+                            <div class="var-item">
+                                <div class="var-name">outputErrors[]</div>
+                                <div class="var-value" id="var-outErrors">—</div>
+                            </div>
+                            <div class="var-item">
+                                <div class="var-name">hiddenErrors[]</div>
+                                <div class="var-value" id="var-hidErrors">—</div>
+                            </div>
+                            <div class="var-item">
+                                <div class="var-name">Weight[0] (sample)</div>
+                                <div class="var-value" id="var-weight">0.500</div>
+                            </div>
+                            <div class="var-item">
+                                <div class="var-name">learningRate</div>
+                                <div class="var-value" id="var-lr">0.1</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 style="margin: 20px 0 15px 0;">💬 What's Happening</h3>
+                    <div class="info-box" id="explanation">
+                        <p>Ready to trace through training on <strong>Penguin</strong>.</p>
+                        <p style="margin-top: 10px; color: #94a3b8;">Each step shows exactly which method calls which, with real values.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="fullStackView" style="margin-top: 30px;">
+                <h3>📜 Full Trace Log</h3>
+                <div class="code-box" id="traceLog" style="max-height: 300px; overflow-y: auto;">
+<span style="color: #6e7681;">// Trace log will appear here as you step through...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab navigation
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Stochastic flow animation
+        let stochasticStep = 0;
+        function resetStochastic() {
+            stochasticStep = 0;
+            document.querySelectorAll('#stochasticFlow .flow-step').forEach(s => {
+                s.classList.remove('active', 'complete');
+            });
+            document.getElementById('stochasticBtn').disabled = false;
+        }
+
+        function stepStochastic() {
+            const steps = document.querySelectorAll('#stochasticFlow .flow-step');
+            if (stochasticStep > 0) {
+                steps[stochasticStep - 1].classList.remove('active');
+                steps[stochasticStep - 1].classList.add('complete');
+            }
+            if (stochasticStep < steps.length) {
+                steps[stochasticStep].classList.add('active');
+                stochasticStep++;
+            }
+            if (stochasticStep >= steps.length) {
+                document.getElementById('stochasticBtn').disabled = true;
+            }
+        }
+
+        // Batch flow animation
+        let batchStep = 0;
+        function resetBatch() {
+            batchStep = 0;
+            document.querySelectorAll('#batchFlow .flow-step').forEach(s => {
+                s.classList.remove('active', 'complete');
+            });
+            document.getElementById('batchBtn').disabled = false;
+        }
+
+        function stepBatch() {
+            const steps = document.querySelectorAll('#batchFlow .flow-step');
+            if (batchStep > 0) {
+                steps[batchStep - 1].classList.remove('active');
+                steps[batchStep - 1].classList.add('complete');
+            }
+            if (batchStep < steps.length) {
+                steps[batchStep].classList.add('active');
+                batchStep++;
+            }
+            if (batchStep >= steps.length) {
+                document.getElementById('batchBtn').disabled = true;
+            }
+        }
+
+        // Comparison visualization
+        const animals = [
+            { name: 'Penguin', gradient: 0.10, color: '#8b5cf6' },
+            { name: 'Dog', gradient: -0.08, color: '#06b6d4' },
+            { name: 'Eagle', gradient: 0.05, color: '#f59e0b' }
+        ];
+
+        let stochasticWeight = 0.50;
+        let stochasticIdx = 0;
+
+        let batchWeight = 0.50;
+        let batchSum = 0;
+        let batchIdx = 0;
+
+        const learningRate = 0.1;
+
+        function resetComparison() {
+            stochasticWeight = 0.50;
+            stochasticIdx = 0;
+            batchWeight = 0.50;
+            batchSum = 0;
+            batchIdx = 0;
+
+            document.getElementById('sw0').textContent = '0.50';
+            document.getElementById('bw0').textContent = '0.50';
+            document.getElementById('batchSum').textContent = '0.00';
+            document.getElementById('batchCount').textContent = '0';
+            document.getElementById('batchAvg').textContent = '—';
+
+            document.getElementById('stochasticLog').innerHTML = '<div style="color: #94a3b8;">Click "Train Next Animal" to see the weight change...</div>';
+            document.getElementById('batchLog').innerHTML = '<div style="color: #94a3b8;">Accumulate all animals, then apply once...</div>';
+
+            document.getElementById('stochasticCompBtn').disabled = false;
+            document.getElementById('batchCompBtn').disabled = false;
+            document.getElementById('applyBatchBtn').disabled = true;
+            document.getElementById('comparisonInsight').style.display = 'none';
+        }
+
+        function stepStochasticComparison() {
+            if (stochasticIdx >= animals.length) return;
+
+            const animal = animals[stochasticIdx];
+            const oldWeight = stochasticWeight;
+            const change = learningRate * animal.gradient;
+            stochasticWeight += change;
+
+            const changeStr = change >= 0 ? `+${change.toFixed(3)}` : change.toFixed(3);
+            const changeClass = change >= 0 ? 'positive' : 'negative';
+
+            document.getElementById('stochasticLog').innerHTML += `
+                <div style="margin: 8px 0; padding: 8px; background: #1a1a2e; border-radius: 5px; border-left: 3px solid ${animal.color};">
+                    <strong style="color: ${animal.color};">${animal.name}:</strong>
+                    ${oldWeight.toFixed(3)} → <span class="${changeClass === 'positive' ? 'success-color' : 'error-color'}">${stochasticWeight.toFixed(3)}</span>
+                    <span class="weight-change ${changeClass}" style="margin-left: 10px;">${changeStr}</span>
+                </div>
+            `;
+
+            document.getElementById('sw0').textContent = stochasticWeight.toFixed(3);
+
+            stochasticIdx++;
+            if (stochasticIdx >= animals.length) {
+                document.getElementById('stochasticCompBtn').disabled = true;
+                checkComparison();
+            }
+        }
+
+        function stepBatchComparison() {
+            if (batchIdx >= animals.length) return;
+
+            const animal = animals[batchIdx];
+            batchSum += animal.gradient;
+
+            document.getElementById('batchLog').innerHTML += `
+                <div style="margin: 8px 0; padding: 8px; background: #1a1a2e; border-radius: 5px; border-left: 3px solid ${animal.color};">
+                    <strong style="color: ${animal.color};">${animal.name}:</strong>
+                    gradient = ${animal.gradient >= 0 ? '+' : ''}${animal.gradient.toFixed(2)}
+                    → Sum = ${batchSum >= 0 ? '+' : ''}${batchSum.toFixed(2)}
+                </div>
+            `;
+
+            document.getElementById('batchSum').textContent = (batchSum >= 0 ? '+' : '') + batchSum.toFixed(2);
+            document.getElementById('batchCount').textContent = batchIdx + 1;
+            document.getElementById('batchAvg').textContent = (batchSum / (batchIdx + 1)).toFixed(3);
+
+            batchIdx++;
+            if (batchIdx >= animals.length) {
+                document.getElementById('batchCompBtn').disabled = true;
+                document.getElementById('applyBatchBtn').disabled = false;
+            }
+        }
+
+        function applyBatchComparison() {
+            const avg = batchSum / batchIdx;
+            const change = learningRate * avg;
+            const oldWeight = batchWeight;
+            batchWeight += change;
+
+            document.getElementById('batchLog').innerHTML += `
+                <div style="margin: 15px 0; padding: 12px; background: #166534; border-radius: 5px; border: 1px solid #4ade80;">
+                    <strong style="color: #4ade80;">✓ Applied Average:</strong><br>
+                    ${oldWeight.toFixed(3)} + (0.1 × ${avg.toFixed(3)}) = <strong>${batchWeight.toFixed(3)}</strong>
+                </div>
+            `;
+
+            document.getElementById('bw0').textContent = batchWeight.toFixed(3);
+            document.getElementById('applyBatchBtn').disabled = true;
+            checkComparison();
+        }
+
+        function checkComparison() {
+            if (stochasticIdx >= animals.length && document.getElementById('applyBatchBtn').disabled) {
+                const diff = Math.abs(stochasticWeight - batchWeight);
+                document.getElementById('comparisonInsight').style.display = 'block';
+                document.getElementById('comparisonResult').innerHTML = `
+                    <strong>Stochastic final:</strong> ${stochasticWeight.toFixed(3)} (zigzagged through ${animals.length} updates)<br>
+                    <strong>Batch final:</strong> ${batchWeight.toFixed(3)} (one smooth update)<br><br>
+                    Both end up in a similar place, but <span class="highlight">batch got there in ONE step instead of ${animals.length}</span>!<br>
+                    The difference (${diff.toFixed(4)}) comes from the order of operations in stochastic training.
+                `;
+            }
+        }
+
+        // ========== STACK TRACE VISUALIZATION ==========
+
+        const traceSteps = [
+            {
+                stack: ['BetterGame.TrainInitialNetwork()'],
+                level: [1],
+                action: 'foreach (var animal in animals) — Starting with Penguin',
+                vars: { animal: '🐧 Penguin', inputs: '—', hidden: '—', outputs: '—', outErrors: '—', hidErrors: '—', weight: '0.500' },
+                explanation: '<strong>Level 1: BetterGame</strong><br>The CEO starts the training loop. We\'re iterating through all animals, starting with Penguin.',
+                log: '<span class="code-keyword">foreach</span> (var animal in animals)  <span class="code-comment">// animal = Penguin</span>'
+            },
+            {
+                stack: ['BetterGame.TrainInitialNetwork()', 'network.Train(inputs, expected, 0.1)'],
+                level: [1, 2],
+                action: 'Calling network.Train() with Penguin\'s data',
+                vars: { animal: '🐧 Penguin', inputs: '[0, 2, 0, 2, 2, 0]', hidden: '—', outputs: '—', outErrors: '—', hidErrors: '—', weight: '0.500' },
+                explanation: '<strong>Level 1 → Level 2</strong><br>BetterGame passes Penguin\'s feature vector to the Network. The Network will handle all the internal complexity.',
+                log: 'network.<span class="code-method">Train</span>([0,2,0,2,2,0], [1,0,0,0,0,0,0,0], <span class="code-number">0.1</span>)'
+            },
+            {
+                stack: ['BetterGame.TrainInitialNetwork()', 'NeuralNetwork.Train()', 'ComputeSingleLayer(inputs, hiddenLayer)'],
+                level: [1, 2, 2],
+                action: 'Forward pass Step 1: Computing hidden layer outputs',
+                vars: { animal: '🐧 Penguin', inputs: '[0, 2, 0, 2, 2, 0]', hidden: '<em>computing...</em>', outputs: '—', outErrors: '—', hidErrors: '—', weight: '0.500' },
+                explanation: '<strong>Level 2: NeuralNetwork</strong><br>First, we do a forward pass. Each hidden neuron receives ALL 6 inputs and produces one output.',
+                log: '<span class="code-keyword">var</span> hiddenOutputs = <span class="code-method">ComputeSingleLayer</span>(inputs, hiddenLayer);'
+            },
+            {
+                stack: ['BetterGame.TrainInitialNetwork()', 'NeuralNetwork.Train()'],
+                level: [1, 2],
+                action: 'Hidden layer computed! 6 neurons → 6 outputs',
+                vars: { animal: '🐧 Penguin', inputs: '[0, 2, 0, 2, 2, 0]', hidden: '[0.73, 0.45, 0.82, 0.31, 0.67, 0.55]', outputs: '—', outErrors: '—', hidErrors: '—', weight: '0.500' },
+                explanation: '<strong>Level 2: NeuralNetwork</strong><br>Each hidden neuron did: sigmoid(Σ(input × weight) + bias). These 6 numbers become inputs to the output layer.',
+                log: '<span class="code-comment">// hiddenOutputs = [0.73, 0.45, 0.82, 0.31, 0.67, 0.55]</span>'
+            },
+            {
+                stack: ['BetterGame.TrainInitialNetwork()', 'NeuralNetwork.Train()', 'ComputeSingleLayer(hiddenOutputs, outputLayer)'],
+                level: [1, 2, 2],
+                action: 'Forward pass Step 2: Computing output layer',
+                vars: { animal: '🐧 Penguin', inputs: '[0, 2, 0, 2, 2, 0]', hidden: '[0.73, 0.45, 0.82, 0.31, 0.67, 0.55]', outputs: '<em>computing...</em>', outErrors: '—', hidErrors: '—', weight: '0.500' },
+                explanation: '<strong>Level 2: NeuralNetwork</strong><br>Now the output layer. Each output neuron receives the 6 hidden outputs and produces a prediction for one animal.',
+                log: '<span class="code-keyword">var</span> finalOutputs = <span class="code-method">ComputeSingleLayer</span>(hiddenOutputs, outputLayer);'
+            },
+            {
+                stack: ['BetterGame.TrainInitialNetwork()', 'NeuralNetwork.Train()'],
+                level: [1, 2],
+                action: 'Output layer computed! 8 neurons → 8 predictions',
+                vars: { animal: '🐧 Penguin', inputs: '[0, 2, 0, 2, 2, 0]', hidden: '[0.73, 0.45, ...]', outputs: '[0.71, 0.23, 0.15, 0.34, 0.12, 0.28, 0.19, 0.22]', outErrors: '—', hidErrors: '—', weight: '0.500' },
+                explanation: '<strong>Level 2: NeuralNetwork</strong><br>We have predictions! Penguin neuron (index 0) output 0.71. We wanted 1.0, so there\'s an error.',
+                log: '<span class="code-comment">// finalOutputs = [0.71, 0.23, 0.15, 0.34, 0.12, 0.28, 0.19, 0.22]</span>'
+            },
+            {
+                stack: ['BetterGame.TrainInitialNetwork()', 'NeuralNetwork.Train()'],
+                level: [1, 2],
+                action: 'Calculating output errors (with sigmoid derivative)',
+                vars: { animal: '🐧 Penguin', inputs: '[0, 2, 0, 2, 2, 0]', hidden: '[0.73, 0.45, ...]', outputs: '[0.71, 0.23, ...]', outErrors: '[<span class="success-color">+0.060</span>, <span class="error-color">-0.041</span>, ...]', hidErrors: '—', weight: '0.500' },
+                explanation: '<strong>Level 2: NeuralNetwork</strong><br>Error = (expected - actual) × derivative.<br>Penguin: (1 - 0.71) × 0.71 × 0.29 = <span class="success-color">+0.060</span><br>Dog: (0 - 0.23) × 0.23 × 0.77 = <span class="error-color">-0.041</span>',
+                log: 'outputErrors[i] = (expected[i] - output) * output * (1 - output);'
+            },
+            {
+                stack: ['BetterGame.TrainInitialNetwork()', 'NeuralNetwork.Train()'],
+                level: [1, 2],
+                action: 'Backpropagating to hidden layer',
+                vars: { animal: '🐧 Penguin', inputs: '[0, 2, 0, 2, 2, 0]', hidden: '[0.73, 0.45, ...]', outputs: '[0.71, 0.23, ...]', outErrors: '[+0.060, -0.041, ...]', hidErrors: '[<span class="success-color">+0.012</span>, <span class="error-color">-0.008</span>, ...]', weight: '0.500' },
+                explanation: '<strong>Level 2: NeuralNetwork</strong><br>For each hidden neuron: sum up (outputError × weight) from ALL output neurons, then multiply by sigmoid derivative.<br>This is the "blame distribution" step!',
+                log: 'hiddenErrors[h] = sum * hiddenOutputs[h] * (1 - hiddenOutputs[h]);'
+            },
+            {
+                stack: ['BetterGame.TrainInitialNetwork()', 'NeuralNetwork.Train()', 'outputLayer[0].Train(hiddenOutputs, 0.060, 0.1)'],
+                level: [1, 2, 3],
+                action: 'Training output neuron #0 (Penguin detector)',
+                vars: { animal: '🐧 Penguin', inputs: '[0, 2, 0, 2, 2, 0]', hidden: '[0.73, 0.45, ...]', outputs: '[0.71, 0.23, ...]', outErrors: '[+0.060, -0.041, ...]', hidErrors: '[+0.012, -0.008, ...]', weight: '0.500' },
+                explanation: '<strong>Level 2 → Level 3</strong><br>Now we call Train() on each neuron. The Penguin output neuron gets its error (+0.060) and the hidden layer outputs as inputs.',
+                log: 'outputLayer[0].<span class="code-method">Train</span>(hiddenOutputs, <span class="code-number">0.060</span>, <span class="code-number">0.1</span>);'
+            },
+            {
+                stack: ['BetterGame.TrainInitialNetwork()', 'NeuralNetwork.Train()', 'Neuron.Train()'],
+                level: [1, 2, 3],
+                action: 'Neuron adjusts its weights!',
+                vars: { animal: '🐧 Penguin', inputs: '[0, 2, 0, 2, 2, 0]', hidden: '[0.73, 0.45, ...]', outputs: '[0.71, 0.23, ...]', outErrors: '[+0.060, -0.041, ...]', hidErrors: '[+0.012, -0.008, ...]', weight: '<span class="success-color">0.504</span>' },
+                explanation: '<strong>Level 3: Neuron</strong><br>The neuron does: Weight[0] += 0.1 × 0.060 × 0.73 = +0.004<br>It doesn\'t know about Penguins — it just adjusts its numbers based on the error it received.',
+                log: 'Weights[i] += learningRate * error * inputs[i];  <span class="code-comment">// 0.500 + 0.004 = 0.504</span>'
+            },
+            {
+                stack: ['BetterGame.TrainInitialNetwork()', 'NeuralNetwork.Train()'],
+                level: [1, 2],
+                action: 'Output neuron #0 trained! Moving to #1, #2, ... #7',
+                vars: { animal: '🐧 Penguin', inputs: '[0, 2, 0, 2, 2, 0]', hidden: '[0.73, 0.45, ...]', outputs: '[0.71, 0.23, ...]', outErrors: '[+0.060, -0.041, ...]', hidErrors: '[+0.012, -0.008, ...]', weight: '0.504' },
+                explanation: '<strong>Level 2: NeuralNetwork</strong><br>The Train() call returned. We loop and call Train() on all 8 output neurons, then all 6 hidden neurons.',
+                log: '<span class="code-comment">// Repeat for outputLayer[1], [2], ... [7]</span>\n<span class="code-comment">// Then hiddenLayer[0], [1], ... [5]</span>'
+            },
+            {
+                stack: ['BetterGame.TrainInitialNetwork()'],
+                level: [1],
+                action: 'network.Train() returned! Penguin complete.',
+                vars: { animal: '🐧 Penguin ✓', inputs: '[0, 2, 0, 2, 2, 0]', hidden: '[0.73, 0.45, ...]', outputs: '[0.71, 0.23, ...]', outErrors: '[+0.060, ...]', hidErrors: '[+0.012, ...]', weight: '0.504' },
+                explanation: '<strong>Level 1: BetterGame</strong><br>The network has been trained on Penguin! All weights are slightly adjusted. Now the loop continues to the next animal (Dog).',
+                log: '<span class="code-comment">// network.Train() returned — Penguin complete!</span>\n<span class="code-comment">// Next iteration: animal = Dog</span>'
+            },
+            {
+                stack: ['BetterGame.TrainInitialNetwork()'],
+                level: [1],
+                action: '✓ One training iteration complete!',
+                vars: { animal: 'All animals trained', inputs: '—', hidden: '—', outputs: '—', outErrors: '—', hidErrors: '—', weight: '~0.51' },
+                explanation: '<strong>Level 1: BetterGame</strong><br>After training on all 8 animals, one "epoch" is complete. The loop checks if error < expectedError. If not, we do another epoch!',
+                log: '<span class="code-comment">// End of foreach — all animals trained once</span>\n<span class="code-comment">// Check: error > expectedError? If yes, loop again!</span>'
+            }
+        ];
+
+        let stackStep = 0;
+
+        function buildTimeline() {
+            const timeline = document.getElementById('timeline');
+            timeline.innerHTML = '';
+            for (let i = 0; i < traceSteps.length; i++) {
+                if (i > 0) {
+                    const connector = document.createElement('div');
+                    connector.className = 'timeline-connector' + (i < stackStep ? ' past' : '');
+                    timeline.appendChild(connector);
+                }
+                const step = document.createElement('div');
+                step.className = 'timeline-step ' + (i < stackStep ? 'past' : (i === stackStep ? 'current' : 'future'));
+                step.textContent = i + 1;
+                step.onclick = () => goToStep(i);
+                timeline.appendChild(step);
+            }
+        }
+
+        function goToStep(step) {
+            stackStep = step;
+            renderStackTrace();
+        }
+
+        function resetStackTrace() {
+            stackStep = 0;
+            document.getElementById('traceLog').innerHTML = '<span style="color: #6e7681;">// Trace log will appear here as you step through...</span>';
+            document.getElementById('callStack').innerHTML = '<div style="color: #6e7681; text-align: center; padding: 40px;">Click "Step Into" to begin...</div>';
+            document.getElementById('explanation').innerHTML = '<p>Ready to trace through training on <strong>Penguin</strong>.</p><p style="margin-top: 10px; color: #94a3b8;">Each step shows exactly which method calls which, with real values.</p>';
+            document.getElementById('var-animal').textContent = '—';
+            document.getElementById('var-inputs').textContent = '—';
+            document.getElementById('var-hidden').textContent = '—';
+            document.getElementById('var-outputs').textContent = '—';
+            document.getElementById('var-outErrors').textContent = '—';
+            document.getElementById('var-hidErrors').textContent = '—';
+            document.getElementById('var-weight').textContent = '0.500';
+            document.getElementById('stackBtn').disabled = false;
+            buildTimeline();
+        }
+
+        function stepStackTrace() {
+            if (stackStep >= traceSteps.length) return;
+            stackStep++;
+            renderStackTrace();
+        }
+
+        function runToEnd() {
+            stackStep = traceSteps.length;
+            renderStackTrace();
+        }
+
+        function renderStackTrace() {
+            if (stackStep === 0) {
+                resetStackTrace();
+                return;
+            }
+
+            const current = traceSteps[stackStep - 1];
+
+            // Build call stack visualization
+            let stackHtml = '';
+            for (let i = 0; i < current.stack.length; i++) {
+                const isLast = i === current.stack.length - 1;
+                const levelClass = 'level-' + current.level[i];
+                const activeClass = isLast ? ' active' : '';
+
+                const parts = current.stack[i].split('.');
+                const className = parts.length > 1 ? parts[0] : '';
+                const methodName = parts.length > 1 ? parts.slice(1).join('.') : parts[0];
+
+                stackHtml += `
+                    <div class="stack-frame ${levelClass}${activeClass}">
+                        <div class="frame-header">
+                            ${className ? `<span class="frame-class">${className}</span><span class="frame-separator">.</span>` : ''}
+                            <span class="frame-method">${methodName}</span>
+                            ${isLast ? '<span class="call-indicator current">◄ current</span>' : ''}
+                        </div>
+                        ${isLast ? `<div class="frame-action executing">${current.action}</div>` : ''}
+                    </div>
+                `;
+            }
+            document.getElementById('callStack').innerHTML = stackHtml;
+
+            // Update variables
+            document.getElementById('var-animal').innerHTML = current.vars.animal;
+            document.getElementById('var-inputs').innerHTML = current.vars.inputs;
+            document.getElementById('var-hidden').innerHTML = current.vars.hidden;
+            document.getElementById('var-outputs').innerHTML = current.vars.outputs;
+            document.getElementById('var-outErrors').innerHTML = current.vars.outErrors;
+            document.getElementById('var-hidErrors').innerHTML = current.vars.hidErrors;
+            document.getElementById('var-weight').innerHTML = current.vars.weight;
+
+            // Update explanation
+            document.getElementById('explanation').innerHTML = current.explanation;
+
+            // Update trace log
+            const logDiv = document.getElementById('traceLog');
+            logDiv.innerHTML += '\n<span style="color: #6e7681;">Step ' + stackStep + ':</span> ' + current.log;
+            logDiv.scrollTop = logDiv.scrollHeight;
+
+            // Update timeline
+            buildTimeline();
+
+            // Disable button if at end
+            if (stackStep >= traceSteps.length) {
+                document.getElementById('stackBtn').disabled = true;
+            }
+        }
+
+        // Initialize
+        resetStochastic();
+        resetBatch();
+        resetStackTrace();
+    </script>
+</body>
+</html>

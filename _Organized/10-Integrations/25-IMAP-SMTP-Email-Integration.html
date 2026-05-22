@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IMAP & SMTP — Email Integration with MailKit</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --surface: #16213e;
+            --surface2: #0f3460;
+            --accent: #e94560;
+            --accent2: #533483;
+            --text: #eee;
+            --text-muted: #aab;
+            --success: #4ecca3;
+            --warning: #f0a500;
+            --code-bg: #0d1117;
+            --border: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+
+        h2 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin: 2.5rem 0 1rem 0;
+            padding-bottom: 0.3rem;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        h3 {
+            color: var(--success);
+            font-size: 1.2rem;
+            margin: 1.8rem 0 0.8rem 0;
+        }
+
+        h4 {
+            color: var(--warning);
+            font-size: 1.05rem;
+            margin: 1.2rem 0 0.5rem 0;
+        }
+
+        p { margin-bottom: 1rem; }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.2rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        code {
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9rem;
+        }
+
+        p code, li code {
+            background: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .keyword { color: #569cd6; }
+        .type { color: #4ec9b0; }
+        .string { color: #ce9178; }
+        .comment { color: #6a9955; }
+        .method { color: #dcdcaa; }
+        .number { color: #b5cea8; }
+        .param { color: #9cdcfe; }
+
+        .callout {
+            border-radius: 8px;
+            padding: 1.2rem 1.5rem;
+            margin: 1.5rem 0;
+            border-left: 4px solid;
+        }
+
+        .callout-metaphor {
+            background: rgba(83, 52, 131, 0.2);
+            border-color: var(--accent2);
+        }
+        .callout-metaphor::before {
+            content: "Metaphor";
+            display: block;
+            font-weight: bold;
+            color: var(--accent2);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-english {
+            background: rgba(78, 204, 163, 0.1);
+            border-color: var(--success);
+        }
+        .callout-english::before {
+            content: "Read It Like English";
+            display: block;
+            font-weight: bold;
+            color: var(--success);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-warning {
+            background: rgba(240, 165, 0, 0.1);
+            border-color: var(--warning);
+        }
+        .callout-warning::before {
+            content: "Common Confusion";
+            display: block;
+            font-weight: bold;
+            color: var(--warning);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-rule {
+            background: rgba(233, 69, 96, 0.1);
+            border-color: var(--accent);
+        }
+        .callout-rule::before {
+            content: "Golden Rule";
+            display: block;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        ul, ol {
+            margin: 0.5rem 0 1rem 1.5rem;
+        }
+
+        li { margin-bottom: 0.3rem; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 0.6rem 1rem;
+            text-align: left;
+        }
+
+        th {
+            background: var(--surface2);
+            color: var(--success);
+        }
+
+        td { background: var(--surface); }
+
+        .diagram {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'Cascadia Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            white-space: pre;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>IMAP & SMTP — Email Integration with MailKit</h1>
+    <p class="subtitle">Tutorial #25 — How GivingCare reads, sends, and auto-processes email</p>
+
+    <!-- ============================================================ -->
+    <!-- 1. IMAP vs SMTP -->
+    <!-- ============================================================ -->
+
+    <h2>1. IMAP vs SMTP — The Two Protocols</h2>
+
+    <p>
+        Email integration requires two completely separate protocols. They do opposite jobs and run on different ports:
+    </p>
+
+    <table>
+        <tr>
+            <th>Protocol</th>
+            <th>Direction</th>
+            <th>Port</th>
+            <th>Security</th>
+            <th>Purpose</th>
+        </tr>
+        <tr>
+            <td><code>IMAP</code></td>
+            <td>Pull (read)</td>
+            <td><code>993</code></td>
+            <td>Implicit SSL</td>
+            <td>Read emails from the mail server inbox</td>
+        </tr>
+        <tr>
+            <td><code>SMTP</code></td>
+            <td>Push (send)</td>
+            <td><code>587</code></td>
+            <td>STARTTLS</td>
+            <td>Send emails through the mail server</td>
+        </tr>
+    </table>
+
+    <p>
+        Both require authentication (username + password). GivingCare uses
+        <strong>MailKit</strong>, the most popular open-source .NET library for email, to handle both protocols.
+    </p>
+
+    <div class="callout callout-metaphor">
+        IMAP is like checking your physical mailbox — you go there, see what's new, and bring it inside.
+        SMTP is like dropping a letter into the outgoing slot at the post office.
+    </div>
+
+    <div class="diagram">
+         Mail Server (Gmail, Outlook, etc.)
+              ┌─────────────────────────────────┐
+              │                                 │
+              │   IMAP (port 993, SSL)          │  &larr; EmailReaderService reads inbox
+              │                                 │
+              ├─────────────────────────────────┤
+              │                                 │
+              │   SMTP (port 587, STARTTLS)     │  &larr; EmailSenderService sends replies
+              │                                 │
+              └────────────────┬────────────────┘
+                               │
+                               │  MailKit (.NET)
+                               │
+                      ┌────────┴────────┐
+                      │  GivingCare App │
+                      └─────────────────┘</div>
+
+    <div class="callout callout-warning">
+        IMAP port 993 uses <strong>implicit SSL</strong> — the connection starts encrypted from the very first byte.
+        SMTP port 587 uses <strong>STARTTLS</strong> — the connection starts unencrypted, then upgrades to TLS mid-handshake.
+        Don't mix them up or your connections will hang indefinitely without any error message.
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- 2. The Data Model -->
+    <!-- ============================================================ -->
+
+    <h2>2. The Data Model — EmailAccount</h2>
+
+    <p>
+        Each email account stores both IMAP (reading) and SMTP (sending) configuration in a single entity.
+        This means one row in the database gives us everything we need to both read <em>and</em> send from that address.
+    </p>
+
+    <pre><code><span class="keyword">public class</span> <span class="type">EmailAccount</span> : <span class="type">BaseAuditableEntity</span>
+{
+    <span class="keyword">public</span> <span class="type">string</span> <span class="param">Name</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public</span> <span class="type">string</span> <span class="param">EmailAddress</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+
+    <span class="comment">// IMAP — reading emails</span>
+    <span class="keyword">public</span> <span class="type">string</span>? <span class="param">ImapServer</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public</span> <span class="type">int</span> <span class="param">ImapPort</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; } = <span class="number">993</span>;
+    <span class="keyword">public</span> <span class="type">bool</span> <span class="param">ImapUseSsl</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; } = <span class="keyword">true</span>;
+
+    <span class="comment">// SMTP — sending emails</span>
+    <span class="keyword">public</span> <span class="type">string</span>? <span class="param">SmtpServer</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public</span> <span class="type">int</span> <span class="param">SmtpPort</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; } = <span class="number">587</span>;
+    <span class="keyword">public</span> <span class="type">bool</span> <span class="param">SmtpUseSsl</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; } = <span class="keyword">true</span>;
+
+    <span class="comment">// Authentication (shared by both protocols)</span>
+    <span class="keyword">public</span> <span class="type">string</span>? <span class="param">Username</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public</span> <span class="type">string</span>? <span class="param">Password</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+
+    <span class="comment">// Monitoring configuration</span>
+    <span class="keyword">public</span> <span class="type">bool</span> <span class="param">MonitoringEnabled</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public</span> <span class="type">int</span> <span class="param">MonitoringIntervalMinutes</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; } = <span class="number">5</span>;
+    <span class="keyword">public</span> <span class="type">bool</span> <span class="param">AutoCreateLeads</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+
+    <span class="comment">// Sync tracking</span>
+    <span class="keyword">public</span> <span class="type">DateTime</span>? <span class="param">LastSyncedAt</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public</span> <span class="type">string</span>? <span class="param">LastSyncError</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+}</code></pre>
+
+    <h3>Key design decisions</h3>
+    <ul>
+        <li><strong>Defaults are sensible</strong> — <code>ImapPort = 993</code> and <code>SmtpPort = 587</code> mean most users never need to touch these fields.</li>
+        <li><strong>MonitoringIntervalMinutes</strong> controls how often we poll. Default 5 minutes is a good balance between freshness and server load.</li>
+        <li><strong>AutoCreateLeads</strong> is per-account — some mailboxes are for sales (auto-create), others are for support (don't auto-create).</li>
+        <li><strong>LastSyncedAt / LastSyncError</strong> give the UI something to display so admins can see if syncing is healthy.</li>
+    </ul>
+
+    <!-- ============================================================ -->
+    <!-- 3. Reading Email — IMAP -->
+    <!-- ============================================================ -->
+
+    <h2>3. Reading Email — EmailReaderService (IMAP)</h2>
+
+    <p>
+        The <code>EmailReaderService</code> uses MailKit's <code>ImapClient</code> to connect to the mail server,
+        search for unread messages, and pull their metadata and body content.
+    </p>
+
+    <pre><code><span class="keyword">using var</span> <span class="param">client</span> = <span class="keyword">new</span> <span class="type">ImapClient</span>();
+
+<span class="comment">// 1. Connect to the IMAP server (SSL on port 993)</span>
+<span class="keyword">await</span> <span class="param">client</span>.<span class="method">ConnectAsync</span>(<span class="param">account</span>.ImapServer, <span class="param">account</span>.ImapPort, <span class="param">account</span>.ImapUseSsl);
+
+<span class="comment">// 2. Authenticate with credentials</span>
+<span class="keyword">await</span> <span class="param">client</span>.<span class="method">AuthenticateAsync</span>(<span class="param">account</span>.Username, <span class="param">account</span>.Password);
+
+<span class="comment">// 3. Open the inbox in read-only mode (we won't modify flags)</span>
+<span class="keyword">var</span> <span class="param">inbox</span> = <span class="param">client</span>.Inbox;
+<span class="keyword">await</span> <span class="param">inbox</span>.<span class="method">OpenAsync</span>(<span class="type">FolderAccess</span>.ReadOnly);
+
+<span class="comment">// 4. Search for unread emails only</span>
+<span class="keyword">var</span> <span class="param">uids</span> = <span class="keyword">await</span> <span class="param">inbox</span>.<span class="method">SearchAsync</span>(<span class="type">SearchQuery</span>.NotSeen);
+
+<span class="comment">// 5. Fetch the last 50 (envelope = subject, from, to, date, messageId)</span>
+<span class="keyword">var</span> <span class="param">items</span> = <span class="keyword">await</span> <span class="param">inbox</span>.<span class="method">FetchAsync</span>(
+    <span class="param">uids</span>.<span class="method">TakeLast</span>(<span class="number">50</span>),
+    <span class="type">MessageSummaryItems</span>.Envelope | <span class="type">MessageSummaryItems</span>.UniqueId
+);</code></pre>
+
+    <div class="callout callout-english">
+        <code>SearchQuery.NotSeen</code> reads as: "Show me all emails in this inbox that I haven't read yet."
+    </div>
+
+    <h3>What each step does</h3>
+
+    <table>
+        <tr>
+            <th>Step</th>
+            <th>What happens</th>
+            <th>Why</th>
+        </tr>
+        <tr>
+            <td><code>ConnectAsync</code></td>
+            <td>Opens TCP connection with SSL/TLS</td>
+            <td>Encrypted channel to the mail server</td>
+        </tr>
+        <tr>
+            <td><code>AuthenticateAsync</code></td>
+            <td>Sends username + password</td>
+            <td>Mail server verifies identity</td>
+        </tr>
+        <tr>
+            <td><code>OpenAsync(ReadOnly)</code></td>
+            <td>Opens INBOX folder without write access</td>
+            <td>We only want to read, not mark as read or delete</td>
+        </tr>
+        <tr>
+            <td><code>SearchAsync(NotSeen)</code></td>
+            <td>Returns UIDs of unread messages</td>
+            <td>Only process emails we haven't seen before</td>
+        </tr>
+        <tr>
+            <td><code>FetchAsync(...TakeLast(50))</code></td>
+            <td>Downloads metadata for the 50 most recent</td>
+            <td>Prevents pulling thousands of emails on first sync</td>
+        </tr>
+    </table>
+
+    <h3>What we extract from each email</h3>
+    <ul>
+        <li><strong>Subject</strong> — the email subject line</li>
+        <li><strong>From</strong> — sender name and email address</li>
+        <li><strong>To / Cc</strong> — recipients</li>
+        <li><strong>MessageId</strong> — unique identifier assigned by the sending server (critical for deduplication)</li>
+        <li><strong>Body</strong> — both plain text and HTML versions</li>
+        <li><strong>Date</strong> — when the email was sent</li>
+    </ul>
+
+    <!-- ============================================================ -->
+    <!-- 4. Sending Email — SMTP -->
+    <!-- ============================================================ -->
+
+    <h2>4. Sending Email — EmailSenderService (SMTP)</h2>
+
+    <p>
+        The <code>EmailSenderService</code> uses MailKit's <code>SmtpClient</code> to compose and send emails.
+        The pattern is: build a <code>MimeMessage</code>, connect, authenticate, send, disconnect.
+    </p>
+
+    <pre><code><span class="comment">// 1. Build the email message</span>
+<span class="keyword">var</span> <span class="param">message</span> = <span class="keyword">new</span> <span class="type">MimeMessage</span>();
+<span class="param">message</span>.From.<span class="method">Add</span>(<span class="keyword">new</span> <span class="type">MailboxAddress</span>(<span class="param">account</span>.Name, <span class="param">account</span>.EmailAddress));
+<span class="param">message</span>.To.<span class="method">Add</span>(<span class="type">MailboxAddress</span>.<span class="method">Parse</span>(<span class="param">to</span>));
+<span class="param">message</span>.Subject = <span class="param">subject</span>;
+<span class="param">message</span>.Body = <span class="keyword">new</span> <span class="type">TextPart</span>(<span class="string">"html"</span>) { Text = <span class="param">body</span> };
+
+<span class="comment">// 2. Connect to the SMTP server (STARTTLS on port 587)</span>
+<span class="keyword">using var</span> <span class="param">client</span> = <span class="keyword">new</span> <span class="type">SmtpClient</span>();
+<span class="keyword">await</span> <span class="param">client</span>.<span class="method">ConnectAsync</span>(<span class="param">account</span>.SmtpServer, <span class="param">account</span>.SmtpPort, <span class="param">account</span>.SmtpUseSsl);
+
+<span class="comment">// 3. Authenticate</span>
+<span class="keyword">await</span> <span class="param">client</span>.<span class="method">AuthenticateAsync</span>(<span class="param">account</span>.Username, <span class="param">account</span>.Password);
+
+<span class="comment">// 4. Send the email</span>
+<span class="keyword">await</span> <span class="param">client</span>.<span class="method">SendAsync</span>(<span class="param">message</span>);
+
+<span class="comment">// 5. Disconnect cleanly (true = send QUIT command)</span>
+<span class="keyword">await</span> <span class="param">client</span>.<span class="method">DisconnectAsync</span>(<span class="keyword">true</span>);</code></pre>
+
+    <h3>Key details</h3>
+    <ul>
+        <li><code>MailboxAddress.Parse(to)</code> — safely parses an email address string, throwing if it's invalid.</li>
+        <li><code>TextPart("html")</code> — sends the body as HTML. Use <code>"plain"</code> for plain text emails.</li>
+        <li><code>DisconnectAsync(true)</code> — the <code>true</code> parameter means "send the QUIT command to the server before closing." This is polite protocol behavior.</li>
+        <li>The <code>using var</code> ensures the TCP connection is disposed even if an exception occurs.</li>
+    </ul>
+
+    <!-- ============================================================ -->
+    <!-- 5. The Processing Pipeline -->
+    <!-- ============================================================ -->
+
+    <h2>5. The Processing Pipeline</h2>
+
+    <p>
+        Reading and sending are just the transport layer. The real value is in the <strong>processing pipeline</strong>
+        that ties everything together — polling on a schedule, deduplicating, saving to the database, and optionally
+        converting emails into CRM leads.
+    </p>
+
+    <div class="diagram">
+EmailPollingBackgroundService (runs every 1-5 min)
+    │
+    ▼
+EmailProcessorService.<span class="method">SyncAllAccountsAsync</span>(<span class="param">companyDatabase</span>)
+    │
+    ├── Get active EmailAccounts from DB
+    │
+    ├── For each account:
+    │   │
+    │   ├── EmailReaderService.<span class="method">FetchNewEmailsAsync</span>()     &larr; IMAP
+    │   │
+    │   ├── Deduplicate by MessageId
+    │   │   (skip emails already in ReceivedEmails table)
+    │   │
+    │   ├── Save new emails to ReceivedEmails table
+    │   │
+    │   └── If AutoCreateLeads:
+    │       └── EmailToLeadService.<span class="method">ConvertToLeadAsync</span>()
+    │           │
+    │           ├── Check if Lead exists for sender email
+    │           ├── If yes &rarr; link email to existing lead
+    │           └── If no  &rarr; create new Lead + link email
+    │
+    └── Update account.LastSyncedAt</div>
+
+    <h3>Why a background service?</h3>
+    <p>
+        IMAP doesn't push emails to you — you have to <em>poll</em> for them. The
+        <code>EmailPollingBackgroundService</code> is a .NET <code>BackgroundService</code> (a hosted service)
+        that runs a loop: sleep for N minutes, then call the processor. This ensures new emails are picked up
+        automatically without any user action.
+    </p>
+
+    <!-- ============================================================ -->
+    <!-- 6. Email-to-Lead Conversion -->
+    <!-- ============================================================ -->
+
+    <h2>6. Email-to-Lead Conversion</h2>
+
+    <p>
+        When <code>AutoCreateLeads</code> is enabled on an email account, the processor calls
+        <code>EmailToLeadService</code> for each new email. This service either links the email to an
+        existing lead or creates a brand new one.
+    </p>
+
+    <pre><code><span class="comment">// Check if a lead already exists for this sender</span>
+<span class="keyword">var</span> <span class="param">existingLead</span> = <span class="keyword">await</span> <span class="param">context</span>.<span class="method">Set</span>&lt;<span class="type">Lead</span>&gt;()
+    .<span class="method">FirstOrDefaultAsync</span>(<span class="param">l</span> =&gt; <span class="param">l</span>.ContactoEmail == <span class="param">email</span>.FromAddress);
+
+<span class="keyword">if</span> (<span class="param">existingLead</span> != <span class="keyword">null</span>)
+{
+    <span class="comment">// Link to existing lead — don't create a duplicate</span>
+    <span class="param">email</span>.LeadId = <span class="param">existingLead</span>.Id;
+    <span class="param">email</span>.IsProcessed = <span class="keyword">true</span>;
+    <span class="keyword">return</span>;
+}
+
+<span class="comment">// No existing lead — create a new one</span>
+<span class="keyword">var</span> <span class="param">lead</span> = <span class="keyword">new</span> <span class="type">Lead</span>
+{
+    Codigo = <span class="string">$"EM-</span>{<span class="type">DateTime</span>.UtcNow:<span class="string">yyyyMMddHHmmss</span>}<span class="string">"</span>,
+    Nome = <span class="param">email</span>.FromName ?? <span class="param">email</span>.FromAddress ?? <span class="string">"Desconhecido"</span>,
+    ContactoEmail = <span class="param">email</span>.FromAddress,
+    Status = <span class="type">LeadStatusConstants</span>.Novo,
+};</code></pre>
+
+    <h3>How it works</h3>
+    <ul>
+        <li><strong>Deduplication by email address</strong> — if a lead with the sender's email already exists, we link instead of creating a duplicate.</li>
+        <li><strong>Auto-code generation</strong> — the <code>EM-</code> prefix distinguishes email-generated leads from manually created ones. The timestamp ensures uniqueness.</li>
+        <li><strong>Fallback naming</strong> — <code>FromName ?? FromAddress ?? "Desconhecido"</code> uses the null-coalescing chain to always have a name, even if the sender's display name is empty.</li>
+        <li><strong>Link via LeadId</strong> — the <code>ReceivedEmail.LeadId</code> foreign key creates the relationship between emails and leads.</li>
+    </ul>
+
+    <!-- ============================================================ -->
+    <!-- 7. Deduplication by MessageId -->
+    <!-- ============================================================ -->
+
+    <h2>7. Deduplication by MessageId</h2>
+
+    <p>
+        Every email ever sent has a globally unique <code>MessageId</code> header assigned by the sending mail server
+        (e.g., <code>&lt;abc123@mail.gmail.com&gt;</code>). Since we poll repeatedly, the same unread email will
+        appear in every poll until it's marked as read. We use MessageId to skip already-imported emails.
+    </p>
+
+    <pre><code><span class="comment">// Get all MessageIds we've already saved for this account</span>
+<span class="keyword">var</span> <span class="param">existingMessageIds</span> = <span class="keyword">await</span> <span class="param">context</span>.<span class="method">Set</span>&lt;<span class="type">ReceivedEmail</span>&gt;()
+    .<span class="method">Where</span>(<span class="param">e</span> =&gt; <span class="param">e</span>.EmailAccountId == <span class="param">accountId</span>)
+    .<span class="method">Select</span>(<span class="param">e</span> =&gt; <span class="param">e</span>.MessageId)
+    .<span class="method">ToListAsync</span>();
+
+<span class="comment">// Filter out duplicates — only keep emails with new MessageIds</span>
+<span class="keyword">var</span> <span class="param">uniqueEmails</span> = <span class="param">newEmails</span>
+    .<span class="method">Where</span>(<span class="param">e</span> =&gt; !<span class="type">string</span>.<span class="method">IsNullOrEmpty</span>(<span class="param">e</span>.MessageId)
+               &amp;&amp; !<span class="param">existingMessageIds</span>.<span class="method">Contains</span>(<span class="param">e</span>.MessageId))
+    .<span class="method">ToList</span>();</code></pre>
+
+    <div class="callout callout-rule">
+        Always deduplicate by MessageId. Polling is inherently repetitive — without dedup,
+        you'll import the same email every 5 minutes and fill your database with duplicates.
+    </div>
+
+    <h3>Why not just mark emails as read?</h3>
+    <p>
+        You <em>could</em> open the IMAP folder in <code>ReadWrite</code> mode and add the <code>\Seen</code> flag.
+        But that has side effects — the email would also appear as "read" in the user's regular mail client
+        (Gmail, Outlook, etc.), which is confusing. Opening in <code>ReadOnly</code> mode and deduplicating
+        on our side is the non-destructive approach.
+    </p>
+
+    <!-- ============================================================ -->
+    <!-- 8. Connection Testing -->
+    <!-- ============================================================ -->
+
+    <h2>8. Connection Testing</h2>
+
+    <p>
+        When configuring a new email account in the UI, users can test both IMAP and SMTP connections before saving.
+        The pattern is identical for both: create client, connect, authenticate, disconnect, and report success or failure.
+    </p>
+
+    <h3>IMAP Test</h3>
+    <pre><code><span class="keyword">public async</span> <span class="type">Task</span>&lt;<span class="type">ConnectionTestResult</span>&gt; <span class="method">TestImapAsync</span>(<span class="type">EmailAccount</span> <span class="param">account</span>)
+{
+    <span class="keyword">try</span>
+    {
+        <span class="keyword">using var</span> <span class="param">client</span> = <span class="keyword">new</span> <span class="type">ImapClient</span>();
+        <span class="keyword">await</span> <span class="param">client</span>.<span class="method">ConnectAsync</span>(<span class="param">account</span>.ImapServer, <span class="param">account</span>.ImapPort, <span class="param">account</span>.ImapUseSsl);
+        <span class="keyword">await</span> <span class="param">client</span>.<span class="method">AuthenticateAsync</span>(<span class="param">account</span>.Username, <span class="param">account</span>.Password);
+        <span class="keyword">await</span> <span class="param">client</span>.<span class="method">DisconnectAsync</span>(<span class="keyword">true</span>);
+
+        <span class="keyword">return</span> <span class="type">ConnectionTestResult</span>.<span class="method">Success</span>(<span class="string">"IMAP connection successful"</span>);
+    }
+    <span class="keyword">catch</span> (<span class="type">Exception</span> <span class="param">ex</span>)
+    {
+        <span class="keyword">return</span> <span class="type">ConnectionTestResult</span>.<span class="method">Fail</span>(<span class="param">ex</span>.Message);
+    }
+}</code></pre>
+
+    <h3>SMTP Test</h3>
+    <pre><code><span class="keyword">public async</span> <span class="type">Task</span>&lt;<span class="type">ConnectionTestResult</span>&gt; <span class="method">TestSmtpAsync</span>(<span class="type">EmailAccount</span> <span class="param">account</span>)
+{
+    <span class="keyword">try</span>
+    {
+        <span class="keyword">using var</span> <span class="param">client</span> = <span class="keyword">new</span> <span class="type">SmtpClient</span>();
+        <span class="keyword">await</span> <span class="param">client</span>.<span class="method">ConnectAsync</span>(<span class="param">account</span>.SmtpServer, <span class="param">account</span>.SmtpPort, <span class="param">account</span>.SmtpUseSsl);
+        <span class="keyword">await</span> <span class="param">client</span>.<span class="method">AuthenticateAsync</span>(<span class="param">account</span>.Username, <span class="param">account</span>.Password);
+        <span class="keyword">await</span> <span class="param">client</span>.<span class="method">DisconnectAsync</span>(<span class="keyword">true</span>);
+
+        <span class="keyword">return</span> <span class="type">ConnectionTestResult</span>.<span class="method">Success</span>(<span class="string">"SMTP connection successful"</span>);
+    }
+    <span class="keyword">catch</span> (<span class="type">Exception</span> <span class="param">ex</span>)
+    {
+        <span class="keyword">return</span> <span class="type">ConnectionTestResult</span>.<span class="method">Fail</span>(<span class="param">ex</span>.Message);
+    }
+}</code></pre>
+
+    <p>
+        The <code>ConnectionTestResult</code> is a simple DTO with <code>bool IsSuccess</code> and <code>string Message</code>.
+        The UI shows a green checkmark or red error based on this result. This "test before you save" pattern
+        prevents broken configurations from being stored in the database.
+    </p>
+
+    <!-- ============================================================ -->
+    <!-- 9. Multi-Tenant Email Polling -->
+    <!-- ============================================================ -->
+
+    <h2>9. Multi-Tenant Email Polling</h2>
+
+    <p>
+        GivingCare is multi-tenant — many companies share one deployment, each with their own database.
+        The background service must poll email accounts across <em>all</em> company databases.
+    </p>
+
+    <div class="diagram">
+EmailPollingBackgroundService (singleton, runs in background)
+    │
+    ▼
+Loop forever:
+    │
+    ├── Get all active companies from BaseControleContext
+    │
+    ├── For each company:
+    │   │
+    │   ├── Check EmailMonitoringConfig.GlobalMonitoringEnabled
+    │   │   (skip companies that disabled monitoring entirely)
+    │   │
+    │   └── EmailProcessorService.<span class="method">SyncAllAccountsAsync</span>(companyDb)
+    │       (this creates a DynamicCompanyContext for that tenant)
+    │
+    └── Sleep for N minutes
+        (N = minimum MonitoringIntervalMinutes across all active accounts)</div>
+
+    <h3>Key multi-tenant considerations</h3>
+    <ul>
+        <li><strong>Company-level toggle</strong> — <code>EmailMonitoringConfig.GlobalMonitoringEnabled</code> lets an admin disable all email monitoring for their company without deleting account configurations.</li>
+        <li><strong>Dynamic interval</strong> — if Company A wants 5-minute polling and Company B wants 10-minute polling, the service uses the <em>minimum</em> (5 minutes) as its sleep interval, then checks per-account intervals internally.</li>
+        <li><strong>Context per tenant</strong> — the processor creates a <code>DynamicCompanyContext</code> for each company database, following GivingCare's standard multi-tenant pattern via <code>IDbContextFactoryService</code>.</li>
+        <li><strong>Error isolation</strong> — if one company's email sync fails, it doesn't block others. Each company's sync is wrapped in its own try/catch.</li>
+    </ul>
+
+    <!-- ============================================================ -->
+    <!-- 10. Service Registration -->
+    <!-- ============================================================ -->
+
+    <h2>10. Service Registration</h2>
+
+    <p>
+        All email services are registered in <code>ServiceCollectionExtensions.cs</code>.
+        Notice the lifetime choices:
+    </p>
+
+    <pre><code><span class="comment">// Scoped — one instance per HTTP request / SignalR connection</span>
+<span class="param">builder</span>.Services.<span class="method">AddScoped</span>&lt;<span class="type">IEmailMonitoringService</span>, <span class="type">EmailMonitoringService</span>&gt;();
+<span class="param">builder</span>.Services.<span class="method">AddScoped</span>&lt;<span class="type">IEmailReaderService</span>, <span class="type">EmailReaderService</span>&gt;();
+<span class="param">builder</span>.Services.<span class="method">AddScoped</span>&lt;<span class="type">IEmailSenderService</span>, <span class="type">EmailSenderService</span>&gt;();
+<span class="param">builder</span>.Services.<span class="method">AddScoped</span>&lt;<span class="type">IEmailProcessorService</span>, <span class="type">EmailProcessorService</span>&gt;();
+<span class="param">builder</span>.Services.<span class="method">AddScoped</span>&lt;<span class="type">IEmailToLeadService</span>, <span class="type">EmailToLeadService</span>&gt;();
+
+<span class="comment">// Hosted — singleton background worker, runs for the app's entire lifetime</span>
+<span class="param">builder</span>.Services.<span class="method">AddHostedService</span>&lt;<span class="type">EmailPollingBackgroundService</span>&gt;();</code></pre>
+
+    <h3>Why these lifetimes?</h3>
+
+    <table>
+        <tr>
+            <th>Service</th>
+            <th>Lifetime</th>
+            <th>Reason</th>
+        </tr>
+        <tr>
+            <td><code>EmailReaderService</code></td>
+            <td>Scoped</td>
+            <td>Uses <code>IDbContextFactoryService</code> (scoped) to create DB contexts</td>
+        </tr>
+        <tr>
+            <td><code>EmailSenderService</code></td>
+            <td>Scoped</td>
+            <td>Called from Razor pages during user interactions (reply, forward)</td>
+        </tr>
+        <tr>
+            <td><code>EmailProcessorService</code></td>
+            <td>Scoped</td>
+            <td>Orchestrates reader + dedup + lead conversion per request</td>
+        </tr>
+        <tr>
+            <td><code>EmailToLeadService</code></td>
+            <td>Scoped</td>
+            <td>Needs DB context access for lead lookup/creation</td>
+        </tr>
+        <tr>
+            <td><code>EmailPollingBackgroundService</code></td>
+            <td>Hosted (Singleton)</td>
+            <td>Must run continuously; creates its own scopes via <code>IServiceScopeFactory</code></td>
+        </tr>
+    </table>
+
+    <h4>The Background Service + Scoped Service Pattern</h4>
+    <p>
+        Since <code>EmailPollingBackgroundService</code> is a singleton but the services it calls are scoped,
+        it must create a new scope for each polling cycle:
+    </p>
+
+    <pre><code><span class="keyword">protected override async</span> <span class="type">Task</span> <span class="method">ExecuteAsync</span>(<span class="type">CancellationToken</span> <span class="param">stoppingToken</span>)
+{
+    <span class="keyword">while</span> (!<span class="param">stoppingToken</span>.IsCancellationRequested)
+    {
+        <span class="keyword">using var</span> <span class="param">scope</span> = _scopeFactory.<span class="method">CreateScope</span>();
+        <span class="keyword">var</span> <span class="param">processor</span> = <span class="param">scope</span>.ServiceProvider
+            .<span class="method">GetRequiredService</span>&lt;<span class="type">IEmailProcessorService</span>&gt;();
+
+        <span class="keyword">await</span> <span class="param">processor</span>.<span class="method">SyncAllAccountsAsync</span>(<span class="param">companyDatabase</span>);
+
+        <span class="keyword">await</span> <span class="type">Task</span>.<span class="method">Delay</span>(<span class="type">TimeSpan</span>.<span class="method">FromMinutes</span>(<span class="param">intervalMinutes</span>), <span class="param">stoppingToken</span>);
+    }
+}</code></pre>
+
+    <!-- ============================================================ -->
+    <!-- Summary -->
+    <!-- ============================================================ -->
+
+    <h2>Summary — The Complete Picture</h2>
+
+    <div class="diagram">
+┌──────────────────────────────────────────────────────────────────┐
+│                     EMAIL INTEGRATION STACK                      │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌─────────────────────┐    ┌──────────────────────┐            │
+│  │  EmailReaderService │    │  EmailSenderService   │            │
+│  │  (IMAP / port 993)  │    │  (SMTP / port 587)    │            │
+│  └──────────┬──────────┘    └──────────┬───────────┘            │
+│             │                          │                         │
+│             ▼                          │                         │
+│  ┌──────────────────────┐              │                         │
+│  │ EmailProcessorService│              │                         │
+│  │  - Dedup by MessageId│              │                         │
+│  │  - Save to DB        │              │                         │
+│  │  - Auto-create Leads │              │                         │
+│  └──────────┬───────────┘              │                         │
+│             │                          │                         │
+│             ▼                          ▼                         │
+│  ┌──────────────────────────────────────────────┐               │
+│  │          DynamicCompanyContext (EF Core)       │               │
+│  │  ReceivedEmails | Leads | EmailAccounts       │               │
+│  └──────────────────────────────────────────────┘               │
+│                          ▲                                       │
+│                          │                                       │
+│  ┌───────────────────────┴──────────────────────┐               │
+│  │    EmailPollingBackgroundService (loop)        │               │
+│  │    Polls every N minutes across all tenants    │               │
+│  └──────────────────────────────────────────────┘               │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘</div>
+
+    <h3>Key takeaways</h3>
+    <ol>
+        <li><strong>Two protocols, two services</strong> — IMAP reads (pull), SMTP sends (push). Never mix their ports or SSL modes.</li>
+        <li><strong>MailKit handles the protocol details</strong> — we just call <code>ConnectAsync</code>, <code>AuthenticateAsync</code>, and use the high-level API.</li>
+        <li><strong>Deduplication is non-negotiable</strong> — polling means seeing the same emails repeatedly. MessageId is the unique key.</li>
+        <li><strong>Email-to-Lead is optional per account</strong> — the <code>AutoCreateLeads</code> flag controls whether incoming emails auto-generate CRM leads.</li>
+        <li><strong>Multi-tenant polling</strong> — one background service iterates all company databases, creating scoped contexts for each.</li>
+        <li><strong>Test before save</strong> — always validate IMAP/SMTP credentials with a test connection before persisting account configuration.</li>
+    </ol>
+
+</body>
+</html>

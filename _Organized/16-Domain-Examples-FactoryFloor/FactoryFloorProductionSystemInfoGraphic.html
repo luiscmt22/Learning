@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FactoryFloorProductionSystemInfoGraphic</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 16-Domain-Examples-FactoryFloor</div>
+  <h1>FactoryFloorProductionSystemInfoGraphic</h1>
+  <div class="meta">Source: <code>Education/FactoryFloor/ENG/FactoryFloorProductionSystemInfoGraphic.docx</code> &middot; <a href="FactoryFloorProductionSystemInfoGraphic.docx">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<div class="dup-banner"><strong>Same-stem variants</strong> (likely same content, different format): <code>Education/FactoryFloor/ENG/FactoryFloorProductionSystemInfoGraphic.pdf</code></div><p>🏭 Factory Floor Production System</p>
+<p>📖 What Is This System?</p>
+<p>Imagine you run a factory that makes products. This system is like a smart assistant that helps workers on the factory floor track what they&#x27;re making, how much material they&#x27;re using, and ensures everything gets recorded properly.</p>
+<p>Think of it like a recipe app for a factory - it tells you what ingredients you need, tracks what you actually use, and makes sure nothing gets wasted!</p>
+<p>🎯 The Big Picture</p>
+<p>What Problems Does It Solve?</p>
+<p>Without this system:</p>
+<p>📝 Workers write production on paper (gets lost!)</p>
+<p>🤷 Nobody knows how much material was really used</p>
+<p>📊 Managers can&#x27;t see real-time production data</p>
+<p>💸 Materials get wasted without anyone noticing</p>
+<p>🔄 Stock counts are always wrong</p>
+<p>With this system:</p>
+<p>✅ Everything is digital and instant</p>
+<p>📱 Workers use tablets/computers on the factory floor</p>
+<p>📈 Managers see live production stats</p>
+<p>🎯 Material usage is tracked precisely</p>
+<p>📦 Stock levels update automatically</p>
+<p>👥 The Three Main Parts Explained</p>
+<ol>
+<li>The Factory Floor Page (Factory_New.razor) - &quot;The Control Center&quot;</li>
+</ol>
+<p>What it&#x27;s like: Think of this as the main dashboard a factory worker sees when they start their shift.</p>
+<p>Real-world analogy: It&#x27;s like a restaurant&#x27;s order screen in the kitchen - shows what needs to be made, what&#x27;s currently being made, and what&#x27;s done.</p>
+<p>What workers see:</p>
+<p>Today&#x27;s Stats Box 📊</p>
+<p>How many units completed today (like a scoreboard!)</p>
+<p>How many units still need to be made</p>
+<p>Machine Selector 🎮</p>
+<p>Like choosing which oven you&#x27;re using in a bakery</p>
+<p>Click &quot;GERAL&quot; to see all orders</p>
+<p>Click a specific machine to see only its orders</p>
+<p>Two Columns of Work Orders 📋</p>
+<p>Left side: &quot;To Start&quot; - Orders waiting to begin (like a to-do list)</p>
+<p>Right side: &quot;Started&quot; - Orders currently being worked on</p>
+<p>How workers use it:</p>
+<p>Come to work, open the page</p>
+<p>Select their machine</p>
+<p>See what needs to be made</p>
+<p>Click &quot;Start&quot; to begin working</p>
+<p>Click &quot;Pause&quot; for breaks</p>
+<p>Click &quot;Stop&quot; when done</p>
+<ol>
+<li>The Material Consumption Modal (MaterialConsumptionModal.razor) - &quot;The Recipe Tracker&quot;</li>
+</ol>
+<p>What it&#x27;s like: This is the form that pops up when a worker finishes making something.</p>
+<p>Real-world analogy: Like a chef&#x27;s prep sheet where they record:</p>
+<p>How many dishes they made ✅</p>
+<p>What ingredients they used 🥕</p>
+<p>If anything was wasted 🗑️</p>
+<p>What it shows:</p>
+<p>Production Info 📦</p>
+<p>What product was made</p>
+<p>How many were ordered</p>
+<p>How many are still needed</p>
+<p>Quantity Fields 🔢</p>
+<p>Units Produced: &quot;I made 50 widgets&quot;</p>
+<p>Waste: &quot;3 widgets were defective&quot;</p>
+<p>Materials Table 📋</p>
+<p>Shows all materials needed (like a shopping list)</p>
+<p>Planned vs. Actual amounts</p>
+<p>Current stock levels (highlighted in red if running low!)</p>
+<p>Historical averages (&quot;Usually we use about this much...&quot;)</p>
+<p>Smart features:</p>
+<p>🎯 Auto-calculates material needs based on quantity produced</p>
+<p>📊 Shows if you&#x27;re using more/less than planned</p>
+<p>🔴 Warns if stock is too low</p>
+<p>📈 Learns from history (&quot;Last time we made 100, we used 15kg&quot;)</p>
+<ol>
+<li>The Service (FactoryFloorService.cs) - &quot;The Brain&quot;</li>
+</ol>
+<p>What it&#x27;s like: This is the invisible helper that does all the calculations and record-keeping.</p>
+<p>Real-world analogy: Like having a super-efficient office manager who:</p>
+<p>Takes notes on everything 📝</p>
+<p>Updates inventory instantly 📦</p>
+<p>Calculates costs automatically 💰</p>
+<p>Sends reports to accounting 📊</p>
+<p>What it does behind the scenes:</p>
+<p>When production starts:</p>
+<p>Marks order as &quot;in progress&quot;</p>
+<p>Records who started it and when</p>
+<p>Like clocking in for a specific job</p>
+<p>When production pauses/stops:</p>
+<p>Updates the order status</p>
+<p>Triggers the material consumption form</p>
+<p>Like taking a coffee break but logging it</p>
+<p>When materials are recorded:</p>
+<p>Updates stock levels (removes used materials)</p>
+<p>Adds finished products to inventory</p>
+<p>Records any waste</p>
+<p>Sends data to accounting system (Primavera)</p>
+<p>Like a cashier processing a sale, but for production</p>
+<p>Smart calculations:</p>
+<p>If making 50 units needs 100kg of material...</p>
+<p>And you only make 25 units...</p>
+<p>It suggests you probably used 50kg</p>
+<p>But lets you adjust if needed!</p>
+<p>🎬 A Day in the Life - How It All Works Together</p>
+<p>Morning Shift Starts (8:00 AM)</p>
+<p>João the Machine Operator arrives:</p>
+<p>Opens the system on the factory tablet</p>
+<p>Enters his PIN (like clocking in)</p>
+<p>Selects his machine (Machine #3 - the blue one)</p>
+<p>Sees today&#x27;s orders:</p>
+<p>Order #1234: Make 100 plastic bottles</p>
+<p>Order #1235: Make 50 bottle caps</p>
+<p>Starting Production (8:15 AM)</p>
+<p>João clicks &quot;Start&quot; on Order #1234</p>
+<p>System asks for his PIN (security check!)</p>
+<p>System records:</p>
+<p>João started Order #1234</p>
+<p>At 8:15 AM</p>
+<p>On Machine #3</p>
+<p>Order moves from &quot;To Start&quot; to &quot;Started&quot; column</p>
+<p>Lunch Break (12:00 PM)</p>
+<p>João made 60 bottles, needs a break</p>
+<p>Clicks &quot;Pause&quot; button</p>
+<p>PIN required again</p>
+<p>Material Consumption form appears:</p>
+<p>Enters: &quot;60 bottles produced&quot;</p>
+<p>System shows: &quot;You probably used 6kg plastic&quot;</p>
+<p>João confirms or adjusts</p>
+<p>Clicks &quot;Confirm Production&quot;</p>
+<p>System automatically:</p>
+<p>Removes 6kg plastic from warehouse stock</p>
+<p>Adds 60 bottles to finished goods</p>
+<p>Updates Order #1234: &quot;40 bottles remaining&quot;</p>
+<p>Logs everything with timestamps</p>
+<p>After Lunch (1:00 PM)</p>
+<p>João returns, clicks &quot;Start&quot; again</p>
+<p>Continues making the remaining 40 bottles</p>
+<p>At 2:30 PM, finishes the order</p>
+<p>Clicks &quot;Stop&quot;</p>
+<p>Material form appears again:</p>
+<p>Enters: &quot;40 bottles produced&quot;</p>
+<p>Enters: &quot;2 bottles wasted&quot; (quality issues)</p>
+<p>System marks order as COMPLETE ✅</p>
+<p>End of Day</p>
+<p>Manager Maria checks the dashboard:</p>
+<p>Sees &quot;100 bottles completed today&quot;</p>
+<p>Sees &quot;50 caps still pending&quot;</p>
+<p>Reviews material usage (any unusual consumption?)</p>
+<p>All data already sent to accounting!</p>
+<p>💡 Why This Is Brilliant</p>
+<p>For Workers:</p>
+<p>No paperwork - everything is digital</p>
+<p>Can&#x27;t forget steps - system guides them</p>
+<p>Instant feedback - know if doing well</p>
+<p>Less blame - system tracks everything fairly</p>
+<p>For Managers:</p>
+<p>Real-time visibility - see production live</p>
+<p>Accurate costs - know exactly what was used</p>
+<p>Spot problems early - unusual material usage = red flag</p>
+<p>Better planning - historical data helps predict future needs</p>
+<p>For the Company:</p>
+<p>Less waste - track and reduce material loss</p>
+<p>Better inventory - stock levels always accurate</p>
+<p>Faster billing - automatic integration with accounting</p>
+<p>Quality tracking - know which batches had issues</p>
+<p>🚨 Common Scenarios &amp; Solutions</p>
+<p>&quot;Oops, I entered wrong quantity!&quot;</p>
+<p>Before confirming: Just change the number</p>
+<p>After confirming: Supervisor can create adjustment</p>
+<p>&quot;Machine broke during production!&quot;</p>
+<p>Hit &quot;Pause&quot; → Record what was made so far</p>
+<p>Maintenance fixes machine</p>
+<p>Hit &quot;Start&quot; again to continue</p>
+<p>&quot;We ran out of material!&quot;</p>
+<p>System shows red warning before starting</p>
+<p>Can&#x27;t proceed without supervisor override</p>
+<p>Prevents starting impossible orders</p>
+<p>&quot;I forgot my PIN!&quot;</p>
+<p>Supervisor has master access</p>
+<p>Can reset PIN</p>
+<p>All actions still tracked</p>
+<p>🎯 The Magic Behind the Scenes</p>
+<p>The system is smart because it:</p>
+<p>Learns from history 📊</p>
+<p>&quot;Last 10 times we made this, we used average 5.2kg&quot;</p>
+<p>Suggests this amount automatically</p>
+<p>Prevents mistakes 🛡️</p>
+<p>Can&#x27;t use more material than exists</p>
+<p>Can&#x27;t produce negative quantities</p>
+<p>Requires PIN for important actions</p>
+<p>Connects everything 🔗</p>
+<p>Production → Stock → Accounting</p>
+<p>All automatic, no double entry</p>
+<p>One action updates everything</p>
+<p>Provides insights 💡</p>
+<p>&quot;Machine #3 uses 10% more material than others&quot;</p>
+<p>&quot;Tuesday productions always have more waste&quot;</p>
+<p>Helps identify improvement areas</p>
+<p>📚 Think of It Like...</p>
+<p>The whole system is like a smart kitchen:</p>
+<p>Factory_New page = Kitchen order display</p>
+<p>Material Modal = Recipe card + prep sheet</p>
+<p>Service = Sous chef doing all calculations</p>
+<p>Or like a video game:</p>
+<p>Factory_New page = Game lobby/mission select</p>
+<p>Material Modal = Post-mission report</p>
+<p>Service = Game engine calculating scores</p>
+<p>✅ Bottom Line</p>
+<p>This system turns chaotic factory production into an organized, tracked, and optimized process. Workers know what to do, managers know what&#x27;s happening, and accountants know what it cost - all in real-time, with no paperwork!</p>
+<p>It&#x27;s like upgrading from:</p>
+<p>📝 Paper lists → 📱 Digital tracking</p>
+<p>🤷 Guessing → 📊 Knowing</p>
+<p>🐌 End-of-month reports → ⚡ Real-time data</p>
+<p>😰 Chaos → 😌 Control</p>
+</div>
+</body>
+</html>

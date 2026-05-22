@@ -1,0 +1,444 @@
+Migration & Seeding Mechanism — CLI Commands, TenantMigrator, and DemoDataSeeder
+Migration & Seeding Mechanism
+CLI commands, TenantMigrator, DemoDataSeeder, and the two layers of seed data
+1. The Big Picture
+Our apps have a CLI mode built directly into the same executable that runs the web server.
+Instead of separate migration tools, we pass command-line flags to dotnet run that tell the app
+to do database work and exit instead of starting Blazor.
+dotnet run → Start the web server (normal mode)
+dotnet run -- --migrate-all → Migrate all databases, then exit
+dotnet run -- --migrate-auth → Migrate auth database only, then exit
+dotnet run -- --migrate-tenants → Migrate company databases only, then exit
+dotnet run -- --seed-demo → Seed demo company data, then exit
+dotnet run -- --reseed-demo → Drop + re-create demo company, then exit
+Think of it like a Swiss Army knife. The same .exe can be a web server OR a database provisioning
+tool — depending on which blade you flip out with the -- flags.
+This approach means:
+No separate console project for migrations
+No dotnet ef database update needed at runtime
+CI/CD pipelines can run dotnet run -- --migrate-all before starting the app
+Developers can reset their environment with two commands
+2. How args Works
+The -- separator
+When you type dotnet run -- --migrate-all , the double-dash ( -- ) tells the
+dotnet CLI: "everything after this is for the app, not for me."
+dotnet run -- --migrate-all
+│ │ │
+│ │ └── This goes into args[] as "--migrate-all"
+│ └───── Separator: "stop parsing dotnet flags here"
+└────────────────── The dotnet CLI command
+Inside Program.cs , the top-level args variable is the string array that
+WebApplication.CreateBuilder(args) receives. It contains exactly what comes after -- .
+Without the -- , dotnet run would try to interpret --migrate-all
+as its own flag and fail with: "Unrecognized option '--migrate-all'" . The double dash is a
+Unix/POSIX convention that means "end of options for this command."
+The decision gate in Program.cs
+At the very bottom of Program.cs , after all middleware and services are configured,
+we check args before calling app.Run() :
+// Database migration commands (run and exit — don't start the web server)
+// Usage:
+// dotnet run -- --migrate-all Migrate auth + all company databases
+// dotnet run -- --migrate-auth Migrate auth database only
+// dotnet run -- --migrate-tenants Migrate company databases only
+if (args. Contains ( "--migrate-all" ))
+{
+await TenantMigrator . MigrateAllAsync (app.Configuration);
+return ; // ← EXIT: don't start the web server
+}
+if (args. Contains ( "--migrate-auth" ))
+{
+await TenantMigrator . MigrateAuthDatabaseAsync (app.Configuration);
+return ;
+}
+if (args. Contains ( "--migrate-tenants" ))
+{
+await TenantMigrator . MigrateTenantsAsync (app.Configuration);
+return ;
+}
+if (args. Contains ( "--seed-demo" ) || args. Contains ( "--reseed-demo" ))
+{
+await DemoDataSeeder . SeedAsync (app.Configuration, forceReseed: args. Contains ( "--reseed-demo" ));
+return ;
+}
+app. Run (); // ← Only reached if NO migration/seeding command was provided
+"If the user asked to migrate, do the migration and leave. If they asked to seed, do the seeding and
+leave. Otherwise, start the web server."
+The return; after each migration/seeding block is critical. It exits the process
+without starting Kestrel. Migration is a setup step, not part of normal app operation.
+3. TenantMigrator — The Static Migration Class
+Where it lives
+Tools/TenantMigrator.cs — a small static class with four methods:
+using GivingCare .Models.Contexts;
+using Microsoft.EntityFrameworkCore;
+namespace GivingCare .Tools;
+public static class TenantMigrator
+{
+/// Migrates the AuthDatabase (BaseControleContext).
+/// Creates the database if it doesn't exist, applies migrations, seeds data.
+public static async Task MigrateAuthDatabaseAsync ( IConfiguration configuration )
+{
+await using var context = new BaseControleContext (configuration);
+var dbName = context.Database. GetDbConnection ().Database;
+Console. WriteLine ( $"Provisioning auth database: {dbName}" );
+await context.Database. MigrateAsync ();
+Console. WriteLine ( $"Auth database '{dbName}' is ready." );
+}
+/// Creates a single tenant database and applies all pending migrations.
+/// The companyKey must match an entry in Client:Database:Companies in appsettings.json.
+public static async Task MigrateTenantAsync ( IConfiguration configuration , string companyKey )
+{
+await using var context = new DynamicCompanyContext (configuration, companyKey);
+var dbName = context.Database. GetDbConnection ().Database;
+Console. WriteLine ( $"Provisioning tenant database: {dbName} (key: {companyKey})" );
+await context.Database. MigrateAsync ();
+Console. WriteLine ( $"Tenant '{companyKey}' is ready." );
+}
+/// Provisions ALL tenant databases defined in Client:Database:Companies.
+public static async Task MigrateTenantsAsync ( IConfiguration configuration )
+{
+var companies = configuration
+. GetSection ( "Client:Database:Companies" ). GetChildren ();
+foreach ( var company in companies)
+await MigrateTenantAsync (configuration, company.Key);
+}
+/// Provisions everything: AuthDatabase first, then all tenant databases.
+public static async Task MigrateAllAsync ( IConfiguration configuration )
+{
+await MigrateAuthDatabaseAsync (configuration);
+await MigrateTenantsAsync (configuration);
+}
+}
+What MigrateAsync() does under the hood
+When EF Core's context.Database.MigrateAsync() is called, it performs these steps:
+Creates the database if it doesn't exist ( CREATE DATABASE )
+Creates __EFMigrationsHistory table if it doesn't exist — tracks applied migrations
+Compares migrations in your Migrations/ folder against __EFMigrationsHistory
+Applies pending migrations in chronological order (by the timestamp prefix)
+Executes InsertData calls inside those migrations — this is where HasData() seed data gets inserted
+MigrateAsync() is idempotent . Running it twice is harmless.
+If all migrations are already applied, it does nothing. This is why it's safe to call on every deployment.
+How it knows which database to connect to
+Both contexts read connection details from appsettings.json :
+"Client" : {
+"Database" : {
+"Server" : "your-server" ,
+"AuthDatabase" : "AuthDatabase" ,
+"Username" : "sa" ,
+"Password" : "..." ,
+"Companies" : {
+"DefaultCompany" : { "Database" : "DefaultCompany" },
+"DemoCompany" : { "Database" : "DemoCompany" }
+}
+}
+}
+BaseControleContext reads Client:Database:AuthDatabase .
+DynamicCompanyContext takes a companyKey and reads
+Client:Database:Companies:{key}:Database .
+TenantMigrator is a building superintendent. It goes to the lobby first
+( MigrateAuthDatabaseAsync ), then walks apartment by apartment
+( MigrateTenantsAsync ), making sure each one has working plumbing (schema + seed data).
+4. Two Layers of Seed Data
+The system uses two distinct seeding mechanisms for different purposes:
+Layer 1: HasData() (Migration Seeds)
+Layer 2: DemoDataSeeder (Programmatic Seeds)
+What
+Reference/lookup data baked into migrations
+Realistic demo data generated by code
+Where
+IEntityTypeConfiguration classes + OnModelCreating
+Tools/DemoDataSeeder.cs + DemoDataSeeder.Business.cs
+When
+Every MigrateAsync() — always, every database
+Only when you run --seed-demo or --reseed-demo
+Scope
+ALL company databases get this data
+Only the DemoCompany database
+Examples
+Document types, payment conditions, currencies, leave types, equipment statuses, VAT rates
+25 employees, 15 entities, 30 articles, 1000 attendance records, CRM pipeline data
+"Layer 1 sets up the furniture that every apartment needs — kitchen cabinets, bathroom fixtures.
+Layer 2 fills one specific apartment with realistic staging furniture for the showroom tour."
+5. Layer 1: HasData() — Migration Seeds
+How it works
+EF Core lets you define seed data via HasData() inside IEntityTypeConfiguration<T>
+classes. When you generate a migration, EF compares the current HasData() definitions against
+what was seeded in previous migrations, and emits InsertData calls for anything new.
+Step 1: Define the configuration class
+// Models/Entities/Configuration/EntityLookupConfigurations.cs
+public class EntityCurrencyConfiguration
+: IEntityTypeConfiguration < EntityCurrency >
+{
+public void Configure ( EntityTypeBuilder < EntityCurrency > builder )
+{
+builder. HasData (
+new EntityCurrency { Id = 1 , Code = "EUR" , Description = "Euro" },
+new EntityCurrency { Id = 2 , Code = "USD" , Description = "Dólar Americano" },
+new EntityCurrency { Id = 3 , Code = "GBP" , Description = "Libra Esterlina" },
+new EntityCurrency { Id = 4 , Code = "CHF" , Description = "Franco Suíço" },
+new EntityCurrency { Id = 5 , Code = "BRL" , Description = "Real Brasileiro" }
+);
+}
+}
+Step 2: Auto-discovery via BaseContext
+You don't register each configuration manually. BaseContext.OnModelCreating uses
+ApplyConfigurationsFromAssembly to auto-discover every IEntityTypeConfiguration<T>
+in the assembly:
+// Models/Contexts/BaseContext.cs
+protected override void OnModelCreating ( ModelBuilder modelBuilder )
+{
+modelBuilder. ApplyConfigurationsFromAssembly (
+typeof ( BaseContext ).Assembly,
+type => !_centralOnlyConfigurations. Contains (type));
+}
+This means: just create the configuration class and it's automatically picked up .
+No registration step needed.
+_centralOnlyConfigurations is a blocklist for configs that should only apply to the auth
+database (Countries, Districts, Counties). Everything else — including entity lookup configs —
+is applied to company databases.
+Step 3: The migration captures it
+When EF generates or applies a migration, the HasData() definitions become
+InsertData calls in the migration's Up() method:
+// Inside 20260310_InitialCreate.cs (auto-generated)
+migrationBuilder. InsertData (
+table: "EntityCurrencies" ,
+columns: new [] { "Id" , "Code" , "Description" },
+values: new object [,]
+{
+{ 1 , "EUR" , "Euro" },
+{ 2 , "USD" , "Dólar Americano" },
+{ 3 , "GBP" , "Libra Esterlina" },
+{ 4 , "CHF" , "Franco Suíço" },
+{ 5 , "BRL" , "Real Brasileiro" }
+});
+HasData() requires explicit primary key values ( Id = 1 , Id = 2 , etc.).
+EF uses these to track which rows are "seed data" across migrations. If you omit the ID, you get a compile error.
+What gets seeded via HasData() in each database
+Database
+Seed Data (via HasData)
+AuthDatabase
+SuperAdmin user ( agile / 1234 )
+4 SystemRoles (SuperAdmin, Admin, Manager, User)
+100+ SystemPermissions
+Master Company + UserCompany link
+Geography (countries, districts, counties)
+Company DBs
+13 document types & series, 18 state configs
+56+ employee permissions
+Equipment & maintenance statuses
+Article types, VAT rates, leave types
+2 warehouses, sales pipeline + stages
+Entity lookups : currencies, zones, languages, payment conditions, salespersons, shipping modes
+The three files that must agree
+When you add HasData() to a configuration, three migration files need to contain the seed data:
+File
+Contains
+Purpose
+*_InitialCreate.cs
+migrationBuilder.InsertData(...)
+The actual SQL that runs when migrating
+*_InitialCreate.Designer.cs
+b.HasData(...) inside entity builders
+EF's snapshot of what the model looked like at this migration
+*ModelSnapshot.cs
+b.HasData(...) inside entity builders
+EF's snapshot of the current model state
+If you add HasData() to a configuration after the migration was already generated,
+the migration won't have the InsertData calls. You must either generate a new migration or
+manually add the InsertData and HasData blocks to all three files. We chose the
+manual approach for our entity lookup data to keep it in the single InitialCreate migration.
+6. Layer 2: DemoDataSeeder — Programmatic Seeds
+Where it lives
+Tools/DemoDataSeeder.cs + Tools/DemoDataSeeder.Business.cs — a
+partial class split across two files for organization.
+Entry point
+public static partial class DemoDataSeeder
+{
+private const int DemoCompanyId = 3 ;
+private const int AdminUserId = 1 ;
+private const string CompanyKey = "DemoCompany" ;
+private static readonly DateTime Today = DateTime .Today;
+private static readonly Random Rng = new ( 42 ); // deterministic for reproducibility
+public static async Task SeedAsync ( IConfiguration configuration , bool forceReseed = false )
+{
+// 0. Drop tenant DB if re-seeding
+if (forceReseed)
+{
+await using var dropCtx = new DynamicCompanyContext (configuration, CompanyKey);
+await dropCtx.Database. EnsureDeletedAsync ();
+}
+// 1. Ensure databases exist (run migrations first)
+await TenantMigrator . MigrateAuthDatabaseAsync (configuration);
+await TenantMigrator . MigrateTenantAsync (configuration, CompanyKey);
+// 2. Seed auth data (Company + UserCompany + FeatureFlags)
+await SeedAuthDataAsync (configuration);
+// 3. Seed company data (HR, CRM, Docs, Stock, etc.)
+await SeedCompanyDataAsync (configuration);
+}
+}
+Key design decisions
+1. It calls TenantMigrator first
+The seeder always migrates before seeding . This guarantees tables exist and
+Layer 1 seed data (HasData) is already in place. The seeder can then reference migration-seeded
+data:
+// LeaveTypes are already seeded by the migration's HasData()
+var leaveTypes = await ctx.LeaveTypes. ToListAsync ();
+// Now use them to create leave balances for demo employees
+SeedLeaveBalances (ctx, employees);
+2. It's idempotent
+The seeder checks for existing data before inserting:
+// Auth data: check before inserting
+if (! await ctx.Companies. AnyAsync (c => c.Id == DemoCompanyId))
+{
+// ... create company
+}
+// Company data: check once at the top
+if ( await ctx.CrmFuncionarios. AnyAsync ())
+{
+Console. WriteLine ( " → Company data already exists, skipping." );
+return ;
+}
+3. --reseed-demo drops first
+If you pass --reseed-demo instead of --seed-demo , it calls
+EnsureDeletedAsync() to drop the entire DemoCompany database before re-creating it.
+This gives you a clean slate.
+4. Domain-method chaining
+The business partial file organizes seeding by domain, where each method returns its created
+entities so downstream methods can reference their IDs:
+// Each seed method returns its entities for dependent methods
+var departments = SeedDepartments (ctx); // → List<Department>
+var locations = SeedLocations (ctx); // → List<Location>
+var schedules = SeedSchedules (ctx); // → List<Schedule>
+await ctx. SaveChangesAsync (); // flush → IDs are now populated
+var employees = SeedEmployees (ctx, departments); // uses dept.Id
+await ctx. SaveChangesAsync ();
+SeedContracts (ctx, employees); // uses emp.Id
+SeedEmployeeSchedules (ctx, employees, schedules); // uses emp.Id & schedule.Id
+SeedAttendanceRecords (ctx, employees, schedules); // uses emp.Id
+What gets seeded
+DemoDataSeeder.SeedAsync()
+│
+├── Auth Database
+│ ├── Demo Company (Id=3, "DemoCompany" DB)
+│ ├── UserCompany link (admin → demo company)
+│ └── Feature flags (all modules enabled, Full access)
+│
+└── DemoCompany Database
+├── HR Core
+│ ├── 6 departments, 4 locations, 3 schedules
+│ ├── 25 employees with contracts
+│ ├── Schedule & location assignments
+│ ├── Leave balances & requests
+│ └── ~1000 attendance records (80 days × employees)
+│
+├── Equipment
+│ ├── 5 types, 5 brands, 8 models, 15 items
+│ └── 6 maintenance records
+│
+├── Entities (Clients/Suppliers)
+│ ├── 15 entities (10 clients, 5 suppliers)
+│ ├── Contacts & addresses per entity
+│ └── Price levels
+│
+├── Articles: 30 articles, 5 families, 10 sub-families
+├── Documents: 20 invoices/receipts with line items
+├── Jobs: 8 projects, 4 teams
+├── CRM: 15 leads, 8 opportunities, pipeline movements
+├── Support: 3 packages, 20 tickets
+├── Tasks: 3 process types/templates, instances
+├── Forms: 2 templates with groups/fields
+├── Stock: levels & movements per warehouse
+├── Production: 2 sections, 3 work centers
+└── Courses: 3 categories, 5 courses, 15 enrollments
+7. Handling Already-Migrated Databases
+The problem
+If you add HasData() seed data after the migration has already been applied
+to a live database, MigrateAsync() won't insert the data — because the migration was
+already recorded in __EFMigrationsHistory .
+Solution: SQL idempotent script
+For databases that already ran the migration, use a standalone SQL script with NOT EXISTS
+guards so it's safe to run multiple times:
+-- Scripts/SeedEntityLookups.sql
+-- Run against each COMPANY database where migration already applied.
+SET IDENTITY_INSERT [EntityCurrencies] ON ;
+IF NOT EXISTS ( SELECT 1 FROM [EntityCurrencies] WHERE [Id] = 1 )
+INSERT INTO [EntityCurrencies] ([Id], [Code], [Description])
+VALUES ( 1 , N 'EUR' , N 'Euro' );
+-- ... more rows ...
+SET IDENTITY_INSERT [EntityCurrencies] OFF ;
+IDENTITY_INSERT ON is required because the seed data uses explicit IDs (1, 2, 3...)
+but the table has an identity column. Without it, SQL Server would auto-assign IDs and they
+wouldn't match what the migration expects.
+Decision flow
+Is this a NEW database (never migrated)?
+├── YES → dotnet run -- --migrate-all
+│ └── MigrateAsync() applies InitialCreate
+│ └── InsertData runs automatically ✓
+│
+└── NO → Database already exists with migration applied
+├── Option A: Run the SQL script manually
+│ └── Scripts/SeedEntityLookups.sql against each company DB
+│
+└── Option B: Drop & re-create (dev only!)
+└── Drop DB → dotnet run -- --migrate-all
+8. File Map
+Project Root/
+├── Program.cs ← CLI arg routing (--migrate-*, --seed-*)
+│
+├── Tools/
+│ ├── TenantMigrator.cs ← Static class: MigrateAllAsync, etc.
+│ ├── DemoDataSeeder.cs ← Partial class: orchestrator + auth seed
+│ └── DemoDataSeeder.Business.cs ← Partial class: domain-specific seed methods
+│
+├── Models/
+│ ├── Contexts/
+│ │ ├── BaseControleContext.cs ← Auth DB context + HasData (users, roles, geo)
+│ │ ├── DynamicCompanyContext.cs ← Company DB context (takes companyKey)
+│ │ └── BaseContext.cs ← ApplyConfigurationsFromAssembly
+│ │
+│ └── Entities/Configuration/
+│ └── EntityLookupConfigurations.cs ← HasData for currencies, zones, etc.
+│
+├── Migrations/
+│ ├── Auth/
+│ │ ├── *_InitialCreate.cs ← Auth tables + InsertData (seed)
+│ │ ├── *_InitialCreate.Designer.cs ← HasData snapshot for this migration
+│ │ └── BaseControleContextModelSnapshot.cs
+│ │
+│ └── Company/
+│ ├── *_InitialCreate.cs ← Company tables + InsertData (seed)
+│ ├── *_InitialCreate.Designer.cs ← HasData snapshot for this migration
+│ └── DynamicCompanyContextModelSnapshot.cs
+│
+└── Scripts/
+├── ResetDatabases.sql ← DROP all databases
+└── SeedEntityLookups.sql ← Idempotent INSERT for already-migrated DBs
+9. Common Workflows
+Scenario
+Commands
+Fresh install (first time)
+dotnet run -- --migrate-all
+dotnet run
+Fresh install + demo data
+dotnet run -- --seed-demo (migrates automatically)
+dotnet run
+Full reset (nuke everything)
+Run Scripts/ResetDatabases.sql in SSMS
+dotnet run -- --migrate-all
+dotnet run
+Reset demo company only
+dotnet run -- --reseed-demo
+dotnet run
+Schema changed (new migration added)
+dotnet run -- --migrate-tenants
+dotnet run
+Added HasData after migration was applied
+Run Scripts/SeedEntityLookups.sql against each company DB
+10. Key Takeaways
+Same executable, two modes — args flags control whether it's a migration tool or a web server
+return; after migration — the process exits cleanly without starting Kestrel
+TenantMigrator is static — no DI needed; it creates contexts directly from IConfiguration
+Two seed layers — HasData for universal lookup data (every DB), DemoDataSeeder for realistic demo data (one DB)
+HasData needs three files in sync — the migration .cs, the Designer.cs, and the ModelSnapshot.cs
+DemoDataSeeder calls TenantMigrator — it always migrates before seeding, so Layer 1 data exists
+Idempotent everywhere — MigrateAsync skips applied migrations; DemoDataSeeder checks for existing data; SQL scripts use NOT EXISTS
+For already-migrated DBs — use the SQL script to backfill seed data that was added after the migration ran

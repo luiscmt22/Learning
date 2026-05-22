@@ -1,0 +1,364 @@
+EF Core - Multi-Tenant Database Pattern
+EF Core - Multi-Tenant Database Pattern
+How to use ONE DbContext class to manage MULTIPLE databases | The "Database-per-Tenant" pattern with EF Core
+Contents
+1. The Problem — Why Not One Context Per Database?
+2. The Solution — Dynamic Connection String
+3. Architecture Overview
+4. The Base Context (Abstract)
+5. The Dynamic Context (Concrete)
+6. The Context Factory (Runtime)
+7. Configuration (appsettings.json)
+8. Design-Time Factories (EF CLI Tools)
+9. Migrations — Creating & Applying
+10. Provisioning New Tenants at Runtime
+11. The TenantMigrator Utility
+12. Full Lifecycle — From Zero to Multi-Tenant
+13. Common Gotchas & Pitfalls
+14. EF Core CLI Command Reference
+1. The Problem concept
+Imagine you have a SaaS app where each company gets its own database (for data isolation, compliance, or just cleanliness). You need:
+Database Purpose
+AuthDatabase Central: users, companies, roles, permissions
+DefaultCompany Tenant A: employees, jobs, attendance, CRM data
+TestCompany Tenant B: same tables, different data
+ClientXYZ Tenant C: same tables, different data
+All tenant databases have the exact same schema (same tables, same columns, same indexes). The only difference is which server/database they connect to.
+The Wrong Way (what you'd instinctively do)
+// One class per database — DON'T DO THIS
+public class DefaultCompanyContext : DbContext { ... }
+public class TestCompanyContext : DbContext { ... }
+public class ClientXYZContext : DbContext { ... }
+// 100 tenants = 100 identical classes?!
+The Right Way (dynamic connection)
+// ONE class for ALL tenants
+public class DynamicCompanyContext : BaseContext
+{
+public DynamicCompanyContext ( config , "DefaultCompany" ) { }
+public DynamicCompanyContext ( config , "TestCompany" ) { }
+public DynamicCompanyContext ( config , "ClientXYZ" ) { }
+// Same class, different parameter!
+}
+Key Insight: A DbContext is just a connection to a database + a description of tables. If all tenants have the same tables, you only need ONE class. The connection string is the only thing that changes — and that can be a constructor parameter.
+2. The Solution — Dynamic Connection String concept
+A DbContext decides which database to connect to in a method called OnConfiguring . Normally this is hardcoded. But we can make it dynamic :
+protected override void OnConfiguring ( DbContextOptionsBuilder optionsBuilder )
+{
+// _companyDatabase is set in the constructor: "DefaultCompany", "TestCompany", etc.
+var connectionString = ResolveConnectionString (_configuration, _companyDatabase );
+// ↑ this changes per instance!
+optionsBuilder . UseSqlServer ( connectionString );
+}
+So when you write:
+new DynamicCompanyContext (config, "DefaultCompany" ) → connects to DefaultCompany DB
+new DynamicCompanyContext (config, "TestCompany" ) → connects to TestCompany DB
+new DynamicCompanyContext (config, "ClientXYZ" ) → connects to ClientXYZ DB
+Same class. Same tables. Different database. That's the entire pattern.
+3. Architecture Overview concept
+┌─────────────────────────────────────────────────────────────┐
+│ appsettings.json │
+│ Server: "136.144.249.153" │
+│ AuthDatabase: "AuthDatabase" │
+│ Companies: │
+│ DefaultCompany → "DefaultCompany" │
+│ TestCompany → "TestCompany" │
+└──────────────────────┬──────────────────────────────────────┘
+│
+┌────────────┴────────────┐
+▼ ▼
+┌──────────────────┐ ┌──────────────────────────────┐
+│ BaseControle │ │ DynamicCompanyContext │
+│ Context │ │ (extends BaseContext) │
+│ │ │ │
+│ Fixed DB: │ │ Dynamic DB based on key: │
+│ "AuthDatabase" │ │ "DefaultCompany" │
+│ │ │ "TestCompany" │
+│ Tables: │ │ "AnyFutureClient" │
+│ - Users │ │ │
+│ - Companies │ │ Tables (same in ALL tenants): │
+│ - SystemRoles │ │ - Employees │
+│ - AuditLogs │ │ - Departments │
+│ - Holidays │ │ - Attendance │
+│ - Geography │ │ - Jobs, CRM, Stock, etc. │
+└──────────────────┘ └──────────────────────────────┘
+↓ ↓ ↓
+┌──────────┐ ┌──────────┐ ┌──────────┐
+│ AuthDatabase │ │ Default │ │ Test │
+│ (SQL DB) │ │ Company │ │ Company │
+│ │ │ (SQL DB) │ │ (SQL DB) │
+└──────────┘ └──────────┘ └──────────┘
+4. The Base Context (Abstract) code
+The abstract base class defines ALL the DbSets (tables) and how to build connection strings. It can't be instantiated directly — child classes must provide the database name.
+public abstract class BaseContext : DbContext
+{
+protected readonly IConfiguration _configuration ;
+protected string _companyDatabase ; // ← THE KEY: which DB to connect to
+// All tenant tables defined here (same for every tenant)
+public virtual DbSet < Employee > Employees { get ; set ; }
+public virtual DbSet < Department > Departments { get ; set ; }
+public virtual DbSet < Attendance > Attendances { get ; set ; }
+public virtual DbSet < Job > Jobs { get ; set ; }
+// ... hundreds more DbSets ...
+protected override void OnConfiguring ( DbContextOptionsBuilder optionsBuilder )
+{
+if (! optionsBuilder .IsConfigured && _configuration != null )
+{
+// Build connection string using _companyDatabase as the lookup key
+var connectionString = ResolveConnectionString ( _configuration , _companyDatabase );
+optionsBuilder . UseSqlServer ( connectionString );
+}
+}
+protected static string ResolveConnectionString ( IConfiguration config , string companyKey )
+{
+// 1. Read the Companies dictionary from appsettings
+var dbOptions = config . GetSection ( "Client:Database" ). Get < DatabaseOptions >();
+// 2. Look up the company key → get database name
+var company = dbOptions .Companies[ companyKey ];
+// "DefaultCompany" → { Database: "DefaultCompany" }
+// "TestCompany" → { Database: "TestCompany" }
+// 3. Build the connection string
+return $"Server={dbOptions.Server};Database={company.Database};..." ;
+}
+}
+Why abstract? We never want to instantiate BaseContext directly — it has no idea which database to connect to. It's a blueprint. Only child classes that set _companyDatabase can be used.
+5. The Dynamic Context (Concrete) code
+This is the actual class you instantiate. It's almost comically small — ALL it does is pass the company key to the base class:
+public class DynamicCompanyContext : BaseContext
+{
+public DynamicCompanyContext ( IConfiguration configuration , string companyKey )
+: base ( configuration )
+{
+_companyDatabase = companyKey ; // That's it. That's the whole class.
+}
+}
+Three lines of real code. The companyKey flows into _companyDatabase which OnConfiguring uses to build the connection string. Everything else is inherited from BaseContext .
+Think of it like a car key: The car (BaseContext) is always the same — same engine, same seats, same features. The key (companyKey) just tells it which parking spot (database) to go to.
+6. The Context Factory (Runtime) runtime
+Services don't create contexts directly — they use a factory. This centralizes context creation and makes it easy to inject:
+public interface IDbContextFactoryService
+{
+// Always connects to the central auth database
+BaseControleContext CreateBaseControleContext ();
+// Connects to any tenant database by key
+BaseContext CreateCompanyContext ( string companyDatabase );
+}
+public class DbContextFactoryService : IDbContextFactoryService
+{
+private readonly IConfiguration _configuration ;
+public BaseControleContext CreateBaseControleContext ()
+{
+return new BaseControleContext ( _configuration );
+}
+public BaseContext CreateCompanyContext ( string companyDatabase )
+{
+// Same class, different key → different database
+return new DynamicCompanyContext ( _configuration , companyDatabase );
+}
+}
+How services use it
+public class EmployeeService
+{
+private readonly IDbContextFactoryService _contextFactory ;
+public async Task<List< Employee >> GetAllAsync ( string companyDatabase )
+{
+// Creates a context pointing to the right tenant DB
+await using var context = _contextFactory . CreateCompanyContext ( companyDatabase );
+// companyDatabase = "DefaultCompany" → queries DefaultCompany DB
+// companyDatabase = "TestCompany" → queries TestCompany DB
+return await context .Employees. ToListAsync ();
+}
+}
+Where does companyDatabase come from? The authenticated user's session stores which company they selected. The Razor page passes CompanyDatabase (from AuthenticatedComponentBase ) down to every service call.
+7. Configuration (appsettings.json) code
+{
+"Client" : {
+"Database" : {
+"Server" : " your-server-ip " ,
+"AuthDatabase" : "AuthDatabase" , // ← BaseControleContext always uses this
+"DefaultCompanyDatabase" : "DefaultCompany" , // ← fallback for design-time tools
+"Username" : " sa " ,
+"Password" : " your-password " ,
+"Companies" : { // ← tenant dictionary
+"DefaultCompany" : { // ← key used in code
+"Database" : "DefaultCompany" // ← actual SQL DB name
+},
+"TestCompany" : {
+"Database" : "TestCompany"
+},
+"FutureClient" : { // ← just add entries here!
+"Database" : "FutureClientDb" ,
+"Server" : " different-server " // ← can even override server per tenant!
+}
+}
+}
+}
+}
+Adding a new tenant is just config: Add a new entry to Companies, provision the database (see section 10), and it's live. No code changes, no new context classes, no redeployment needed.
+8. Design-Time Factories (EF CLI Tools) CLI tooling
+Here's the tricky part. When you run dotnet ef migrations add , EF needs to instantiate your context to inspect the model. But there's no DI container, no HTTP request, no user session — it's just a command-line tool.
+EF can auto-instantiate contexts with a parameterless constructor or DbContextOptions . But our DynamicCompanyContext requires (IConfiguration, string) — EF has no idea what to pass.
+The solution: IDesignTimeDbContextFactory<T> — a factory that tells EF exactly how to create the context at design time:
+public class DynamicCompanyContextFactory : IDesignTimeDbContextFactory < DynamicCompanyContext >
+{
+public DynamicCompanyContext CreateDbContext ( string [] args )
+{
+// Build configuration manually (no DI available)
+var configuration = new ConfigurationBuilder ()
+. SetBasePath ( Directory . GetCurrentDirectory ())
+. AddJsonFile ( "appsettings.json" )
+. Build ();
+// Always target DefaultCompany for migrations
+var defaultCompany = configuration [ "Client:Database:DefaultCompanyDatabase" ] ?? "DefaultCompany" ;
+return new DynamicCompanyContext ( configuration , defaultCompany );
+}
+}
+Important: This factory is ONLY used by dotnet ef CLI tools. At runtime, the app uses DbContextFactoryService instead. The design-time factory always targets DefaultCompany — but the migration files it generates work for ALL tenants since they share the same schema.
+When is this factory called?
+Command Uses Factory? Why?
+dotnet ef migrations add Yes Needs to inspect the model to generate migration code
+dotnet ef database update Yes Needs to connect to apply migrations
+dotnet ef migrations list Yes Needs to connect to check __EFMigrationsHistory
+dotnet run (your app) No Uses DI and DbContextFactoryService instead
+9. Migrations — Creating & Applying CLI
+Two separate migration histories
+Since we have two different context types (auth + tenant), we need two migration folders:
+Migrations/
+├── Auth/ ← BaseControleContext migrations
+│ ├── 20260306_InitialCreate.cs
+│ └── BaseControleContextModelSnapshot.cs
+└── Company/ ← DynamicCompanyContext migrations
+├── 20260306_InitialCreate.cs
+└── DynamicCompanyContextModelSnapshot.cs
+Creating a migration (generates code files)
+# Auth context — central database
+dotnet ef migrations add MigrationName --context BaseControleContext --output-dir Migrations/Auth
+# Company context — tenant databases
+dotnet ef migrations add MigrationName --context DynamicCompanyContext --output-dir Migrations/Company
+Applying migrations (creates/updates the database)
+# Creates AuthDatabase + applies all migrations + seeds data
+dotnet ef database update --context BaseControleContext
+# Creates DefaultCompany DB + applies all migrations + seeds data
+# (uses the design-time factory, which targets DefaultCompany)
+dotnet ef database update --context DynamicCompanyContext
+Limitation: dotnet ef database update only targets the ONE database that the design-time factory points to ( DefaultCompany ). To apply the same migration to TestCompany , you need the runtime approach — see section 10.
+Rolling back a migration
+# Remove the last migration (if not yet applied to DB)
+dotnet ef migrations remove --context DynamicCompanyContext
+# Revert DB to a specific migration
+dotnet ef database update PreviousMigrationName --context DynamicCompanyContext
+10. Provisioning New Tenants at Runtime runtime
+This is where the magic happens. To create a new tenant database , you don't need any CLI tools. You just:
+1 Add the tenant to appsettings.json (the Companies dictionary)
+2 Create a DynamicCompanyContext pointing to that new key
+3 Call MigrateAsync()
+// This is ALL the code needed to create a new tenant database:
+await using var context = new DynamicCompanyContext ( configuration , "TestCompany" );
+await context .Database. MigrateAsync ();
+// Done. The database now exists with all tables, indexes, and seed data.
+What MigrateAsync() does under the hood
+// Step 1: Checks if the database exists
+// → If not: CREATE DATABASE [TestCompany]
+// Step 2: Checks for __EFMigrationsHistory table
+// → If not: CREATE TABLE [__EFMigrationsHistory]
+// Step 3: Reads which migrations have been applied
+// → SELECT MigrationId FROM __EFMigrationsHistory
+// Step 4: Compares with migrations in the code (Migrations/Company/)
+// → Finds pending migrations
+// Step 5: Applies each pending migration in order
+// → CREATE TABLE, CREATE INDEX, INSERT seed data, etc.
+// Step 6: Records each applied migration
+// → INSERT INTO __EFMigrationsHistory (MigrationId, ProductVersion)
+EnsureCreatedAsync() vs MigrateAsync()
+Method Creates DB? Creates Tables? Tracks Migrations? Runs Seed Data? Use When?
+EnsureCreatedAsync() Yes Yes No No Quick throwaway / testing
+MigrateAsync() Yes Yes Yes Yes Production / real apps
+Never mix them! If you use EnsureCreatedAsync() on a DB, future MigrateAsync() calls may fail because there's no migration history. Always use MigrateAsync() for real work.
+11. The TenantMigrator Utility code
+A reusable helper that provisions any tenant from config:
+public static class TenantMigrator
+{
+/// Provisions a single tenant database.
+public static async Task MigrateTenantAsync ( IConfiguration config , string companyKey )
+{
+await using var context = new DynamicCompanyContext ( config , companyKey );
+await context .Database. MigrateAsync ();
+}
+/// Provisions ALL tenants from Client:Database:Companies.
+public static async Task MigrateAllTenantsAsync ( IConfiguration config )
+{
+var companies = config . GetSection ( "Client:Database:Companies" ). GetChildren ();
+foreach ( var company in companies )
+await MigrateTenantAsync ( config , company .Key);
+}
+}
+Wired into Program.cs with a CLI flag
+// At the end of Program.cs, before app.Run():
+if ( args . Contains ( "--migrate-tenants" ))
+{
+await TenantMigrator . MigrateAllTenantsAsync ( app .Configuration);
+return ; // Exit after migration
+}
+app . Run ();
+Usage from command line
+# Provision all tenant databases from config
+dotnet run -- --migrate-tenants
+# Output:
+# Provisioning tenant database: DefaultCompany (key: DefaultCompany)
+# Tenant 'DefaultCompany' is ready.
+# Provisioning tenant database: TestCompany (key: TestCompany)
+# Tenant 'TestCompany' is ready.
+This is idempotent: Running it multiple times is safe. MigrateAsync() only applies pending migrations. If the database is already up to date, it does nothing.
+12. Full Lifecycle — From Zero to Multi-Tenant concept
+Initial Setup (one time)
+1 Configure appsettings.json with server, auth DB name, and tenant entries
+2 Create design-time factories ( IDesignTimeDbContextFactory<T> )
+3 Generate initial migrations:
+dotnet ef migrations add InitialCreate --context BaseControleContext --output-dir Migrations/Auth
+dotnet ef migrations add InitialCreate --context DynamicCompanyContext --output-dir Migrations/Company
+4 Apply auth DB migration:
+dotnet ef database update --context BaseControleContext
+5 Provision all tenants:
+dotnet run -- --migrate-tenants
+Adding a New Tenant (ongoing)
+1 Add entry to appsettings.json Companies dictionary
+2 Run dotnet run -- --migrate-tenants (or call TenantMigrator.MigrateTenantAsync from an admin page)
+That's it. No code changes.
+Schema Changes (adding tables/columns)
+1 Modify your models / DbSets / configurations
+2 Generate a new migration:
+dotnet ef migrations add AddNewFeature --context DynamicCompanyContext --output-dir Migrations/Company
+3 Apply to ALL tenants:
+dotnet run -- --migrate-tenants
+# MigrateAsync() applies only the NEW migration to each tenant
+13. Common Gotchas & Pitfalls
+Gotcha Why it Happens Solution
+"Unable to create DbContext" during dotnet ef
+No parameterless constructor and no design-time factory
+Create an IDesignTimeDbContextFactory<T>
+dotnet ef database update only updates one tenant
+CLI tools use the design-time factory which targets one DB
+Use MigrateAsync() at runtime for other tenants
+Migrations fail with "table already exists"
+Used EnsureCreatedAsync() before MigrateAsync()
+Never mix them. Always use MigrateAsync()
+Tenant A has migration X but tenant B doesn't
+Forgot to run --migrate-tenants after adding migration
+Always provision ALL tenants after generating migrations
+Central tables (Users, Companies) appearing in tenant DB
+EF discovered them via navigation properties
+Use modelBuilder.Ignore<T>() in BaseContext.OnModelCreating
+Connection string not found for company key
+Company key doesn't match any entry in Companies dictionary
+Ensure appsettings has the exact key used in code
+14. EF Core CLI Command Reference CLI
+Command What it does
+dotnet ef migrations add Name --context Ctx --output-dir Dir Generates migration code files from model changes
+dotnet ef migrations remove --context Ctx Deletes the last migration (if not applied to DB)
+dotnet ef migrations list --context Ctx Shows all migrations and which are applied
+dotnet ef database update --context Ctx Applies all pending migrations to the database
+dotnet ef database update MigrationName --context Ctx Migrates up/down to a specific migration
+dotnet ef database drop --context Ctx Drops the database (asks for confirmation)
+dotnet ef dbcontext info --context Ctx Shows context info (provider, database name)
+dotnet ef migrations script --context Ctx Generates a SQL script instead of applying directly
+dotnet ef migrations script --idempotent --context Ctx Generates a safe SQL script that checks before applying
+Pro tip: Use --verbose on any command to see the SQL being generated. Use migrations script --idempotent for production deployments where you want to review the SQL before running it.

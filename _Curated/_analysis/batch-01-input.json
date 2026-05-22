@@ -1,0 +1,74 @@
+[
+  {
+    "src_rel": "Education/Basics/Blazor_Architecture_and_Security_Guide.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Basics\\Blazor_Architecture_and_Security_Guide.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Basics__Blazor_Architecture_and_Security_Guide.pdf.txt",
+    "word_count": 6090,
+    "category_legacy": "01-Basics"
+  },
+  {
+    "src_rel": "Education/tutorial.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\tutorial.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__tutorial.html.txt",
+    "word_count": 3752,
+    "category_legacy": "11-Web-Fundamentals"
+  },
+  {
+    "src_rel": "Education/Basics/Blazor_Guide_For_Dummies (1).pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Basics\\Blazor_Guide_For_Dummies (1).pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Basics__Blazor_Guide_For_Dummies (1).pdf.txt",
+    "word_count": 2951,
+    "category_legacy": "01-Basics"
+  },
+  {
+    "src_rel": "Education/Stock/PT/SistemaServiçoStockDocumentaçãoFormal.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Stock\\PT\\SistemaServiçoStockDocumentaçãoFormal.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Stock__PT__SistemaServiçoStockDocumentaçãoFormal.pdf.txt",
+    "word_count": 2271,
+    "category_legacy": "17-Domain-Examples-Stock"
+  },
+  {
+    "src_rel": "Education/FactoryFloor/PT/SistemaProduçãoChãoFábricaInfoGráfico.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\FactoryFloor\\PT\\SistemaProduçãoChãoFábricaInfoGráfico.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__FactoryFloor__PT__SistemaProduçãoChãoFábricaInfoGráfico.pdf.txt",
+    "word_count": 1576,
+    "category_legacy": "16-Domain-Examples-FactoryFloor"
+  },
+  {
+    "src_rel": "Education/13-Export-Service-Strategy-Pattern.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\13-Export-Service-Strategy-Pattern.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__13-Export-Service-Strategy-Pattern.md.txt",
+    "word_count": 1268,
+    "category_legacy": "02-Architecture-and-Patterns"
+  },
+  {
+    "src_rel": "Microsoft_Fullstack/HowToCreateUnitTesting.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Microsoft_Fullstack\\HowToCreateUnitTesting.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Microsoft_Fullstack__HowToCreateUnitTesting.docx.txt",
+    "word_count": 886,
+    "category_legacy": "13-Testing"
+  },
+  {
+    "src_rel": "Education/ForDummies/06-Blazor-JS-Interop-Static-Events-ForDummies.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\ForDummies\\06-Blazor-JS-Interop-Static-Events-ForDummies.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__ForDummies__06-Blazor-JS-Interop-Static-Events-ForDummies.md.txt",
+    "word_count": 407,
+    "category_legacy": "19-For-Dummies"
+  }
+]

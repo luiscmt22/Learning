@@ -1,0 +1,1400 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Generic Schedule Grid - For Dummies</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #07090f;
+  --bg-1: #0c111c;
+  --bg-2: #11182a;
+  --bg-3: #1a2238;
+  --bg-4: #232e4a;
+  --border: #1e2840;
+  --border-2: #2a3551;
+  --border-3: #3a4870;
+  --text: #e9eef8;
+  --text-dim: #94a3bf;
+  --text-mut: #5f6b86;
+  --accent: #6aa6ff;
+  --accent-strong: #3b82f6;
+  --accent-2: #b86aff;
+  --accent-3: #f472b6;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+  --info: #38bdf8;
+  --code-bg: #0a1020;
+  --code-border: #1a2340;
+  --shadow: 0 8px 32px rgba(0,0,0,0.55);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.35);
+  --shadow-glow: 0 0 0 1px rgba(106,166,255,0.18), 0 12px 40px rgba(106,166,255,0.10);
+}
+
+/* Doc-type theming */
+[data-doc-type="core-concept"] {
+  --doc-accent: #6aa6ff;
+  --doc-accent-rgb: 106,166,255;
+  --doc-eyebrow: "Concept";
+}
+[data-doc-type="applied-implementation"] {
+  --doc-accent: #b86aff;
+  --doc-accent-rgb: 184,106,255;
+  --doc-eyebrow: "Implementation";
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font: 16px/1.7 -apple-system, "Inter", \'Segoe UI\', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+::selection { background: rgba(106,166,255,0.30); }
+
+/* ═══ Top bar ═══════════════════════════════════════════════════════ */
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(7,9,15,0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 28px;
+  display: flex; align-items: center; gap: 16px;
+}
+.topbar .crumbs {
+  flex: 1; font-size: 13px; color: var(--text-dim);
+  display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden;
+}
+.topbar .crumbs span.sep { color: var(--text-mut); }
+.topbar .crumbs .current {
+  color: var(--text); font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.topbar .crumbs a { color: var(--text-dim); text-decoration: none; }
+.topbar .crumbs a:hover { color: var(--accent); }
+.topbar .actions { display: flex; gap: 6px; flex-shrink: 0; }
+.topbar .action {
+  font-size: 13px; padding: 6px 14px; border-radius: 8px;
+  color: var(--text-dim); text-decoration: none;
+  border: 1px solid transparent; transition: all .15s;
+}
+.topbar .action:hover {
+  color: var(--text); background: var(--bg-2); border-color: var(--border);
+  text-decoration: none;
+}
+
+/* ═══ Document layout ═══════════════════════════════════════════════ */
+.layout {
+  display: grid; grid-template-columns: 280px 1fr;
+  max-width: 1380px; margin: 0 auto; align-items: start;
+}
+.layout.no-toc { grid-template-columns: 1fr; max-width: 940px; }
+
+.toc-sidebar {
+  position: sticky; top: 70px;
+  align-self: start;
+  max-height: calc(100vh - 90px);
+  overflow-y: auto;
+  padding: 40px 8px 40px 28px;
+  border-right: 1px solid var(--border);
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+.toc-sidebar::-webkit-scrollbar { width: 6px; }
+.toc-sidebar::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
+.toc-sidebar h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px; padding-left: 14px; font-weight: 600;
+}
+.toc-sidebar ol { list-style: none; margin: 0; padding: 0; }
+.toc-sidebar li { margin: 0; }
+.toc-sidebar a {
+  display: block;
+  padding: 5px 14px;
+  border-left: 2px solid transparent;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 13px;
+  line-height: 1.5;
+  transition: all .15s;
+  word-break: break-word;
+}
+.toc-sidebar a:hover {
+  color: var(--text); border-left-color: var(--border-2); text-decoration: none;
+}
+.toc-sidebar a.active {
+  color: var(--doc-accent, var(--accent));
+  border-left-color: var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.07);
+}
+.toc-sidebar .lvl-3 a { padding-left: 28px; font-size: 12.5px; }
+.toc-sidebar .lvl-4 a, .toc-sidebar .lvl-5 a, .toc-sidebar .lvl-6 a {
+  padding-left: 42px; font-size: 12px;
+}
+
+.content { padding: 40px 64px 120px; min-width: 0; }
+
+/* ═══ Hero (per-doc) ════════════════════════════════════════════════ */
+.doc-hero {
+  position: relative;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 32px;
+  margin-bottom: 36px;
+}
+.doc-hero::before {
+  content: ''; position: absolute;
+  top: -40px; left: -64px; right: -64px; height: 220px;
+  background: radial-gradient(ellipse 60% 100% at 0% 0%, rgba(var(--doc-accent-rgb, 106,166,255),0.10), transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+.doc-hero > * { position: relative; z-index: 1; }
+.doc-hero .eyebrow {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  color: var(--doc-accent, var(--accent)); font-weight: 600;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.doc-hero .eyebrow .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--doc-accent, var(--accent));
+  box-shadow: 0 0 8px var(--doc-accent, var(--accent));
+}
+.doc-hero h1 {
+  font-size: 40px; line-height: 1.1;
+  margin: 12px 0 16px;
+  font-weight: 700; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.doc-hero .one-liner {
+  font-size: 18px; line-height: 1.55;
+  color: var(--text-dim);
+  margin: 0 0 20px;
+  max-width: 70ch;
+}
+.doc-hero .meta-row {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  font-size: 12.5px;
+}
+.meta-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--bg-2); border: 1px solid var(--border);
+  padding: 5px 12px; border-radius: 14px;
+  font-size: 12px; color: var(--text-dim);
+}
+.meta-pill .num { color: var(--text); font-weight: 600; font-feature-settings: "tnum"; }
+.meta-pill.fmt-md   { color: #6aa6ff; border-color: rgba(106,166,255,0.30); background: rgba(106,166,255,0.06); }
+.meta-pill.fmt-pdf  { color: #f87171; border-color: rgba(248,113,113,0.30); background: rgba(248,113,113,0.06); }
+.meta-pill.fmt-docx { color: #38bdf8; border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.fmt-html { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.fmt-htm  { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.complexity-beginner    { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.06); }
+.meta-pill.complexity-intermediate { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.complexity-advanced     { color: #fb923c; border-color: rgba(251,146,60,0.30); background: rgba(251,146,60,0.06); }
+.meta-pill.complexity-unknown      { color: var(--text-mut); }
+.meta-pill.source code { background: transparent; padding: 0; border: 0; font-size: 11px; color: var(--text-dim); }
+
+/* ═══ Curation panels ═══════════════════════════════════════════════ */
+
+.curation {
+  margin-bottom: 36px;
+}
+
+.intro-hook {
+  font-size: 18px;
+  line-height: 1.65;
+  color: var(--text);
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  padding: 8px 0 8px 20px;
+  margin: 0 0 28px;
+  font-style: italic;
+  font-weight: 350;
+}
+
+.exec-summary {
+  background: linear-gradient(135deg, rgba(var(--doc-accent-rgb, 106,166,255),0.07), rgba(var(--doc-accent-rgb, 106,166,255),0.02));
+  border: 1px solid rgba(var(--doc-accent-rgb, 106,166,255),0.20);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 0 0 24px;
+}
+.exec-summary h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent, var(--accent));
+  font-weight: 600;
+}
+.exec-summary p {
+  margin: 0; font-size: 15px; line-height: 1.65; color: var(--text);
+}
+
+.metaphor-callout {
+  display: flex; gap: 14px; align-items: flex-start;
+  background: rgba(184,106,255,0.06);
+  border: 1px solid rgba(184,106,255,0.25);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 0 0 24px;
+}
+.metaphor-callout .icon {
+  font-size: 22px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 4px rgba(184,106,255,0.4));
+}
+.metaphor-callout .body {
+  flex: 1; font-size: 14.5px; line-height: 1.6;
+  color: var(--text);
+}
+.metaphor-callout .body .label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--accent-2); font-weight: 700;
+  display: block; margin-bottom: 4px;
+}
+
+.tutorial-structure {
+  display: grid; grid-template-columns: 1fr; gap: 14px;
+  margin: 0 0 28px;
+}
+.tutorial-section {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--doc-accent);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+}
+.tutorial-section h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent);
+  font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.tutorial-section h3 .num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--doc-accent); color: var(--bg);
+  font-size: 10px; font-weight: 700;
+}
+.tutorial-section p {
+  margin: 0; font-size: 14.5px; line-height: 1.65; color: var(--text);
+}
+
+.context-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin: 0 0 28px;
+}
+.context-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.context-card h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut);
+  font-weight: 600;
+}
+.context-card ul {
+  margin: 0; padding: 0; list-style: none;
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.context-card li {
+  background: var(--bg-3);
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--text-dim);
+  border: 1px solid var(--border-2);
+}
+.context-card.prereqs li { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.05); }
+.context-card.builds li { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.05); }
+.context-card.concepts li { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.05); }
+
+.takeaways {
+  background: linear-gradient(135deg, rgba(74,222,128,0.05), rgba(74,222,128,0.01));
+  border: 1px solid rgba(74,222,128,0.20);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin: 36px 0 0;
+}
+.takeaways h3 {
+  margin: 0 0 10px;
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--ok); font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.takeaways h3::before {
+  content: '✓';
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(74,222,128,0.18);
+  font-size: 12px; font-weight: 700;
+}
+.takeaways ul { margin: 0; padding-left: 22px; }
+.takeaways li {
+  font-size: 14.5px; line-height: 1.6; color: var(--text);
+  margin: 6px 0;
+}
+
+/* ═══ Article body ══════════════════════════════════════════════════ */
+article { font-size: 16px; line-height: 1.78; color: var(--text); max-width: 78ch; }
+article > * + * { margin-top: 1.0em; }
+article p { margin: 0; }
+article h1, article h2, article h3, article h4 {
+  font-weight: 650; letter-spacing: -0.01em; color: var(--text);
+  scroll-margin-top: 90px; position: relative;
+}
+article h1 { font-size: 28px; margin-top: 56px; }
+article h2 {
+  font-size: 24px; margin-top: 56px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+article h3 { font-size: 19px; margin-top: 36px; }
+article h4 { font-size: 16.5px; margin-top: 24px; color: var(--text-dim); }
+article h2::before, article h3::before {
+  content: '#'; position: absolute; left: -28px;
+  color: var(--text-mut); font-weight: 400;
+  opacity: 0; transition: opacity .15s;
+}
+article h2:hover::before, article h3:hover::before { opacity: 1; }
+
+article ul, article ol { padding-left: 1.5em; margin: 0; }
+article li { margin: .35em 0; }
+article li > p { margin: 0; }
+
+article hr {
+  border: 0; height: 1px; background: var(--border); margin: 36px 0;
+}
+
+article blockquote {
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.05);
+  padding: 14px 18px;
+  margin: 22px 0;
+  border-radius: 0 8px 8px 0;
+  color: var(--text-dim);
+}
+article blockquote p { margin: 0; }
+
+article pre {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-size: 13.5px;
+  line-height: 1.65;
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+article pre::-webkit-scrollbar { height: 7px; }
+article pre::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+article code, article pre {
+  font-family: "JetBrains Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+  font-feature-settings: "calt" 1;
+}
+article code.il {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  padding: 1px 7px; border-radius: 5px;
+  font-size: 0.88em;
+  color: var(--accent);
+}
+.code-block { position: relative; }
+.code-block .copy-btn {
+  position: absolute; top: 8px; right: 8px;
+  background: var(--bg-3); border: 1px solid var(--border);
+  color: var(--text-dim); padding: 4px 11px; border-radius: 5px;
+  font-size: 11px; font-family: inherit; cursor: pointer;
+  opacity: 0; transition: all .15s;
+}
+.code-block:hover .copy-btn { opacity: 1; }
+.code-block .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+.code-block .copy-btn.copied { color: var(--ok); border-color: var(--ok); }
+
+article pre .kw   { color: #c084fc; font-weight: 500; }
+article pre .type { color: #67e8f9; }
+article pre .str  { color: #fcd34d; }
+article pre .num  { color: #fb923c; }
+article pre .cmt  { color: #6b7d99; font-style: italic; }
+
+article .tbl-wrap {
+  overflow-x: auto; margin: 22px 0;
+  border-radius: 10px; border: 1px solid var(--border);
+}
+article table { border-collapse: collapse; width: 100%; font-size: 14px; }
+article th {
+  background: var(--bg-3); padding: 11px 14px; text-align: left;
+  font-weight: 600; color: var(--text);
+  border-bottom: 1px solid var(--border-2);
+}
+article td {
+  padding: 11px 14px; border-top: 1px solid var(--border); vertical-align: top;
+}
+article tr:nth-child(even) td { background: rgba(255,255,255,0.013); }
+
+article .diagram-box {
+  background: linear-gradient(135deg, #1c2540 0%, #0e1424 100%);
+  border: 1px solid var(--border-2);
+  border-radius: 12px;
+  padding: 22px 26px;
+  margin: 24px 0;
+  box-shadow: var(--shadow);
+}
+article .diagram-box pre {
+  background: transparent; border: 0; padding: 0;
+  color: #e8edf5; font-size: 13px; line-height: 1.55;
+}
+
+article .img-ref {
+  display: inline-block;
+  background: var(--bg-2); color: var(--text-mut);
+  padding: 1px 8px; border-radius: 4px;
+  font-size: 11px; font-style: normal;
+  border: 1px dashed var(--border-2);
+}
+
+/* ═══ Duplicate banners ═════════════════════════════════════════════ */
+.dup-banner {
+  background: linear-gradient(135deg, rgba(251,191,36,0.10), rgba(251,191,36,0.04));
+  border: 1px solid rgba(251,191,36,0.35);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 18px;
+  font-size: 14px; line-height: 1.55;
+  display: flex; gap: 14px; align-items: flex-start;
+}
+.dup-banner + .dup-banner { margin-top: 0; }
+.dup-banner .icon { font-size: 22px; line-height: 1.2; flex-shrink: 0; }
+.dup-banner .body { flex: 1; min-width: 0; }
+.dup-banner h4 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--warn); text-transform: uppercase; letter-spacing: 1px; }
+.dup-banner p { margin: 0; color: var(--text-dim); }
+.dup-banner ul { margin: 6px 0 0; padding-left: 22px; color: var(--text-dim); }
+.dup-banner ul li { margin: 3px 0; word-break: break-word; }
+.dup-banner code {
+  background: var(--bg-3); padding: 2px 7px; border-radius: 5px;
+  font-size: 0.92em; color: var(--text);
+}
+.dup-banner.exact {
+  border-color: rgba(248,113,113,0.40);
+  background: linear-gradient(135deg, rgba(248,113,113,0.10), rgba(248,113,113,0.04));
+}
+.dup-banner.exact h4 { color: var(--bad); }
+.dup-banner.near {
+  border-color: rgba(56,189,248,0.40);
+  background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(56,189,248,0.04));
+}
+.dup-banner.near h4 { color: var(--info); }
+.banner-stack { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+
+/* ═══ PDF page cards ════════════════════════════════════════════════ */
+.pdf-page {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin: 24px 0;
+  overflow: hidden;
+  scroll-margin-top: 90px;
+}
+.pdf-page .page-head {
+  background: var(--bg-3);
+  padding: 9px 20px;
+  font-size: 11px; font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 1.4px;
+  border-bottom: 1px solid var(--border);
+}
+.pdf-page .page-body { padding: 18px 24px 22px; }
+.pdf-page pre {
+  margin: 0; background: transparent; border: 0; padding: 0;
+  white-space: pre-wrap; word-wrap: break-word;
+  color: var(--text); font-size: 13px; line-height: 1.6;
+}
+
+.empty-note {
+  background: var(--bg-2);
+  border: 1px dashed var(--border-2);
+  border-radius: 10px;
+  padding: 18px 22px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* ═══ Cross-references + related ════════════════════════════════════ */
+.cross-refs {
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.cross-refs h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.cross-ref-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.cross-ref-list a {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: all .15s;
+}
+.cross-ref-list a:hover {
+  color: var(--text);
+  border-color: var(--doc-accent, var(--accent));
+  background: var(--bg-3);
+  text-decoration: none;
+}
+.cross-ref-list a .arrow { color: var(--doc-accent, var(--accent)); margin-right: 6px; }
+
+.related {
+  margin-top: 48px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.related h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 18px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.related-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+.related-card {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+}
+.related-card:hover {
+  border-color: var(--doc-accent, var(--accent));
+  transform: translateY(-1px);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+}
+.related-card .title {
+  font-weight: 600; font-size: 13.5px; line-height: 1.35;
+  color: var(--text);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.related-card .meta {
+  font-size: 11px; color: var(--text-mut); margin-top: 6px;
+  display: flex; gap: 8px; align-items: center;
+}
+.related-card .meta .badge {
+  padding: 1px 6px; border-radius: 3px;
+  background: var(--bg-3); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* ═══ Master index page ═════════════════════════════════════════════ */
+
+.index-hero {
+  text-align: center;
+  padding: 80px 24px 56px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.index-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 30% 0%, rgba(106,166,255,0.13), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 70% 30%, rgba(184,106,255,0.10), transparent 70%);
+  pointer-events: none;
+}
+.index-hero > * { position: relative; z-index: 1; }
+.index-hero .eyebrow {
+  color: var(--accent); font-size: 12px;
+  text-transform: uppercase; letter-spacing: 1.8px; font-weight: 600;
+}
+.index-hero h1 {
+  font-size: 56px; margin: 16px 0 12px;
+  font-weight: 750; letter-spacing: -0.025em;
+  background: linear-gradient(135deg, #6aa6ff 0%, #b86aff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.index-hero .tagline {
+  color: var(--text-dim); font-size: 18px;
+  max-width: 720px; margin: 14px auto 0; line-height: 1.6;
+}
+.search-row {
+  display: flex; gap: 12px;
+  max-width: 720px; margin: 36px auto 0;
+}
+.search-row input {
+  flex: 1;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 15px;
+  padding: 14px 22px;
+  border-radius: 14px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color .15s, box-shadow .15s;
+}
+.search-row input::placeholder { color: var(--text-mut); }
+.search-row input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(106,166,255,0.13);
+}
+
+.summary-stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  max-width: 1080px; margin: 36px auto 56px; padding: 0 24px;
+}
+.stat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  text-align: center;
+  transition: border-color .15s;
+}
+.stat-card:hover { border-color: var(--border-2); }
+.stat-card .num {
+  font-size: 32px; font-weight: 700; color: var(--accent);
+  font-feature-settings: "tnum"; line-height: 1.1;
+}
+.stat-card .lbl {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--text-mut); margin-top: 6px;
+}
+
+.split-view {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  max-width: 1320px; margin: 0 auto; padding: 0 24px 60px;
+}
+@media (max-width: 980px) {
+  .split-view { grid-template-columns: 1fr; }
+}
+
+.hub-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 32px 36px;
+  position: relative;
+  overflow: hidden;
+  transition: all .2s;
+}
+.hub-card.core::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 0% 0%, rgba(106,166,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card.applications::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 100% 0%, rgba(184,106,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card > * { position: relative; z-index: 1; }
+.hub-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.hub-card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 700;
+}
+.hub-card.core .label { color: var(--accent); }
+.hub-card.applications .label { color: var(--accent-2); }
+.hub-card h2 {
+  font-size: 32px; line-height: 1.15;
+  margin: 8px 0 12px;
+  font-weight: 700; letter-spacing: -0.02em;
+  color: var(--text);
+}
+.hub-card .desc {
+  font-size: 15px; line-height: 1.6; color: var(--text-dim);
+  margin: 0 0 24px;
+}
+.hub-card .stats {
+  display: flex; gap: 18px; margin-bottom: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-card .stats .num { color: var(--text); font-weight: 600; }
+.hub-card .cta {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 10px;
+  font-size: 13.5px; font-weight: 600;
+  text-decoration: none;
+}
+.hub-card.core .cta {
+  background: rgba(106,166,255,0.12);
+  color: var(--accent);
+  border: 1px solid rgba(106,166,255,0.30);
+}
+.hub-card.applications .cta {
+  background: rgba(184,106,255,0.12);
+  color: var(--accent-2);
+  border: 1px solid rgba(184,106,255,0.30);
+}
+.hub-card .cta:hover { text-decoration: none; transform: translateX(2px); }
+.hub-card .quick {
+  margin-top: 24px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.hub-card .quick h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut); font-weight: 600;
+}
+.hub-card .quick ul { list-style: none; margin: 0; padding: 0; }
+.hub-card .quick li { padding: 4px 0; font-size: 13px; }
+.hub-card .quick li a { color: var(--text-dim); text-decoration: none; }
+.hub-card .quick li a:hover { color: var(--text); }
+
+/* ═══ Hub page (CORE / APPLICATIONS landing) ════════════════════════ */
+
+.hub-hero {
+  padding: 64px 32px 36px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1240px; margin: 0 auto;
+}
+.hub-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 600;
+}
+.hub-hero h1 {
+  font-size: 48px; margin: 12px 0 14px;
+  font-weight: 750; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.hub-hero p {
+  color: var(--text-dim); font-size: 17px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.hub-hero .stats {
+  display: flex; gap: 22px; margin-top: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-hero .stats .num { color: var(--text); font-weight: 600; }
+
+.cat-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 18px;
+  max-width: 1280px; margin: 28px auto; padding: 0 32px 80px;
+}
+.cat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 24px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.cat-card:hover {
+  border-color: var(--border-3);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+}
+.cat-card .head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 12px;
+}
+.cat-card .head .icon {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 18px;
+  color: var(--accent);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.cat-card.app .head .icon { color: var(--accent-2); }
+.cat-card .title {
+  font-size: 18px; font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  flex: 1;
+}
+.cat-card .head .count {
+  font-size: 12px; color: var(--text-mut);
+  flex-shrink: 0;
+}
+.cat-card .tagline {
+  font-size: 13px; color: var(--accent);
+  font-weight: 500;
+  margin: 0;
+}
+.cat-card.app .tagline { color: var(--accent-2); }
+.cat-card .desc {
+  font-size: 13.5px; color: var(--text-dim);
+  line-height: 1.55;
+  margin: 4px 0 0;
+}
+
+/* ═══ Category landing (per family/domain) ══════════════════════════ */
+
+.cat-hero {
+  padding: 56px 32px 32px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1180px; margin: 0 auto;
+}
+.cat-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px; font-weight: 600;
+}
+.cat-hero h1 {
+  font-size: 42px; margin: 10px 0 14px;
+  font-weight: 700; letter-spacing: -0.02em;
+}
+.cat-hero p {
+  color: var(--text-dim); font-size: 16px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.cat-hero .stats {
+  display: flex; gap: 20px; margin-top: 22px;
+  font-size: 13px; color: var(--text-mut);
+}
+.cat-hero .stats .num { color: var(--text); font-weight: 600; }
+.cat-hero .search-row {
+  max-width: 520px; margin: 24px 0 0;
+}
+.cat-hero .search-row input { padding: 12px 18px; font-size: 14px; }
+
+.doc-cards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 14px;
+  max-width: 1180px; margin: 36px auto 96px;
+  padding: 0 32px;
+}
+.doc-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 22px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .18s;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.doc-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.doc-card.app:hover { border-color: var(--accent-2); }
+.doc-card .head {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+}
+.doc-card .title {
+  font-size: 16px; font-weight: 650; line-height: 1.3;
+  color: var(--text); flex: 1;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  letter-spacing: -0.01em;
+}
+.doc-card .badges { display: flex; gap: 4px; flex-shrink: 0; }
+.doc-card .badge {
+  font-size: 9px; padding: 2px 7px; border-radius: 3px;
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px;
+  background: var(--bg-3); color: var(--text-mut);
+}
+.doc-card .badge.dup { background: rgba(248,113,113,0.18); color: var(--bad); }
+.doc-card .badge.fmt-md { background: rgba(106,166,255,0.18); color: #6aa6ff; }
+.doc-card .badge.fmt-pdf { background: rgba(248,113,113,0.18); color: #f87171; }
+.doc-card .badge.fmt-docx { background: rgba(56,189,248,0.18); color: #38bdf8; }
+.doc-card .badge.fmt-html { background: rgba(251,191,36,0.18); color: #fbbf24; }
+.doc-card .one-liner {
+  font-size: 13.5px; color: var(--text-dim); line-height: 1.55;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  flex: 1;
+}
+.doc-card .meta {
+  display: flex; gap: 14px; font-size: 11px; color: var(--text-mut);
+  border-top: 1px solid var(--border); padding-top: 12px;
+  margin-top: auto;
+}
+.doc-card .meta .num { color: var(--text-dim); font-weight: 600; font-feature-settings: "tnum"; }
+
+/* ═══ Mobile ════════════════════════════════════════════════════════ */
+@media (max-width: 980px) {
+  .layout { grid-template-columns: 1fr; }
+  .toc-sidebar { display: none; }
+  .content { padding: 28px 24px 80px; }
+  .doc-hero h1 { font-size: 30px; }
+  .doc-hero .one-liner { font-size: 16px; }
+  .topbar { padding: 10px 18px; }
+  .index-hero h1 { font-size: 38px; }
+  .index-hero { padding: 56px 20px 36px; }
+  .hub-hero h1 { font-size: 34px; }
+  .hub-hero { padding: 40px 20px 24px; }
+  .cat-hero h1 { font-size: 32px; }
+  .cat-hero { padding: 36px 20px 24px; }
+  .doc-cards, .cat-grid { padding: 0 20px 60px; }
+  .split-view { padding: 0 20px 40px; }
+}
+</style>
+</head>
+<body data-doc-type="applied-implementation">
+<nav class="topbar">
+<div class="crumbs"><a href="../../00-Index.html">Learning</a><span class="sep">›</span><a href="../_Hub.html">APPLICATIONS</a><span class="sep">›</span><a href="_Category.html">Scheduling Module</a><span class="sep">›</span><span class="current">Generic Schedule Grid - For Dummies</span></div>
+<div class="actions"><a class="action" href="generic-schedule-grid__2.md" download>↓ Download</a><a class="action" href="../../00-Index.html">All docs</a></div>
+</nav>
+<div class="layout">
+<aside class="toc-sidebar"><h3>On this page</h3><ol><li class="lvl-2"><a href="#generic-schedule-grid-for-dummies">Generic Schedule Grid - For Dummies</a></li><li class="lvl-2"><a href="#the-real-world-problem">The Real-World Problem</a></li><li class="lvl-2"><a href="#what-we-built">What We Built</a></li><li class="lvl-2"><a href="#the-four-views">The Four Views</a></li><li class="lvl-2"><a href="#how-it-works">How It Works</a></li><li class="lvl-3"><a href="#step-1-the-data-provider-contract">Step 1: The Data Provider Contract</a></li><li class="lvl-3"><a href="#step-2-each-view-has-its-own-provider">Step 2: Each View Has Its Own Provider</a></li><li class="lvl-3"><a href="#step-3-the-generic-grid-uses-the-provider">Step 3: The Generic Grid Uses the Provider</a></li><li class="lvl-2"><a href="#the-row-abstraction">The Row Abstraction</a></li><li class="lvl-2"><a href="#wrapper-components-the-easy-part">Wrapper Components (The Easy Part)</a></li><li class="lvl-2"><a href="#where-to-find-each-piece">Where To Find Each Piece</a></li><li class="lvl-3"><a href="#data-providers">Data Providers</a></li><li class="lvl-3"><a href="#contracts">Contracts</a></li><li class="lvl-3"><a href="#ui-components">UI Components</a></li><li class="lvl-3"><a href="#integration-points">Integration Points</a></li><li class="lvl-2"><a href="#adding-a-new-view-example-teams-employees">Adding a New View (Example: Teams → Employees)</a></li><li class="lvl-2"><a href="#key-concepts">Key Concepts</a></li><li class="lvl-2"><a href="#why-this-design-rocks">Why This Design Rocks</a></li><li class="lvl-3"><a href="#before-without-abstraction">Before (Without Abstraction)</a></li><li class="lvl-3"><a href="#after-with-generic-grid">After (With Generic Grid)</a></li><li class="lvl-3"><a href="#adding-new-entity-types">Adding New Entity Types</a></li><li class="lvl-2"><a href="#the-schedule-entry-interface">The Schedule Entry Interface</a></li><li class="lvl-2"><a href="#quick-reference">Quick Reference</a></li><li class="lvl-2"><a href="#remember">Remember</a></li></ol></aside>
+<main class="content">
+
+<header class="doc-hero">
+  <div class="eyebrow"><span class="dot"></span>Implementation · Scheduling Module</div>
+  <h1>Generic Schedule Grid - For Dummies</h1>
+  <p class="one-liner">Refactoring story of a 2000-line Razor schedule grid into a single GenericScheduleGrid&lt;TSchedule&gt; backed by four IScheduleGridDataProvider implementations - one component, four views, no copy-paste.</p>
+  <div class="meta-row">
+    <span class="meta-pill fmt-md">MD</span>
+    <span class="meta-pill complexity-intermediate">Intermediate</span>
+    <span class="meta-pill"><span class="num">1,316</span> words</span>
+    <span class="meta-pill"><span class="num">7</span> min read</span>
+    <span class="meta-pill source">Source: <code>Education/ForDummies/09-GenericScheduleGrid-ForDummies.md</code></span>
+  </div>
+</header>
+
+<div class="curation"><p class="intro-hook">How do you avoid maintaining 8000 lines of copy-pasted Razor when business asks for the same grid &#x27;but inverted&#x27;? You stop writing components for entities and start writing components for shapes. This is the story of how four schedule views became one generic grid plus four 30-line wrappers.</p>
+<div class="exec-summary"><h3>Executive summary</h3><p>This document describes how the team turned what would have been four near-identical 2000-line Razor schedule components (Job to Employees, Job to Equipment, Employee to Jobs, Equipment to Jobs) into a single generic GenericScheduleGrid&lt;TSchedule&gt; component. The grid delegates data fetching and saving to an injected IScheduleGridDataProvider, and each of the four views supplies its own provider. Rows implement IScheduleGridRow so the grid can render Employees, Equipment, or Jobs uniformly without knowing what they are. Schedules implement IScheduleEntry so the grid can compute hours and detect overlaps generically. Adding a fifth view (Team -&gt; Employees) means writing one provider and one wrapper - no changes to the grid itself.</p></div>
+<div class="metaphor-callout"><div class="icon">💡</div><div class="body"><span class="label">Metaphor</span>GenericScheduleGrid is like a universal picture frame that doesn&#x27;t care what painting you put in it - oil, watercolor, photograph, child&#x27;s crayon drawing - it just needs the painting to have a width, a height, and a way to hang. The data providers are the curators who know which paintings live in which gallery and how to take them off the wall, while the wrapper components are the gallery labels that say &#x27;this frame currently shows the Renaissance collection.&#x27;</div></div>
+<div class="tutorial-structure"><div class="tutorial-section"><h3><span class="num">1</span>Why it exists</h3><p>The team had a beautiful schedule grid showing Employees on Jobs but needed three more views: Equipment on Jobs, Jobs on Employee, and Jobs on Equipment. The naive copy-paste approach would have produced 8000+ lines to maintain, with bug fixes and feature requests needing four touches each. They needed one component that worked for all four perspectives.</p></div><div class="tutorial-section"><h3><span class="num">2</span>What it does</h3><p>GenericScheduleGrid&lt;TSchedule&gt; renders a row-and-column schedule editor where the rows can be any IScheduleGridRow, the cells contain any IScheduleEntry, and all data fetching is delegated to an injected IScheduleGridDataProvider&lt;TSchedule&gt;. Four data providers (JobEmployeeScheduleDataProvider, JobEquipmentScheduleDataProvider, EmployeeJobScheduleDataProvider, EquipmentJobScheduleDataProvider) each know how to ask the database for the rows and schedules of one specific perspective. Thin wrapper components (JobEmployeeScheduleTab, JobEquipmentScheduleTab, EmployeeScheduleTab, EquipmentScheduleTab) just configure the generic grid with the right provider and ContextId.</p></div><div class="tutorial-section"><h3><span class="num">3</span>How it works</h3><p>The IScheduleGridDataProvider&lt;TSchedule&gt; contract requires GetRowsAsync, GetSchedulesAsync, CreateNewSchedule, and CRUD methods. JobEmployeeScheduleDataProvider&#x27;s GetRowsAsync queries JobEmployee where JobId == jobId; EmployeeJobScheduleDataProvider&#x27;s GetRowsAsync queries the same join table but filtered by EmployeeId. IScheduleGridRow exposes RowId, RowLabel, RowIcon, NavigationUrl so the grid can render any entity uniformly. IScheduleEntry exposes ScheduleDate, CheckInTime, CheckOutTime, IsCrossMidnightShift, OverlapsWith() so the grid can compute hours and warn about conflicts without caring whether it&#x27;s an employee or equipment schedule. Adding a new view is four steps: write the provider, register it in DI, write a wrapper that injects it, drop it on the page.</p></div></div>
+<div class="context-row"><div class="context-card prereqs"><h4>You should know first</h4><ul><li>Blazor components</li><li>C# generics</li><li>interface-based design</li><li>dependency injection</li></ul></div><div class="context-card concepts"><h4>Key concepts covered</h4><ul><li>generic components</li><li>strategy pattern via DI</li><li>IScheduleGridDataProvider</li><li>IScheduleGridRow abstraction</li><li>IScheduleEntry interface</li><li>wrapper components</li><li>ContextId vs RowId</li></ul></div><div class="context-card builds"><h4>Opens the door to</h4><ul><li>plugin architectures</li><li>open-closed principle in practice</li><li>Razor generic type parameters</li></ul></div></div></div>
+<article>
+<h1 id="generic-schedule-grid-for-dummies">Generic Schedule Grid - For Dummies</h1>
+<h2 id="the-real-world-problem">The Real-World Problem</h2>
+<p>We had a beautiful schedule grid that showed <strong>Employees on Jobs</strong>:</p>
+<pre><code class="lang-text">         | Mon 16 | Tue 17 | Wed 18 | Thu 19 |
+---------+--------+--------+--------+--------+
+Employee1| 08-17  |        | 08-17  |        |
+Employee2|        | 08-17  | 08-17  | 08-17  |</code></pre>
+<p>But then we needed:</p>
+<ul>
+<li><strong>Equipment on Jobs</strong> (same view, but equipment instead of employees)</li>
+<li><strong>Jobs on Employee</strong> (inverted: see all jobs where Employee X is assigned)</li>
+<li><strong>Jobs on Equipment</strong> (inverted: see all jobs where Equipment Y is assigned)</li>
+</ul>
+<p><strong>The naive approach:</strong> Copy-paste the 2000+ line JobsScheduleView.razor four times.</p>
+<p><strong>The problem:</strong></p>
+<ul>
+<li>8000+ lines to maintain</li>
+<li>Bug fix? Fix it in 4 places</li>
+<li>Feature request? Add it in 4 places</li>
+<li>Nightmare!</li>
+</ul>
+<p><strong>The smart approach:</strong> One generic component that works for ALL four views.</p>
+<hr>
+<h2 id="what-we-built">What We Built</h2>
+<div class="diagram-box"><pre>┌─────────────────────────────────────────────────────────────────┐
+│              GenericScheduleGrid&lt;TSchedule&gt;                      │
+│                                                                  │
+│   &quot;I don&#x27;t care WHAT you&#x27;re scheduling.                         │
+│    Just tell me HOW to get the data.&quot;                           │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+           Uses DataProvider to load/save data
+                              │
+┌──────────────┬──────────────┬──────────────┬──────────────┐
+│ JobEmployee  │ JobEquipment │ EmployeeJob  │ EquipmentJob │
+│ DataProvider │ DataProvider │ DataProvider │ DataProvider │
+│              │              │              │              │
+│ Job→Employees│ Job→Equipment│ Emp→Jobs     │ Equip→Jobs   │
+└──────────────┴──────────────┴──────────────┴──────────────┘</pre></div>
+<hr>
+<h2 id="the-four-views">The Four Views</h2>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>View</th>
+<th>Where It&#x27;s Used</th>
+<th>Fixed Axis</th>
+<th>Rows</th>
+<th>Columns</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Job → Employees</strong></td>
+<td>Jobs.razor (Schedule tab)</td>
+<td>Job</td>
+<td>Employees</td>
+<td>Days</td>
+</tr>
+<tr>
+<td><strong>Job → Equipment</strong></td>
+<td>Jobs.razor (toggle)</td>
+<td>Job</td>
+<td>Equipment</td>
+<td>Days</td>
+</tr>
+<tr>
+<td><strong>Employee → Jobs</strong></td>
+<td>ColaboradoresDetalhe.razor</td>
+<td>Employee</td>
+<td>Jobs</td>
+<td>Days</td>
+</tr>
+<tr>
+<td><strong>Equipment → Jobs</strong></td>
+<td>EquipamentoDetalhe.razor</td>
+<td>Equipment</td>
+<td>Jobs</td>
+<td>Days</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="how-it-works">How It Works</h2>
+<h3 id="step-1-the-data-provider-contract">Step 1: The Data Provider Contract</h3>
+<p>Every data provider &quot;signs a contract&quot; promising to implement these methods:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">interface</span> <span class="type">IScheduleGridDataProvider</span>&lt;<span class="type">TSchedule</span>&gt;
+{
+    <span class="cmt">// &quot;Tell me who goes in the rows&quot;</span>
+    <span class="type">Task</span>&lt;<span class="type">List</span>&lt;<span class="type">IScheduleGridRow</span>&gt;&gt; <span class="type">GetRowsAsync</span>(<span class="kw">int</span> contextId, <span class="kw">string</span> companyDatabase);
+
+    <span class="cmt">// &quot;Tell me the schedules for the date range&quot;</span>
+    <span class="type">Task</span>&lt;<span class="type">List</span>&lt;<span class="type">TSchedule</span>&gt;&gt; <span class="type">GetSchedulesAsync</span>(<span class="kw">int</span> contextId, <span class="type">DateTime</span> start, <span class="type">DateTime</span> end, ...);
+
+    <span class="cmt">// &quot;Create a new schedule when user clicks a cell&quot;</span>
+    <span class="type">TSchedule</span> <span class="type">CreateNewSchedule</span>(<span class="kw">int</span> contextId, <span class="kw">int</span> rowId, <span class="kw">string</span> rowLabel, <span class="type">DateTime</span> date);
+
+    <span class="cmt">// &quot;Save this schedule&quot;</span>
+    <span class="type">Task</span>&lt;<span class="type">ServiceResult</span>&gt; <span class="type">CreateScheduleAsync</span>(<span class="type">TSchedule</span> schedule, ...);
+    <span class="type">Task</span>&lt;<span class="type">ServiceResult</span>&gt; <span class="type">UpdateScheduleAsync</span>(<span class="type">TSchedule</span> schedule, ...);
+    <span class="type">Task</span>&lt;<span class="type">ServiceResult</span>&gt; <span class="type">DeleteScheduleAsync</span>(<span class="kw">int</span> scheduleId, ...);
+}</code></pre>
+<h3 id="step-2-each-view-has-its-own-provider">Step 2: Each View Has Its Own Provider</h3>
+<p><strong>JobEmployeeScheduleDataProvider</strong> (Job → Employees):</p>
+<pre><code class="lang-csharp"><span class="cmt">// GetRowsAsync returns: Employees assigned to this Job</span>
+<span class="kw">var</span> employees = context.<span class="type">Set</span>&lt;<span class="type">JobEmployee</span>&gt;()
+    .<span class="type">Where</span>(je =&gt; je.<span class="type">JobId</span> == jobId &amp;&amp; je.<span class="type">IsActive</span>)
+    .<span class="type">Select</span>(je =&gt; je.<span class="type">Employee</span>)
+    .<span class="type">ToList</span>();
+
+<span class="cmt">// GetSchedulesAsync queries: JobSchedule table</span>
+<span class="kw">var</span> schedules = context.<span class="type">Set</span>&lt;<span class="type">JobSchedule</span>&gt;()
+    .<span class="type">Where</span>(s =&gt; s.<span class="type">JobId</span> == jobId &amp;&amp; s.<span class="type">ScheduleDate</span> &gt;= start &amp;&amp; s.<span class="type">ScheduleDate</span> &lt;= end)
+    .<span class="type">ToList</span>();</code></pre>
+<p><strong>EmployeeJobScheduleDataProvider</strong> (Employee → Jobs):</p>
+<pre><code class="lang-csharp"><span class="cmt">// GetRowsAsync returns: Jobs where this Employee is assigned</span>
+<span class="kw">var</span> jobs = context.<span class="type">Set</span>&lt;<span class="type">JobEmployee</span>&gt;()
+    .<span class="type">Where</span>(je =&gt; je.<span class="type">EmployeeId</span> == employeeId &amp;&amp; je.<span class="type">IsActive</span>)
+    .<span class="type">Select</span>(je =&gt; je.<span class="type">Job</span>)
+    .<span class="type">ToList</span>();
+
+<span class="cmt">// GetSchedulesAsync queries: Same JobSchedule table, different filter</span>
+<span class="kw">var</span> schedules = context.<span class="type">Set</span>&lt;<span class="type">JobSchedule</span>&gt;()
+    .<span class="type">Where</span>(s =&gt; s.<span class="type">EmployeeId</span> == employeeId &amp;&amp; s.<span class="type">ScheduleDate</span> &gt;= start &amp;&amp; ...)
+    .<span class="type">ToList</span>();</code></pre>
+<h3 id="step-3-the-generic-grid-uses-the-provider">Step 3: The Generic Grid Uses the Provider</h3>
+<pre><code class="lang-razor">&lt;<span class="type">GenericScheduleGrid</span> <span class="type">TSchedule</span>=<span class="str">&quot;JobSchedule&quot;</span>
+                    <span class="type">ContextId</span>=<span class="str">&quot;@JobId&quot;</span>
+                    <span class="type">DataProvider</span>=<span class="str">&quot;@_dataProvider&quot;</span>
+                    <span class="type">CompanyDatabase</span>=<span class="str">&quot;@CompanyDb&quot;</span>
+                    <span class="type">UserId</span>=<span class="str">&quot;@UserId&quot;</span> /&gt;</code></pre>
+<p>The grid doesn&#x27;t know or care about:</p>
+<ul>
+<li>What type of entity the rows represent</li>
+<li>Where the schedules are stored</li>
+<li>The specific database queries</li>
+</ul>
+<p>It just asks the provider: &quot;Give me rows&quot; and &quot;Give me schedules.&quot;</p>
+<hr>
+<h2 id="the-row-abstraction">The Row Abstraction</h2>
+<p>Every row (Employee, Equipment, or Job) looks the same to the grid:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">interface</span> <span class="type">IScheduleGridRow</span>
+{
+    <span class="kw">int</span> <span class="type">RowId</span> { <span class="kw">get</span>; }              <span class="cmt">// Employee 123, Equipment 456, Job 789</span>
+    <span class="kw">string</span> <span class="type">RowLabel</span> { <span class="kw">get</span>; }         <span class="cmt">// &quot;John Doe&quot;, &quot;Excavator-001&quot;, &quot;Project Alpha&quot;</span>
+    <span class="kw">string</span> <span class="type">RowIcon</span> { <span class="kw">get</span>; }          <span class="cmt">// &quot;person&quot;, &quot;build&quot;, &quot;work&quot;</span>
+    <span class="kw">string</span>? <span class="type">RowSecondaryLabel</span> { <span class="kw">get</span>; } <span class="cmt">// Optional subtitle</span>
+    <span class="kw">string</span> <span class="type">NavigationUrl</span> { <span class="kw">get</span>; }    <span class="cmt">// &quot;/employees/123&quot;, &quot;/equipments/456&quot;</span>
+}</code></pre>
+<p>The grid renders:</p>
+<pre><code class="lang-text">[icon] RowLabel        | Mon | Tue | Wed | Thu |
+       RowSecondaryLabel</code></pre>
+<hr>
+<h2 id="wrapper-components-the-easy-part">Wrapper Components (The Easy Part)</h2>
+<p>We create thin &quot;wrapper&quot; components that configure the generic grid:</p>
+<p><strong>JobEmployeeScheduleTab.razor:</strong></p>
+<pre><code class="lang-razor">@inject <span class="type">JobEmployeeScheduleDataProvider</span> <span class="type">DataProvider</span>
+
+&lt;<span class="type">GenericScheduleGrid</span> <span class="type">TSchedule</span>=<span class="str">&quot;JobSchedule&quot;</span>
+                    <span class="type">ContextId</span>=<span class="str">&quot;@JobId&quot;</span>
+                    <span class="type">DataProvider</span>=<span class="str">&quot;@DataProvider&quot;</span>
+                    <span class="type">RowHeaderLabel</span>=<span class="str">&quot;Colaborador&quot;</span> /&gt;
+
+@code {
+    [<span class="type">Parameter</span>] <span class="kw">public</span> <span class="kw">int</span> <span class="type">JobId</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="cmt">// ... other parameters</span>
+}</code></pre>
+<p><strong>EmployeeScheduleTab.razor:</strong></p>
+<pre><code class="lang-razor">@inject <span class="type">EmployeeJobScheduleDataProvider</span> <span class="type">DataProvider</span>
+
+&lt;<span class="type">GenericScheduleGrid</span> <span class="type">TSchedule</span>=<span class="str">&quot;JobSchedule&quot;</span>
+                    <span class="type">ContextId</span>=<span class="str">&quot;@EmployeeId&quot;</span>
+                    <span class="type">DataProvider</span>=<span class="str">&quot;@DataProvider&quot;</span>
+                    <span class="type">RowHeaderLabel</span>=<span class="str">&quot;Obra&quot;</span> /&gt;
+
+@code {
+    [<span class="type">Parameter</span>] <span class="kw">public</span> <span class="kw">int</span> <span class="type">EmployeeId</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="cmt">// ... other parameters</span>
+}</code></pre>
+<p><strong>The magic:</strong> Same grid component, different providers, different views!</p>
+<hr>
+<h2 id="where-to-find-each-piece">Where To Find Each Piece</h2>
+<h3 id="data-providers">Data Providers</h3>
+<div class="diagram-box"><pre>Services/Core/Scheduling/DataProviders/
+├── JobEmployeeScheduleDataProvider.cs    (Job → Employees)
+├── JobEquipmentScheduleDataProvider.cs   (Job → Equipment)
+├── EmployeeJobScheduleDataProvider.cs    (Employee → Jobs)
+└── EquipmentJobScheduleDataProvider.cs   (Equipment → Jobs)</pre></div>
+<h3 id="contracts">Contracts</h3>
+<div class="diagram-box"><pre>Services/Core/Scheduling/Contracts/
+├── IScheduleGridDataProvider.cs          (Data provider interface)
+├── IScheduleGridRow.cs                   (Row abstraction)
+└── IScheduleEntry.cs                     (Schedule entry interface)</pre></div>
+<h3 id="ui-components">UI Components</h3>
+<div class="diagram-box"><pre>Pages/Shared/Scheduling/
+├── GenericScheduleGrid.razor             (The main component)
+└── GenericScheduleEditDialog.razor       (Edit dialog)
+
+Pages/Jobs/Components/
+├── JobEmployeeScheduleTab.razor          (Wrapper for Jobs page)
+└── JobEquipmentScheduleTab.razor         (Wrapper for Jobs page)
+
+Pages/HR/EmployeeManagement/Components/
+└── EmployeeScheduleTab.razor             (Wrapper for Employee detail)
+
+Pages/Equipments/Components/
+└── EquipmentScheduleTab.razor            (Wrapper for Equipment detail)</pre></div>
+<h3 id="integration-points">Integration Points</h3>
+<pre><code class="lang-text">Pages/Jobs/Jobs.razor                     (Toggle between Employee/Equipment)
+Pages/HR/EmployeeManagement/ColaboradoresDetalhe.razor  (Horários tab)
+Pages/Equipments/EquipamentoDetalhe.razor              (Horários tab)</code></pre>
+<hr>
+<h2 id="adding-a-new-view-example-teams-employees">Adding a New View (Example: Teams → Employees)</h2>
+<p>Want to show which employees are in a team, with their schedules?</p>
+<p><strong>Step 1:</strong> Create the provider</p>
+<pre><code class="lang-csharp"><span class="cmt">// Services/Core/Scheduling/DataProviders/TeamEmployeeScheduleDataProvider.cs</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">TeamEmployeeScheduleDataProvider</span> : <span class="type">IScheduleGridDataProvider</span>&lt;<span class="type">TeamSchedule</span>&gt;
+{
+    <span class="kw">public</span> <span class="kw">string</span> <span class="type">EntityType</span> =&gt; <span class="str">&quot;Team&quot;</span>;
+
+    <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="type">List</span>&lt;<span class="type">IScheduleGridRow</span>&gt;&gt; <span class="type">GetRowsAsync</span>(<span class="kw">int</span> teamId, ...)
+    {
+        <span class="cmt">// Query TeamMembers to get employees in this team</span>
+    }
+
+    <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="type">List</span>&lt;<span class="type">TeamSchedule</span>&gt;&gt; <span class="type">GetSchedulesAsync</span>(<span class="kw">int</span> teamId, ...)
+    {
+        <span class="cmt">// Query team schedules</span>
+    }
+
+    <span class="cmt">// ... other methods</span>
+}</code></pre>
+<p><strong>Step 2:</strong> Register in Program.cs</p>
+<pre><code class="lang-csharp">builder.<span class="type">Services</span>.<span class="type">AddScoped</span>&lt;<span class="type">TeamEmployeeScheduleDataProvider</span>&gt;();</code></pre>
+<p><strong>Step 3:</strong> Create wrapper component</p>
+<pre><code class="lang-razor">@inject <span class="type">TeamEmployeeScheduleDataProvider</span> <span class="type">DataProvider</span>
+
+&lt;<span class="type">GenericScheduleGrid</span> <span class="type">TSchedule</span>=<span class="str">&quot;TeamSchedule&quot;</span>
+                    <span class="type">ContextId</span>=<span class="str">&quot;@TeamId&quot;</span>
+                    <span class="type">DataProvider</span>=<span class="str">&quot;@DataProvider&quot;</span>
+                    <span class="type">RowHeaderLabel</span>=<span class="str">&quot;Membro&quot;</span> /&gt;</code></pre>
+<p><strong>Step 4:</strong> Add to your page</p>
+<p>Done! No changes to GenericScheduleGrid.razor needed.</p>
+<hr>
+<h2 id="key-concepts">Key Concepts</h2>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Concept</th>
+<th>What It Means</th>
+<th>Example</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>ContextId</strong></td>
+<td>The &quot;fixed axis&quot; entity</td>
+<td>JobId, EmployeeId, EquipmentId</td>
+</tr>
+<tr>
+<td><strong>RowId</strong></td>
+<td>What appears in each row</td>
+<td>EmployeeId, JobId</td>
+</tr>
+<tr>
+<td><strong>DataProvider</strong></td>
+<td>Knows how to fetch/save data</td>
+<td>JobEmployeeScheduleDataProvider</td>
+</tr>
+<tr>
+<td><strong>TSchedule</strong></td>
+<td>The schedule entity type</td>
+<td>JobSchedule, JobEquipmentSchedule</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="why-this-design-rocks">Why This Design Rocks</h2>
+<h3 id="before-without-abstraction">Before (Without Abstraction)</h3>
+<ul>
+<li>4 separate schedule components</li>
+<li>8000+ lines of duplicated code</li>
+<li>Bug fix = edit 4 files</li>
+<li>New feature = implement 4 times</li>
+</ul>
+<h3 id="after-with-generic-grid">After (With Generic Grid)</h3>
+<ul>
+<li>1 schedule component + 4 thin providers</li>
+<li>~1500 lines total</li>
+<li>Bug fix = edit 1 file</li>
+<li>New feature = implement once</li>
+</ul>
+<h3 id="adding-new-entity-types">Adding New Entity Types</h3>
+<p>Before: Copy-paste entire component, rename everything, pray you didn&#x27;t miss anything</p>
+<p>After:</p>
+<ol>
+<li>Create new DataProvider (~200 lines)</li>
+<li>Create wrapper component (~30 lines)</li>
+<li>Register in DI</li>
+<li>Use it!</li>
+</ol>
+<hr>
+<h2 id="the-schedule-entry-interface">The Schedule Entry Interface</h2>
+<p>Both <code class="il">JobSchedule</code> and <code class="il">JobEquipmentSchedule</code> implement:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">interface</span> <span class="type">IScheduleEntry</span>
+{
+    <span class="kw">int</span> <span class="type">Id</span> { <span class="kw">get</span>; }
+    <span class="kw">int</span> <span class="type">JobId</span> { <span class="kw">get</span>; }
+    <span class="kw">int</span> <span class="type">EntityId</span> { <span class="kw">get</span>; }           <span class="cmt">// EmployeeId OR EquipmentId</span>
+    <span class="type">DateTime</span> <span class="type">ScheduleDate</span> { <span class="kw">get</span>; }
+    <span class="type">DateTime</span>? <span class="type">EndDate</span> { <span class="kw">get</span>; }
+    <span class="type">TimeSpan</span>? <span class="type">CheckInTime</span> { <span class="kw">get</span>; }
+    <span class="type">TimeSpan</span>? <span class="type">CheckOutTime</span> { <span class="kw">get</span>; }
+
+    <span class="cmt">// Computed properties</span>
+    <span class="kw">bool</span> <span class="type">IsCrossMidnightShift</span> { <span class="kw">get</span>; }
+    <span class="kw">decimal</span> <span class="type">CalculatedTotalHours</span> { <span class="kw">get</span>; }
+    <span class="kw">bool</span> <span class="type">OverlapsWith</span>(<span class="type">IScheduleEntry</span> other);
+}</code></pre>
+<p>This means the generic grid can:</p>
+<ul>
+<li>Display any schedule type in cells</li>
+<li>Calculate hours</li>
+<li>Detect overlaps</li>
+<li>Handle cross-midnight shifts</li>
+</ul>
+<p>All without knowing if it&#x27;s an employee or equipment schedule!</p>
+<hr>
+<h2 id="quick-reference">Quick Reference</h2>
+<p><strong>Want to show Employees on a Job?</strong> → Use <code class="il">JobEmployeeScheduleTab</code> with <code class="il">JobId</code></p>
+<p><strong>Want to show Equipment on a Job?</strong> → Use <code class="il">JobEquipmentScheduleTab</code> with <code class="il">JobId</code></p>
+<p><strong>Want to show Jobs for an Employee?</strong> → Use <code class="il">EmployeeScheduleTab</code> with <code class="il">EmployeeId</code></p>
+<p><strong>Want to show Jobs for Equipment?</strong> → Use <code class="il">EquipmentScheduleTab</code> with <code class="il">EquipmentId</code></p>
+<hr>
+<h2 id="remember">Remember</h2>
+<ol>
+<li><strong>The grid is generic</strong> - It works with any schedule type</li>
+<li><strong>Providers do the work</strong> - They know WHERE the data lives</li>
+<li><strong>Wrappers are thin</strong> - Just configuration, no logic</li>
+<li><strong>One codebase</strong> - Fix once, works everywhere</li>
+<li><strong>Extensible</strong> - New views = new provider, not new grid</li>
+</ol>
+</article>
+<div class="takeaways"><h3>Key takeaways</h3><ul><li>When you find yourself about to copy-paste a component, look for a generic type parameter and a strategy interface instead</li><li>Wrapper components should be thin - just inject a provider and configure the generic component</li><li>Interfaces like IScheduleGridRow let totally different entities (Employees, Equipment, Jobs) be rendered by the same UI code</li><li>ContextId is the &#x27;fixed axis&#x27; (the entity the user is viewing), RowId is what appears in each row</li><li>Adding a new view should mean writing a provider, not modifying the generic component</li><li>Razor supports generic type parameters via TSchedule, making this pattern work in markup</li></ul></div>
+<aside class="cross-refs"><h2>Cross-references</h2><div class="cross-ref-list"><a href="../../CORE/patterns/strategy-pattern.html"><span class="arrow">→</span>Strategy Pattern: Pluggable Algorithms</a><a href="../../CORE/language/csharp-generics.html"><span class="arrow">→</span>Generics in C#: A Comprehensive Guide</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>blazor-generic-components</a><a href="../../APPLICATIONS/factory-floor/factory-floor-system.html"><span class="arrow">→</span>Factory Floor Production System — Technical Documentation</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>scheduling-system</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>open-closed-principle</a></div></aside>
+<aside class="related"><h2>More in this category</h2><div class="related-grid"><a class="related-card" href="../../APPLICATIONS/scheduling/schedule-conflict-detector-patterns.html"><div class="title">Design Patterns &amp; SOLID Principles - For Dummies (Schedule Conflict Detector)</div><div class="meta"><span class="badge">MD</span><span>1,383 words</span></div></a><a class="related-card" href="../../APPLICATIONS/scheduling/generic-schedule-grid.html"><div class="title">Generic Schedule Grid Architecture</div><div class="meta"><span class="badge">MD</span><span>1,484 words</span></div></a><a class="related-card" href="../../APPLICATIONS/scheduling/givingcare-validator-pipeline.html"><div class="title">Validator Pipeline: Chain of Responsibility &amp; Strategy Pattern</div><div class="meta"><span class="badge">HTML</span><span>3,414 words</span></div></a></div></aside>
+</main>
+</div>
+<script>
+// ─── Active TOC item on scroll ────────────────────────────────────
+(function() {
+  const tocLinks = document.querySelectorAll('.toc-sidebar a[href^="#"]');
+  if (!tocLinks.length) return;
+  const headings = Array.from(document.querySelectorAll(
+    'article h1[id], article h2[id], article h3[id], article h4[id], .pdf-page[id]'
+  ));
+  if (!headings.length) return;
+  function setActive(id) {
+    tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+  }
+  let lastVisible = headings[0].id;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) lastVisible = e.target.id; });
+    setActive(lastVisible);
+  }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+  headings.forEach(h => observer.observe(h));
+  setActive(headings[0].id);
+})();
+
+// ─── Copy code buttons ────────────────────────────────────────────
+(function() {
+  document.querySelectorAll('article pre').forEach(pre => {
+    if (pre.closest('.diagram-box')) return;
+    if (pre.closest('.pdf-page')) return;
+    if (pre.parentElement && pre.parentElement.classList.contains('code-block')) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'code-block';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.type = 'button';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', () => {
+      const code = pre.querySelector('code') || pre;
+      const text = code.innerText;
+      const done = () => {
+        btn.textContent = 'Copied';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(() => {});
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+    });
+    wrap.appendChild(btn);
+  });
+})();
+
+// ─── Live filter (master + hub + category pages) ─────────────────
+(function() {
+  const search = document.getElementById('search-input');
+  if (!search) return;
+  const items = document.querySelectorAll('[data-search]');
+  function apply() {
+    const q = search.value.toLowerCase().trim();
+    items.forEach(el => {
+      const match = !q || el.dataset.search.includes(q);
+      el.style.display = match ? '' : 'none';
+    });
+    document.querySelectorAll('[data-search-parent]').forEach(parent => {
+      const visible = Array.from(parent.querySelectorAll('[data-search]'))
+        .some(el => el.style.display !== 'none');
+      parent.style.display = visible ? '' : 'none';
+    });
+  }
+  search.addEventListener('input', apply);
+})();
+</script>
+</body>
+</html>

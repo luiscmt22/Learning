@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backpropagation Visualized</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            margin: 0;
+            padding: 20px;
+        }
+        h1, h2 { text-align: center; color: #00d9ff; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .network-container {
+            background: #16213e;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        svg { display: block; margin: 0 auto; }
+        .neuron { cursor: pointer; transition: all 0.3s; }
+        .neuron:hover { filter: brightness(1.3); }
+        .label { font-size: 12px; fill: #aaa; }
+        .layer-label { font-size: 16px; fill: #00d9ff; font-weight: bold; }
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        button {
+            background: #00d9ff;
+            color: #1a1a2e;
+            border: none;
+            padding: 12px 24px;
+            margin: 5px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        button:hover { background: #00ffcc; transform: scale(1.05); }
+        button.active { background: #ff6b6b; }
+        .explanation {
+            background: #0f3460;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            line-height: 1.8;
+        }
+        .highlight { color: #00ffcc; font-weight: bold; }
+        .error-pos { color: #4ade80; }
+        .error-neg { color: #f87171; }
+        .formula {
+            background: #1a1a2e;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Backpropagation Visualized</h1>
+
+        <div class="controls">
+            <button onclick="showForward()">1. Forward Pass</button>
+            <button onclick="showError()">2. Output Errors</button>
+            <button onclick="showBackprop()">3. Backpropagation</button>
+            <button onclick="showUpdate()">4. Weight Update</button>
+            <button onclick="resetAll()">Reset</button>
+        </div>
+
+        <div class="network-container">
+            <svg id="network" width="900" height="450" viewBox="0 0 900 450">
+                <!-- Will be populated by JavaScript -->
+            </svg>
+        </div>
+
+        <div id="explanation" class="explanation">
+            <p>Click the buttons above to step through backpropagation!</p>
+            <p>This network has: <span class="highlight">6 inputs</span> → <span class="highlight">6 hidden neurons</span> → <span class="highlight">8 output neurons</span></p>
+        </div>
+    </div>
+
+    <script>
+        const svg = document.getElementById('network');
+        const explanation = document.getElementById('explanation');
+
+        // Network structure
+        const layers = [
+            { name: 'Inputs', count: 6, x: 100, color: '#64748b', labels: ['Fly?', 'Swim?', 'Mammal?', 'Bird?', 'Feline?', 'Danger?'] },
+            { name: 'Hidden', count: 6, x: 400, color: '#8b5cf6', labels: ['H0', 'H1', 'H2', 'H3', 'H4', 'H5'] },
+            { name: 'Output', count: 8, x: 700, color: '#06b6d4', labels: ['Penguin', 'Dog', 'Eagle', 'Shark', 'Cat', 'Whale', 'Bat', 'Salmon'] }
+        ];
+
+        // Sample data
+        const inputValues = [0, 0, 2, 0, 2, 0]; // Cat: doesn't fly, doesn't swim, mammal, not bird, feline, not dangerous
+        const expectedOutput = [0, 0, 0, 0, 1, 0, 0, 0]; // Cat is index 4
+        let outputValues = [0.2, 0.3, 0.1, 0.1, 0.6, 0.2, 0.1, 0.1]; // Simulated network output
+
+        function getY(index, count) {
+            const spacing = 350 / (count + 1);
+            return 50 + spacing * (index + 1);
+        }
+
+        function drawNetwork(highlightLayer = -1, showWeights = false, showErrors = false, showBackprop = false) {
+            svg.innerHTML = '';
+
+            // Draw connections first (behind neurons)
+            for (let l = 0; l < layers.length - 1; l++) {
+                const from = layers[l];
+                const to = layers[l + 1];
+
+                for (let i = 0; i < from.count; i++) {
+                    for (let j = 0; j < to.count; j++) {
+                        const x1 = from.x;
+                        const y1 = getY(i, from.count);
+                        const x2 = to.x;
+                        const y2 = getY(j, to.count);
+
+                        let strokeColor = '#334155';
+                        let strokeWidth = 1;
+                        let opacity = 0.3;
+
+                        // Highlight specific connections during backprop
+                        if (showBackprop && l === 1) {
+                            // Highlight connections from hidden to output during backprop
+                            if (i === 2) { // Highlight H2's connections
+                                strokeColor = '#f59e0b';
+                                strokeWidth = 2;
+                                opacity = 0.8;
+                            }
+                        }
+
+                        if (highlightLayer === l || highlightLayer === l + 1) {
+                            strokeColor = '#00d9ff';
+                            strokeWidth = 1.5;
+                            opacity = 0.5;
+                        }
+
+                        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        line.setAttribute('x1', x1);
+                        line.setAttribute('y1', y1);
+                        line.setAttribute('x2', x2);
+                        line.setAttribute('y2', y2);
+                        line.setAttribute('stroke', strokeColor);
+                        line.setAttribute('stroke-width', strokeWidth);
+                        line.setAttribute('opacity', opacity);
+                        svg.appendChild(line);
+                    }
+                }
+            }
+
+            // Draw neurons
+            layers.forEach((layer, l) => {
+                // Layer label
+                const layerLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                layerLabel.setAttribute('x', layer.x);
+                layerLabel.setAttribute('y', 30);
+                layerLabel.setAttribute('text-anchor', 'middle');
+                layerLabel.setAttribute('class', 'layer-label');
+                layerLabel.textContent = layer.name;
+                svg.appendChild(layerLabel);
+
+                for (let i = 0; i < layer.count; i++) {
+                    const y = getY(i, layer.count);
+
+                    // Neuron circle
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('cx', layer.x);
+                    circle.setAttribute('cy', y);
+                    circle.setAttribute('r', 20);
+                    circle.setAttribute('fill', layer.color);
+                    circle.setAttribute('class', 'neuron');
+
+                    if (highlightLayer === l) {
+                        circle.setAttribute('stroke', '#00ffcc');
+                        circle.setAttribute('stroke-width', 3);
+                    }
+
+                    svg.appendChild(circle);
+
+                    // Neuron label
+                    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    label.setAttribute('x', layer.x + 30);
+                    label.setAttribute('y', y + 5);
+                    label.setAttribute('class', 'label');
+                    label.textContent = layer.labels[i];
+                    svg.appendChild(label);
+
+                    // Show values for input layer
+                    if (l === 0 && highlightLayer >= 0) {
+                        const val = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                        val.setAttribute('x', layer.x);
+                        val.setAttribute('y', y + 5);
+                        val.setAttribute('text-anchor', 'middle');
+                        val.setAttribute('fill', '#fff');
+                        val.setAttribute('font-size', '12px');
+                        val.textContent = inputValues[i];
+                        svg.appendChild(val);
+                    }
+
+                    // Show output values and errors
+                    if (l === 2 && showErrors) {
+                        const error = expectedOutput[i] - outputValues[i];
+                        const errorColor = error > 0 ? '#4ade80' : '#f87171';
+
+                        // Output value
+                        const val = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                        val.setAttribute('x', layer.x);
+                        val.setAttribute('y', y + 5);
+                        val.setAttribute('text-anchor', 'middle');
+                        val.setAttribute('fill', '#fff');
+                        val.setAttribute('font-size', '11px');
+                        val.textContent = outputValues[i].toFixed(1);
+                        svg.appendChild(val);
+
+                        // Error badge
+                        const errorText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                        errorText.setAttribute('x', layer.x + 70);
+                        errorText.setAttribute('y', y + 5);
+                        errorText.setAttribute('fill', errorColor);
+                        errorText.setAttribute('font-size', '12px');
+                        errorText.setAttribute('font-weight', 'bold');
+                        errorText.textContent = (error >= 0 ? '+' : '') + error.toFixed(1);
+                        svg.appendChild(errorText);
+                    }
+
+                    // Show backprop arrows
+                    if (showBackprop && l === 1 && i === 2) {
+                        circle.setAttribute('fill', '#f59e0b');
+                        circle.setAttribute('stroke', '#fff');
+                        circle.setAttribute('stroke-width', 3);
+                    }
+                }
+            });
+
+            // Draw flow arrows
+            if (highlightLayer >= 0 && highlightLayer < 2) {
+                drawArrow(layers[highlightLayer].x + 30, 220, layers[highlightLayer + 1].x - 30, 220, '#00ffcc');
+            }
+
+            if (showBackprop) {
+                // Draw backward arrow
+                drawArrow(650, 250, 450, 250, '#f59e0b', true);
+            }
+        }
+
+        function drawArrow(x1, y1, x2, y2, color, dashed = false) {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', x1);
+            line.setAttribute('y1', y1);
+            line.setAttribute('x2', x2);
+            line.setAttribute('y2', y2);
+            line.setAttribute('stroke', color);
+            line.setAttribute('stroke-width', 3);
+            if (dashed) line.setAttribute('stroke-dasharray', '10,5');
+            line.setAttribute('marker-end', 'url(#arrowhead)');
+
+            // Add arrowhead marker if not exists
+            if (!document.getElementById('arrowhead')) {
+                const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+                defs.innerHTML = `
+                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="${color}" />
+                    </marker>
+                `;
+                svg.appendChild(defs);
+            }
+
+            svg.appendChild(line);
+        }
+
+        function showForward() {
+            drawNetwork(0, false, false, false);
+            setTimeout(() => drawNetwork(1, false, false, false), 800);
+            setTimeout(() => drawNetwork(2, false, false, false), 1600);
+
+            explanation.innerHTML = `
+                <h2>Step 1: Forward Pass</h2>
+                <p>Data flows <span class="highlight">left to right</span> through the network:</p>
+                <p>1. <span class="highlight">Inputs</span> (question answers) feed into hidden layer</p>
+                <p>2. Each <span class="highlight">hidden neuron</span> computes: sigmoid(Σ(input × weight) + bias)</p>
+                <p>3. Hidden outputs feed into <span class="highlight">output layer</span></p>
+                <p>4. Output neurons produce final predictions (one per animal)</p>
+                <div class="formula">inputs [0,0,2,0,2,0] → hidden outputs → final outputs [0.2, 0.3, 0.1, 0.1, 0.6, ...]</div>
+            `;
+        }
+
+        function showError() {
+            drawNetwork(2, false, true, false);
+
+            explanation.innerHTML = `
+                <h2>Step 2: Calculate Output Errors</h2>
+                <p>Compare predictions to expected values:</p>
+                <div class="formula">error = expected - actual</div>
+                <p>For <span class="highlight">Cat</span> (index 4): expected = 1, actual = 0.6</p>
+                <p>Error = <span class="error-pos">+0.4</span> (needs to fire MORE)</p>
+                <p>For <span class="highlight">Dog</span> (index 1): expected = 0, actual = 0.3</p>
+                <p>Error = <span class="error-neg">-0.3</span> (needs to fire LESS)</p>
+                <br>
+                <p><span class="highlight">Green (+)</span> = neuron should have fired more</p>
+                <p><span class="error-neg">Red (-)</span> = neuron should have fired less</p>
+            `;
+        }
+
+        function showBackprop() {
+            drawNetwork(-1, false, true, true);
+
+            explanation.innerHTML = `
+                <h2>Step 3: Backpropagation</h2>
+                <p>Errors flow <span class="highlight">backward</span> through the weights!</p>
+                <p>For hidden neuron <span style="color: #f59e0b; font-weight: bold;">H2</span>:</p>
+                <div class="formula">
+hiddenError[2] = outputError[0] × weight[H2→O0]
+               + outputError[1] × weight[H2→O1]
+               + outputError[2] × weight[H2→O2]
+               + ... (all 8 outputs)
+                </div>
+                <p><span class="highlight">Key insight:</span> If H2 has a strong connection to an output with big error, H2 gets more blame!</p>
+                <p>The weights act as <span class="highlight">"blame distributors"</span> — the same weights that amplified signals forward now distribute errors backward.</p>
+            `;
+        }
+
+        function showUpdate() {
+            drawNetwork(-1, true, false, false);
+
+            explanation.innerHTML = `
+                <h2>Step 4: Update Weights</h2>
+                <p>Now every neuron adjusts its weights using the learning rule:</p>
+                <div class="formula">weight += learningRate × error × input</div>
+                <p><span class="highlight">Output neurons</span> use:</p>
+                <ul>
+                    <li>error = their own output error</li>
+                    <li>inputs = hidden layer outputs</li>
+                </ul>
+                <p><span class="highlight">Hidden neurons</span> use:</p>
+                <ul>
+                    <li>error = backpropagated error (sum of downstream blame)</li>
+                    <li>inputs = original inputs (question answers)</li>
+                </ul>
+                <p>After updating, run another forward pass and repeat! Each iteration reduces error.</p>
+            `;
+        }
+
+        function resetAll() {
+            drawNetwork();
+            explanation.innerHTML = `
+                <p>Click the buttons above to step through backpropagation!</p>
+                <p>This network has: <span class="highlight">6 inputs</span> → <span class="highlight">6 hidden neurons</span> → <span class="highlight">8 output neurons</span></p>
+            `;
+        }
+
+        // Initial draw
+        drawNetwork();
+    </script>
+</body>
+</html>

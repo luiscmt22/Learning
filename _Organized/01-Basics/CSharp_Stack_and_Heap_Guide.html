@@ -1,0 +1,1375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CSharp_Stack_and_Heap_Guide</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 01-Basics</div>
+  <h1>CSharp_Stack_and_Heap_Guide</h1>
+  <div class="meta">Source: <code>Education/Basics/CSharp_Stack_and_Heap_Guide.pdf</code> &middot; <a href="CSharp_Stack_and_Heap_Guide.pdf">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<div class="pdf-page"><h3>Page 1</h3><pre>          Stack and Heap in C#
+
+              Understanding Memory Management in .NET
+
+From Fundamentals to Performance Optimization</pre></div>
+<div class="pdf-page"><h3>Page 2</h3><pre>Part I: Foundations of Memory</pre></div>
+<div class="pdf-page"><h3>Page 3</h3><pre>Chapter 1: A Brief History of Memory Management
+
+1.1 The Early Days: Manual Memory Management
+
+In the beginning, programmers had complete control over memory—and complete responsibility for it.
+Languages like C and C++ required developers to explicitly allocate memory when needed and free it
+when done. This was done through functions like malloc() and free() in C, or the new and delete
+operators in C++.
+
+// C-style memory management                     // Allocate
+int* numbers = (int*)malloc(100 * sizeof(int));
+// ... use the memory ...
+free(numbers); // Must remember to free!
+
+             // C++ style
+             Employee* emp = new Employee(); // Allocate
+             // ... use the object ...
+             delete emp; // Must remember to delete!
+
+This approach was powerful but dangerous. Forget to free memory? You have a memory leak—your
+application slowly consumes more and more RAM until it crashes or the system grinds to a halt. Free
+memory twice? You have a double-free bug—undefined behavior that could corrupt data or crash your
+program. Use memory after freeing it? A use-after-free vulnerability—a security nightmare that attackers
+love to exploit.
+
+1.2 The Revolution: Garbage Collection
+
+The idea of automatic memory management—garbage collection—emerged in the 1950s with John
+McCarthy&#x27;s Lisp language. Instead of requiring programmers to track every allocation and deallocation, the
+runtime would automatically identify and reclaim memory that was no longer in use.
+
+For decades, garbage collection was considered too slow for &quot;serious&quot; applications. Real programmers
+managed their own memory, or so the thinking went. But as software grew more complex and developer
+time became more expensive than CPU cycles, the calculus changed.
+
+In 2002, Microsoft released the .NET Framework with the Common Language Runtime (CLR)—a
+managed execution environment with sophisticated garbage collection. C# was designed from the ground
+up to work with this managed memory model. Developers could focus on solving business problems
+instead of hunting memory bugs.
+
+1.3 The Trade-Off
+
+Managed memory isn&#x27;t free. The garbage collector needs CPU time to run. Memory might not be
+reclaimed instantly. But for most applications, this trade-off is overwhelmingly positive: fewer bugs, faster
+development, and more reliable software.
+
+However, understanding how memory management works remains crucial. Misusing memory in .NET
+won&#x27;t cause crashes like in C++, but it can cause performance problems, memory bloat, and subtle bugs.
+The developers who understand the stack and heap write better, faster code.</pre></div>
+<div class="pdf-page"><h3>Page 4</h3><pre>Chapter 2: The Two Memory Regions
+
+2.1 What Is Memory, Really?
+
+When your .NET application runs, the operating system allocates a chunk of memory for it. This memory is
+a contiguous block of bytes that the application can use to store data. But not all parts of this memory are
+used the same way.
+
+The CLR divides application memory into several regions, but two are particularly important for
+understanding how your code behaves: the Stack and the Heap (specifically, the managed heap).
+
+2.2 The Stack: Fast, Ordered, Automatic
+
+The stack is a region of memory that operates on a simple principle: Last In, First Out (LIFO). Think of it
+like a stack of plates—you can only add or remove plates from the top.
+
+Characteristic    Stack
+Structure         Linear, contiguous
+Access pattern    LIFO (Last In, First Out)
+Allocation speed  Extremely fast (just move a pointer)
+Deallocation      Automatic when scope exits
+Size              Limited (typically 1MB per thread)
+What it stores    Value types, references, method call info
+Thread safety     Each thread has its own stack
+
+When you call a method, a stack frame is pushed onto the stack. This frame contains the method&#x27;s
+parameters, local variables (if they&#x27;re value types or references), and the return address (where to
+continue execution after the method completes). When the method returns, its stack frame is popped
+off—instantly freeing all that memory.
+
+2.3 The Heap: Flexible, Dynamic, Managed
+
+The heap (specifically, the managed heap in .NET) is a larger, more flexible region of memory. Unlike the
+stack&#x27;s strict ordering, objects on the heap can be allocated and deallocated in any order.
+
+Characteristic    Managed Heap
+Structure         Non-contiguous, dynamic
+Access pattern    Random access via references
+Allocation speed  Slower (requires finding space, tracking)
+Deallocation      Garbage collector (non-deterministic)
+Size              Limited only by available system memory</pre></div>
+<div class="pdf-page"><h3>Page 5</h3><pre>What it stores  Reference type instances (objects)
+Thread safety   Shared across all threads
+
+When you create an object with new, the CLR allocates space on the managed heap. The object lives
+there until the garbage collector determines it&#x27;s no longer reachable—meaning no part of your code can
+access it anymore. Then, at some point, the GC reclaims that memory.
+
+2.4 The Mental Model
+
+Here&#x27;s a simple way to think about it:
+
+      • Stack = Your desk. Small, fast to access, automatically cleared when you leave for the day.
+      • Heap = A warehouse. Huge, takes longer to find things, requires someone to clean up periodically.</pre></div>
+<div class="pdf-page"><h3>Page 6</h3><pre>Chapter 3: Value Types vs Reference Types
+
+3.1 The Fundamental Distinction
+
+Every type in C# falls into one of two categories: value types or reference types. This distinction
+determines where and how data is stored in memory.
+
+Value Types
+
+Value types directly contain their data. When you declare a value type variable, the memory for the actual
+data is allocated right there—typically on the stack (with some exceptions we&#x27;ll discuss).
+
+Value types include:
+
+• Numeric types: int, long, float, double, decimal
+• bool, char
+• struct (including DateTime, Guid, TimeSpan)
+• enum
+• Tuples (ValueTuple)
+
+        int x = 42;       // 42 is stored directly in x&#x27;s memory location
+
+        int y = x;        // y gets its own copy of 42
+
+        y = 100;          // Changing y doesn&#x27;t affect x
+
+        Console.WriteLine(x); // Still 42
+
+Reference Types
+
+Reference types store a reference (essentially a memory address) that points to the actual data on the
+heap. The variable itself holds only this reference, not the data.
+
+Reference types include:
+
+• class
+• interface
+• delegate
+• string (special case, immutable)
+• Arrays (even arrays of value types)
+• object
+
+        Employee emp1 = new Employee { Name = &quot;Alice&quot; };
+
+        Employee emp2 = emp1; // emp2 gets a copy of the REFERENCE, not the object
+
+        emp2.Name = &quot;Bob&quot;;  // Changes the object both variables point to
+
+        Console.WriteLine(emp1.Name); // &quot;Bob&quot; - emp1 sees the change!
+
+3.2 Memory Layout Visualized
+
+Let&#x27;s visualize what happens in memory with this code:
+
+        void ProcessData()                              // Value type
+        {                                               // Value type
+
+               int count = 5;                            // Reference type
+               double price = 19.99;                    // Reference type (array)
+               Employee employee = new Employee();
+               int[] numbers = new int[3];
+        }
+
+Stack:</pre></div>
+<div class="pdf-page"><h3>Page 7</h3><pre>       sssssssssssssssssssssssssssssss
+
+       s count: 5                 s ← int (4 bytes)
+
+       sssssssssssssssssssssssssssssss
+
+       s price: 19.99             s ← double (8 bytes)
+
+       sssssssssssssssssssssssssssssss
+
+       s employee: 0x7FFA2B10     s ← Reference (points to heap)
+
+       sssssssssssssssssssssssssssssss
+
+       s numbers: 0x7FFA3C20      s ← Reference (points to heap)
+
+       sssssssssssssssssssssssssssssss
+
+Heap:
+
+       Address 0x7FFA2B10:
+
+       sssssssssssssssssssssssssssssss
+
+       s Employee object          s
+
+       s - Name: null             s
+
+       s - Id: 0                  s
+
+       s - ... other fields       s
+
+       sssssssssssssssssssssssssssssss
+
+       Address 0x7FFA3C20:
+
+       sssssssssssssssssssssssssssssss
+
+       s int[] array (length: 3)  s
+
+       s - [0]: 0                 s
+
+       s - [1]: 0                 s
+
+       s - [2]: 0                 s
+
+       sssssssssssssssssssssssssssssss
+
+3.3 The Size Question
+
+A reference in 64-bit .NET is always 8 bytes, regardless of how large the object it points to is. This is
+important for understanding memory layout:
+
+             // On the stack: just an 8-byte reference
+             string hugeText = new string(&#x27;x&#x27;, 1_000_000);
+
+             // The actual 1MB+ of character data is on the heap
+             // Only the 8-byte reference is on the stack</pre></div>
+<div class="pdf-page"><h3>Page 8</h3><pre>Part II: Deep Dive into Memory Mechanics</pre></div>
+<div class="pdf-page"><h3>Page 9</h3><pre>Chapter 4: Stack Mechanics
+
+4.1 The Stack Pointer
+
+The stack&#x27;s efficiency comes from its simplicity. The CPU maintains a stack pointer—a register that
+always points to the top of the stack. Allocation is just decrementing this pointer; deallocation is just
+incrementing it.
+
+// Conceptual view of stack operations
+
+void Method()      // Stack pointer moves down, space for &#x27;a&#x27;
+{                  // Stack pointer moves down again, space for &#x27;b&#x27;
+
+       int a = 1;
+       int b = 2;
+
+       // When Method returns:
+       // Stack pointer moves back up, reclaiming all space instantly
+}
+
+4.2 Stack Frames in Detail
+
+Each method call creates a stack frame containing:
+
+      • Return address: Where to continue after the method returns
+      • Parameters: Copies of value types or copies of references
+      • Local variables: Value types and references declared in the method
+      • Saved registers: CPU state that needs to be restored
+
+int Calculate(int x, int y)
+{
+
+       int sum = x + y;
+       int product = x * y;
+       return sum + product;
+}
+
+// Stack frame for Calculate:
+
+// ssssssssssssssssssssssssss
+
+// s Return address           s
+
+// s x (parameter): copy s
+
+// s y (parameter): copy s
+
+// s sum (local): value       s
+
+// s product (local): value s
+
+// ssssssssssssssssssssssssss
+
+4.3 Stack Overflow
+
+The stack has a fixed size (typically 1MB on Windows for .NET applications). If you exceed this—usually
+through deep or infinite recursion—you get a StackOverflowException.
+
+             void InfiniteRecursion()
+             {
+
+                    InfiniteRecursion(); // Each call adds a stack frame
+                    // Eventually: StackOverflowException!
+             }
+
+// Also dangerous: very deep recursion              // Exponential stack usage
+int Fibonacci(int n)
+{
+
+       if (n &lt;= 1) return n;
+       return Fibonacci(n - 1) + Fibonacci(n - 2);</pre></div>
+<div class="pdf-page"><h3>Page 10</h3><pre>             }
+
+    Important: Unlike most exceptions, StackOverflowException cannot be caught. The stack is
+    corrupted; there&#x27;s no safe way to continue. Your application will terminate.
+
+4.4 Stack Allocation with stackalloc
+
+C# provides stackalloc to allocate arrays on the stack instead of the heap. This can improve performance
+for small, short-lived arrays by avoiding heap allocation and garbage collection.
+
+             // Traditional heap allocation
+             byte[] buffer = new byte[256]; // Goes on heap, GC must clean up
+
+             // Stack allocation (C# 7.2+)
+             Span&lt;byte&gt; buffer = stackalloc byte[256]; // Goes on stack, auto-cleaned
+
+             // Use case: high-performance parsing
+             public int ParseInt(ReadOnlySpan&lt;char&gt; input)
+             {
+
+                    Span&lt;char&gt; normalized = stackalloc char[input.Length];
+                    // Process without any heap allocation
+             }
+
+    Tip: Use stackalloc for small, fixed-size buffers in performance-critical code. But be careful—too
+    large an allocation can cause stack overflow. Generally keep stackalloc allocations under a few KB.</pre></div>
+<div class="pdf-page"><h3>Page 11</h3><pre>Chapter 5: Heap Mechanics and the Garbage Collector
+
+5.1 The Managed Heap Structure
+
+The .NET managed heap is divided into segments, primarily organized by object lifetime:
+
+• Generation 0 (Gen0): Newly allocated objects. Small, frequently collected.
+• Generation 1 (Gen1): Objects that survived one GC. Buffer between Gen0 and Gen2.
+• Generation 2 (Gen2): Long-lived objects. Largest generation, least frequently collected.
+• Large Object Heap (LOH): Objects ≥ 85,000 bytes. Collected with Gen2.
+
+Managed Heap Layout:
+
+ssssssssssssssssssssssssssssssssssssssssssssssssssss
+
+s                     Generation 0                s
+
+s (New objects - most die here)                   s
+
+ssssssssssssssssssssssssssssssssssssssssssssssssssss
+
+s                     Generation 1                s
+
+s (Survived one collection)                       s
+
+ssssssssssssssssssssssssssssssssssssssssssssssssssss
+
+s                     Generation 2                s
+
+s (Long-lived objects)                            s
+
+ssssssssssssssssssssssssssssssssssssssssssssssssssss
+
+s  Large Object Heap                              s
+
+s (Objects ≥ 85KB)                                s
+
+ssssssssssssssssssssssssssssssssssssssssssssssssssss
+
+5.2 The Generational Hypothesis
+
+The GC&#x27;s design is based on empirical observation: most objects die young. In typical applications,
+80-90% of objects become unreachable almost immediately after creation.
+
+// Example: Most objects here are extremely short-lived
+
+foreach (var line in File.ReadLines(&quot;data.txt&quot;))
+
+{
+
+   var parts = line.Split(&#x27;,&#x27;);     // New string array - dies immediately
+
+   var trimmed = parts[0].Trim(); // New string - dies immediately
+
+   var upper = trimmed.ToUpper(); // New string - dies immediately
+
+   ProcessValue(upper);
+
+   // All those intermediate objects are garbage before next iteration
+
+}
+
+By focusing most collection effort on Gen0 (where most garbage is), the GC achieves efficiency. Gen0
+collections are very fast—often sub-millisecond. Gen2 collections are slower but happen less often.
+
+5.3 How Garbage Collection Works
+
+The GC uses a mark-and-sweep algorithm with compaction:
+
+Phase 1: Mark
+
+Starting from &quot;roots&quot; (local variables, static fields, CPU registers), the GC traces all references, marking
+each reachable object as &quot;alive.&quot; Any object not marked is considered garbage.
+
+Phase 2: Sweep
+
+The GC reclaims memory from unmarked (dead) objects.
+
+Phase 3: Compact</pre></div>
+<div class="pdf-page"><h3>Page 12</h3><pre>Surviving objects are moved together, eliminating fragmentation. References are updated to point to new
+locations.
+
+Before Compaction:     After Compaction:
+
+sssssssssssssssssssss            sssssssssssssssssssss
+
+sAs sBs sCs →                    sAsBsCs                  s
+sssssssssssssssssssss
+                                 sssssssssssssssssssss
+
+↑             ↑                  ↑
+
+Dead Dead                        Free space (contiguous)
+
+5.4 GC Modes
+
+Mode                Description                              Best For
+Workstation
+Server              Single GC thread, optimized for responsiveness Desktop apps, UI apps
+Concurrent
+Background          One GC thread per CPU, optimized for throughput Web servers, services
+
+                    GC runs alongside app threads (Gen2)     Low-latency requirements
+
+                    Enhanced concurrent, less blocking       Default in modern .NET</pre></div>
+<div class="pdf-page"><h3>Page 13</h3><pre>Chapter 6: Boxing and Unboxing
+
+6.1 What Is Boxing?
+
+Boxing is the process of converting a value type to a reference type. The CLR allocates an object on the
+heap, copies the value into it, and returns a reference to that object.
+
+int number = 42;        // Value type, on stack
+object boxed = number;  // Boxing! New object on heap containing 42
+
+// What actually happens:
+// 1. CLR allocates space on heap for an object
+// 2. Copies the value 42 into the heap object
+// 3. Returns reference to that object
+// 4. &#x27;boxed&#x27; variable holds this reference
+
+6.2 What Is Unboxing?
+
+Unboxing is the reverse: extracting the value type from a boxed object. This requires an explicit cast and
+type checking.
+
+             object boxed = 42;
+             int number = (int)boxed; // Unboxing: extract the int
+
+             // What actually happens:
+             // 1. CLR checks that &#x27;boxed&#x27; actually contains an int
+             // 2. Copies the value from heap to stack
+             // 3. If type doesn&#x27;t match: InvalidCastException
+
+6.3 The Performance Cost
+
+Boxing and unboxing are expensive operations:
+
+      • Memory allocation: Every box creates a new heap object
+      • Memory copy: Data must be copied to/from the heap
+      • GC pressure: Boxed objects eventually need garbage collection
+
+             // Hidden boxing - ArrayList stores objects
+             ArrayList list = new ArrayList();
+             for (int i = 0; i &lt; 1000000; i++)
+             {
+
+                    list.Add(i); // Boxing on every iteration!
+             }
+             // Result: 1 million heap allocations, massive GC pressure
+
+             // No boxing - List&lt;T&gt; stores int directly
+             List&lt;int&gt; genericList = new List&lt;int&gt;();
+             for (int i = 0; i &lt; 1000000; i++)
+             {
+
+                    genericList.Add(i); // No boxing!
+             }
+             // Result: One array allocation, values stored directly
+
+6.4 Common Boxing Traps
+
+String Interpolation and Formatting
+
+             int count = 42;
+             string message = $&quot;Count: {count}&quot;; // Boxing in older C# versions!</pre></div>
+<div class="pdf-page"><h3>Page 14</h3><pre>             // Avoid boxing with explicit ToString():
+             string message = $&quot;Count: {count.ToString()}&quot;; // No boxing
+
+             // Modern .NET 6+ often optimizes this automatically
+
+Interface Calls on Structs
+
+             public struct Point : IFormattable
+             {
+
+                    public int X, Y;
+                    public string ToString(string format, IFormatProvider provider) =&gt; $&quot;{X},{Y}&quot;;
+             }
+
+             Point p = new Point { X = 1, Y = 2 };
+             IFormattable f = p; // Boxing! Point is copied to heap
+             string s = f.ToString(&quot;&quot;, null);
+
+             // Avoid: Call method directly on struct
+             string s = p.ToString(&quot;&quot;, null); // No boxing
+
+LINQ with Value Types
+
+             int[] numbers = { 1, 2, 3, 4, 5 };
+
+             // Some LINQ operations may cause boxing
+             var result = numbers.Cast&lt;object&gt;().ToList(); // Boxing every int!
+
+             // Generic LINQ avoids boxing
+             var result = numbers.Select(n =&gt; n * 2).ToList(); // No boxing</pre></div>
+<div class="pdf-page"><h3>Page 15</h3><pre>Chapter 7: Special Cases and Nuances
+
+7.1 Strings: Reference Type, Value Semantics
+
+Strings are reference types stored on the heap, but they behave like value types because they&#x27;re
+immutable. Once created, a string cannot be changed. &quot;Modifying&quot; a string always creates a new one.
+
+string s1 = &quot;Hello&quot;;    // Both reference same string object
+string s2 = s1;         // Creates NEW string; s1 unchanged
+s2 = s2 + &quot; World&quot;;
+
+Console.WriteLine(s1);  // &quot;Hello&quot;
+Console.WriteLine(s2);  // &quot;Hello World&quot;
+
+// Each concatenation creates a new string
+string result = &quot;&quot;;
+for (int i = 0; i &lt; 1000; i++)
+{
+
+       result += i.ToString(); // 1000 string allocations!
+}
+
+// Use StringBuilder instead
+var sb = new StringBuilder();
+for (int i = 0; i &lt; 1000; i++)
+{
+
+       sb.Append(i); // Mutates internal buffer
+}
+string result = sb.ToString(); // Single string allocation
+
+7.2 String Interning
+
+The CLR maintains a string intern pool—a table of unique string values. Literal strings are automatically
+interned, meaning identical literals share the same memory.
+
+             string a = &quot;Hello&quot;;
+             string b = &quot;Hello&quot;;
+             Console.WriteLine(ReferenceEquals(a, b)); // True! Same object
+
+             string c = &quot;Hel&quot; + &quot;lo&quot;; // Compiler concatenates at compile time
+             Console.WriteLine(ReferenceEquals(a, c)); // True! Same object
+
+             string d = &quot;Hel&quot;;
+             string e = d + &quot;lo&quot;; // Runtime concatenation
+             Console.WriteLine(ReferenceEquals(a, e)); // False! Different object
+
+             // Manual interning
+             string f = string.Intern(e);
+             Console.WriteLine(ReferenceEquals(a, f)); // True! Now interned
+
+7.3 Value Types on the Heap
+
+Value types don&#x27;t always live on the stack. They&#x27;re stored on the heap when:
+
+      • They&#x27;re fields of a reference type (class)
+      • They&#x27;re elements of an array
+      • They&#x27;re boxed
+      • They&#x27;re captured by a closure (lambda/delegate)
+
+             public class Employee
+             {</pre></div>
+<div class="pdf-page"><h3>Page 16</h3><pre>   public int Id;         // int is on heap (part of Employee object)
+
+   public DateTime Hired; // DateTime is on heap (part of Employee object)
+
+}
+
+int[] numbers = new int[100]; // The ints are on the heap (inside array)
+
+// Closure capture
+int counter = 0;
+Action increment = () =&gt; counter++; // &#x27;counter&#x27; moved to heap!
+
+7.4 Structs: Choosing Wisely
+
+Use struct instead of class when:
+
+      • The type represents a single value (like int or DateTime)
+      • Instance size is small (Microsoft suggests ≤16 bytes)
+      • It&#x27;s immutable or has no reason to be mutable
+      • It won&#x27;t be boxed frequently
+
+             // Good struct: small, represents a value
+             public readonly struct Point
+             {
+
+                    public readonly int X;
+                    public readonly int Y;
+
+       public Point(int x, int y) =&gt; (X, Y) = (x, y);
+}
+
+// Bad struct: too large, mutable
+
+public struct BadExample
+
+{
+
+   public string Name;    // 8 bytes (reference)
+
+   public string Address; // 8 bytes (reference)
+
+   public DateTime Created; // 8 bytes
+
+   public decimal Amount; // 16 bytes
+
+   // Total: 40+ bytes - too big, copying is expensive
+
+}</pre></div>
+<div class="pdf-page"><h3>Page 17</h3><pre>Part III: Practical Application</pre></div>
+<div class="pdf-page"><h3>Page 18</h3><pre>Chapter 8: Memory Leaks in .NET
+
+8.1 Wait, .NET Has Memory Leaks?
+
+The garbage collector prevents traditional memory leaks (forgetting to free memory), but .NET applications
+can still have logical memory leaks—situations where objects are kept alive longer than necessary
+because something still references them.
+
+8.2 Common Leak Patterns
+
+Event Handler Leaks
+
+             public class Publisher
+             {
+
+                    public event EventHandler DataChanged;
+             }
+
+public class Subscriber                                     // Subscriber now referenced by Publisher
+{
+
+       public Subscriber(Publisher pub)
+       {
+
+              pub.DataChanged += OnDataChanged;
+       }
+
+private void OnDataChanged(object sender, EventArgs e) { }
+
+       // If Publisher lives longer than Subscriber, and we forget to unsubscribe:
+       // Subscriber cannot be garbage collected!
+}
+
+// Fix: Implement IDisposable and unsubscribe
+public class Subscriber : IDisposable
+{
+
+       private Publisher _publisher;
+
+public Subscriber(Publisher pub)
+{
+
+       _publisher = pub;
+       _publisher.DataChanged += OnDataChanged;
+}
+
+       public void Dispose()
+       {
+
+              _publisher.DataChanged -= OnDataChanged; // Allow GC
+       }
+}
+
+Static Collections
+
+             public static class Cache
+             {
+
+                    private static Dictionary&lt;string, object&gt; _cache = new();
+
+public static void Add(string key, object value)
+{
+
+       _cache[key] = value; // Object now rooted forever!
+}
+
+       // If you never remove items, they live for application lifetime
+}
+
+// Fix: Use weak references or implement expiration</pre></div>
+<div class="pdf-page"><h3>Page 19</h3><pre>             public static class BetterCache
+             {
+
+                    private static ConditionalWeakTable&lt;string, object&gt; _cache = new();
+                    // Objects can be GC&#x27;d when no other references exist
+             }
+
+Captured Variables in Long-Lived Delegates
+
+             public class Service
+             {
+
+                    private Timer _timer;
+
+                    public void Start()
+                    {
+
+                            var largeData = LoadLargeData(); // 100MB of data
+
+                            _timer = new Timer(_ =&gt;
+                            {
+
+                                   // Lambda captures &#x27;largeData&#x27; - it can never be GC&#x27;d!
+                                   Console.WriteLine(largeData.Length);
+                            }, null, 0, 1000);
+                    }
+             }
+
+             // Fix: Only capture what you need
+             public void Start()
+             {
+
+                    var largeData = LoadLargeData();
+                    var length = largeData.Length; // Capture only the length
+
+                    _timer = new Timer(_ =&gt;
+                    {
+
+                            Console.WriteLine(length); // largeData can now be GC&#x27;d
+                    }, null, 0, 1000);
+             }
+
+8.3 Blazor-Specific Considerations
+
+In Blazor Server applications, each circuit (user connection) maintains state on the server. This creates
+unique memory management challenges:
+
+             // Problem: Services scoped to circuit can accumulate data
+             public class UserSessionService : IDisposable
+             {
+
+                    private List&lt;ActivityLog&gt; _activityLog = new();
+
+                    public void LogActivity(string action)
+                    {
+
+                            _activityLog.Add(new ActivityLog(action, DateTime.Now));
+                            // List grows unbounded during session!
+                    }
+
+                    public void Dispose()
+                    {
+
+                            _activityLog.Clear(); // Clean up on circuit disposal
+                    }
+             }
+
+             // Problem: Components that don&#x27;t unsubscribe from services
+             @implements IDisposable
+
+             @code {
+                    [Inject] private INotificationService Notifications { get; set; }</pre></div>
+<div class="pdf-page"><h3>Page 20</h3><pre>       protected override void OnInitialized()
+       {
+
+              Notifications.OnNotification += HandleNotification;
+       }
+
+       public void Dispose()
+       {
+
+              Notifications.OnNotification -= HandleNotification; // Essential!
+       }
+}</pre></div>
+<div class="pdf-page"><h3>Page 21</h3><pre>Chapter 9: Performance Optimization Strategies
+
+9.1 Reduce Allocations
+
+The fastest allocation is the one you don&#x27;t make. Every allocation is work for the GC later.
+
+Object Pooling
+
+             // Without pooling: new object every request
+             public async Task HandleRequest()
+             {
+
+                    var buffer = new byte[4096]; // Allocation
+                    await ProcessAsync(buffer);
+                    // buffer becomes garbage
+             }
+
+             // With pooling: reuse objects
+             private static readonly ArrayPool&lt;byte&gt; Pool = ArrayPool&lt;byte&gt;.Shared;
+
+             public async Task HandleRequest()
+             {
+
+                    byte[] buffer = Pool.Rent(4096); // Get from pool
+                    try
+                    {
+
+                            await ProcessAsync(buffer);
+                    }
+                    finally
+                    {
+
+                            Pool.Return(buffer); // Return to pool for reuse
+                    }
+             }
+
+Span&lt;T&gt; and Memory&lt;T&gt;
+
+             // Substring creates new string (allocation)
+             string input = &quot;Hello, World!&quot;;
+             string hello = input.Substring(0, 5); // New string allocated
+
+             // Span creates a view (no allocation)
+             ReadOnlySpan&lt;char&gt; helloSpan = input.AsSpan(0, 5); // Just a pointer + length
+
+             // Parsing without allocations
+             public static int ParseFirstInt(ReadOnlySpan&lt;char&gt; input)
+             {
+
+                    int commaIndex = input.IndexOf(&#x27;,&#x27;);
+                    var firstPart = input.Slice(0, commaIndex); // No allocation
+                    return int.Parse(firstPart); // Span overload, no allocation
+             }
+
+9.2 Right-Size Your Data Structures
+
+             // List resizing causes allocations and copies
+             var list = new List&lt;int&gt;();
+             for (int i = 0; i &lt; 10000; i++)
+             {
+
+                    list.Add(i); // Multiple internal array resizes
+             }
+
+             // Pre-size when you know the count
+             var list = new List&lt;int&gt;(10000); // One allocation
+             for (int i = 0; i &lt; 10000; i++)
+             {</pre></div>
+<div class="pdf-page"><h3>Page 22</h3><pre>                    list.Add(i); // No resizing needed
+             }
+
+             // Use appropriate collection types
+             Dictionary&lt;string, int&gt; dict = new(expectedCount); // Pre-size
+             HashSet&lt;int&gt; set = new(collection); // Initialize from existing
+
+9.3 Avoid Large Object Heap When Possible
+
+Objects ≥85,000 bytes go to the LOH, which is collected less frequently and not compacted by default.
+This can lead to fragmentation.
+
+             // This array goes to LOH (85,000+ bytes)
+             var largeArray = new byte[100_000];
+
+             // Alternative: Use ArrayPool for temporary large arrays
+             var pooledArray = ArrayPool&lt;byte&gt;.Shared.Rent(100_000);
+             try
+             {
+
+                    // Use the array
+             }
+             finally
+             {
+
+                    ArrayPool&lt;byte&gt;.Shared.Return(pooledArray);
+             }
+
+             // Alternative: Stream processing instead of loading all at once
+             await foreach (var chunk in ReadChunksAsync(file))
+             {
+
+                    await ProcessChunkAsync(chunk); // Never hold entire file
+             }
+
+9.4 Struct Optimization
+
+             // Pass large structs by reference to avoid copying
+             public readonly struct LargeStruct
+             {
+
+                    public readonly long A, B, C, D; // 32 bytes
+             }
+
+             // Copying: 32 bytes copied on each call
+             void ProcessCopy(LargeStruct data) { }
+
+             // Reference: Only 8 bytes (pointer) passed
+             void ProcessRef(in LargeStruct data) { } // &#x27;in&#x27; = readonly reference
+
+             // Return large structs by reference
+             private LargeStruct _cached;
+             public ref readonly LargeStruct GetCached() =&gt; ref _cached;</pre></div>
+<div class="pdf-page"><h3>Page 23</h3><pre>Chapter 10: Debugging Memory Issues
+
+10.1 Key Diagnostic Tools
+
+Tool                            Purpose
+Visual Studio Diagnostic Tools  Real-time memory usage and snapshots
+dotMemory (JetBrains)           Detailed memory profiling and leak detection
+PerfView                        Free Microsoft tool for GC and allocation analysis
+dotnet-counters                 CLI tool for real-time metrics
+dotnet-dump                     Capture and analyze memory dumps
+dotnet-gcdump                   Capture GC heap snapshots
+
+10.2 Reading GC Metrics
+
+             // Monitor GC in code
+             public static void LogGCStats()
+             {
+
+                    for (int gen = 0; gen &lt;= 2; gen++)
+                    {
+
+                            Console.WriteLine($&quot;Gen{gen} collections: {GC.CollectionCount(gen)}&quot;);
+                    }
+
+                    var info = GC.GetGCMemoryInfo();
+                    Console.WriteLine($&quot;Heap size: {info.HeapSizeBytes / 1024 / 1024} MB&quot;);
+                    Console.WriteLine($&quot;Fragmentation: {info.FragmentedBytes / 1024} KB&quot;);
+             }
+
+             // CLI monitoring
+             // dotnet-counters monitor -p &lt;pid&gt; --counters System.Runtime
+
+10.3 Investigating Memory Growth
+
+When investigating memory issues, follow this process:
+
+      1. Establish baseline: What&#x27;s normal memory usage?
+      2. Reproduce the issue: What actions cause growth?
+      3. Take snapshots: Before and after the action
+      4. Compare: What objects are accumulating?
+      5. Trace roots: Why can&#x27;t they be collected?
+
+             // Force GC before taking measurements (diagnostic only!)
+             GC.Collect();
+             GC.WaitForPendingFinalizers();
+             GC.Collect();
+
+             long before = GC.GetTotalMemory(true);
+
+             // ... perform operation ...
+
+             long after = GC.GetTotalMemory(true);
+             Console.WriteLine($&quot;Memory delta: {(after - before) / 1024} KB&quot;);</pre></div>
+<div class="pdf-page"><h3>Page 24</h3><pre>Part IV: Advanced Topics</pre></div>
+<div class="pdf-page"><h3>Page 25</h3><pre>Chapter 11: IDisposable and Finalizers
+
+11.1 Unmanaged Resources
+
+The GC manages memory, but some resources—file handles, database connections, network
+sockets—exist outside the managed heap. These unmanaged resources must be explicitly released.
+
+             // Without proper disposal
+             void ProcessFile()
+             {
+
+                    var reader = new StreamReader(&quot;data.txt&quot;);
+                    string content = reader.ReadToEnd();
+                    // File handle is STILL OPEN!
+                    // Other processes can&#x27;t access the file
+             }
+
+             // With proper disposal
+             void ProcessFile()
+             {
+
+                    using var reader = new StreamReader(&quot;data.txt&quot;);
+                    string content = reader.ReadToEnd();
+             } // Automatically calls Dispose(), releases file handle
+
+11.2 The Dispose Pattern
+
+public class ResourceHolder : IDisposable
+{
+
+       private IntPtr _unmanagedHandle;
+       private Stream _managedStream;
+       private bool _disposed = false;
+
+public void Dispose()              // No need for finalizer
+{
+
+       Dispose(true);
+       GC.SuppressFinalize(this);
+}
+
+protected virtual void Dispose(bool disposing)
+{
+
+       if (_disposed) return;
+
+if (disposing)
+{
+
+       // Free managed resources
+       _managedStream?.Dispose();
+}
+
+// Free unmanaged resources
+if (_unmanagedHandle != IntPtr.Zero)
+{
+
+       CloseHandle(_unmanagedHandle);
+       _unmanagedHandle = IntPtr.Zero;
+}
+
+       _disposed = true;
+}
+
+       ~ResourceHolder() // Finalizer - safety net
+       {
+
+              Dispose(false);
+       }
+}</pre></div>
+<div class="pdf-page"><h3>Page 26</h3><pre>11.3 Finalizers: The Safety Net
+
+Finalizers (~ClassName) are called by the GC before an object is collected. They&#x27;re a safety net for when
+Dispose() wasn&#x27;t called, but they have significant costs:
+
+      • Objects with finalizers survive an extra GC generation
+      • Finalizer thread is single-threaded (bottleneck)
+      • Order of finalization is undefined
+      • Exceptions in finalizers can crash the application
+
+    Best Practice: Always call Dispose() explicitly (preferably via &#x27;using&#x27;). Only implement finalizers if
+    your class directly holds unmanaged resources. Most classes just hold other IDisposable objects
+    and don&#x27;t need finalizers.</pre></div>
+<div class="pdf-page"><h3>Page 27</h3><pre>Chapter 12: Span, Memory, and Modern Memory APIs
+
+12.1 The Span&lt;T&gt; Revolution
+
+Span&lt;T&gt; is a stack-only type that provides a type-safe, memory-safe view into any contiguous memory
+region. It&#x27;s the foundation of modern high-performance .NET code.
+
+             // Span over an array
+             int[] array = { 1, 2, 3, 4, 5 };
+             Span&lt;int&gt; span = array;
+
+             // Span over stack memory
+             Span&lt;int&gt; stackSpan = stackalloc int[10];
+
+             // Span over part of an array (slicing)
+             Span&lt;int&gt; middle = array.AsSpan(1, 3); // { 2, 3, 4 }
+
+             // All operations are bounds-checked and safe
+             span[0] = 100; // Modifies original array
+             // span[10] = 0; // Throws IndexOutOfRangeException
+
+12.2 ReadOnlySpan&lt;T&gt;
+
+ReadOnlySpan&lt;T&gt; is the immutable version, commonly used for strings:
+
+// Zero-allocation string operations          // No new string!
+string text = &quot;Hello, World!&quot;;                // No new string!
+ReadOnlySpan&lt;char&gt; span = text.AsSpan();
+ReadOnlySpan&lt;char&gt; hello = span.Slice(0, 5);
+ReadOnlySpan&lt;char&gt; world = span.Slice(7, 5);
+
+// Efficient parsing
+public static bool TryParseCoordinate(ReadOnlySpan&lt;char&gt; input,
+
+       out double lat, out double lon)
+{
+
+       int comma = input.IndexOf(&#x27;,&#x27;);
+       if (comma &lt; 0) { lat = lon = 0; return false; }
+
+       return double.TryParse(input.Slice(0, comma), out lat) &amp;&amp;
+                   double.TryParse(input.Slice(comma + 1), out lon);
+
+}
+
+12.3 Memory&lt;T&gt; for Async Operations
+
+Span&lt;T&gt; is stack-only—it can&#x27;t be used in async methods or stored in fields. Memory&lt;T&gt; is the
+heap-friendly equivalent.
+
+// Span can&#x27;t be used in async methods      // Compiler error!
+async Task ProcessAsync(Span&lt;byte&gt; data)
+{
+
+       await Task.Delay(1);
+}
+
+// Memory&lt;T&gt; works with async
+async Task ProcessAsync(Memory&lt;byte&gt; data)
+{
+
+       await Task.Delay(1);
+
+// Get a Span when you need to work with the data
+Span&lt;byte&gt; span = data.Span;
+ProcessSync(span);</pre></div>
+<div class="pdf-page"><h3>Page 28</h3><pre>             }
+
+             // Common pattern: IMemoryOwner&lt;T&gt; for pooled buffers
+             using IMemoryOwner&lt;byte&gt; owner = MemoryPool&lt;byte&gt;.Shared.Rent(1024);
+             Memory&lt;byte&gt; memory = owner.Memory;
+             await ProcessAsync(memory);
+
+12.4 Practical Example: Zero-Copy CSV Parsing
+
+             public static IEnumerable&lt;(ReadOnlyMemory&lt;char&gt; Name, int Value)&gt;
+                    ParseCsv(ReadOnlyMemory&lt;char&gt; csv)
+
+             {
+                    var remaining = csv;
+
+                    while (!remaining.IsEmpty)
+                    {
+
+                            int newline = remaining.Span.IndexOf(&#x27;\n&#x27;);
+                            var line = newline &lt; 0 ? remaining : remaining.Slice(0, newline);
+
+                            int comma = line.Span.IndexOf(&#x27;,&#x27;);
+                            if (comma &gt; 0)
+                            {
+
+                                   var name = line.Slice(0, comma);
+                                   if (int.TryParse(line.Slice(comma + 1).Span, out int value))
+                                   {
+
+                                          yield return (name, value);
+                                   }
+                            }
+
+                            remaining = newline &lt; 0
+                                   ? ReadOnlyMemory&lt;char&gt;.Empty
+                                   : remaining.Slice(newline + 1);
+
+                    }
+             }
+
+             // Usage: Zero heap allocations during parsing!
+             var csv = File.ReadAllText(&quot;data.csv&quot;).AsMemory();
+             foreach (var (name, value) in ParseCsv(csv))
+             {
+
+                    // name is a view into the original string
+             }</pre></div>
+<div class="pdf-page"><h3>Page 29</h3><pre>Chapter 13: Records, ref structs, and Modern C#
+
+13.1 Records: Immutable Reference Types
+
+Records (C# 9+) are reference types designed for immutable data. They provide value-based equality
+while remaining on the heap.
+
+             public record Person(string Name, int Age);
+
+             // Record behavior:
+             var p1 = new Person(&quot;Alice&quot;, 30);
+             var p2 = new Person(&quot;Alice&quot;, 30);
+             Console.WriteLine(p1 == p2); // True (value equality, unlike classes)
+
+             // Non-destructive mutation (creates new instance)
+             var p3 = p1 with { Age = 31 }; // New object on heap
+
+             // Still a reference type
+             Person p4 = p1;
+             Console.WriteLine(ReferenceEquals(p1, p4)); // True (same object)
+
+13.2 Record Structs: Value Type Records
+
+             public readonly record struct Point(int X, int Y);
+
+             // Combines struct benefits with record syntax:
+             // - Stack allocation (when local)
+             // - Value equality
+             // - Readonly (immutable)
+             // - Deconstruction
+
+             var p1 = new Point(1, 2);
+             var p2 = new Point(1, 2);
+             Console.WriteLine(p1 == p2); // True
+
+             var (x, y) = p1; // Deconstruction
+
+13.3 ref struct: Stack-Only Types
+
+ref structs are guaranteed to live only on the stack. This makes them suitable for high-performance
+scenarios where heap allocation must be avoided.
+
+             public ref struct StackOnlyBuffer
+             {
+
+                    private Span&lt;byte&gt; _buffer; // Can hold Span&lt;T&gt;!
+
+                    public StackOnlyBuffer(Span&lt;byte&gt; buffer)
+                    {
+
+                            _buffer = buffer;
+                    }
+             }
+
+             // Restrictions on ref structs:
+             // - Cannot be boxed (no object, no interfaces)
+             // - Cannot be fields in classes or non-ref structs
+             // - Cannot be used in async methods
+             // - Cannot be captured by lambdas
+             // - Cannot be elements of arrays
+
+             // Span&lt;T&gt; itself is a ref struct!
+             Span&lt;int&gt; span = stackalloc int[10]; // Must stay on stack</pre></div>
+<div class="pdf-page"><h3>Page 30</h3><pre>        Appendix A: Quick Reference
+
+Stack vs Heap Summary
+
+Aspect           Stack                          Heap
+
+Access Speed     Very fast                      Slower
+
+Allocation       Automatic (push)               GC managed (new)
+
+Deallocation     Automatic (pop)                Garbage collector
+
+Size Limit       ~1MB per thread                System memory
+
+What Lives Here  Value types*, references       Objects, arrays
+
+Thread Safety    Thread-private                 Shared
+
+Fragmentation    None (LIFO)                    Possible
+
+*When declared as local variables or parameters, not as class fields
+
+Type Categories
+
+Category         Examples                                             Default Location
+Value Types      int, double, bool, struct, enum                      Stack (if local)
+Reference Types  class, interface, delegate, string, array            Heap (always)
+ref struct       Span&lt;T&gt;, ReadOnlySpan&lt;T&gt;                             Stack (enforced)
+
+GC Generation Triggers
+
+Generation       Triggers                                             Typical Frequency
+Gen0
+Gen1             When Gen0 budget exceeded                            Very frequent (ms)
+Gen2
+Full GC          When Gen1 budget exceeded                            Less frequent
+
+                 When Gen2 budget exceeded, LOH allocationInfrequent (seconds)
+
+                 Memory pressure, GC.Collect()                        Rare</pre></div>
+<div class="pdf-page"><h3>Page 31</h3><pre>    Appendix B: Further Reading
+
+1. &quot;Pro .NET Memory Management&quot; by Konrad Kokosa — The definitive deep dive into .NET memory
+
+2. &quot;Writing High-Performance .NET Code&quot; by Ben Watson — Practical optimization techniques
+
+3. &quot;CLR via C#&quot; by Jeffrey Richter — Foundational understanding of the runtime
+
+4.  Microsoft  Docs:  Memory                                          Management           —
+
+https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/
+
+5. Adam Sitnik&#x27;s Blog — In-depth performance analysis posts
+
+6. .NET Blog: Performance — Updates on runtime improvements
+
+This guide was written to help .NET developers understand the memory model that underpins their
+applications. While the garbage collector handles most complexity, understanding these concepts leads to
+better architectural decisions, more efficient code, and easier debugging of memory-related issues.</pre></div>
+</div>
+</body>
+</html>

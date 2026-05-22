@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>HowToCreateUnitTesting</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 13-Testing</div>
+  <h1>HowToCreateUnitTesting</h1>
+  <div class="meta">Source: <code>Microsoft_Fullstack/HowToCreateUnitTesting.docx</code> &middot; <a href="HowToCreateUnitTesting.docx">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<p>Step 1: Create the Test Project</p>
+<p>Open Terminal/Command Prompt in your solution folder (where your .sln file is)</p>
+<p>Run these commands:</p>
+<p>bash</p>
+<h1 id="create-test-project">Create test project</h1>
+<p>dotnet new xunit -n SambientalMVC.Tests</p>
+<h1 id="add-test-project-to-solution">Add test project to solution</h1>
+<p>dotnet sln add SambientalMVC.Tests/SambientalMVC.Tests.csproj</p>
+<h1 id="navigate-to-test-project-folder">Navigate to test project folder</h1>
+<p>cd SambientalMVC.Tests</p>
+<h1 id="add-reference-to-your-main-project">Add reference to your main project</h1>
+<p>dotnet add reference ../SambientalMVC/SambientalMVC.csproj</p>
+<h1 id="add-required-nuget-packages">Add required NuGet packages</h1>
+<p>dotnet add package Microsoft.EntityFrameworkCore.InMemory --version 8.0.0</p>
+<p>dotnet add package Moq --version 4.20.0</p>
+<p>dotnet add package FluentAssertions --version 6.12.0</p>
+<p>dotnet add package Microsoft.AspNetCore.Mvc.Testing --version 8.0.0</p>
+<h1 id="go-back-to-solution-root">Go back to solution root</h1>
+<p>cd ..</p>
+<p>Step 2: Create Test Project Structure</p>
+<p>In your SambientalMVC.Tests project, create these folders:</p>
+<p>Services/</p>
+<p>Helpers/</p>
+<p>Your folder structure should look like:</p>
+<p>SambientalMVC.Tests/</p>
+<p>├── Services/</p>
+<p>├── Helpers/</p>
+<p>├── SambientalMVC.Tests.csproj</p>
+<p>└── GlobalUsings.cs</p>
+<p>Step 3: Create GlobalUsings.cs</p>
+<p>Create GlobalUsings.cs in the test project root:</p>
+<p>csharp</p>
+<p>global using Xunit;</p>
+<p>global using FluentAssertions;</p>
+<p>global using Microsoft.EntityFrameworkCore;</p>
+<p>global using Microsoft.Extensions.DependencyInjection;</p>
+<p>global using Microsoft.Extensions.Logging;</p>
+<p>global using Moq;</p>
+<p>global using SambientalMVC.Data;</p>
+<p>global using SambientalMVC.Models;</p>
+<p>global using SambientalMVC.Services;</p>
+<p>global using System;</p>
+<p>global using System.Threading.Tasks;</p>
+<p>global using System.Linq;</p>
+<p>Step 4: Create Test Database Context Helper</p>
+<p>Create Helpers/TestDbContextFactory.cs:</p>
+<p>csharp</p>
+<p>namespace SambientalMVC.Tests.Helpers</p>
+<p>{</p>
+<p>public static class TestDbContextFactory</p>
+<p>{</p>
+<p>public static ApplicationDbContext CreateInMemoryContext()</p>
+<p>{</p>
+<p>var options = new DbContextOptionsBuilder&lt;ApplicationDbContext&gt;()</p>
+<p>.UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())</p>
+<p>.Options;</p>
+<p>return new ApplicationDbContext(options);</p>
+<p>}</p>
+<p>}</p>
+<p>}</p>
+<p>Step 5: Create Your First Test Class</p>
+<p>Create Services/AgendaMaintenanceServiceTests.cs:</p>
+<p>csharp</p>
+<p>using SambientalMVC.Tests.Helpers;</p>
+<p>namespace SambientalMVC.Tests.Services</p>
+<p>{</p>
+<p>public class AgendaMaintenanceServiceTests : IDisposable</p>
+<p>{</p>
+<p>private readonly ApplicationDbContext _context;</p>
+<p>private readonly AgendaMaintenanceService _service;</p>
+<p>public AgendaMaintenanceServiceTests()</p>
+<p>{</p>
+<p>// Setup - runs before each test</p>
+<p>_context = TestDbContextFactory.CreateInMemoryContext();</p>
+<p>var dateFormattingService = new DateFormattingService();</p>
+<p>var separatorService = new AgendaSeparatorService(_context, dateFormattingService);</p>
+<p>var recurringProcessor = new RecurringServiceProcessor(_context, dateFormattingService);</p>
+<p>_service = new AgendaMaintenanceService(</p>
+<p>_context,</p>
+<p>dateFormattingService,</p>
+<p>separatorService,</p>
+<p>recurringProcessor</p>
+<p>);</p>
+<p>}</p>
+<p>[Fact]</p>
+<p>public async Task MaintainTodaySeparator_Should_Create_New_Separator()</p>
+<p>{</p>
+<p>// Arrange - setup test data</p>
+<p>// (nothing needed for this test)</p>
+<p>// Act - run the method we&#x27;re testing</p>
+<p>await _service.MaintainTodaySeparatorAsync();</p>
+<p>// Assert - check the results</p>
+<p>var separators = await _context.AgendaServicos</p>
+<p>.Where(a =&gt; a.IsSeparator)</p>
+<p>.ToListAsync();</p>
+<p>separators.Should().HaveCount(1);</p>
+<p>separators[0].DataCompleta.Should().Be(DateTime.Today);</p>
+<p>}</p>
+<p>[Fact]</p>
+<p>public async Task MaintainBlankRows_Should_Create_Five_Rows()</p>
+<p>{</p>
+<p>// Act</p>
+<p>await _service.MaintainBlankRowsAsync();</p>
+<p>// Assert</p>
+<p>var totalRows = await _context.AgendaServicos.CountAsync();</p>
+<p>totalRows.Should().Be(5);</p>
+<p>}</p>
+<p>public void Dispose()</p>
+<p>{</p>
+<p>// Cleanup - runs after each test</p>
+<p>_context?.Dispose();</p>
+<p>}</p>
+<p>}</p>
+<p>}</p>
+<p>Step 6: Create Recurring Service Tests</p>
+<p>Create Services/RecurringServiceProcessorTests.cs:</p>
+<p>csharp</p>
+<p>using SambientalMVC.Tests.Helpers;</p>
+<p>namespace SambientalMVC.Tests.Services</p>
+<p>{</p>
+<p>public class RecurringServiceProcessorTests : IDisposable</p>
+<p>{</p>
+<p>private readonly ApplicationDbContext _context;</p>
+<p>private readonly RecurringServiceProcessor _processor;</p>
+<p>public RecurringServiceProcessorTests()</p>
+<p>{</p>
+<p>_context = TestDbContextFactory.CreateInMemoryContext();</p>
+<p>var dateFormattingService = new DateFormattingService();</p>
+<p>_processor = new RecurringServiceProcessor(_context, dateFormattingService);</p>
+<p>}</p>
+<p>[Fact]</p>
+<p>public async Task ProcessRecurringServices_Should_Create_Service_When_Due()</p>
+<p>{</p>
+<p>// Arrange - create a recurring service that&#x27;s due</p>
+<p>var recurringService = new AgendaRecorrente</p>
+<p>{</p>
+<p>AgendaRecorrenteId = 1,</p>
+<p>DataAtualizacao = DateTime.Today.AddDays(-8), // 8 days ago</p>
+<p>DataFim = DateTime.Today.AddMonths(3),        // ends in 3 months</p>
+<p>Periodicidade = 7,                             // weekly</p>
+<p>ClienteId = &quot;TEST123&quot;,</p>
+<p>Morada = &quot;Test Address&quot;,</p>
+<p>CriadoPor = &quot;Test User&quot;</p>
+<p>};</p>
+<p>_context.AgendaRecorrentes.Add(recurringService);</p>
+<p>await _context.SaveChangesAsync();</p>
+<p>// Act</p>
+<p>var processedCount = await _processor.ProcessRecurringServicesAsync();</p>
+<p>// Assert</p>
+<p>processedCount.Should().Be(1);</p>
+<p>// Check if new service was created</p>
+<p>var newService = await _context.AgendaServicos</p>
+<p>.FirstOrDefaultAsync(s =&gt; s.ClienteId == &quot;TEST123&quot;);</p>
+<p>newService.Should().NotBeNull();</p>
+<p>newService.Morada.Should().Be(&quot;Test Address&quot;);</p>
+<p>}</p>
+<p>[Fact]</p>
+<p>public async Task ProcessRecurringServices_Should_Not_Process_If_Not_Due()</p>
+<p>{</p>
+<p>// Arrange - create a recurring service that&#x27;s NOT due yet</p>
+<p>var recurringService = new AgendaRecorrente</p>
+<p>{</p>
+<p>AgendaRecorrenteId = 1,</p>
+<p>DataAtualizacao = DateTime.Today.AddDays(-3), // only 3 days ago</p>
+<p>DataFim = DateTime.Today.AddMonths(3),</p>
+<p>Periodicidade = 7,                             // weekly</p>
+<p>ClienteId = &quot;TEST456&quot;</p>
+<p>};</p>
+<p>_context.AgendaRecorrentes.Add(recurringService);</p>
+<p>await _context.SaveChangesAsync();</p>
+<p>// Act</p>
+<p>var processedCount = await _processor.ProcessRecurringServicesAsync();</p>
+<p>// Assert</p>
+<p>processedCount.Should().Be(0);</p>
+<p>// Check no service was created</p>
+<p>var services = await _context.AgendaServicos.CountAsync();</p>
+<p>services.Should().Be(0);</p>
+<p>}</p>
+<p>public void Dispose()</p>
+<p>{</p>
+<p>_context?.Dispose();</p>
+<p>}</p>
+<p>}</p>
+<p>}</p>
+<p>Step 7: Create Hosted Service Test</p>
+<p>Create Services/AgendaHostedServiceTests.cs:</p>
+<p>csharp</p>
+<p>using Microsoft.Extensions.Hosting;</p>
+<p>using SambientalMVC.Tests.Helpers;</p>
+<p>using System.Threading;</p>
+<p>namespace SambientalMVC.Tests.Services</p>
+<p>{</p>
+<p>public class AgendaHostedServiceTests</p>
+<p>{</p>
+<p>[Fact]</p>
+<p>public async Task HostedService_Should_Run_All_Maintenance_Tasks()</p>
+<p>{</p>
+<p>// Arrange - create a test version of the hosted service</p>
+<p>var services = new ServiceCollection();</p>
+<p>// Add all required services</p>
+<p>services.AddDbContext&lt;ApplicationDbContext&gt;(options =&gt;</p>
+<p>options.UseInMemoryDatabase(&quot;TestDb&quot;));</p>
+<p>services.AddScoped&lt;IDateFormattingService, DateFormattingService&gt;();</p>
+<p>services.AddScoped&lt;IAgendaSeparatorService, AgendaSeparatorService&gt;();</p>
+<p>services.AddScoped&lt;IRecurringServiceProcessor, RecurringServiceProcessor&gt;();</p>
+<p>services.AddScoped&lt;IAgendaMaintenanceService, AgendaMaintenanceService&gt;();</p>
+<p>// Add logging so we can see what&#x27;s happening</p>
+<p>services.AddLogging(builder =&gt; builder.AddConsole());</p>
+<p>var serviceProvider = services.BuildServiceProvider();</p>
+<p>// Create test hosted service that runs immediately</p>
+<p>var hostedService = new TestAgendaHostedService(serviceProvider);</p>
+<p>// Act - run the service</p>
+<p>var cancellationToken = new CancellationTokenSource(TimeSpan.FromSeconds(5)).Token;</p>
+<p>await hostedService.StartAsync(cancellationToken);</p>
+<p>// Wait a bit for it to complete</p>
+<p>await Task.Delay(1000);</p>
+<p>// Assert - check if tasks were executed</p>
+<p>using var scope = serviceProvider.CreateScope();</p>
+<p>var context = scope.ServiceProvider.GetRequiredService&lt;ApplicationDbContext&gt;();</p>
+<p>// Should have created today&#x27;s separator</p>
+<p>var hasSeparator = await context.AgendaServicos</p>
+<p>.AnyAsync(a =&gt; a.IsSeparator);</p>
+<p>hasSeparator.Should().BeTrue();</p>
+<p>// Should have created blank rows</p>
+<p>var rowCount = await context.AgendaServicos.CountAsync();</p>
+<p>rowCount.Should().BeGreaterThan(1); // At least separator + blank rows</p>
+<p>}</p>
+<p>}</p>
+<p>// Test version that runs immediately instead of waiting</p>
+<p>public class TestAgendaHostedService : BackgroundService</p>
+<p>{</p>
+<p>private readonly IServiceProvider _serviceProvider;</p>
+<p>public TestAgendaHostedService(IServiceProvider serviceProvider)</p>
+<p>{</p>
+<p>_serviceProvider = serviceProvider;</p>
+<p>}</p>
+<p>protected override async Task ExecuteAsync(CancellationToken stoppingToken)</p>
+<p>{</p>
+<p>// Run immediately for testing</p>
+<p>using var scope = _serviceProvider.CreateScope();</p>
+<p>var maintenanceService = scope.ServiceProvider</p>
+<p>.GetRequiredService&lt;IAgendaMaintenanceService&gt;();</p>
+<p>await maintenanceService.MaintainTodaySeparatorAsync();</p>
+<p>await maintenanceService.MaintainBlankRowsAsync();</p>
+<p>await maintenanceService.MaintainRecurringServicesAsync();</p>
+<p>}</p>
+<p>}</p>
+<p>}</p>
+<p>Step 8: Run Your Tests</p>
+<p>In Visual Studio:</p>
+<p>Open Test Explorer: Test → Test Explorer</p>
+<p>Click &quot;Run All Tests&quot; button</p>
+<p>Tests should appear and run</p>
+<p>In Terminal:</p>
+<p>bash</p>
+<h1 id="run-all-tests">Run all tests</h1>
+<p>dotnet test</p>
+<h1 id="run-with-details">Run with details</h1>
+<p>dotnet test --logger &quot;console;verbosity=normal&quot;</p>
+<h1 id="run-specific-test">Run specific test</h1>
+<p>dotnet test --filter &quot;FullyQualifiedName~MaintainTodaySeparator&quot;</p>
+<p>Step 9: View Results</p>
+<p>You should see output like:</p>
+<p>Starting test execution, please wait...</p>
+<p>A total of 1 test files matched the specified pattern.</p>
+<p>Passed!  - Failed:     0, Passed:     5, Skipped:     0, Total:     5, Duration: 1 s</p>
+</div>
+</body>
+</html>

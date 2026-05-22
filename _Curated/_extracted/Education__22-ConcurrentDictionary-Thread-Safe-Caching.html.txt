@@ -1,0 +1,467 @@
+ConcurrentDictionary & Thread-Safe Caching — The Multi-Lane Highway of Shared State
+ConcurrentDictionary & Thread-Safe Caching
+Tutorial #22 — The Multi-Lane Highway of Shared State
+1. The Problem: Why Regular Dictionary Fails Under Concurrency
+Blazor Server runs on a single server process. Every connected user gets their own circuit (like a session),
+but they all share the same server memory. When you mark a field as static , every circuit
+sees the same object. That means multiple threads can read and write the same Dictionary<TKey, TValue>
+at the exact same time.
+Dictionary<TKey, TValue> was never designed for this. It uses an internal array of buckets.
+When two threads both decide to add an entry at the same moment, they can corrupt the internal bucket chain,
+causing infinite loops during lookups, lost entries, or outright NullReferenceException crashes.
+The Classic Race Condition
+Consider this deceptively simple caching pattern:
+// DANGEROUS: Dictionary is NOT thread-safe
+private static readonly Dictionary < string , PropertyInfo > _cache = new ();
+public static PropertyInfo ? GetProperty ( string name )
+{
+if (_cache. TryGetValue ( name , out var cached ))
+return cached ;
+// Thread A reaches here...
+// Thread B also reaches here (same key, same miss)...
+var prop = typeof ( Article ). GetProperty ( name );
+_cache[ name ] = prop ; // Both threads write — BOOM
+return prop ;
+}
+Two threads both check TryGetValue , both see the key is missing, and both write simultaneously.
+At best, one overwrites the other (wasted work). At worst, the internal hash table is corrupted and the entire
+application hangs in an infinite loop inside Dictionary.FindEntry() .
+A regular Dictionary is like a single-lane bridge — only one car can cross at a time.
+If two cars enter from opposite ends simultaneously, they crash. ConcurrentDictionary is a
+multi-lane highway — many cars flow simultaneously because each lane has its own traffic light.
+2. ConcurrentDictionary — The Thread-Safe Alternative
+ConcurrentDictionary<TKey, TValue> lives in System.Collections.Concurrent
+and was purpose-built for multi-threaded access. Instead of one giant lock around the entire dictionary,
+it uses lock striping — the internal array is divided into segments, and each segment
+has its own lock. Multiple threads can read and write simultaneously as long as they hit different stripes.
+Key Atomic Operations
+Method
+What It Does
+Atomicity
+GetOrAdd(key, factory)
+Return existing value, or create + store + return new one
+The lookup-or-add is atomic (but the factory may run more than once)
+TryGetValue(key, out value)
+Try to read a value without throwing
+Fully atomic read
+TryRemove(key, out value)
+Remove if exists, return what was removed
+Fully atomic remove
+AddOrUpdate(key, add, update)
+Add if missing, update if existing
+Atomic lookup; factories may run multiple times
+ContainsKey(key)
+Check existence
+Point-in-time snapshot
+No explicit lock() is needed for these operations. The dictionary handles all synchronization internally.
+GetOrAdd(key, factory) reads as: "Give me the cached value for this key. If it doesn't exist yet,
+create it with this factory function, store it, and give me that instead."
+3. Real Example #1: ReflectionCache (Compiled Expression Caching)
+File: Services/Artigo/ReflectionCache.cs
+This is the cleanest example in the codebase. It caches compiled expression trees for property access,
+turning slow reflection into near-native-speed getters and setters.
+using System.Collections.Concurrent;
+using System.Linq.Expressions;
+using System.Reflection;
+namespace GivingCare.Services.Artigo;
+public static class ReflectionCache
+{
+private static readonly ConcurrentDictionary <( Type , string ), Func < object , object ?>> Getters = new ();
+private static readonly ConcurrentDictionary <( Type , string ), Action < object , object ?>> Setters = new ();
+public static T ? GetValue < T >( object entity , string propertyName )
+{
+if ( entity == null ) return default ;
+var key = ( entity . GetType (), propertyName );
+var getter = Getters. GetOrAdd ( key , CreateGetter );
+if ( getter == null ) return default ;
+var value = getter ( entity );
+if ( value == null ) return default ;
+return ( T ) value ;
+}
+public static void SetValue ( object entity , string propertyName , object ? value )
+{
+if ( entity == null ) return ;
+var key = ( entity . GetType (), propertyName );
+var setter = Setters. GetOrAdd ( key , CreateSetter );
+setter ?. Invoke ( entity , value );
+}
+private static Func < object , object ?>? CreateGetter (( Type type, string propertyName) key )
+{
+var property = key .type. GetProperty ( key .propertyName,
+BindingFlags .Public | BindingFlags .Instance);
+if ( property == null || ! property .CanRead) return null ;
+var param = Expression . Parameter ( typeof ( object ), "obj" );
+var castToEntity = Expression . Convert ( param , key .type);
+var propertyAccess = Expression . Property ( castToEntity , property );
+var castToObject = Expression . Convert ( propertyAccess , typeof ( object ));
+return Expression . Lambda < Func < object , object ?>>( castToObject , param ). Compile ();
+}
+private static Action < object , object ?>? CreateSetter (( Type type, string propertyName) key )
+{
+var property = key .type. GetProperty ( key .propertyName,
+BindingFlags .Public | BindingFlags .Instance);
+if ( property == null || ! property .CanWrite) return null ;
+var objParam = Expression . Parameter ( typeof ( object ), "obj" );
+var valueParam = Expression . Parameter ( typeof ( object ), "value" );
+var castToEntity = Expression . Convert ( objParam , key .type);
+var propertyAccess = Expression . Property ( castToEntity , property );
+var castValue = Expression . Convert ( valueParam , property .PropertyType);
+var assign = Expression . Assign ( propertyAccess , castValue );
+return Expression . Lambda < Action < object , object ?>>( assign , objParam , valueParam ). Compile ();
+}
+}
+Why Compiled Expressions?
+When you call PropertyInfo.GetValue(entity) , the runtime goes through reflection on every single call —
+looking up metadata, checking permissions, boxing value types. This is roughly 100x slower than
+a direct property access.
+The Expression.Lambda(...).Compile() call builds an actual IL method at runtime that directly
+accesses the property — almost as fast as writing entity.Name by hand. The compilation itself
+is expensive (microseconds to milliseconds), but it only happens once per (Type, PropertyName) pair .
+After that, every subsequent call uses the pre-compiled delegate.
+Anatomy of the Design
+Tuple key (Type, string) — The same property name on different types produces different entries. (typeof(Article), "Code") and (typeof(Employee), "Code") are distinct keys because the compiled expression must cast to the correct type.
+static readonly — The cache lives forever, shared by all requests on all circuits. This is intentional: compiled expressions are immutable and reusable across any thread.
+GetOrAdd(key, CreateGetter) — Atomic lookup-or-create. If two threads both ask for the same key at the same time, the factory ( CreateGetter ) might execute twice, but only one result is stored. The "extra" compilation is harmless — a tiny amount of wasted work, no corruption.
+4. Real Example #2: CategoryService (MethodInfo Caching)
+File: Services/Artigo/CategoryService.cs
+The CategoryService works with any entity type generically. It needs to call
+context.Set<T>() where T is determined at runtime. Since
+MakeGenericMethod() involves reflection, the result is cached.
+private static readonly ConcurrentDictionary < Type , MethodInfo > _setMethodCache = new ();
+private static readonly MethodInfo _dbContextSetMethod =
+typeof ( DbContext ). GetMethod ( nameof ( DbContext .Set), Type .EmptyTypes)!;
+private static async Task < List < object >> QueryEntitiesAsync ( DbContext context , Type entityType )
+{
+var setMethod = _setMethodCache. GetOrAdd ( entityType ,
+type => _dbContextSetMethod. MakeGenericMethod ( type ));
+var dbSet = ( IQueryable ) setMethod . Invoke ( context , null )!;
+return await dbSet . Cast < object >(). AsNoTracking (). ToListAsync ();
+}
+What's Happening Here
+_dbContextSetMethod grabs the open generic DbContext.Set<>() method once at class load time. This is the "template" method without a concrete type argument.
+MakeGenericMethod(type) closes the generic — it creates the specific Set<CrmFamilia>() or Set<CrmSubfamilia>() variant. This involves allocating a new MethodInfo object and is not free.
+GetOrAdd ensures MakeGenericMethod is called at most once per entity type (possibly a few extra times under contention, but only one result survives in the cache).
+Without the cache, every single query to any category would rebuild the MethodInfo from scratch.
+With 20+ category types being queried across many users, that adds up fast.
+5. Real Example #3: ChatHub (ConcurrentDictionary + lock on Value)
+File: Services/Chat/Hubs/ChatHub.cs
+This is the most instructive example because it shows that ConcurrentDictionary alone is
+sometimes not enough. When the value inside the dictionary is a mutable collection,
+you need an additional layer of protection.
+private static readonly ConcurrentDictionary < int , HashSet < string >> _onlineUsers = new ();
+On Connect: GetOrAdd + lock
+public override async Task OnConnectedAsync ()
+{
+var userId = GetUserId ();
+if ( userId .HasValue)
+{
+var connections = _onlineUsers. GetOrAdd ( userId .Value, _ => new HashSet < string >());
+lock ( connections )
+{
+connections . Add ( Context .ConnectionId);
+}
+// Notify others this user is online (only on first device)
+if ( connections .Count == 1 )
+{
+await Clients.Others. SendAsync ( "UserOnline" , userId .Value);
+}
+}
+await base . OnConnectedAsync ();
+}
+On Disconnect: TryGetValue + lock + TryRemove
+public override async Task OnDisconnectedAsync ( Exception ? exception )
+{
+var userId = GetUserId ();
+if ( userId .HasValue && _onlineUsers. TryGetValue ( userId .Value, out var connections ))
+{
+bool lastConnection ;
+lock ( connections )
+{
+connections . Remove ( Context .ConnectionId);
+lastConnection = connections .Count == 0 ;
+}
+if ( lastConnection )
+{
+_onlineUsers. TryRemove ( userId .Value, out _);
+await Clients.Others. SendAsync ( "UserOffline" , userId .Value);
+}
+}
+await base . OnDisconnectedAsync ( exception );
+}
+On Broadcast: The Snapshot Pattern
+public async Task SendMessage ( SendMessageDto dto )
+{
+// ...
+if (_onlineUsers. TryGetValue ( dto .ToUserId, out var recipientConnections ))
+{
+HashSet < string > snapshot ;
+lock ( recipientConnections )
+{
+snapshot = new HashSet < string >( recipientConnections );
+}
+await Clients. Clients ( snapshot . ToList ()). SendAsync ( "ReceiveMessage" , message );
+}
+}
+Why the Two Layers?
+ConcurrentDictionary makes the dictionary thread-safe, not the values
+inside it. If your value is a mutable collection (like HashSet<string> ), you still need to
+lock when modifying it. The dictionary protects the key-to-value mapping; the lock protects
+the value itself.
+The snapshot pattern is crucial here:
+Acquire the lock on the HashSet .
+Copy its contents into a new HashSet (the snapshot).
+Release the lock immediately.
+Use the snapshot for the (potentially slow) async I/O operation ( SendAsync ).
+This ensures you never hold a lock while awaiting a network call. If you did, every other
+connect/disconnect for that user would block until the message was delivered — potentially seconds.
+6. Real Example #4: FacialRecognitionHelper (9 Callback Dictionaries)
+File: Services/FacialRecognition/FacialRecognitionHelper.cs
+This static helper routes JavaScript facial recognition callbacks to the correct Blazor component instance.
+It uses 9 separate ConcurrentDictionary instances , one per event type:
+public static class FacialRecognitionHelper
+{
+// Attendance-related callbacks
+private static readonly ConcurrentDictionary < string , Action < string >> _identifyCallbacks = new ();
+private static readonly ConcurrentDictionary < string , Action < int , int >> _progressCallbacks = new ();
+private static readonly ConcurrentDictionary < string , Action < string >> _errorCallbacks = new ();
+private static readonly ConcurrentDictionary < string , Action < string >> _checkInCallbacks = new ();
+private static readonly ConcurrentDictionary < string , Action < string >> _checkOutCallbacks = new ();
+private static readonly ConcurrentDictionary < string , Action < string >> _breakStartCallbacks = new ();
+private static readonly ConcurrentDictionary < string , Action < string >> _breakEndCallbacks = new ();
+// Enrollment-related callbacks
+private static readonly ConcurrentDictionary < string , Action < string >> _faceEnrolledCallbacks = new ();
+private static readonly ConcurrentDictionary < string , Action < bool >> _faceDetectedCallbacks = new ();
+// ...
+}
+The Lifecycle: Register, Route, Cleanup
+Registration (Component OnInitialized)
+public static void RegisterInstance (
+string instanceId ,
+Action < string >? onIdentify = null ,
+Action < int , int >? onProgress = null ,
+Action < string >? onError = null ,
+/* ... more callbacks ... */ )
+{
+if ( onIdentify != null ) _identifyCallbacks[ instanceId ] = onIdentify ;
+if ( onProgress != null ) _progressCallbacks[ instanceId ] = onProgress ;
+if ( onError != null ) _errorCallbacks[ instanceId ] = onError ;
+// ... etc
+}
+Invocation (JavaScript calls into .NET)
+[ JSInvokable ]
+public static void NotifyFacialIdentifyCompleteForInstance ( string instanceId , string descriptorJson )
+{
+if (_identifyCallbacks. TryGetValue ( instanceId , out var callback ))
+{
+callback . Invoke ( descriptorJson );
+}
+}
+Cleanup (Component Dispose)
+public static void UnregisterInstance ( string instanceId )
+{
+_identifyCallbacks. TryRemove ( instanceId , out _);
+_progressCallbacks. TryRemove ( instanceId , out _);
+_errorCallbacks. TryRemove ( instanceId , out _);
+_checkInCallbacks. TryRemove ( instanceId , out _);
+_checkOutCallbacks. TryRemove ( instanceId , out _);
+_breakStartCallbacks. TryRemove ( instanceId , out _);
+_breakEndCallbacks. TryRemove ( instanceId , out _);
+_faceEnrolledCallbacks. TryRemove ( instanceId , out _);
+_faceDetectedCallbacks. TryRemove ( instanceId , out _);
+}
+Why This Design Works
+Instance isolation — The key is a Guid string generated per component instance. Multiple facial kiosks can run simultaneously without cross-talk.
+No lock needed on values — Unlike the ChatHub example, the values here are immutable Action delegates. Once registered, they are only read or replaced wholesale — never mutated in place.
+TryRemove on Dispose — This prevents memory leaks. Without cleanup, the static dictionaries would hold references to disposed component instances forever, preventing garbage collection.
+9 dictionaries vs 1 dictionary of 9-field objects — Keeping them separate means each [JSInvokable] method only touches one dictionary. Less contention, simpler code, and each callback type has its own clear delegate signature.
+7. The Anti-Pattern: Dictionary + Manual Lock
+File: Services/Artigo/ArticlePersistenceService.cs
+This file uses a plain Dictionary with a manual lock — the double-checked locking pattern.
+It works, but it is fragile and unnecessarily complex.
+private static readonly Dictionary < string , PropertyInfo > _propertyCache = new ();
+private static readonly object _cacheLock = new ();
+private static PropertyInfo ? GetCachedProperty ( string propertyName )
+{
+// First check: read without lock (fast path)
+if (_propertyCache. TryGetValue ( propertyName , out var cached ))
+{
+return cached ;
+}
+// Slow path: acquire lock, check again, then add
+lock (_cacheLock)
+{
+if (_propertyCache. TryGetValue ( propertyName , out cached ))
+{
+return cached ;
+}
+var propertyInfo = typeof ( Article ). GetProperty ( propertyName );
+if ( propertyInfo != null )
+{
+_propertyCache[ propertyName ] = propertyInfo ;
+}
+return propertyInfo ;
+}
+}
+What's Wrong With This?
+Coarse-grained locking — The entire dictionary is locked for every write. If thread A is adding "Code" , thread B cannot even read "Description" . With ConcurrentDictionary , unrelated keys would be on different stripes and wouldn't block each other at all.
+The first TryGetValue outside the lock is reading a non-thread-safe collection without protection. This technically violates the Dictionary contract. It usually works because TryGetValue is a read-only operation and modern CPUs have cache coherence, but it is not guaranteed to be safe if another thread is simultaneously resizing the internal table.
+Easy to forget the double-check — If a developer adds a new caching method and forgets the second TryGetValue inside the lock, you get duplicate work or race conditions.
+Reader-writer contention — All readers and writers compete for the same single lock object. Even two simultaneous reads would block if a write is in progress.
+The Fix: One Line
+Replace the entire pattern with:
+private static readonly ConcurrentDictionary < string , PropertyInfo > _propertyCache = new ();
+private static PropertyInfo ? GetCachedProperty ( string propertyName )
+{
+return _propertyCache. GetOrAdd ( propertyName ,
+name => typeof ( Article ). GetProperty ( name ));
+}
+Three lines instead of fifteen. No lock object, no double-check pattern, no risk of forgetting a step.
+GetOrAdd handles everything atomically.
+8. SemaphoreSlim — The Missing Pattern
+ConcurrentDictionary is perfect for caching, but what about async initialization guards?
+Consider the GlobalChatService and GlobalNotificationService in the project.
+Both have this pattern:
+private readonly object _lockObject = new ();
+public async Task InitializeAsync ( int userId )
+{
+if (_isDisposed) return ;
+lock (_lockObject) // Sync lock...
+{
+if (_isInitialized && _currentUserId == userId ) return ;
+_currentUserId = userId ;
+} // ...released here
+// But the async work happens OUTSIDE the lock!
+await DisconnectAsync (); // Async I/O
+await CreateHubConnection (); // Async I/O
+await ConnectAsync (); // Async I/O
+_isInitialized = true ; // Set AFTER lock released!
+}
+The Problem
+The lock() only protects the boolean check. The actual async initialization runs unprotected.
+If two threads call InitializeAsync at the same time, both pass the lock check (because
+_isInitialized is still false), and both proceed to create hub connections simultaneously.
+You get double connections, event handler duplication, and subtle state corruption.
+You cannot put await inside a lock — the C# compiler will give you error
+CS1996 : "Cannot await in the body of a lock statement." Even if you could, holding a
+lock across an await is dangerous because the continuation might run on a different thread, and
+lock() is thread-affine (only the thread that acquired it can release it).
+The Solution: SemaphoreSlim(1, 1)
+SemaphoreSlim with initial count 1 and max count 1 acts as an async-compatible mutex .
+It has a WaitAsync() method that can be awaited without blocking the thread.
+private readonly SemaphoreSlim _initLock = new ( 1 , 1 );
+public async Task InitializeAsync ( int userId )
+{
+if (_isDisposed) return ;
+await _initLock. WaitAsync ();
+try
+{
+if (_isInitialized && _currentUserId == userId ) return ;
+_currentUserId = userId ;
+await DisconnectAsync (); // Now protected!
+await CreateHubConnection (); // Now protected!
+await ConnectAsync (); // Now protected!
+_isInitialized = true ; // Set under protection
+}
+finally
+{
+_initLock. Release ();
+}
+}
+Key Differences from lock()
+Feature
+lock()
+SemaphoreSlim(1,1)
+Async support
+No — cannot await inside
+Yes — WaitAsync()
+Thread affinity
+Must release on same thread
+Any thread can release
+Timeout support
+Only via Monitor.TryEnter
+Built-in: WaitAsync(timeout)
+Cancellation
+No
+Built-in: WaitAsync(CancellationToken)
+Performance (uncontested)
+Faster (no allocation)
+Slightly slower
+Can protect async code
+No
+Yes
+9. Choosing the Right Tool
+Need
+Use
+Why
+Thread-safe key-value cache (read-heavy)
+ConcurrentDictionary + GetOrAdd
+Atomic, fine-grained locks via lock striping
+Thread-safe key-value with expiration
+IMemoryCache
+Built-in eviction policies (absolute, sliding, size)
+Mutable value inside ConcurrentDictionary
+ConcurrentDictionary + lock(value)
+Dictionary is safe; value needs its own lock
+Async mutual exclusion
+SemaphoreSlim(1, 1)
+Only primitive that works with await
+Simple sync mutual exclusion
+lock()
+Lightweight, no async, minimal overhead
+Rate limiting / controlled parallelism
+SemaphoreSlim(N, N)
+Allows up to N concurrent accessors
+10. Performance: Lock Striping vs Global Lock
+The fundamental difference between Dictionary + lock and ConcurrentDictionary
+comes down to how much of the data structure gets blocked when one thread is writing.
+Dictionary + global lock:
+Thread 1: ----[LOCK]=========[Read Key A]=========[UNLOCK]----
+Thread 2: ---------[BLOCKED..........................]--------[Read Key B]--
+Thread 3: ---------[BLOCKED..........................]--------[BLOCKED......]--[Write Key C]--
+All threads wait for the single lock, even for unrelated keys.
+ConcurrentDictionary (lock striping):
+Thread 1: ----[Stripe 1]--[Read Key A]--[Done]
+Thread 2: ----[Stripe 2]--[Read Key B]--[Done] <-- Parallel!
+Thread 3: ----[Stripe 3]--[Write Key C]-[Done] <-- Parallel!
+Thread 4: ----[Stripe 1]--[Write Key D]-[Done] <-- Waits only if same stripe as Thread 1
+Threads on different stripes never block each other.
+The dictionary internally hashes each key and assigns it to one of several "stripes" (segments).
+Each stripe has its own lock. The default number of stripes is
+Environment.ProcessorCount * 4 , so on a 4-core machine you get 16 independent lock lanes.
+The odds of two unrelated keys colliding on the same stripe are low, meaning most operations proceed
+without any contention at all.
+If your Dictionary is static or shared across threads, it MUST
+be a ConcurrentDictionary . No exceptions. The performance cost is negligible for single-threaded
+use, but the safety guarantee is essential the moment a second thread touches it.
+Summary: Patterns in Our Codebase
+File
+Pattern
+Rating
+ReflectionCache.cs
+ConcurrentDictionary + GetOrAdd with compiled expressions
+Excellent
+CategoryService.cs
+ConcurrentDictionary + GetOrAdd for MethodInfo caching
+Excellent
+ChatHub.cs
+ConcurrentDictionary + lock(value) with snapshot pattern
+Excellent
+FacialRecognitionHelper.cs
+9 ConcurrentDictionaries for instance-isolated callbacks
+Excellent
+ArticlePersistenceService.cs
+Dictionary + manual lock (double-checked locking)
+Fragile — should be ConcurrentDictionary
+GlobalChatService.cs
+lock() guarding async initialization
+Broken — needs SemaphoreSlim
+GlobalNotificationService.cs
+lock() guarding async initialization
+Broken — needs SemaphoreSlim
+GetOrAdd(key, factory) — "Give me the cached value for this key. If it
+doesn't exist yet, create it with this factory function, store it, and give me that instead."
+One line replaces the entire double-checked locking ceremony.
+Think of ConcurrentDictionary as a hotel with many front desks. Each desk handles
+check-ins and check-outs independently. A guest arriving at desk 3 doesn't wait for desk 7 to
+finish. But if two guests try to check into the same room at the same desk, the desk clerk handles
+it — only one gets the room, and the other gets told it's already taken. That's GetOrAdd .

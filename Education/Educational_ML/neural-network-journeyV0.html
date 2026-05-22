@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Networks from Scratch: The 20 Questions Journey</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #0f0f1a;
+            color: #e0e0e0;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* Navigation */
+        .nav {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 1000;
+            background: rgba(15, 15, 26, 0.9);
+            padding: 15px 25px;
+            border-radius: 50px;
+            box-shadow: 0 5px 30px rgba(0, 217, 255, 0.3);
+        }
+        .nav button {
+            background: #1a1a2e;
+            color: #00d9ff;
+            border: 2px solid #00d9ff;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .nav button:hover {
+            background: #00d9ff;
+            color: #0f0f1a;
+            transform: scale(1.05);
+        }
+        .nav button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        .progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #00d9ff, #00ffcc);
+            transition: width 0.3s;
+            z-index: 1000;
+        }
+        .slide-counter {
+            color: #64748b;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Slides Container */
+        .slides-container {
+            height: 100vh;
+            overflow: hidden;
+        }
+        .slide {
+            height: 100vh;
+            padding: 60px;
+            display: none;
+            animation: fadeIn 0.5s ease;
+            overflow-y: auto;
+        }
+        .slide.active { display: block; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Typography */
+        h1 {
+            font-size: 3em;
+            color: #00d9ff;
+            margin-bottom: 20px;
+            text-shadow: 0 0 30px rgba(0, 217, 255, 0.5);
+        }
+        h2 {
+            font-size: 2.2em;
+            color: #00ffcc;
+            margin-bottom: 15px;
+        }
+        h3 {
+            font-size: 1.5em;
+            color: #f59e0b;
+            margin: 20px 0 10px 0;
+        }
+        p { line-height: 1.8; margin: 15px 0; font-size: 1.1em; }
+        .subtitle {
+            font-size: 1.4em;
+            color: #94a3b8;
+            margin-bottom: 40px;
+        }
+        .highlight { color: #00ffcc; font-weight: bold; }
+        .keyword { color: #f59e0b; }
+        .insight {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border-left: 4px solid #00ffcc;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 10px 10px 0;
+        }
+        .insight-title {
+            color: #00ffcc;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        /* Code blocks */
+        .code {
+            background: #1a1a2e;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.95em;
+            overflow-x: auto;
+            margin: 15px 0;
+            border: 1px solid #334155;
+        }
+        .code .comment { color: #6b7280; }
+        .code .keyword { color: #f59e0b; }
+        .code .string { color: #4ade80; }
+        .code .number { color: #00d9ff; }
+
+        /* Visual elements */
+        .diagram {
+            background: #16213e;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .network-visual {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        .layer {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+        .layer-label {
+            color: #00d9ff;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .neuron {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .neuron.input { background: #64748b; }
+        .neuron.hidden { background: #8b5cf6; }
+        .neuron.output { background: #06b6d4; }
+        .arrow {
+            font-size: 30px;
+            color: #334155;
+        }
+
+        /* Cards */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .card {
+            background: #16213e;
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid #334155;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 217, 255, 0.2);
+        }
+        .card h4 {
+            color: #00d9ff;
+            margin-bottom: 10px;
+        }
+        .card.complete { border-color: #4ade80; }
+        .card.current { border-color: #f59e0b; border-width: 2px; }
+        .card.upcoming { border-color: #334155; opacity: 0.7; }
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+        .badge.complete { background: #166534; color: #4ade80; }
+        .badge.current { background: #78350f; color: #fbbf24; }
+        .badge.upcoming { background: #1e3a5f; color: #64748b; }
+
+        /* Formula */
+        .formula {
+            background: #1a1a2e;
+            padding: 20px 30px;
+            border-radius: 10px;
+            font-family: 'Consolas', monospace;
+            font-size: 1.2em;
+            text-align: center;
+            margin: 20px 0;
+            color: #00ffcc;
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border: 1px solid #334155;
+        }
+        th { background: #1e3a5f; color: #00d9ff; }
+        tr:nth-child(even) { background: #1a1a2e; }
+
+        /* Two columns */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: start;
+        }
+        @media (max-width: 900px) {
+            .two-col { grid-template-columns: 1fr; }
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(to bottom, #4ade80, #f59e0b, #64748b);
+        }
+        .timeline-item {
+            position: relative;
+            padding: 20px 0 20px 30px;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -7px;
+            top: 25px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #00d9ff;
+            border: 3px solid #0f0f1a;
+        }
+        .timeline-item.complete::before { background: #4ade80; }
+        .timeline-item.current::before { background: #f59e0b; }
+        .timeline-item.upcoming::before { background: #64748b; }
+
+        /* Center content */
+        .center { text-align: center; }
+        .max-width { max-width: 900px; margin: 0 auto; }
+
+        /* Title slide special */
+        .title-slide {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            height: 100vh;
+        }
+        .title-slide h1 {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        .big-emoji {
+            font-size: 80px;
+            margin: 30px 0;
+        }
+
+        /* TOC */
+        .toc {
+            columns: 2;
+            column-gap: 40px;
+        }
+        .toc-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #334155;
+            break-inside: avoid;
+        }
+        .toc-item.complete { color: #4ade80; }
+        .toc-item.current { color: #f59e0b; }
+        .toc-item.upcoming { color: #64748b; }
+    </style>
+</head>
+<body>
+    <div class="progress" id="progress"></div>
+
+    <div class="slides-container">
+        <!-- Slide 1: Title -->
+        <div class="slide active" id="slide-1">
+            <div class="title-slide">
+                <div class="big-emoji">🧠</div>
+                <h1>Neural Networks from Scratch</h1>
+                <p class="subtitle">The 20 Questions Journey</p>
+                <p style="color: #64748b; margin-top: 40px;">Building AI that learns — one concept at a time</p>
+                <p style="color: #334155; margin-top: 20px;">Use arrow keys or buttons to navigate</p>
+            </div>
+        </div>
+
+        <!-- Slide 2: The Goal -->
+        <div class="slide" id="slide-2">
+            <div class="max-width">
+                <h1>The Goal</h1>
+                <p class="subtitle">Build a 20 Questions game that <span class="highlight">actually learns</span></p>
+
+                <div class="two-col">
+                    <div>
+                        <h3>The Game</h3>
+                        <p>Think of an animal. The computer asks yes/no questions and tries to guess it.</p>
+                        <p>Simple rules, but requires <span class="keyword">classification</span> — one of the core problems in machine learning.</p>
+                    </div>
+                    <div>
+                        <h3>The Challenge</h3>
+                        <p>Don't just code rules — build a system that <span class="highlight">learns patterns from data</span>.</p>
+                        <p>When it guesses wrong, it should get smarter for next time.</p>
+                    </div>
+                </div>
+
+                <div class="insight">
+                    <div class="insight-title">💡 Teaching Philosophy</div>
+                    <p>Understand the "why" not just the "how." Build intuition before formulas. Make mistakes and debug them. That's how real learning happens.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: Table of Contents -->
+        <div class="slide" id="slide-3">
+            <div class="max-width">
+                <h1>The Learning Path</h1>
+                <p class="subtitle">11 Modules from Zero to AI</p>
+
+                <div class="toc">
+                    <div class="toc-item complete">✅ Module 1: Foundations — What is Classification?</div>
+                    <div class="toc-item complete">✅ Module 2: From Lookup to Learning</div>
+                    <div class="toc-item complete">✅ Module 3: Multi-Class Classification</div>
+                    <div class="toc-item complete">✅ Module 4: Data Management with EF Core</div>
+                    <div class="toc-item complete">✅ Module 5: Hidden Layers & Deep Learning</div>
+                    <div class="toc-item complete">✅ Module 6: Backpropagation</div>
+                    <div class="toc-item upcoming">⏳ Module 7: Training at Scale</div>
+                    <div class="toc-item upcoming">⏳ Module 8: Persistence & Production</div>
+                    <div class="toc-item upcoming">🔷 Module 9: Smart Question Selection</div>
+                    <div class="toc-item upcoming">🔷 Module 10: ML Libraries Comparison</div>
+                    <div class="toc-item upcoming">⏳ Module 11: Building the UI</div>
+                </div>
+
+                <p style="margin-top: 30px; color: #64748b;">
+                    ✅ Complete &nbsp;&nbsp; ⏳ Upcoming &nbsp;&nbsp; 🔷 Optional/Advanced
+                </p>
+            </div>
+        </div>
+
+        <!-- Slide 4: Module 1 - Foundations -->
+        <div class="slide" id="slide-4">
+            <div class="max-width">
+                <span class="badge complete">MODULE 1 ✓</span>
+                <h1>Foundations: What is Classification?</h1>
+                <p class="subtitle">Teaching computers to recognize patterns</p>
+
+                <h3>The Core Question</h3>
+                <p>How do you teach a computer to guess what you're thinking?</p>
+
+                <div class="two-col">
+                    <div>
+                        <h3>Feature Vectors</h3>
+                        <p>Represent each animal as a list of numbers — its "fingerprint"</p>
+                        <div class="code">
+Penguin: [0, 2, 0, 2]  <span class="comment">// fly, swim, mammal, bird</span>
+Dog:     [0, 0, 2, 0]
+Eagle:   [2, 0, 0, 2]
+Shark:   [0, 2, 0, 0]
+                        </div>
+                    </div>
+                    <div>
+                        <h3>Distance = Similarity</h3>
+                        <p>Similar animals have similar fingerprints.</p>
+                        <p>Use <span class="keyword">Manhattan distance</span> to measure how "far apart" two animals are.</p>
+                    </div>
+                </div>
+
+                <div class="insight">
+                    <div class="insight-title">🔑 Key Insight</div>
+                    <p><strong>Identical fingerprints = indistinguishable objects.</strong> If Cat and Dog have the same feature vector, no algorithm can tell them apart. The quality of your questions determines the ceiling of any algorithm's intelligence.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: Module 2 - Learning -->
+        <div class="slide" id="slide-5">
+            <div class="max-width">
+                <span class="badge complete">MODULE 2 ✓</span>
+                <h1>From Lookup to Learning</h1>
+                <p class="subtitle">What if the computer figured out patterns itself?</p>
+
+                <h3>The Neuron</h3>
+                <p>Inspired by biology: a unit that takes inputs, weighs them, and fires (or doesn't).</p>
+
+                <div class="diagram">
+                    <div class="formula">
+                        output = sigmoid( Σ(weight × input) + bias )
+                    </div>
+                </div>
+
+                <div class="two-col">
+                    <div>
+                        <h3>Weights = Knowledge</h3>
+                        <p><span class="keyword">Weights</span> encode what the neuron has learned about which features matter.</p>
+                        <p>High weight = this feature is important for detecting this class.</p>
+                    </div>
+                    <div>
+                        <h3>The Learning Rule</h3>
+                        <div class="code">
+weight += learningRate × error × input
+                        </div>
+                        <p>If wrong, adjust weights in the direction that reduces error.</p>
+                    </div>
+                </div>
+
+                <div class="insight">
+                    <div class="insight-title">🔑 Key Insight</div>
+                    <p><strong>Training is just adjusting weights until errors shrink.</strong> The neuron doesn't "understand" — it just finds patterns in numbers through trial and error.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: Sigmoid Function -->
+        <div class="slide" id="slide-6">
+            <div class="max-width">
+                <h1>The Sigmoid Function</h1>
+                <p class="subtitle">Squashing infinity into [0, 1]</p>
+
+                <div class="diagram">
+                    <svg width="500" height="250" viewBox="0 0 500 250">
+                        <!-- Axes -->
+                        <line x1="50" y1="200" x2="450" y2="200" stroke="#64748b" stroke-width="2"/>
+                        <line x1="250" y1="30" x2="250" y2="220" stroke="#64748b" stroke-width="2"/>
+
+                        <!-- Labels -->
+                        <text x="250" y="245" fill="#64748b" text-anchor="middle">input</text>
+                        <text x="25" y="125" fill="#64748b" text-anchor="middle" transform="rotate(-90, 25, 125)">output</text>
+                        <text x="450" y="195" fill="#64748b">+∞</text>
+                        <text x="50" y="195" fill="#64748b">-∞</text>
+                        <text x="260" y="45" fill="#00ffcc">1</text>
+                        <text x="260" y="205" fill="#00ffcc">0</text>
+
+                        <!-- Sigmoid curve -->
+                        <path d="M 50 195 Q 150 195, 200 180 Q 250 125, 300 70 Q 350 55, 450 55"
+                              fill="none" stroke="#00d9ff" stroke-width="3"/>
+
+                        <!-- 0.5 line -->
+                        <line x1="50" y1="125" x2="450" y2="125" stroke="#334155" stroke-dasharray="5,5"/>
+                        <text x="460" y="130" fill="#64748b">0.5</text>
+                    </svg>
+                </div>
+
+                <div class="formula">
+                    sigmoid(x) = 1 / (1 + e<sup>-x</sup>)
+                </div>
+
+                <div class="card-grid">
+                    <div class="card">
+                        <h4>Why Sigmoid?</h4>
+                        <p>Converts any number into a probability-like value between 0 and 1. Perfect for "is this a dog? yes/no" decisions.</p>
+                    </div>
+                    <div class="card">
+                        <h4>Biological Inspiration</h4>
+                        <p>Real neurons either fire or don't. Sigmoid models this "soft" threshold — values near 0.5 are uncertain, near 0 or 1 are confident.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: Module 3 - Multi-Class -->
+        <div class="slide" id="slide-7">
+            <div class="max-width">
+                <span class="badge complete">MODULE 3 ✓</span>
+                <h1>Multi-Class Classification</h1>
+                <p class="subtitle">Recognizing many categories, not just one</p>
+
+                <h3>One Neuron Per Class</h3>
+                <p>Each neuron learns to recognize one animal. The network picks the one with highest activation.</p>
+
+                <div class="network-visual">
+                    <div class="layer">
+                        <div class="layer-label">Inputs</div>
+                        <div class="neuron input">Fly?</div>
+                        <div class="neuron input">Swim?</div>
+                        <div class="neuron input">Mammal?</div>
+                        <div class="neuron input">Bird?</div>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="layer">
+                        <div class="layer-label">Output Neurons</div>
+                        <div class="neuron output">🐧</div>
+                        <div class="neuron output">🐕</div>
+                        <div class="neuron output">🦅</div>
+                        <div class="neuron output">🦈</div>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="layer">
+                        <div class="layer-label">Winner</div>
+                        <div style="font-size: 50px;">🐕</div>
+                        <div style="color: #4ade80;">Highest score!</div>
+                    </div>
+                </div>
+
+                <div class="insight">
+                    <div class="insight-title">🔑 Key Insight</div>
+                    <p><strong>A network is just neurons working together.</strong> Each learns to recognize one pattern. The collective behavior produces intelligent classification.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: Module 4 - Data Management -->
+        <div class="slide" id="slide-8">
+            <div class="max-width">
+                <span class="badge complete">MODULE 4 ✓</span>
+                <h1>Data Management</h1>
+                <p class="subtitle">Scaling beyond hardcoded data with Entity Framework Core</p>
+
+                <h3>The Database Schema</h3>
+                <div class="code">
+<span class="keyword">Animals</span>: Id, Name
+<span class="keyword">Questions</span>: Id, Text
+<span class="keyword">AnimalAnswers</span>: AnimalId, QuestionId, Value (0=No, 1=Maybe, 2=Yes)
+                </div>
+
+                <div class="two-col">
+                    <div>
+                        <h3>Why Database?</h3>
+                        <ul style="line-height: 2;">
+                            <li>Add animals without changing code</li>
+                            <li>Add questions without changing code</li>
+                            <li>Network size adapts dynamically</li>
+                            <li>Persist learned corrections</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3>Many-to-Many</h3>
+                        <p>Animals ↔ Questions through AnimalAnswers</p>
+                        <p>Each animal has an answer to each question.</p>
+                    </div>
+                </div>
+
+                <div class="insight">
+                    <div class="insight-title">🔑 Key Insight</div>
+                    <p><strong>The network structure should be driven by data, not hardcoded.</strong> `questions.Count` determines input size. `animals.Count` determines output neurons.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: Feature Engineering Lesson -->
+        <div class="slide" id="slide-9">
+            <div class="max-width">
+                <h1>Lesson: Feature Engineering</h1>
+                <p class="subtitle">The questions you ask matter more than the algorithm</p>
+
+                <h3>The Problem We Hit</h3>
+                <p>Cat and Dog had <span class="keyword">identical feature vectors</span>: [0, 0, 2, 0]</p>
+                <p>Shark and Salmon too: [0, 2, 0, 0]</p>
+
+                <table>
+                    <tr>
+                        <th>Animal</th><th>Fly</th><th>Swim</th><th>Mammal</th><th>Bird</th><th>Distinguishable?</th>
+                    </tr>
+                    <tr><td>Dog</td><td>0</td><td>0</td><td>2</td><td>0</td><td rowspan="2" style="color: #f87171;">NO! Same vector</td></tr>
+                    <tr><td>Cat</td><td>0</td><td>0</td><td>2</td><td>0</td></tr>
+                    <tr><td>Shark</td><td>0</td><td>2</td><td>0</td><td>0</td><td rowspan="2" style="color: #f87171;">NO! Same vector</td></tr>
+                    <tr><td>Salmon</td><td>0</td><td>2</td><td>0</td><td>0</td></tr>
+                </table>
+
+                <h3>The Solution: Better Questions</h3>
+                <div class="code">
+<span class="keyword">New Question:</span> "Is it a feline?" → Cat: Yes, Dog: No ✓
+<span class="keyword">New Question:</span> "Is it dangerous?" → Shark: Yes, Salmon: No ✓
+                </div>
+
+                <div class="insight">
+                    <div class="insight-title">🔑 Key Insight</div>
+                    <p><strong>No algorithm can overcome bad data.</strong> Feature engineering — choosing the right questions — is often more impactful than choosing the right model.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10: Module 5 - Hidden Layers -->
+        <div class="slide" id="slide-10">
+            <div class="max-width">
+                <span class="badge complete">MODULE 5 ✓</span>
+                <h1>Hidden Layers & Deep Learning</h1>
+                <p class="subtitle">Why can't a single layer solve everything?</p>
+
+                <h3>The Architecture</h3>
+                <div class="network-visual">
+                    <div class="layer">
+                        <div class="layer-label">Inputs (6)</div>
+                        <div class="neuron input"></div>
+                        <div class="neuron input"></div>
+                        <div class="neuron input"></div>
+                        <div class="neuron input"></div>
+                        <div class="neuron input"></div>
+                        <div class="neuron input"></div>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="layer">
+                        <div class="layer-label">Hidden (6)</div>
+                        <div class="neuron hidden"></div>
+                        <div class="neuron hidden"></div>
+                        <div class="neuron hidden"></div>
+                        <div class="neuron hidden"></div>
+                        <div class="neuron hidden"></div>
+                        <div class="neuron hidden"></div>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="layer">
+                        <div class="layer-label">Output (8)</div>
+                        <div class="neuron output"></div>
+                        <div class="neuron output"></div>
+                        <div class="neuron output"></div>
+                        <div class="neuron output"></div>
+                        <div class="neuron output"></div>
+                        <div class="neuron output"></div>
+                        <div class="neuron output"></div>
+                        <div class="neuron output"></div>
+                    </div>
+                </div>
+
+                <div class="code">
+<span class="keyword">public</span> List&lt;List&lt;Neuron&gt;&gt; Layers { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+
+<span class="comment">// Forward pass: each layer's output becomes next layer's input</span>
+<span class="keyword">foreach</span> (<span class="keyword">var</span> layer <span class="keyword">in</span> Layers) {
+    outputs = ComputeSingleLayer(inputs, layer);
+    inputs = outputs;  <span class="comment">// ← The key line!</span>
+}
+                </div>
+
+                <div class="insight">
+                    <div class="insight-title">🔑 Key Insight</div>
+                    <p><strong>Hidden layers learn intermediate representations.</strong> A hidden neuron might detect "aquatic mammal" or "flying non-bird" — abstract features that make final classification easier.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 11: Module 6 - Backpropagation Intro -->
+        <div class="slide" id="slide-11">
+            <div class="max-width">
+                <span class="badge complete">MODULE 6 ✓</span>
+                <h1>Backpropagation</h1>
+                <p class="subtitle">How do errors flow backward through layers?</p>
+
+                <h3>The Credit Assignment Problem</h3>
+                <p>If the network guesses "Dog" when it should be "Cat"...</p>
+                <p style="font-size: 1.3em; color: #f59e0b; margin: 20px 0;">Which hidden neuron is to blame?</p>
+
+                <div class="two-col">
+                    <div>
+                        <h3>Output Layer: Easy</h3>
+                        <div class="code">
+error = expected - actual
+<span class="comment">// Direct supervision</span>
+                        </div>
+                    </div>
+                    <div>
+                        <h3>Hidden Layer: Hard</h3>
+                        <div class="code">
+error = ???
+<span class="comment">// No "expected output"!</span>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>The Solution: Blame Flows Backward</h3>
+                <p>If hidden neuron H has a <span class="highlight">strong connection</span> to output neuron O that has a <span class="highlight">big error</span>...</p>
+                <p>Then H contributed heavily to that error!</p>
+
+                <div class="formula">
+                    hiddenError[h] = Σ( outputError[o] × weight[h→o] )
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 12: Backpropagation Visual -->
+        <div class="slide" id="slide-12">
+            <div class="max-width">
+                <h1>Backpropagation: The Flow</h1>
+
+                <div class="diagram">
+                    <svg width="700" height="300" viewBox="0 0 700 300">
+                        <!-- Forward arrows -->
+                        <defs>
+                            <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                <path d="M0,0 L0,6 L9,3 z" fill="#00d9ff"/>
+                            </marker>
+                            <marker id="arrow-orange" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                <path d="M0,0 L0,6 L9,3 z" fill="#f59e0b"/>
+                            </marker>
+                        </defs>
+
+                        <!-- Labels -->
+                        <text x="100" y="30" fill="#00d9ff" font-weight="bold">Inputs</text>
+                        <text x="320" y="30" fill="#8b5cf6" font-weight="bold">Hidden</text>
+                        <text x="540" y="30" fill="#06b6d4" font-weight="bold">Output</text>
+
+                        <!-- Input neurons -->
+                        <circle cx="100" cy="100" r="25" fill="#64748b"/>
+                        <circle cx="100" cy="170" r="25" fill="#64748b"/>
+                        <circle cx="100" cy="240" r="25" fill="#64748b"/>
+
+                        <!-- Hidden neurons -->
+                        <circle cx="350" cy="100" r="25" fill="#8b5cf6"/>
+                        <circle cx="350" cy="170" r="25" fill="#8b5cf6"/>
+                        <circle cx="350" cy="240" r="25" fill="#8b5cf6"/>
+
+                        <!-- Output neurons -->
+                        <circle cx="600" cy="120" r="25" fill="#06b6d4"/>
+                        <circle cx="600" cy="200" r="25" fill="#06b6d4"/>
+
+                        <!-- Forward pass arrows (top) -->
+                        <line x1="130" y1="80" x2="320" y2="80" stroke="#00d9ff" stroke-width="2" marker-end="url(#arrow)"/>
+                        <text x="225" y="70" fill="#00d9ff" font-size="14">FORWARD</text>
+
+                        <line x1="380" y1="80" x2="570" y2="80" stroke="#00d9ff" stroke-width="2" marker-end="url(#arrow)"/>
+
+                        <!-- Backward pass arrows (bottom) -->
+                        <line x1="570" y1="260" x2="380" y2="260" stroke="#f59e0b" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrow-orange)"/>
+                        <text x="475" y="285" fill="#f59e0b" font-size="14">BACKWARD (errors)</text>
+
+                        <line x1="320" y1="260" x2="130" y2="260" stroke="#f59e0b" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrow-orange)"/>
+
+                        <!-- Weight connections (sample) -->
+                        <line x1="125" y1="100" x2="325" y2="100" stroke="#334155" stroke-width="1"/>
+                        <line x1="125" y1="100" x2="325" y2="170" stroke="#334155" stroke-width="1"/>
+                        <line x1="125" y1="170" x2="325" y2="170" stroke="#334155" stroke-width="1"/>
+                        <line x1="375" y1="100" x2="575" y2="120" stroke="#334155" stroke-width="1"/>
+                        <line x1="375" y1="170" x2="575" y2="120" stroke="#334155" stroke-width="1"/>
+                        <line x1="375" y1="170" x2="575" y2="200" stroke="#334155" stroke-width="1"/>
+                    </svg>
+                </div>
+
+                <div class="two-col">
+                    <div class="card">
+                        <h4>Forward Pass</h4>
+                        <p>Signals flow through weights → activations → outputs</p>
+                        <p>Weights <span class="highlight">amplify</span> signals</p>
+                    </div>
+                    <div class="card">
+                        <h4>Backward Pass</h4>
+                        <p>Errors flow through same weights → blame assignment</p>
+                        <p>Weights <span class="highlight">distribute</span> blame</p>
+                    </div>
+                </div>
+
+                <div class="insight">
+                    <div class="insight-title">🔑 Key Insight</div>
+                    <p><strong>The same weights that carry signals forward also carry errors backward.</strong> It's a beautiful symmetry — the network learns by reversing its own computation.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 13: Sigmoid Derivative -->
+        <div class="slide" id="slide-13">
+            <div class="max-width">
+                <h1>The Sigmoid Derivative</h1>
+                <p class="subtitle">Why neurons near 0 or 1 learn slowly</p>
+
+                <div class="formula">
+                    derivative = output × (1 - output)
+                </div>
+
+                <div class="diagram">
+                    <svg width="500" height="200" viewBox="0 0 500 200">
+                        <!-- Curve -->
+                        <path d="M 50 180 Q 100 180, 150 170 Q 200 100, 250 50 Q 300 100, 350 170 Q 400 180, 450 180"
+                              fill="none" stroke="#f59e0b" stroke-width="3"/>
+
+                        <!-- Labels -->
+                        <text x="50" y="195" fill="#64748b">0</text>
+                        <text x="250" y="195" fill="#64748b">0.5</text>
+                        <text x="450" y="195" fill="#64748b">1</text>
+                        <text x="250" y="30" fill="#f59e0b">0.25 (max)</text>
+
+                        <!-- Zones -->
+                        <rect x="50" y="50" width="100" height="130" fill="#f8717133" rx="5"/>
+                        <text x="100" y="100" fill="#f87171" text-anchor="middle" font-size="12">SATURATED</text>
+
+                        <rect x="200" y="50" width="100" height="130" fill="#4ade8033" rx="5"/>
+                        <text x="250" y="100" fill="#4ade80" text-anchor="middle" font-size="12">SENSITIVE</text>
+
+                        <rect x="350" y="50" width="100" height="130" fill="#f8717133" rx="5"/>
+                        <text x="400" y="100" fill="#f87171" text-anchor="middle" font-size="12">SATURATED</text>
+                    </svg>
+                </div>
+
+                <div class="card-grid">
+                    <div class="card">
+                        <h4>Output ≈ 0.5</h4>
+                        <p>Derivative = 0.25 (maximum)</p>
+                        <p>Neuron is <span class="highlight">uncertain</span> — very responsive to learning</p>
+                    </div>
+                    <div class="card">
+                        <h4>Output ≈ 0 or 1</h4>
+                        <p>Derivative ≈ 0</p>
+                        <p>Neuron is <span class="keyword">saturated</span> — confident, barely changes</p>
+                    </div>
+                </div>
+
+                <div class="insight">
+                    <div class="insight-title">🔑 Key Insight</div>
+                    <p><strong>The derivative answers: "How much can this neuron actually change right now?"</strong> It prevents wasting updates on neurons that are already confident.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 14: Backprop Code -->
+        <div class="slide" id="slide-14">
+            <div class="max-width">
+                <h1>Backpropagation: The Code</h1>
+
+                <div class="code" style="font-size: 0.85em;">
+<span class="keyword">public void</span> Train(<span class="keyword">double</span>[] inputs, <span class="keyword">double</span>[] expected, <span class="keyword">double</span> lr) {
+    <span class="comment">// STEP 1: Forward pass</span>
+    <span class="keyword">var</span> hiddenOutputs = ComputeSingleLayer(inputs, Layers[<span class="number">0</span>]);
+    <span class="keyword">var</span> finalOutputs = ComputeSingleLayer(hiddenOutputs, Layers[<span class="number">1</span>]);
+
+    <span class="comment">// STEP 2: Output errors (with derivative!)</span>
+    <span class="keyword">var</span> outputErrors = <span class="keyword">new double</span>[outputLayer.Count];
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i < outputLayer.Count; i++) {
+        <span class="keyword">var</span> o = finalOutputs[i];
+        outputErrors[i] = (expected[i] - o) * o * (<span class="number">1</span> - o);
+    }
+
+    <span class="comment">// STEP 3: Hidden errors (backpropagation!)</span>
+    <span class="keyword">var</span> hiddenErrors = <span class="keyword">new double</span>[hiddenLayer.Count];
+    <span class="keyword">for</span> (<span class="keyword">int</span> h = <span class="number">0</span>; h < hiddenLayer.Count; h++) {
+        <span class="keyword">double</span> sum = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> o = <span class="number">0</span>; o < outputLayer.Count; o++) {
+            sum += outputErrors[o] * outputLayer[o].Weights[h];
+        }
+        <span class="keyword">var</span> ho = hiddenOutputs[h];
+        hiddenErrors[h] = sum * ho * (<span class="number">1</span> - ho);
+    }
+
+    <span class="comment">// STEP 4: Update weights</span>
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i < outputLayer.Count; i++)
+        outputLayer[i].Train(hiddenOutputs, lr, outputErrors[i]);
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i < hiddenLayer.Count; i++)
+        hiddenLayer[i].Train(inputs, lr, hiddenErrors[i]);
+}
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 15: Module 7 - Training at Scale (Upcoming) -->
+        <div class="slide" id="slide-15">
+            <div class="max-width">
+                <span class="badge upcoming">MODULE 7 — UPCOMING</span>
+                <h1>Training at Scale</h1>
+                <p class="subtitle">How do you train on millions of examples efficiently?</p>
+
+                <div class="card-grid">
+                    <div class="card upcoming">
+                        <h4>Batch Training</h4>
+                        <p>Train on all examples, then update weights once. Stable but slow.</p>
+                    </div>
+                    <div class="card upcoming">
+                        <h4>Stochastic (SGD)</h4>
+                        <p>Update after each example. Fast but noisy.</p>
+                    </div>
+                    <div class="card upcoming">
+                        <h4>Mini-Batch</h4>
+                        <p>Best of both worlds. Industry standard.</p>
+                    </div>
+                    <div class="card upcoming">
+                        <h4>Learning Rate Schedules</h4>
+                        <p>Start big, go small. Like cooling metal.</p>
+                    </div>
+                </div>
+
+                <h3>Concepts to Explore</h3>
+                <ul style="line-height: 2;">
+                    <li><span class="keyword">Overfitting</span> — memorizing training data vs. learning patterns</li>
+                    <li><span class="keyword">Validation sets</span> — "trust but verify" with held-out data</li>
+                    <li><span class="keyword">Early stopping</span> — stop when validation error rises</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 16: Module 8 - Persistence (Upcoming) -->
+        <div class="slide" id="slide-16">
+            <div class="max-width">
+                <span class="badge upcoming">MODULE 8 — UPCOMING</span>
+                <h1>Persistence & Production</h1>
+                <p class="subtitle">Save and load a trained network</p>
+
+                <h3>The Problem</h3>
+                <p>Training takes millions of iterations. We don't want to start over every time!</p>
+
+                <div class="two-col">
+                    <div>
+                        <h3>What to Save</h3>
+                        <ul style="line-height: 2;">
+                            <li>Network architecture (layer sizes)</li>
+                            <li>All weights</li>
+                            <li>All biases</li>
+                            <li>Version/metadata</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3>Options</h3>
+                        <ul style="line-height: 2;">
+                            <li>JSON serialization (simple)</li>
+                            <li>Database tables (structured)</li>
+                            <li>Binary format (efficient)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="insight">
+                    <div class="insight-title">💡 Key Concept</div>
+                    <p><strong>Training is expensive. Inference is cheap.</strong> Train once, deploy everywhere. This is why ML models are shipped as trained weights, not training code.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 17: Module 9 - Smart Questions (Optional) -->
+        <div class="slide" id="slide-17">
+            <div class="max-width">
+                <span class="badge upcoming">MODULE 9 — OPTIONAL</span>
+                <h1>Smart Question Selection</h1>
+                <p class="subtitle">What question gives the most information?</p>
+
+                <h3>The Idea</h3>
+                <p>Not all questions are equal. <span class="keyword">"Does it fly?"</span> might be useless if you've already narrowed to aquatic animals.</p>
+
+                <div class="formula">
+                    Information Gain = Entropy(before) - Entropy(after)
+                </div>
+
+                <div class="card-grid">
+                    <div class="card upcoming">
+                        <h4>Entropy</h4>
+                        <p>Measure of uncertainty. High entropy = many possibilities. Low entropy = almost certain.</p>
+                    </div>
+                    <div class="card upcoming">
+                        <h4>Information Gain</h4>
+                        <p>How much a question reduces uncertainty. Pick the question that maximizes this!</p>
+                    </div>
+                </div>
+
+                <div class="insight">
+                    <div class="insight-title">💡 Key Concept</div>
+                    <p><strong>Decision trees vs neural networks</strong> — Decision trees explicitly optimize question order. Neural networks learn features implicitly. Both have tradeoffs.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 18: Module 11 - UI (Upcoming) -->
+        <div class="slide" id="slide-18">
+            <div class="max-width">
+                <span class="badge upcoming">MODULE 11 — FINAL</span>
+                <h1>Building the UI</h1>
+                <p class="subtitle">Make it fun to play!</p>
+
+                <h3>Tech Stack</h3>
+                <p><span class="keyword">Blazor</span> + <span class="keyword">MudBlazor</span> — Modern C# web development</p>
+
+                <div class="card-grid">
+                    <div class="card upcoming">
+                        <h4>Game Interface</h4>
+                        <p>Beautiful question/answer flow. Animated feedback. Satisfying reveal.</p>
+                    </div>
+                    <div class="card upcoming">
+                        <h4>Training Dashboard</h4>
+                        <p>Watch the network learn in real-time. Error curves, weight visualizations.</p>
+                    </div>
+                    <div class="card upcoming">
+                        <h4>Admin Panel</h4>
+                        <p>Add animals. Add questions. Manage training data.</p>
+                    </div>
+                </div>
+
+                <div class="insight">
+                    <div class="insight-title">💡 Coming Full Circle</div>
+                    <p>We started with console I/O, understood the math deeply, and now we can build something people actually want to use. That's the power of understanding fundamentals.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 19: Key Lessons -->
+        <div class="slide" id="slide-19">
+            <div class="max-width">
+                <h1>Key Lessons Learned</h1>
+                <p class="subtitle">Bugs that taught us the most</p>
+
+                <div class="timeline">
+                    <div class="timeline-item complete">
+                        <h3>Reference vs Value Types</h3>
+                        <p>All neurons shared the same weights array because arrays are reference types. <span class="highlight">Fix: create new array inside the loop.</span></p>
+                    </div>
+                    <div class="timeline-item complete">
+                        <h3>Loop Variable Scope</h3>
+                        <p>`var i = 0` inside foreach resets every iteration. <span class="highlight">Fix: declare outside loop.</span></p>
+                    </div>
+                    <div class="timeline-item complete">
+                        <h3>Random Initialization</h3>
+                        <p>`new Random()` in tight loops produces same values. <span class="highlight">Fix: create Random once, reuse.</span></p>
+                    </div>
+                    <div class="timeline-item complete">
+                        <h3>Identical Feature Vectors</h3>
+                        <p>Cat and Dog were indistinguishable. <span class="highlight">Fix: add discriminating questions.</span></p>
+                    </div>
+                    <div class="timeline-item complete">
+                        <h3>Missing Sigmoid Derivative</h3>
+                        <p>Network didn't generalize well. <span class="highlight">Fix: scale errors by derivative.</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 20: Summary -->
+        <div class="slide" id="slide-20">
+            <div class="title-slide">
+                <h1>What You've Built</h1>
+                <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin: 40px 0;">
+                    <div class="card" style="text-align: center; padding: 30px;">
+                        <div style="font-size: 40px; margin-bottom: 10px;">🧠</div>
+                        <h4>Neural Network</h4>
+                        <p>From scratch, no libraries</p>
+                    </div>
+                    <div class="card" style="text-align: center; padding: 30px;">
+                        <div style="font-size: 40px; margin-bottom: 10px;">⚡</div>
+                        <h4>Backpropagation</h4>
+                        <p>Multi-layer learning</p>
+                    </div>
+                    <div class="card" style="text-align: center; padding: 30px;">
+                        <div style="font-size: 40px; margin-bottom: 10px;">💾</div>
+                        <h4>Database</h4>
+                        <p>EF Core integration</p>
+                    </div>
+                    <div class="card" style="text-align: center; padding: 30px;">
+                        <div style="font-size: 40px; margin-bottom: 10px;">🎮</div>
+                        <h4>Working Game</h4>
+                        <p>That actually learns!</p>
+                    </div>
+                </div>
+                <p class="subtitle">Understanding beats memorization.<br>Build it yourself, and you'll never forget how it works.</p>
+                <p style="color: #64748b; margin-top: 40px;">The journey continues... → Training at Scale → Persistence → UI</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav">
+        <button onclick="prevSlide()" id="prevBtn">← Previous</button>
+        <div class="slide-counter">
+            <span id="currentSlide">1</span> / <span id="totalSlides">20</span>
+        </div>
+        <button onclick="nextSlide()" id="nextBtn">Next →</button>
+    </div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 20;
+
+        function showSlide(n) {
+            // Hide all slides
+            document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+
+            // Show target slide
+            document.getElementById(`slide-${n}`).classList.add('active');
+
+            // Update counter
+            document.getElementById('currentSlide').textContent = n;
+
+            // Update progress bar
+            document.getElementById('progress').style.width = `${(n / totalSlides) * 100}%`;
+
+            // Update button states
+            document.getElementById('prevBtn').disabled = (n === 1);
+            document.getElementById('nextBtn').disabled = (n === totalSlides);
+
+            currentSlide = n;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) showSlide(currentSlide + 1);
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) showSlide(currentSlide - 1);
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        });
+
+        // Initialize
+        document.getElementById('totalSlides').textContent = totalSlides;
+        showSlide(1);
+    </script>
+</body>
+</html>

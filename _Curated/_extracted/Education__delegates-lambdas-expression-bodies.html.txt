@@ -1,0 +1,325 @@
+C# Deep Dive: Delegates, Lambdas & Expression-Bodied Members
+Delegates, Lambdas & Expression-Bodied Members
+A "for dummies" deep dive into three C# concepts that share an arrow
+Table of Contents
+Part 1: Delegates — "A Variable That Holds a Method"
+Part 2: Lambdas — "A Method Without a Name"
+Part 3: Expression-Bodied Members — "Just Shorthand"
+Part 4: The Big Comparison — Telling Them Apart
+Part 5: Practice Exercises
+Part 1: Delegates
+"A variable that holds a method"
+Think of a delegate like a job posting .
+A job posting says: "I need someone who can take a string and return a number." It doesn't say who will do the job — it just describes the shape of the work (what goes in, what comes out).
+When you assign a method to a delegate, you're hiring someone for that job. The posting (delegate type) stays the same; you're just filling the position.
+The Basics
+Normally, when you call a method, you know exactly which method you're calling:
+int Add ( int a , int b ) => a + b;
+var result = Add ( 3 , 4 ); // You KNOW you're calling Add
+But what if you want to say: "I'll call some method that takes two ints and returns an int — but I don't know which one yet" ?
+That's what a delegate does. It's a typed container for a method reference .
+// Step 1: Declare the "job posting" (the delegate type)
+delegate int MathOperation ( int a , int b );
+// Step 2: Create real methods that match the posting
+int Add ( int a , int b ) => a + b;
+int Multiply ( int a , int b ) => a * b;
+// Step 3: "Hire" a method for the job
+MathOperation operation = Add; // operation now "points to" Add
+var result = operation ( 3 , 4 ); // calls Add(3, 4) → returns 7
+// Step 4: You can swap who does the job!
+operation = Multiply; // now it points to Multiply
+result = operation ( 3 , 4 ); // calls Multiply(3, 4) → returns 12
+delegate int MathOperation(int a, int b);
+"A MathOperation is any method that takes two ints and returns an int ."
+MathOperation operation = Add;
+"Create a variable called operation and point it at the Add method."
+operation(3, 4);
+"Call whatever method operation is currently pointing to, with arguments 3 and 4."
+Why Would I Ever Need This?
+Delegates let you pass behavior as a parameter . Instead of passing data (numbers, strings), you pass actions .
+// A method that applies ANY operation to two numbers
+int Calculate ( int a , int b , MathOperation whatToDo )
+{
+return whatToDo (a, b);
+}
+// Now you can pass different behaviors:
+Calculate ( 3 , 4 , Add); // → 7 (passed Add as behavior)
+Calculate ( 3 , 4 , Multiply); // → 12 (passed Multiply as behavior)
+Calculate(3, 4, Add)
+"Calculate 3 and 4, and the way I want you to do it is by adding ."
+Calculate(3, 4, Multiply)
+"Calculate 3 and 4, and the way I want you to do it is by multiplying ."
+Built-in Delegates: Func, Action, Predicate
+Declaring your own delegate type every time is tedious. C# provides built-in ones:
+Func<...>
+Has a return value. Last type parameter is the return type.
+// Takes two ints, returns an int
+Func < int , int , int > add = Add;
+// ↑in ↑in ↑out
+// Takes a string, returns a bool
+Func < string , bool > check = IsValid;
+// ↑in ↑out
+// Takes nothing, returns a string
+Func < string > greet = SayHello;
+// ↑out (only one = return type)
+Action<...>
+No return value (void). All type parameters are inputs.
+// Takes a string, returns nothing
+Action < string > log = Console.WriteLine;
+// ↑in
+// Takes nothing, returns nothing
+Action doStuff = CleanUp;
+// (no type params at all)
+log ( "hello" ); // prints "hello"
+doStuff (); // runs CleanUp()
+Func<string, int> getLength = s => s.Length;
+"getLength is a function that takes a string and returns an int ."
+Action<string> print = s => Console.WriteLine(s);
+"print is an action that takes a string and does something with it (no return value)."
+Delegate = a typed variable that holds a reference to a method. Think of it as: "I don't know WHICH method yet, but I know its SHAPE."
+Use Func<...> when the method returns something. Use Action<...> when it returns void .
+Part 2: Lambdas
+"A method without a name"
+If a delegate is a job posting , a lambda is a freelancer who shows up without a resume .
+Instead of writing a full method, giving it a name, and then pointing a delegate to it, you just write the code right there, inline . It's a method that exists only where it's needed.
+Like telling a taxi driver: "Turn left, then right, then stop" — you didn't name the route, you just described it on the spot.
+The Evolution (How We Got Here)
+Let's filter a list of numbers to keep only the even ones. Watch how the same logic gets shorter over C#'s history:
+C# 1.0 — Named Method
+// Step 1: Write a named method somewhere in your class
+bool IsEven ( int n )
+{
+return n % 2 == 0 ;
+}
+// Step 2: Pass its name
+var evens = numbers. Where (IsEven);
+C# 2.0 — Anonymous Method (delegate keyword)
+var evens = numbers. Where (
+delegate ( int n ) { return n % 2 == 0 ; }
+);
+C# 3.0 — Lambda Expression (what we use today)
+var evens = numbers. Where ( n => n % 2 == 0 );
+All three do exactly the same thing . The lambda is just the most concise way to write it.
+Lambda Syntax Breakdown
+n => n % 2 == 0
+↑ ↑ ↑
+parameter "goes to" body (what to do)
+n => n % 2 == 0
+"Given n , check if n mod 2 equals 0 ."
+Or even simpler: " n goes to n is even ."
+Reading Lambdas Like English
+Here's a cheat sheet for reading the => in a lambda. Read it as "goes to" or "becomes" or "maps to" :
+// "x goes to x times 2"
+x => x * 2
+// "name goes to name starts with A"
+name => name. StartsWith ( "A" )
+// "person goes to person's Age is greater than 18"
+person => person.Age > 18
+// "(a, b) goes to a plus b"
+( a , b ) => a + b
+// "no input goes to 42"
+() => 42
+// With a body block (for multiple statements):
+// "x goes to: do some stuff, then return the result"
+x => {
+var doubled = x * 2 ;
+var plusOne = doubled + 1 ;
+return plusOne;
+}
+Lambdas in Real Life: LINQ
+This is where you see lambdas 90% of the time. Every LINQ method takes a lambda that describes what to do with each element :
+var people = new List < Person > { ... };
+// "WHERE does the person's Age go to being greater than 18?"
+// → In English: "Where the person's age is greater than 18"
+people. Where ( p => p.Age > 18 )
+// "SELECT: person goes to person's Name"
+// → In English: "Select each person's name"
+people. Select ( p => p.Name)
+// "ORDER BY: person goes to person's Age"
+// → In English: "Order by each person's age"
+people. OrderBy ( p => p.Age)
+// "ANY: person goes to person's Name equals John"
+// → In English: "Is there any person whose name is John?"
+people. Any ( p => p.Name == "John" )
+// "FIRST: person goes to person's Name equals John"
+// → In English: "Find the first person whose name is John"
+people. First ( p => p.Name == "John" )
+A Lambda IS a Delegate Value
+This is the critical connection. A lambda is just a convenient way to create a delegate instance :
+// These two are equivalent:
+// 1. Named method + assign to delegate
+bool IsEven ( int n ) { return n % 2 == 0 ; }
+Func < int , bool > check = IsEven;
+// 2. Lambda (anonymous method assigned to delegate in one step)
+Func < int , bool > check = n => n % 2 == 0 ;
+// Both produce the SAME result: a Func<int, bool> that checks evenness.
+// The lambda just skips the "name it, then reference it" step.
+Lambda = an anonymous (unnamed) function that creates a delegate value on the spot.
+Read => as "goes to" . The left side is input, the right side is what to do with it.
+A lambda is literally filling a delegate's "job posting" with an unnamed freelancer.
+Part 3: Expression-Bodied Members
+"Just shorthand for a method/property body"
+If a lambda is a freelancer , an expression-bodied member is a full-time employee with a very short job description .
+It has a name, it lives in a class, it's a proper member — it's just that its body is so simple you can write it in one line with => instead of using curly braces and return .
+It's cosmetic surgery on syntax , nothing more. The compiled result is identical.
+The Core Idea
+When a method or property body is a single expression, you can replace { return ...; } with => ...;
+Traditional Body
+public int Area ()
+{
+return Width * Height;
+}
+public string Name
+{
+get { return _name; }
+}
+Expression Body
+public int Area () => Width * Height;
+public string Name => _name;
+That's it. There's no deeper concept. It's literally just a shorter way to write { return ...; } .
+Reading Expression-Bodied Members Like English
+Read the => as "returns" or "is defined as" (NOT as "goes to"):
+// "Name is defined as 'Builder'"
+public string Name => "Builder" ;
+// "Category is defined as 'Creational'"
+public string Category => "Creational" ;
+// "Area returns Width times Height"
+public int Area () => Width * Height;
+// "ToString returns a formatted string with Name and Text"
+public override string ToString () => $ "Element: {Name}, Text: {Text}" ;
+Where Can You Use It?
+Expression bodies work on almost any class member:
+public class Demo
+{
+private string _name ;
+// Read-only property
+public string Name => _name;
+// Property with getter and setter
+public string Label
+{
+get => _name;
+set => _name = value;
+}
+// Method
+public int Double ( int x ) => x * 2 ;
+// Constructor
+public Demo ( string name ) => _name = name;
+// Void method (no return, just an expression)
+public void Log ( string msg ) => Console. WriteLine (msg);
+}
+From YOUR Codebase
+// In BuilderDemo.cs — these are all expression-bodied PROPERTIES:
+public string Name => "Builder" ; // "Name is defined as 'Builder'"
+public string Category => "Creational" ; // "Category is defined as 'Creational'"
+public int Order => 1 ; // "Order is defined as 1"
+// These are NOT lambdas. They're getter-only properties.
+// Equivalent to:
+public string Name { get { return "Builder" ; } }
+Expression-bodied member = shorthand for writing a single-expression method/property body.
+Read => as "returns" or "is defined as" .
+It has a name. It lives in a class. It's NOT a lambda. It's just shorter syntax.
+Part 4: The Big Comparison
+They both use => , but they're completely different things.
+The => arrow is used in two unrelated contexts in C#. This is the #1 source of confusion. The arrow itself means nothing on its own — its meaning depends entirely on where it appears.
+Where does the => appear?
+On a class member declaration (after a method name, property name, etc.) → It's an expression-bodied member
+Everywhere else (assigned to a variable, passed as an argument, inside LINQ) → It's a lambda
+Side by Side
+public class Example
+{
+// ═══ EXPRESSION-BODIED MEMBERS ═══
+// These have names. They live in a class. They ARE the member.
+public int Double ( int x ) => x * 2 ; // Named method. NOT a lambda.
+public string Name => "Hello" ; // Named property. NOT a lambda.
+// ═══ LAMBDAS ═══
+// These are VALUES — anonymous functions used where a value is expected.
+public void Demo ()
+{
+// Stored in a variable (Func is a delegate type)
+Func < int , int > doubler = x => x * 2 ; // Lambda! (assigned to a variable)
+// Passed as an argument
+var list = new List < int > { 1 , 2 , 3 };
+list. Select ( x => x * 2 ); // Lambda! (passed to a method)
+list. Where ( x => x > 1 ); // Lambda! (passed to a method)
+}
+}
+The Visual Test
+Does the => have a CLASS MEMBER to the left?
+(a method name, property name, constructor, etc.)
+┌──── YES ────┐
+│ │
+▼ │
+Expression-bodied │
+member │
+│
+┌──── NO ────┘
+│
+▼
+Lambda
+What They Compile To
+// Expression-bodied method
+public int Double ( int x ) => x * 2 ;
+// Compiles to a regular method:
+// public int Double(int x) { return x * 2; }
+// Nothing special. Just a normal method with shorter syntax.
+// Lambda
+Func < int , int > doubler = x => x * 2 ;
+// Compiles to a delegate OBJECT:
+// The compiler creates a hidden method AND a delegate instance pointing to it.
+// It's a thing you can store, pass around, and invoke later.
+Expression-bodied = how you write a member (syntax)
+Lambda = a value you create (a function object)
+Part 5: Practice Exercises
+Exercise 1: Identify the Arrow
+For each line, is the => an expression-bodied member or a lambda?
+a) public string FullName => $ "{First} {Last}" ;
+b) names. Where ( n => n.Length > 3 );
+c) public void Greet () => Console. WriteLine ( "Hi" );
+d) Func < int , int > square = x => x * x;
+e) public int Order => 5 ;
+Show Answers
+a) Expression-bodied — it's a property (class member on the left)
+b) Lambda — passed as an argument to Where
+c) Expression-bodied — it's a void method (class member on the left)
+d) Lambda — assigned to a Func variable
+e) Expression-bodied — it's a property (class member on the left)
+Exercise 2: Read Like English
+Translate each line to plain English:
+a) products. Where ( p => p.Price > 100 )
+b) public string Category => "SOLID" ;
+c) people. Select ( p => p.Name)
+d) Action < string > yell = s => Console. WriteLine (s. ToUpper ());
+Show Answers
+a) "From products, keep only those where the product's price is greater than 100."
+b) "The Category property is defined as 'SOLID'."
+c) "From people, select each person's name."
+d) "yell is an action that takes a string and writes it to the console in uppercase."
+Exercise 3: Delegate Understanding
+What does this code print?
+Func < int , int , int > operation = ( a , b ) => a + b;
+Console. WriteLine ( operation ( 3 , 4 ));
+operation = ( a , b ) => a * b;
+Console. WriteLine ( operation ( 3 , 4 ));
+Show Answer
+Prints 7 then 12 .
+First, operation points to an "add" lambda, so 3+4=7.
+Then it's reassigned to a "multiply" lambda, so 3*4=12.
+The delegate variable changed what method it points to.
+Exercise 4: Convert Between Styles
+Rewrite this expression-bodied property as a traditional property with { get { } } :
+public string Greeting => $ "Hello, {Name}" ;
+Show Answer
+public string Greeting
+{
+get
+{
+return $ "Hello, {Name}" ;
+}
+}
+They compile to the exact same thing. The expression-bodied version is just shorter.
+Quick Reference Card
+delegate = a type that describes a method's shape
+Func<in, out> = built-in delegate (has return value)
+Action<in> = built-in delegate (void)
+x => x + 1 (in a value position) = lambda (creates a delegate)
+int Foo() => x + 1; (on a member) = expression-bodied (just shorter syntax)

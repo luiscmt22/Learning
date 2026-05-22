@@ -1,0 +1,24 @@
+<div class="fd-toggle">
+    <button class="fd-btn" @onclick="Toggle">
+        &#x1f4a1; @(_showSimple ? "Hide Simple Explanation" : "Show Simple Explanation")
+    </button>
+    @if (_showSimple)
+    {
+        <div class="fd-content">
+            <div class="fd-header">&#x1f393; Simple Explanation</div>
+            @((MarkupString)ContentHtml)
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string TopicId { get; set; } = "";
+    [Parameter] public string ContentHtml { get; set; } = "";
+
+    private bool _showSimple;
+
+    private void Toggle()
+    {
+        _showSimple = !_showSimple;
+    }
+}

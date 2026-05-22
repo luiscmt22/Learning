@@ -1,0 +1,444 @@
+[
+  {
+    "src_rel": "Education/21-Background-Services-Smart-Scheduling.html",
+    "title": "Background Services & Smart Scheduling — The Night Watchmen of Your Application",
+    "doc_type": "core-concept",
+    "topic_family": "concurrency",
+    "domain": null,
+    "topic_slug": "background-services-scheduling-patterns",
+    "complexity": "advanced",
+    "one_line_summary": "A deep-dive tutorial on implementing .NET BackgroundService/IHostedService with four distinct scheduling patterns — smart/event-driven, daily-at-fixed-time, fixed interval, and config-driven — built around six real services from the GivingCare codebase.",
+    "executive_summary": "This tutorial teaches how to build robust .NET background services by dissecting six working examples grouped into four scheduling patterns. The core insight is that not all periodic work should poll at a fixed interval: when you can query 'when is the next thing due?', a smart/event-driven wait eliminates wasted cycles entirely, while daily tasks should calculate a delay to a target time, and only true maintenance should use naive fixed intervals. It also hammers home three non-negotiables: create a scope before touching scoped services, use a three-layer try/catch so one tenant's failure never kills the loop, and always honor the stoppingToken.",
+    "key_concepts": [
+      "BackgroundService / IHostedService",
+      "ExecuteAsync and stoppingToken",
+      "IServiceProvider.CreateScope pattern",
+      "smart/event-driven scheduling",
+      "daily target-time calculation",
+      "three-layer exception handling",
+      "initial startup delay"
+    ],
+    "prerequisites": [
+      "async-await",
+      "dependency-injection-lifetimes",
+      "cancellation-tokens"
+    ],
+    "builds_toward": [
+      "multi-tenant-architecture",
+      "distributed-scheduling",
+      "hangfire-quartz-alternatives"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": null,
+    "suggested_metaphor": "Background services are night watchmen. A dumb watchman walks the whole building every hour whether or not there's anything to check. A smart watchman looks at the alarm panel and says 'nothing will be due until 2:47 AM — I'll take a nap until then.' A scheduled watchman only does the payroll drop at exactly 3 AM. And the cleanup watchman just empties the bins every six hours because it doesn't matter when. Four patterns, one building, one very relaxed set of watchmen.",
+    "suggested_intro_hook": "Your app has work that nobody clicks a button for — sending birthday emails, closing forgotten attendance, polling mailboxes. The naive answer is 'just poll every 5 minutes.' The better answer is to ask: could I calculate exactly when the next thing is due and sleep until then? Do that and you'll wake up 3 times where you used to wake up 60, and your work still happens the instant it's needed.",
+    "what_it_teaches": "How to inherit from BackgroundService, register with AddHostedService, correctly resolve scoped dependencies from inside a singleton-lifetimed hosted service, and pick the right scheduling strategy — smart/event-driven, daily-at-target-time, fixed interval, or config-driven — based on whether the work has a known next-due time, cares about precision, or is user-configurable per tenant.",
+    "key_takeaways": [
+      "AddHostedService registers a singleton — you MUST create a scope before resolving scoped services like DbContext",
+      "Smart scheduling (calculate next due time + sleep) beats fixed polling whenever you can answer 'when is the next thing due?'",
+      "Use three try/catch layers: outer for graceful shutdown, middle for full-cycle crash retry, inner for per-item continue",
+      "Daily scheduled tasks calculate targetTime and AddDays(1) if already past — then Task.Delay until that exact moment",
+      "Always start with an initial delay (~30 seconds) so DB migrations, SignalR hubs, and Kestrel have time to initialize",
+      "Never let one tenant's failure cascade up — wrap each database/item in its own try and continue the loop"
+    ],
+    "cross_references": [
+      "ihosted-service",
+      "di-service-lifetimes",
+      "cancellation-tokens",
+      "multi-tenant-dbcontext-factory",
+      "imemorycache-caching",
+      "imap-smtp-email-integration"
+    ],
+    "quality_notes": "Excellent, well-structured tutorial. Walks through real production services with annotated code, explains the WHY of every pattern, includes ASCII timing diagrams, a decision flowchart, and a copy-paste template for building new services. Could be a gold-standard reference for junior .NET devs.",
+    "reading_difficulty_minutes": 22,
+    "is_part_of_series": true,
+    "series_name": "GivingCare Education Tutorials"
+  },
+  {
+    "src_rel": "Education/20-IMemoryCache-Dual-Caching-Strategy.html",
+    "title": "IMemoryCache — Dual-Caching Strategy",
+    "doc_type": "core-concept",
+    "topic_family": "concurrency",
+    "domain": null,
+    "topic_slug": "imemorycache-dual-caching",
+    "complexity": "intermediate",
+    "one_line_summary": "Teaches .NET IMemoryCache through a real dual-layer strategy where different data has different expiration lifetimes, plus when to reach for ConcurrentDictionary instead and the anti-patterns to avoid.",
+    "executive_summary": "This tutorial explains the TryGetValue + Set pattern for IMemoryCache and, more importantly, why different kinds of data need different cache lifetimes in the same service. Feature flags get a 5-minute sliding expiration because toggles must propagate quickly; company-to-database mappings get 30 minutes because they almost never change. It also covers graceful degradation (return empty defaults, not exceptions), when ConcurrentDictionary beats IMemoryCache for compiled-reflection permanence, why GetOrCreateAsync has a cache-stampede problem, and a Dictionary+lock anti-pattern from a real service that should have been ConcurrentDictionary.",
+    "key_concepts": [
+      "IMemoryCache",
+      "SlidingExpiration vs AbsoluteExpiration",
+      "TryGetValue + Set pattern",
+      "cache invalidation on write",
+      "graceful degradation / fail-open",
+      "ConcurrentDictionary for permanent data",
+      "cache stampede"
+    ],
+    "prerequisites": [
+      "dependency-injection-lifetimes",
+      "async-await",
+      "ef-core-basics"
+    ],
+    "builds_toward": [
+      "distributed-caching-redis",
+      "output-caching",
+      "cache-aside-pattern"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": null,
+    "suggested_metaphor": "IMemoryCache is sticky notes on your monitor. The feature-flag note is written in pencil and you rewrite it every five minutes because the office is always tweaking what's enabled. The company-address note is in permanent marker and you only bother refreshing it every half hour. ConcurrentDictionary is a note engraved into your desk — it's never changing, you never need to re-read the filing cabinet. And the mistake? Some people keep their pencil notes on a shared whiteboard where two people write at once and nobody remembers to bring the marker — that's Dictionary + manual lock, and it eventually gets someone in trouble.",
+    "suggested_intro_hook": "Here's a question that exposes every junior caching bug: 'a user toggles a feature OFF — how long until every server in your cluster actually respects that?' If your answer is 'whenever the cache expires,' you've just described why dual-caching exists. Feature flags need a 5-minute leash; lookup tables can stay out for 30. Same cache, same service, two completely different lifetimes. Here's how.",
+    "what_it_teaches": "How to use IMemoryCache properly in ASP.NET Core — the TryGetValue+Set pattern, picking sliding vs absolute expiration, invalidating on write operations, defaulting safely when lookups fail, and choosing between IMemoryCache and ConcurrentDictionary for different data characteristics.",
+    "key_takeaways": [
+      "Not all cached data has the same freshness requirement — use short sliding for mutable data, long sliding for stable lookups",
+      "Prefer TryGetValue+Set over GetOrCreateAsync: the latter has no per-key locking and can cause cache stampedes on cold start",
+      "Save to DB first, then invalidate the cache key — never the reverse",
+      "Do NOT cache failure/zero results — you'll pin a temporary outage into place",
+      "Return safe defaults (empty dicts, fail-open enabled) instead of throwing when both cache and DB fail",
+      "Use ConcurrentDictionary for permanent static data like compiled reflection delegates — IMemoryCache is overkill"
+    ],
+    "cross_references": [
+      "di-service-lifetimes",
+      "feature-flags",
+      "ef-core-asnotracking",
+      "background-services-scheduling-patterns",
+      "concurrent-dictionary"
+    ],
+    "quality_notes": "High-quality practical tutorial. Shows both correct patterns and an anti-pattern from the codebase with a proposed fix, which is unusually honest and educationally valuable. Every cache has a documented key, lifetime, and invalidation story.",
+    "reading_difficulty_minutes": 16,
+    "is_part_of_series": true,
+    "series_name": "GivingCare Education Tutorials"
+  },
+  {
+    "src_rel": "Education/25-IMAP-SMTP-Email-Integration.html",
+    "title": "IMAP & SMTP — Email Integration with MailKit",
+    "doc_type": "core-concept",
+    "topic_family": "web",
+    "domain": null,
+    "topic_slug": "imap-smtp-email-integration",
+    "complexity": "intermediate",
+    "one_line_summary": "Teaches email integration in .NET using MailKit — IMAP for pulling (port 993 SSL), SMTP for sending (port 587 STARTTLS), plus a full processing pipeline with deduplication, email-to-lead conversion, and multi-tenant polling.",
+    "executive_summary": "Two protocols, two services, one library: MailKit handles both reading (IMAP) and sending (SMTP). This tutorial walks through a complete email integration — from EmailAccount entity design, through ImapClient.FetchAsync with SearchQuery.NotSeen, to SmtpClient with MimeMessage, to a background polling service that deduplicates via MessageId and can optionally auto-create CRM leads. The critical insight is that IMAP is stateless/pull-based, so dedup by MessageId is non-negotiable — polling without it means importing the same email every 5 minutes forever.",
+    "key_concepts": [
+      "IMAP (port 993, implicit SSL)",
+      "SMTP (port 587, STARTTLS)",
+      "MailKit ImapClient and SmtpClient",
+      "MessageId deduplication",
+      "SearchQuery.NotSeen",
+      "MimeMessage construction",
+      "connection test before save"
+    ],
+    "prerequisites": [
+      "async-await",
+      "dependency-injection-lifetimes",
+      "background-services-scheduling-patterns",
+      "ef-core-basics"
+    ],
+    "builds_toward": [
+      "email-templating",
+      "outbox-pattern",
+      "microsoft-graph-api"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": null,
+    "suggested_metaphor": "Email has two completely different doors at the post office. IMAP is the little glass window where you pick up your mail — you peek in, the clerk hands you what's new, and if you don't take it someone else will find it there tomorrow. SMTP is the big outgoing slot around the corner — you drop a stamped envelope in and walk away, trusting it gets delivered. They're on opposite walls, opposite schedules, opposite protocols — and a lot of people show up to the wrong door and wonder why their connection hangs forever.",
+    "suggested_intro_hook": "The worst bug in an email integration isn't bad credentials — it's that you forgot MessageId deduplication, and now every customer support inbox has 288 copies of yesterday's complaint because you polled every 5 minutes for 24 hours. Here's how to build email integration that remembers what it already saw.",
+    "what_it_teaches": "How to integrate an ASP.NET Core app with IMAP and SMTP using the MailKit library — connecting, authenticating, searching the inbox, sending MIME messages, deduplicating by MessageId, converting emails into leads, testing credentials before save, and running the whole thing as a multi-tenant background polling service.",
+    "key_takeaways": [
+      "IMAP uses implicit SSL on port 993; SMTP uses STARTTLS on port 587 — mix them up and the connection silently hangs",
+      "Always open the inbox in ReadOnly mode and dedup on your side — don't mark as read, it corrupts the user's own mail client",
+      "MessageId is the only reliable dedup key for polled email — filter new emails against it before saving",
+      "Connection test = connect + authenticate + disconnect; validate credentials before saving account config",
+      "The background polling service must use the MINIMUM interval across all tenants to honor each company's settings",
+      "Disconnect with DisconnectAsync(true) to send QUIT — polite protocol behavior that avoids server-side session leaks"
+    ],
+    "cross_references": [
+      "background-services-scheduling-patterns",
+      "di-service-lifetimes",
+      "multi-tenant-dbcontext-factory",
+      "lead-management",
+      "mailkit"
+    ],
+    "quality_notes": "Clear, practical tutorial with a satisfying full-pipeline view. Code is complete enough to copy-paste-adapt. Could benefit from a note on OAuth2/XOAUTH2 for Gmail (basic password auth is increasingly deprecated by major providers).",
+    "reading_difficulty_minutes": 13,
+    "is_part_of_series": true,
+    "series_name": "GivingCare Education Tutorials"
+  },
+  {
+    "src_rel": "Education/Stock/PT/SistemaServiçoStockInfoGráfico.pdf",
+    "title": "Sistema de Serviço de Stock — O Guia \"Para Totós\"",
+    "doc_type": "applied-implementation",
+    "topic_family": null,
+    "domain": "stock-service",
+    "topic_slug": "stock-service-system-pt",
+    "complexity": "beginner",
+    "one_line_summary": "A Portuguese 'for dummies' walkthrough of a stock/inventory service that uses a two-layer design — a cached decorator wrapping a real StockService — with time-sensitive cache expiration rules tailored to how old the stock data is.",
+    "executive_summary": "This is the Portuguese beginner-friendly explainer for the project's stock-tracking system. It presents the service as a two-layer cake: an outer CachedStockService decorator that checks IMemoryCache first, and an inner StockService that actually talks to the database. The clever bit is time-graded expiration: historical stock (>7 days old) caches for 1 hour because it never changes, while recent stock caches for only 5 minutes because it's still moving, and filtered queries don't cache at all because they're one-off. The doc also covers the Razor UI pattern of pre-loading _stockSummaryTask in OnInitializedAsync so clicking the Stock tab feels instant.",
+    "key_concepts": [
+      "decorator pattern (CachedStockService wraps StockService)",
+      "time-graded cache expiration",
+      "GetArticleStockByDateAsync (point-in-time query)",
+      "stock movements history",
+      "Task pre-loading before user interaction",
+      "Portuguese localization (pt-PT culture)"
+    ],
+    "prerequisites": [
+      "csharp-basics",
+      "async-await",
+      "blazor-components"
+    ],
+    "builds_toward": [
+      "imemorycache-dual-caching",
+      "factory-floor-system"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": {
+      "why_it_exists": "Without this service, every single stock check would mean recomputing sums over the whole movements table — slow, database-hammering, and frustrating for users waiting on reports. The goal is to make stock lookups feel instant even when thousands of users and thousands of items are involved, while keeping historical reporting accurate. It also exists to decouple the UI (which just wants 'how much do I have?') from the database query that answers it.",
+      "what_it_does": "Given an article ID and optionally a date, the service returns the current stock level, the full movement history (each entrada/saída with document reference), and aggregate totals. It supports a 'time machine' query — tell me what stock I had on January 15th — and it answers every query in sub-millisecond time when the answer is cached. Filtered date-range queries bypass the cache because they're too specific to reuse, while 'since-forever' totals and point-in-time snapshots are eagerly cached.",
+      "how_it_works": "Two services are registered: StockService does the real SQL work (SUM entradas, SUM saidas, SUM stock FROM movimentos WHERE data <= X), and CachedStockService is a decorator that wraps it, checking IMemoryCache by a composite key like stock_{artigoId}_{date:yyyyMMdd} before falling through. Cache lifetime is branched on date: older than 7 days gets 1 hour; newer gets 5 minutes; filtered queries get no cache at all. In the Razor ArtigoDetalhe.razor, the Stock tab task is kicked off inside OnInitializedAsync so that by the time the user clicks the tab, the await resolves instantly. Dates are formatted using a Portuguese culture with custom abbreviated day names."
+    },
+    "suggested_metaphor": "This is the post-it-note trick for inventory. Every time someone asks 'how many do we have of SKU-42?', you normally have to walk into the warehouse and count. Instead, the first person triggers a count and you slap a post-it on the monitor. For the next five minutes, anyone who asks just reads the note — zero walking. Old questions like 'how many did we have last March?' get a thicker post-it that lasts an hour because the past can't change. Weird oddly-specific questions ('how many blue ones came in on the second Tuesday of April?') don't get a note at all — nobody's going to ask that again. The result: 99% of questions cost milliseconds instead of seconds.",
+    "suggested_intro_hook": "Your inventory tab takes 3 seconds to load, and your users click it a hundred times a day. Multiply that out — it's a lot of wasted warehouse-counting. What if the second click were instant, and the tenth click still felt instant, without any chance of lying to users when stock actually moves?",
+    "key_takeaways": [
+      "Different data ages deserve different cache lifetimes — historical data is stable, recent data is volatile",
+      "The decorator pattern lets you add caching without touching the underlying service",
+      "Kicking off the data load in OnInitializedAsync before a tab is clicked makes the UX feel instantaneous",
+      "Filtered/one-off queries should skip the cache — caching them wastes memory for no hit-rate gain",
+      "Point-in-time stock is (SUM entradas) − (SUM saídas) up to the given date — a 'time machine' query"
+    ],
+    "cross_references": [
+      "imemorycache-dual-caching",
+      "decorator-pattern",
+      "blazor-tab-preloading",
+      "factory-floor-system",
+      "stock-service-system-eng"
+    ],
+    "quality_notes": "Beginner-friendly Portuguese explainer with heavy analogy use (post-its, phonebook, bank statements). Very readable for non-technical stakeholders. Less deep than an engineering tutorial — suited as onboarding material or a client-facing explainer. Some code formatting gets mangled by PDF extraction (line breaks inside string literals).",
+    "reading_difficulty_minutes": 8,
+    "is_part_of_series": false,
+    "series_name": null
+  },
+  {
+    "src_rel": "Education/FactoryFloor/ENG/FactoryFloorProductionSystemFormalDocumentation.docx",
+    "title": "Factory Floor Production System — Technical Documentation",
+    "doc_type": "applied-implementation",
+    "topic_family": null,
+    "domain": "factory-floor",
+    "topic_slug": "factory-floor-system",
+    "complexity": "advanced",
+    "one_line_summary": "Formal technical documentation for a Blazor Server MES (manufacturing execution system) that tracks production orders, records material consumption with variance analysis, and syncs stock movements to the Primavera ERP.",
+    "executive_summary": "This is the formal engineering spec for FactoryFloor, a real-time production-tracking module built on Blazor Server with MudBlazor, EF Core, and an IPrimaveraRepository integration. It documents the Factory_New.razor page (per-machine filtering via route param), the MaterialConsumptionModal with 1.5-second debounced material loading, the FactoryFloorService transaction flow that atomically updates order quantities + consumption tracking + generates ENTSTOCK/SAIDASTOCK/DESP documents, and the PIN-based worker authentication model. The material calculation algorithm uses proportional scaling (perUnitQuantity × quantityProduced) with historical averages as suggestions, and the whole write path is wrapped in an EF Core BeginTransactionAsync for atomicity.",
+    "key_concepts": [
+      "Blazor Server + MudBlazor MES UI",
+      "IDbContextFactory for EF Core",
+      "EF Core BeginTransactionAsync with rollback",
+      "IPrimaveraRepository ERP integration",
+      "proportional material consumption + variance analysis",
+      "PIN-based worker authentication",
+      "debounced input (1.5s CancellationTokenSource)",
+      "ENTSTOCK/SAIDASTOCK/DESP document generation"
+    ],
+    "prerequisites": [
+      "blazor-server-basics",
+      "ef-core-basics",
+      "ef-core-transactions",
+      "dependency-injection-lifetimes"
+    ],
+    "builds_toward": [
+      "event-sourcing-mes",
+      "real-time-signalr-dashboards",
+      "erp-integration-patterns"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": {
+      "why_it_exists": "Manufacturing floors need a live view of every production order, the ability to pause/stop/resume jobs per machine, and bulletproof recording of what materials were actually consumed versus what was planned. Without this system, material variance (waste, over-consumption, misallocation) is invisible until the end of the month, and the ERP (Primavera) has no idea what happened on the floor until someone hand-keys it in. This module also exists to give workers a fast, PIN-authenticated way to interact with the system on shared factory tablets without typing full credentials.",
+      "what_it_does": "Shows production orders filtered by machine (via /factory_new/{maquinaid} route), lets workers start, pause, and end production runs with PIN auth, captures actual quantity produced plus waste in a modal, loads the expected materials list based on quantity (with a 1.5s debounce so rapid typing doesn't spam the server), computes variance against the plan and displays historical averages for sanity-checking, and on submission atomically updates the order, records the material consumption, generates the three stock documents (ENTSTOCK for finished goods, SAIDASTOCK for raw materials, DESP for waste), and pushes the movement to Primavera ERP.",
+      "how_it_works": "Factory_New.razor is the main page — it has a maquinaid route parameter and uses a FactoryLayout. It calls IFactoryFloorService.GetProductionOrdersAsync, then filters locally (no server roundtrip) when the machine selection changes. Actions go through RequestPinForAction → PIN dialog → ExecuteProductionAction → service call. MaterialConsumptionModal uses CancellationTokenSource to debounce OnQuantityProducedChanged by 1.5 seconds before calling GetMaterialsForProductionAsync. RegisterProductionAsync in FactoryFloorService wraps everything in context.Database.BeginTransactionAsync: update order.QuantidadeFeita, increment gastoFase.QuantidadeConsumida and NumeroProducoes, call GenerateStockMovementsAsync which creates CrmDocumento + CrmDocumentoDetalhe entries for ENT/SAI/DESP, then commits. The service is registered scoped, with an IDbContextFactory<BioBragaContext> for per-operation contexts and an existingContext parameter pattern to share contexts across nested transaction operations."
+    },
+    "suggested_metaphor": "FactoryFloor is the cockpit of the factory. The worker taps a machine and sees only that machine's jobs (like filtering to your flight on a busy departures board). Pressing Start is easy; pressing Stop is where the real accounting happens — the modal is a checklist asking 'how much did you actually make, how much did you waste, and how much of each raw material did you actually use?' The submit button is a very slow single click — behind the scenes it's a six-step transaction that has to either fully commit or roll back, because a half-recorded production run would poison the ERP downstream.",
+    "suggested_intro_hook": "Real factories run on paper for a reason: paper doesn't crash mid-write and leave you with 700 units of finished product and zero recorded raw-material consumption. To replace paper, your software needs transactions that are atomic across four tables, idempotent against accidental double-clicks, and forgiving enough that a worker with one free hand and a glove on the other can still operate them. Here's how FactoryFloor does it.",
+    "key_takeaways": [
+      "Use IDbContextFactory + existingContext parameter pattern to share transactions across service methods",
+      "Wrap multi-step production writes in BeginTransactionAsync with a try/catch/rollback — never leave partial state",
+      "Debounce user input on tablets with CancellationTokenSource.Cancel + new CTS to avoid spam-loading",
+      "Filter collections client-side in Blazor when the full dataset is already loaded — avoids unnecessary roundtrips",
+      "PIN authentication belongs at the action-request layer, not the page layer — every sensitive action re-asks",
+      "Generate ERP documents inside the same transaction as the operational updates so they can't drift"
+    ],
+    "cross_references": [
+      "ef-core-transactions",
+      "idbcontextfactory",
+      "blazor-server-debouncing",
+      "primavera-erp-integration",
+      "stock-service-system-eng",
+      "factory-floor-system-pt"
+    ],
+    "quality_notes": "Formal technical spec — thorough but drier than the tutorial-style docs. Good as a reference/handoff document. Could use more rationale (why these decisions were made) and more end-to-end flow examples from a worker's perspective. Material calculation algorithm deserves its own fully-worked numeric example.",
+    "reading_difficulty_minutes": 18,
+    "is_part_of_series": false,
+    "series_name": null
+  },
+  {
+    "src_rel": "Education/07-Facial-Recognition-Architecture.md",
+    "title": "Facial Recognition Architecture",
+    "doc_type": "applied-implementation",
+    "topic_family": null,
+    "domain": "facial-recognition",
+    "topic_slug": "facial-recognition-attendance",
+    "complexity": "advanced",
+    "one_line_summary": "Architecture document for HRModule's facial-recognition attendance system: face-api.js runs ML models in the browser to extract a 128-dimensional descriptor, which the Blazor server matches against stored biomarkers via Euclidean distance.",
+    "executive_summary": "The system is a hybrid client-server design: the browser owns all the heavy ML (face detection, landmark extraction, 128-dim descriptor generation via face-api.js), while the C# server only sees mathematical vectors and makes the final authentication decision. This split is important for three reasons — privacy (raw images never leave the device), performance (no video streaming), and security (descriptors are irreversible). The server side routes JSInvokable callbacks through a static FacialRecognitionHelper to per-component instances, then delegates to an orchestrator that discovers the employee's tenant database and calls FacialRecognitionService.IdentifyForAttendanceAsync, which loads all user biomarkers and returns the best match by Euclidean distance below a 0.5 threshold. Ten consecutive detections are required before the descriptor is sent — a cheap but effective anti-spoofing layer.",
+    "key_concepts": [
+      "face-api.js (TinyFaceDetector, FaceLandmark68Net, FaceRecognitionNet)",
+      "128-dimensional face descriptor",
+      "Euclidean distance matching",
+      "JSInvokable for JS→Blazor callbacks",
+      "per-instance static callback routing",
+      "10 consecutive detections (anti-spoofing)",
+      "kiosk mode for shared devices"
+    ],
+    "prerequisites": [
+      "blazor-server-basics",
+      "js-interop-fundamentals",
+      "linear-algebra-vectors",
+      "multi-tenant-dbcontext-factory"
+    ],
+    "builds_toward": [
+      "liveness-detection",
+      "one-shot-learning",
+      "biometric-privacy-law-compliance"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": {
+      "why_it_exists": "Employees need to check in and out without fumbling for cards, remembering passwords, or typing on a greasy factory tablet. Facial recognition solves all three — it's contactless, always available, and fast. But uploading webcam video to a server is a privacy, bandwidth, and performance disaster, so the system is designed so the heavy ML runs in the browser and only a mathematical fingerprint crosses the wire.",
+      "what_it_does": "A user looks into the camera on a kiosk or their own device. The browser runs face detection, landmark extraction, and descriptor generation (128 floats). After 10 consecutive stable detections (anti-spoofing), the descriptor is sent to the Blazor server via a JSInvokable callback. The server looks up the employee's tenant database, loads all users' stored biomarkers, and finds the closest match by Euclidean distance. If the distance is under 0.5, it's a match — the UI then shows the employee and offers CheckIn / CheckOut / Break buttons. If over 0.5, no match.",
+      "how_it_works": "The browser side is face-api.js + a custom script.js that runs a setInterval loop calling detectSingleFace().withFaceLandmarks().withFaceDescriptor(). When score >= 0.5 for 10 consecutive frames, it calls DotNet.invokeMethodAsync('NotifyFacialIdentifyCompleteForInstance', instanceId, descriptor). The server side has a static FacialRecognitionHelper with a concurrent dictionary of instanceId -> callback, so multiple simultaneous kiosk components can coexist. The callback resolves to a FacialAttendanceComponent method, which hands off to FacialAttendanceOrchestrator. The orchestrator discovers the employee's company database (multi-tenant), then calls FacialRecognitionService.IdentifyForAttendanceAsync, which loads all CrmUtilizador rows with non-null Biomarkers and iterates, computing sum of squared differences across 128 dimensions, then returns the best match if below the configured threshold (default 0.5 from appsettings.json). The resulting UserId flows back to the UI, which shows name/status and offers action buttons. Actions call AttendanceService.CheckInAsync/CheckOutAsync/etc, which record the entry with GPS and timestamps."
+    },
+    "suggested_metaphor": "Your face becomes 128 numbers — think of it as your geometric fingerprint. The browser is a math tutor that stares at you and writes those numbers on a napkin. The napkin travels to the server, which has a binder full of everyone else's napkins and does a 128-dimensional game of 'one of these is not like the others' until it finds yours. And because napkins can't be reversed back into faces, it doesn't matter if someone intercepts one — it's like trying to rebuild a person from their height and blood pressure.",
+    "suggested_intro_hook": "Streaming video to a server for face recognition is the wrong architecture — it's slow, it's bandwidth-heavy, and it's terrible for privacy. The right architecture is to never let the video leave the device at all. Only 512 bytes of math cross the wire, and that math can't be reversed into a face. Here's how the HRModule does it.",
+    "key_takeaways": [
+      "Run ML in the browser when you can — face-api.js keeps raw imagery on-device and only sends a 128-float descriptor",
+      "Use a static dictionary keyed by instanceId to route JSInvokable callbacks back to specific component instances",
+      "Euclidean distance in descriptor space = similarity; a threshold of ~0.5 is a good starting balance",
+      "Require N consecutive detections before trusting a result — cheap anti-spoofing against held-up photos",
+      "Descriptors are one-way — you can't reconstruct a face from them, so they're safer to transmit than images",
+      "Server must still be the sole authority on identity — the client only reports observations, it doesn't authenticate"
+    ],
+    "cross_references": [
+      "js-interop-jsinvokable",
+      "blazor-static-class-bridge",
+      "multi-tenant-dbcontext-factory",
+      "kiosk-mode-ui",
+      "facial-recognition-for-dummies",
+      "attendance-service"
+    ],
+    "quality_notes": "Strong architecture document with a clear client/server split diagram, data flow example, security reasoning, and a full file manifest. Code samples are concise and on-point. Missing: latency numbers, what happens when two people look at the camera at once, how biomarkers are enrolled in the first place.",
+    "reading_difficulty_minutes": 12,
+    "is_part_of_series": true,
+    "series_name": "HRModule Architecture Docs"
+  },
+  {
+    "src_rel": "Education/ForDummies/07-Facial-Recognition-Architecture-ForDummies.md",
+    "title": "Facial Recognition - For Dummies",
+    "doc_type": "applied-implementation",
+    "topic_family": null,
+    "domain": "facial-recognition",
+    "topic_slug": "facial-recognition-for-dummies",
+    "complexity": "beginner",
+    "one_line_summary": "A plain-language explainer of the facial recognition attendance system that shows how a face becomes 128 numbers, how those numbers are matched against a 'phonebook' of known faces, and why only the numbers — never the photo — leave the device.",
+    "executive_summary": "This is the non-technical companion to the HRModule facial recognition architecture doc. It explains the same system in four friendly steps: phone sees your face, ML turns it into 128 numbers, server compares those numbers against the 'face phonebook,' and if there's a match it welcomes you. It also covers why 10 consecutive detections are required (so a photo doesn't work) and the privacy story (numbers can't be reversed into a face — like knowing someone's height and weight doesn't let you draw them).",
+    "key_concepts": [
+      "face-to-number conversion (128 measurements)",
+      "server-side 'phonebook' matching",
+      "10-detection anti-spoofing",
+      "privacy via irreversible descriptors",
+      "client-side processing"
+    ],
+    "prerequisites": [],
+    "builds_toward": [
+      "facial-recognition-attendance"
+    ],
+    "has_code_examples": false,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": {
+      "why_it_exists": "Because the engineering architecture doc is dense and uses words like 'JSInvokable,' 'Euclidean distance,' and 'descriptor' — which is fine for developers but useless for anyone who just wants to understand how the login kiosk knows who they are. This version exists so a manager, a new hire, or a curious employee can grasp the system in five minutes without touching any code.",
+      "what_it_does": "Walks the reader through the four-step flow of a facial check-in — camera sees face, math turns face into 128 numbers, server compares numbers to stored ones, welcome message — and answers the two most common questions non-technical people have: 'is someone storing my photo?' and 'can I fool it with a picture?'",
+      "how_it_works": "It leans on analogies: face-to-numbers is like a fingerprint, server comparison is like a phonebook lookup, the 10-detection requirement is like needing to confirm a password twice, and the privacy explanation is 'knowing someone's height and weight doesn't let you draw them.' The visual flow is shown with ASCII art of a camera, a face emoji, a progress bar, and a welcome screen. There is no code — just concepts, emojis, and simple diagrams."
+    },
+    "suggested_metaphor": "Your face has 128 secret measurements — the distance between your eyes, how wide your jaw is, where your mouth sits. The camera reads those measurements and scribbles them on a slip of paper. The slip goes to the server, which has a filing cabinet of everyone's slips. It flips through until it finds one that matches yours. And the slip? You couldn't draw a face from it any more than you could draw me from my height and weight.",
+    "suggested_intro_hook": "When you look at a kiosk camera and it says 'Welcome, João' two seconds later, you might think your photo is sitting on a server somewhere. It isn't. What's actually on the server is 128 little numbers — and those numbers can't be turned back into a face, no matter how hard anyone tries.",
+    "key_takeaways": [
+      "Your face becomes 128 numerical measurements — like a mathematical fingerprint",
+      "Only the numbers are sent to the server, never your actual photo",
+      "The server compares your numbers to the stored numbers of known employees",
+      "10 consecutive checks are required so a held-up photo can't fool the system",
+      "Numbers cannot be reversed into a face, so they're safe to transmit"
+    ],
+    "cross_references": [
+      "facial-recognition-attendance"
+    ],
+    "quality_notes": "Concise, friendly, very clear. Exactly what 'for dummies' should be — short, analogical, visual, no jargon. Perfect as a handout for non-engineering staff or a footer link from the technical doc.",
+    "reading_difficulty_minutes": 4,
+    "is_part_of_series": true,
+    "series_name": "HRModule For-Dummies Series"
+  },
+  {
+    "src_rel": "Education/Educational_ML/backprop-visualization.html",
+    "title": "Backpropagation Visualized",
+    "doc_type": "core-concept",
+    "topic_family": "ml",
+    "domain": null,
+    "topic_slug": "backpropagation-visualization",
+    "complexity": "intermediate",
+    "one_line_summary": "An interactive SVG-based visualization of a tiny neural network (6 inputs → 6 hidden → 8 outputs) walking through the four stages of backpropagation: forward pass, output errors, error propagation backward, and weight update.",
+    "executive_summary": "This is a self-contained interactive HTML page that visualizes how a feedforward neural network classifies animals from 6 binary-ish inputs (Fly? Swim? Mammal? Bird? Feline? Danger?) and learns from mistakes via backpropagation. The user clicks four buttons to step through: (1) forward pass — data flows left-to-right and each neuron computes sigmoid(Σ weighted inputs); (2) output errors — compare predictions to expected and color-code the gap; (3) backpropagation — highlight the error flowing backward through the hidden layer; (4) weight update — show which weights get nudged. It's intentionally pedagogical, not a library — the aim is intuition, not accuracy.",
+    "key_concepts": [
+      "forward pass",
+      "sigmoid activation",
+      "output error (expected - actual)",
+      "backpropagation of error",
+      "weight update via gradient descent",
+      "multi-class classification output",
+      "visualizing neural networks"
+    ],
+    "prerequisites": [
+      "basic-algebra",
+      "what-is-a-neuron",
+      "activation-functions"
+    ],
+    "builds_toward": [
+      "gradient-descent",
+      "chain-rule-calculus",
+      "pytorch-tensorflow-basics",
+      "cross-entropy-loss"
+    ],
+    "has_code_examples": false,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": null,
+    "suggested_metaphor": "Imagine a classroom where 6 students whisper answers to 6 teachers in the middle row, who then whisper to 8 judges at the back. The judges raise paddles with their guess. If the judges are wrong, the 'correction' whisper runs in reverse — each judge tells the middle teachers 'you nudged me the wrong way,' and the middle teachers tell the students 'you fed me bad info.' The next round, everyone whispers slightly differently. That's backpropagation — a chain of 'who's partially to blame?' running backward through the network.",
+    "suggested_intro_hook": "Neural networks don't learn by magic — they learn by getting things wrong and then distributing the blame backward through every weight that contributed to the wrong answer. Most explanations of backprop are a wall of chain-rule calculus. Here's one with circles, arrows, and a button labeled '1. Forward Pass' — press it and watch the math light up.",
+    "what_it_teaches": "How a small feedforward neural network processes inputs, generates outputs, measures how wrong the outputs are, propagates that error backward through the hidden layer, and uses that to update weights. It's designed to build intuition by animation rather than by formulas — you see the data flow, you see the errors, you see which connections are implicated.",
+    "key_takeaways": [
+      "Forward pass flows left to right; backpropagation flows right to left",
+      "Error at an output = expected − actual; positive means predicted too low, negative means too high",
+      "Error propagates backward in proportion to the weights on the forward connections",
+      "Weight updates happen last, using the backpropagated error signal at each neuron",
+      "A network this small (6→6→8) is enough to visualize every step of the algorithm without clutter"
+    ],
+    "cross_references": [
+      "neural-network-basics",
+      "gradient-descent",
+      "sigmoid-activation",
+      "ml-aggression-scorer"
+    ],
+    "quality_notes": "The extracted text file only captures page labels (buttons + title) because the actual educational content is rendered dynamically by JavaScript into SVG. The HTML source itself has layer structure, sample data (Cat: [0,0,2,0,2,0] → expected Cat index 4), and explanation text injected per-step. Great as an interactive supplement but useless as reading material without the live page. Ideal to embed in the webbook as an iframe so users can click through the steps.",
+    "reading_difficulty_minutes": 6,
+    "is_part_of_series": false,
+    "series_name": null
+  }
+]

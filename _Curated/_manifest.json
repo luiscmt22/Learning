@@ -1,0 +1,866 @@
+[
+  {
+    "src_rel": "Actions&Events.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Actions&Events.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Actions&Events.docx.txt",
+    "word_count": 1206,
+    "category_legacy": "03-Blazor"
+  },
+  {
+    "src_rel": "Adding-New-Category.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Adding-New-Category.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Adding-New-Category.html.txt",
+    "word_count": 1663,
+    "category_legacy": "03-Blazor"
+  },
+  {
+    "src_rel": "CookieHandlingBlazorServerApplications.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\CookieHandlingBlazorServerApplications.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\CookieHandlingBlazorServerApplications.docx.txt",
+    "word_count": 1184,
+    "category_legacy": "03-Blazor"
+  },
+  {
+    "src_rel": "Education/01-Understanding-Clean-Architecture.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\01-Understanding-Clean-Architecture.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__01-Understanding-Clean-Architecture.md.txt",
+    "word_count": 526,
+    "category_legacy": "02-Architecture-and-Patterns"
+  },
+  {
+    "src_rel": "Education/02-Role-Based-Authorization.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\02-Role-Based-Authorization.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__02-Role-Based-Authorization.md.txt",
+    "word_count": 524,
+    "category_legacy": "06-Auth-and-Identity"
+  },
+  {
+    "src_rel": "Education/03-Adapter-Pattern-Explained.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\03-Adapter-Pattern-Explained.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__03-Adapter-Pattern-Explained.md.txt",
+    "word_count": 532,
+    "category_legacy": "02-Architecture-and-Patterns"
+  },
+  {
+    "src_rel": "Education/04-Authorization-Architecture.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\04-Authorization-Architecture.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__04-Authorization-Architecture.md.txt",
+    "word_count": 538,
+    "category_legacy": "06-Auth-and-Identity"
+  },
+  {
+    "src_rel": "Education/05-Polite-Code-Style.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\05-Polite-Code-Style.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__05-Polite-Code-Style.md.txt",
+    "word_count": 591,
+    "category_legacy": "14-Code-Quality"
+  },
+  {
+    "src_rel": "Education/06-Blazor-JS-Interop-Static-Events.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\06-Blazor-JS-Interop-Static-Events.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__06-Blazor-JS-Interop-Static-Events.md.txt",
+    "word_count": 835,
+    "category_legacy": "12-JavaScript"
+  },
+  {
+    "src_rel": "Education/07-Facial-Recognition-Architecture.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\07-Facial-Recognition-Architecture.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__07-Facial-Recognition-Architecture.md.txt",
+    "word_count": 1199,
+    "category_legacy": "10-Integrations"
+  },
+  {
+    "src_rel": "Education/08-Agnostic-Schedule-Conflict-Detection.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\08-Agnostic-Schedule-Conflict-Detection.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__08-Agnostic-Schedule-Conflict-Detection.md.txt",
+    "word_count": 1111,
+    "category_legacy": "05-Scheduling"
+  },
+  {
+    "src_rel": "Education/09-Generic-Schedule-Grid-Architecture.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\09-Generic-Schedule-Grid-Architecture.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__09-Generic-Schedule-Grid-Architecture.md.txt",
+    "word_count": 1484,
+    "category_legacy": "05-Scheduling"
+  },
+  {
+    "src_rel": "Education/10-Web-Fundamentals.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\10-Web-Fundamentals.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__10-Web-Fundamentals.md.txt",
+    "word_count": 1327,
+    "category_legacy": "11-Web-Fundamentals"
+  },
+  {
+    "src_rel": "Education/11-SignalR-Real-Time-Communication.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\11-SignalR-Real-Time-Communication.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__11-SignalR-Real-Time-Communication.md.txt",
+    "word_count": 2412,
+    "category_legacy": "09-Realtime-SignalR"
+  },
+  {
+    "src_rel": "Education/12-CSharp-Flags-Enum.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\12-CSharp-Flags-Enum.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__12-CSharp-Flags-Enum.md.txt",
+    "word_count": 815,
+    "category_legacy": "04-CSharp-Language"
+  },
+  {
+    "src_rel": "Education/13-Export-Service-Strategy-Pattern.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\13-Export-Service-Strategy-Pattern.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__13-Export-Service-Strategy-Pattern.md.txt",
+    "word_count": 1268,
+    "category_legacy": "02-Architecture-and-Patterns"
+  },
+  {
+    "src_rel": "Education/14-SignalR-Notification-System.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\14-SignalR-Notification-System.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__14-SignalR-Notification-System.md.txt",
+    "word_count": 1842,
+    "category_legacy": "09-Realtime-SignalR"
+  },
+  {
+    "src_rel": "Education/15-Notification-Recipient-Resolver-Pipeline.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\15-Notification-Recipient-Resolver-Pipeline.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__15-Notification-Recipient-Resolver-Pipeline.md.txt",
+    "word_count": 918,
+    "category_legacy": "09-Realtime-SignalR"
+  },
+  {
+    "src_rel": "Education/16-SignalR-Chat-System.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\16-SignalR-Chat-System.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__16-SignalR-Chat-System.html.txt",
+    "word_count": 1701,
+    "category_legacy": "09-Realtime-SignalR"
+  },
+  {
+    "src_rel": "Education/17-Database-Reset-And-Migration.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\17-Database-Reset-And-Migration.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__17-Database-Reset-And-Migration.html.txt",
+    "word_count": 2310,
+    "category_legacy": "07-Database-EF-SQL"
+  },
+  {
+    "src_rel": "Education/18-Migration-And-Seeding-Mechanism.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\18-Migration-And-Seeding-Mechanism.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__18-Migration-And-Seeding-Mechanism.html.txt",
+    "word_count": 2881,
+    "category_legacy": "07-Database-EF-SQL"
+  },
+  {
+    "src_rel": "Education/19-Feature-Flags-Hierarchy-Dependencies.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\19-Feature-Flags-Hierarchy-Dependencies.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__19-Feature-Flags-Hierarchy-Dependencies.html.txt",
+    "word_count": 4597,
+    "category_legacy": "15-Feature-Management"
+  },
+  {
+    "src_rel": "Education/20-IMemoryCache-Dual-Caching-Strategy.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\20-IMemoryCache-Dual-Caching-Strategy.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__20-IMemoryCache-Dual-Caching-Strategy.html.txt",
+    "word_count": 3403,
+    "category_legacy": "08-Concurrency-and-Async"
+  },
+  {
+    "src_rel": "Education/21-Background-Services-Smart-Scheduling.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\21-Background-Services-Smart-Scheduling.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__21-Background-Services-Smart-Scheduling.html.txt",
+    "word_count": 4482,
+    "category_legacy": "08-Concurrency-and-Async"
+  },
+  {
+    "src_rel": "Education/22-ConcurrentDictionary-Thread-Safe-Caching.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\22-ConcurrentDictionary-Thread-Safe-Caching.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__22-ConcurrentDictionary-Thread-Safe-Caching.html.txt",
+    "word_count": 3515,
+    "category_legacy": "08-Concurrency-and-Async"
+  },
+  {
+    "src_rel": "Education/23-EF-Core-Audit-Trail-Two-Layer-System.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\23-EF-Core-Audit-Trail-Two-Layer-System.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__23-EF-Core-Audit-Trail-Two-Layer-System.html.txt",
+    "word_count": 4628,
+    "category_legacy": "07-Database-EF-SQL"
+  },
+  {
+    "src_rel": "Education/24-Geofencing-Haversine-Location-Validation.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\24-Geofencing-Haversine-Location-Validation.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__24-Geofencing-Haversine-Location-Validation.html.txt",
+    "word_count": 4774,
+    "category_legacy": "10-Integrations"
+  },
+  {
+    "src_rel": "Education/25-IMAP-SMTP-Email-Integration.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\25-IMAP-SMTP-Email-Integration.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__25-IMAP-SMTP-Email-Integration.html.txt",
+    "word_count": 2542,
+    "category_legacy": "10-Integrations"
+  },
+  {
+    "src_rel": "Education/26-Expression-Trees-Compiled-Reflection.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\26-Expression-Trees-Compiled-Reflection.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__26-Expression-Trees-Compiled-Reflection.html.txt",
+    "word_count": 2883,
+    "category_legacy": "04-CSharp-Language"
+  },
+  {
+    "src_rel": "Education/27-Base-Entity-Abstractions-Soft-Delete.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\27-Base-Entity-Abstractions-Soft-Delete.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__27-Base-Entity-Abstractions-Soft-Delete.html.txt",
+    "word_count": 2370,
+    "category_legacy": "07-Database-EF-SQL"
+  },
+  {
+    "src_rel": "Education/28-Password-Security-BCrypt.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\28-Password-Security-BCrypt.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__28-Password-Security-BCrypt.html.txt",
+    "word_count": 3632,
+    "category_legacy": "06-Auth-and-Identity"
+  },
+  {
+    "src_rel": "Education/29-Validator-Pipeline-Chain-Of-Responsibility.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\29-Validator-Pipeline-Chain-Of-Responsibility.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__29-Validator-Pipeline-Chain-Of-Responsibility.html.txt",
+    "word_count": 3414,
+    "category_legacy": "02-Architecture-and-Patterns"
+  },
+  {
+    "src_rel": "Education/30-SemaphoreSlim-Controlled-Access.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\30-SemaphoreSlim-Controlled-Access.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__30-SemaphoreSlim-Controlled-Access.html.txt",
+    "word_count": 2487,
+    "category_legacy": "08-Concurrency-and-Async"
+  },
+  {
+    "src_rel": "Education/31-Strategy-Pattern-Pluggable-Algorithms.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\31-Strategy-Pattern-Pluggable-Algorithms.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__31-Strategy-Pattern-Pluggable-Algorithms.html.txt",
+    "word_count": 3360,
+    "category_legacy": "02-Architecture-and-Patterns"
+  },
+  {
+    "src_rel": "Education/32-Named-Tuples-Value-Semantics.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\32-Named-Tuples-Value-Semantics.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__32-Named-Tuples-Value-Semantics.html.txt",
+    "word_count": 1602,
+    "category_legacy": "04-CSharp-Language"
+  },
+  {
+    "src_rel": "Education/33-Async-State-Machines-Hidden-Mains.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\33-Async-State-Machines-Hidden-Mains.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__33-Async-State-Machines-Hidden-Mains.html.txt",
+    "word_count": 2289,
+    "category_legacy": "99-Uncategorised"
+  },
+  {
+    "src_rel": "Education/Basics/Blazor_Architecture_and_Security_Guide.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Basics\\Blazor_Architecture_and_Security_Guide.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Basics__Blazor_Architecture_and_Security_Guide.pdf.txt",
+    "word_count": 6090,
+    "category_legacy": "01-Basics"
+  },
+  {
+    "src_rel": "Education/Basics/Blazor_Guide_For_Dummies (1).pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Basics\\Blazor_Guide_For_Dummies (1).pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Basics__Blazor_Guide_For_Dummies (1).pdf.txt",
+    "word_count": 2951,
+    "category_legacy": "01-Basics"
+  },
+  {
+    "src_rel": "Education/Basics/Blazor_Guide_For_Dummies.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Basics\\Blazor_Guide_For_Dummies.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Basics__Blazor_Guide_For_Dummies.pdf.txt",
+    "word_count": 2975,
+    "category_legacy": "01-Basics"
+  },
+  {
+    "src_rel": "Education/Basics/CSharp_Generics_Guide.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Basics\\CSharp_Generics_Guide.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Basics__CSharp_Generics_Guide.md.txt",
+    "word_count": 4388,
+    "category_legacy": "01-Basics"
+  },
+  {
+    "src_rel": "Education/Basics/CSharp_Generics_Guide.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Basics\\CSharp_Generics_Guide.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Basics__CSharp_Generics_Guide.pdf.txt",
+    "word_count": 4009,
+    "category_legacy": "01-Basics"
+  },
+  {
+    "src_rel": "Education/Basics/CSharp_Stack_and_Heap_Guide.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Basics\\CSharp_Stack_and_Heap_Guide.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Basics__CSharp_Stack_and_Heap_Guide.pdf.txt",
+    "word_count": 5234,
+    "category_legacy": "01-Basics"
+  },
+  {
+    "src_rel": "Education/delegates-lambdas-expression-bodies.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\delegates-lambdas-expression-bodies.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__delegates-lambdas-expression-bodies.html.txt",
+    "word_count": 2771,
+    "category_legacy": "04-CSharp-Language"
+  },
+  {
+    "src_rel": "Education/Educational_ML/backprop-visualization.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Educational_ML\\backprop-visualization.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Educational_ML__backprop-visualization.html.txt",
+    "word_count": 37,
+    "category_legacy": "18-Machine-Learning"
+  },
+  {
+    "src_rel": "Education/Educational_ML/Backpropagation.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Educational_ML\\Backpropagation.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Educational_ML__Backpropagation.md.txt",
+    "word_count": 520,
+    "category_legacy": "18-Machine-Learning"
+  },
+  {
+    "src_rel": "Education/Educational_ML/neural-network-journeyV0.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Educational_ML\\neural-network-journeyV0.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Educational_ML__neural-network-journeyV0.html.txt",
+    "word_count": 1722,
+    "category_legacy": "18-Machine-Learning"
+  },
+  {
+    "src_rel": "Education/Educational_ML/neural-network-journeyV1.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Educational_ML\\neural-network-journeyV1.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Educational_ML__neural-network-journeyV1.html.txt",
+    "word_count": 3691,
+    "category_legacy": "18-Machine-Learning"
+  },
+  {
+    "src_rel": "Education/Educational_ML/neural-network-journeyV2.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Educational_ML\\neural-network-journeyV2.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Educational_ML__neural-network-journeyV2.html.txt",
+    "word_count": 5191,
+    "category_legacy": "18-Machine-Learning"
+  },
+  {
+    "src_rel": "Education/Educational_ML/sigmoid-derivative.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Educational_ML\\sigmoid-derivative.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Educational_ML__sigmoid-derivative.html.txt",
+    "word_count": 336,
+    "category_legacy": "18-Machine-Learning"
+  },
+  {
+    "src_rel": "Education/Educational_ML/training-flow-visualization.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Educational_ML\\training-flow-visualization.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Educational_ML__training-flow-visualization.html.txt",
+    "word_count": 1271,
+    "category_legacy": "18-Machine-Learning"
+  },
+  {
+    "src_rel": "Education/FactoryFloor/ENG/FactoryFloorProductionSystem.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\FactoryFloor\\ENG\\FactoryFloorProductionSystem.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__FactoryFloor__ENG__FactoryFloorProductionSystem.pdf.txt",
+    "word_count": 1495,
+    "category_legacy": "16-Domain-Examples-FactoryFloor"
+  },
+  {
+    "src_rel": "Education/FactoryFloor/ENG/FactoryFloorProductionSystemFormalDocumentation.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\FactoryFloor\\ENG\\FactoryFloorProductionSystemFormalDocumentation.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__FactoryFloor__ENG__FactoryFloorProductionSystemFormalDocumentation.docx.txt",
+    "word_count": 1429,
+    "category_legacy": "16-Domain-Examples-FactoryFloor"
+  },
+  {
+    "src_rel": "Education/FactoryFloor/ENG/FactoryFloorProductionSystemInfoGraphic.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\FactoryFloor\\ENG\\FactoryFloorProductionSystemInfoGraphic.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__FactoryFloor__ENG__FactoryFloorProductionSystemInfoGraphic.docx.txt",
+    "word_count": 1260,
+    "category_legacy": "16-Domain-Examples-FactoryFloor"
+  },
+  {
+    "src_rel": "Education/FactoryFloor/ENG/FactoryFloorProductionSystemInfoGraphic.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\FactoryFloor\\ENG\\FactoryFloorProductionSystemInfoGraphic.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__FactoryFloor__ENG__FactoryFloorProductionSystemInfoGraphic.pdf.txt",
+    "word_count": 1384,
+    "category_legacy": "16-Domain-Examples-FactoryFloor"
+  },
+  {
+    "src_rel": "Education/FactoryFloor/PT/SistemaProduçãoChãoFábricaDocumentaçãoFormal.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\FactoryFloor\\PT\\SistemaProduçãoChãoFábricaDocumentaçãoFormal.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__FactoryFloor__PT__SistemaProduçãoChãoFábricaDocumentaçãoFormal.docx.txt",
+    "word_count": 1695,
+    "category_legacy": "16-Domain-Examples-FactoryFloor"
+  },
+  {
+    "src_rel": "Education/FactoryFloor/PT/SistemaProduçãoChãoFábricaDocumentaçãoFormal.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\FactoryFloor\\PT\\SistemaProduçãoChãoFábricaDocumentaçãoFormal.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__FactoryFloor__PT__SistemaProduçãoChãoFábricaDocumentaçãoFormal.pdf.txt",
+    "word_count": 1757,
+    "category_legacy": "16-Domain-Examples-FactoryFloor"
+  },
+  {
+    "src_rel": "Education/FactoryFloor/PT/SistemaProduçãoChãoFábricaInfoGráfico.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\FactoryFloor\\PT\\SistemaProduçãoChãoFábricaInfoGráfico.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__FactoryFloor__PT__SistemaProduçãoChãoFábricaInfoGráfico.docx.txt",
+    "word_count": 1448,
+    "category_legacy": "16-Domain-Examples-FactoryFloor"
+  },
+  {
+    "src_rel": "Education/FactoryFloor/PT/SistemaProduçãoChãoFábricaInfoGráfico.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\FactoryFloor\\PT\\SistemaProduçãoChãoFábricaInfoGráfico.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__FactoryFloor__PT__SistemaProduçãoChãoFábricaInfoGráfico.pdf.txt",
+    "word_count": 1576,
+    "category_legacy": "16-Domain-Examples-FactoryFloor"
+  },
+  {
+    "src_rel": "Education/ForDummies/06-Blazor-JS-Interop-Static-Events-ForDummies.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\ForDummies\\06-Blazor-JS-Interop-Static-Events-ForDummies.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__ForDummies__06-Blazor-JS-Interop-Static-Events-ForDummies.md.txt",
+    "word_count": 407,
+    "category_legacy": "19-For-Dummies"
+  },
+  {
+    "src_rel": "Education/ForDummies/07-Facial-Recognition-Architecture-ForDummies.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\ForDummies\\07-Facial-Recognition-Architecture-ForDummies.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__ForDummies__07-Facial-Recognition-Architecture-ForDummies.md.txt",
+    "word_count": 540,
+    "category_legacy": "19-For-Dummies"
+  },
+  {
+    "src_rel": "Education/ForDummies/08-Design-Patterns-For-Dummies.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\ForDummies\\08-Design-Patterns-For-Dummies.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__ForDummies__08-Design-Patterns-For-Dummies.md.txt",
+    "word_count": 1383,
+    "category_legacy": "19-For-Dummies"
+  },
+  {
+    "src_rel": "Education/ForDummies/09-GenericScheduleGrid-ForDummies.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\ForDummies\\09-GenericScheduleGrid-ForDummies.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__ForDummies__09-GenericScheduleGrid-ForDummies.md.txt",
+    "word_count": 1316,
+    "category_legacy": "19-For-Dummies"
+  },
+  {
+    "src_rel": "Education/ForDummies/11-SignalR-Real-Time-Communication-ForDummies.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\ForDummies\\11-SignalR-Real-Time-Communication-ForDummies.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__ForDummies__11-SignalR-Real-Time-Communication-ForDummies.md.txt",
+    "word_count": 1224,
+    "category_legacy": "19-For-Dummies"
+  },
+  {
+    "src_rel": "Education/ForDummies/14-SignalR-Notification-System-ForDummies.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\ForDummies\\14-SignalR-Notification-System-ForDummies.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__ForDummies__14-SignalR-Notification-System-ForDummies.md.txt",
+    "word_count": 1127,
+    "category_legacy": "19-For-Dummies"
+  },
+  {
+    "src_rel": "Education/ForDummies/15-Notification-Recipient-Resolver-Pipeline-ForDummies.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\ForDummies\\15-Notification-Recipient-Resolver-Pipeline-ForDummies.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__ForDummies__15-Notification-Recipient-Resolver-Pipeline-ForDummies.md.txt",
+    "word_count": 798,
+    "category_legacy": "19-For-Dummies"
+  },
+  {
+    "src_rel": "Education/generics-builders-deep-dive.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\generics-builders-deep-dive.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__generics-builders-deep-dive.html.txt",
+    "word_count": 4353,
+    "category_legacy": "04-CSharp-Language"
+  },
+  {
+    "src_rel": "Education/Git/separating-repos.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Git\\separating-repos.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Git__separating-repos.md.txt",
+    "word_count": 353,
+    "category_legacy": "20-Git"
+  },
+  {
+    "src_rel": "Education/login.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\login.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__login.html.txt",
+    "word_count": 27,
+    "category_legacy": "06-Auth-and-Identity"
+  },
+  {
+    "src_rel": "Education/README.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\README.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__README.md.txt",
+    "word_count": 297,
+    "category_legacy": "00-Meta"
+  },
+  {
+    "src_rel": "Education/SQL/backup-and-cleanup.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\SQL\\backup-and-cleanup.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__SQL__backup-and-cleanup.html.txt",
+    "word_count": 3554,
+    "category_legacy": "07-Database-EF-SQL"
+  },
+  {
+    "src_rel": "Education/SQL/ef-core-multi-tenant.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\SQL\\ef-core-multi-tenant.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__SQL__ef-core-multi-tenant.html.txt",
+    "word_count": 2728,
+    "category_legacy": "07-Database-EF-SQL"
+  },
+  {
+    "src_rel": "Education/Stock/ENG/StockServiceSystemFormalDocumentation.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Stock\\ENG\\StockServiceSystemFormalDocumentation.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Stock__ENG__StockServiceSystemFormalDocumentation.docx.txt",
+    "word_count": 2083,
+    "category_legacy": "17-Domain-Examples-Stock"
+  },
+  {
+    "src_rel": "Education/Stock/ENG/StockServiceSystemFormalDocumentation.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Stock\\ENG\\StockServiceSystemFormalDocumentation.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Stock__ENG__StockServiceSystemFormalDocumentation.pdf.txt",
+    "word_count": 2064,
+    "category_legacy": "17-Domain-Examples-Stock"
+  },
+  {
+    "src_rel": "Education/Stock/ENG/StockServiceSystemInfoGraphic.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Stock\\ENG\\StockServiceSystemInfoGraphic.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Stock__ENG__StockServiceSystemInfoGraphic.docx.txt",
+    "word_count": 1495,
+    "category_legacy": "17-Domain-Examples-Stock"
+  },
+  {
+    "src_rel": "Education/Stock/ENG/StockServiceSystemInfoGraphic.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Stock\\ENG\\StockServiceSystemInfoGraphic.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Stock__ENG__StockServiceSystemInfoGraphic.pdf.txt",
+    "word_count": 1571,
+    "category_legacy": "17-Domain-Examples-Stock"
+  },
+  {
+    "src_rel": "Education/Stock/PT/SistemaServiçoStockDocumentaçãoFormal.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Stock\\PT\\SistemaServiçoStockDocumentaçãoFormal.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Stock__PT__SistemaServiçoStockDocumentaçãoFormal.docx.txt",
+    "word_count": 2288,
+    "category_legacy": "17-Domain-Examples-Stock"
+  },
+  {
+    "src_rel": "Education/Stock/PT/SistemaServiçoStockDocumentaçãoFormal.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Stock\\PT\\SistemaServiçoStockDocumentaçãoFormal.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Stock__PT__SistemaServiçoStockDocumentaçãoFormal.pdf.txt",
+    "word_count": 2271,
+    "category_legacy": "17-Domain-Examples-Stock"
+  },
+  {
+    "src_rel": "Education/Stock/PT/SistemaServiçoStockInfoGráfico.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Stock\\PT\\SistemaServiçoStockInfoGráfico.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Stock__PT__SistemaServiçoStockInfoGráfico.docx.txt",
+    "word_count": 1631,
+    "category_legacy": "17-Domain-Examples-Stock"
+  },
+  {
+    "src_rel": "Education/Stock/PT/SistemaServiçoStockInfoGráfico.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Stock\\PT\\SistemaServiçoStockInfoGráfico.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Stock__PT__SistemaServiçoStockInfoGráfico.pdf.txt",
+    "word_count": 1711,
+    "category_legacy": "17-Domain-Examples-Stock"
+  },
+  {
+    "src_rel": "Education/tutorial.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\tutorial.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__tutorial.html.txt",
+    "word_count": 3752,
+    "category_legacy": "11-Web-Fundamentals"
+  },
+  {
+    "src_rel": "Identity/IdentityProjectKnowledge.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Identity\\IdentityProjectKnowledge.pdf",
+    "src_ext": ".pdf",
+    "has_text": false,
+    "text_abs": null,
+    "word_count": 0,
+    "category_legacy": "06-Auth-and-Identity"
+  },
+  {
+    "src_rel": "Identity/IdentityProjectKnowledgeEditable.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Identity\\IdentityProjectKnowledgeEditable.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Identity__IdentityProjectKnowledgeEditable.docx.txt",
+    "word_count": 1221,
+    "category_legacy": "06-Auth-and-Identity"
+  },
+  {
+    "src_rel": "Identity/IdentityRoadmap.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Identity\\IdentityRoadmap.pdf",
+    "src_ext": ".pdf",
+    "has_text": false,
+    "text_abs": null,
+    "word_count": 0,
+    "category_legacy": "06-Auth-and-Identity"
+  },
+  {
+    "src_rel": "JScript/AG_Grid_JS_learning.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\JScript\\AG_Grid_JS_learning.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\JScript__AG_Grid_JS_learning.docx.txt",
+    "word_count": 1261,
+    "category_legacy": "12-JavaScript"
+  },
+  {
+    "src_rel": "JScript/Document 1.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\JScript\\Document 1.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\JScript__Document 1.docx.txt",
+    "word_count": 3237,
+    "category_legacy": "12-JavaScript"
+  },
+  {
+    "src_rel": "JScript/Document 1.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\JScript\\Document 1.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\JScript__Document 1.pdf.txt",
+    "word_count": 3825,
+    "category_legacy": "12-JavaScript"
+  },
+  {
+    "src_rel": "JScript/Exemplo2Buttons.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\JScript\\Exemplo2Buttons.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\JScript__Exemplo2Buttons.html.txt",
+    "word_count": 48,
+    "category_legacy": "12-JavaScript"
+  },
+  {
+    "src_rel": "JScript/ExemploCores.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\JScript\\ExemploCores.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\JScript__ExemploCores.html.txt",
+    "word_count": 62,
+    "category_legacy": "12-JavaScript"
+  },
+  {
+    "src_rel": "JScript/JS_Select2&CustomMethods.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\JScript\\JS_Select2&CustomMethods.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\JScript__JS_Select2&CustomMethods.pdf.txt",
+    "word_count": 3194,
+    "category_legacy": "12-JavaScript"
+  },
+  {
+    "src_rel": "JScript/Manual de Processos-Design.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\JScript\\Manual de Processos-Design.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\JScript__Manual de Processos-Design.pdf.txt",
+    "word_count": 3805,
+    "category_legacy": "12-JavaScript"
+  },
+  {
+    "src_rel": "JScript/Select2_JQuery_explanation.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\JScript\\Select2_JQuery_explanation.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\JScript__Select2_JQuery_explanation.docx.txt",
+    "word_count": 3014,
+    "category_legacy": "12-JavaScript"
+  },
+  {
+    "src_rel": "Microsoft_Fullstack/ASyncPattern.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Microsoft_Fullstack\\ASyncPattern.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Microsoft_Fullstack__ASyncPattern.docx.txt",
+    "word_count": 964,
+    "category_legacy": "08-Concurrency-and-Async"
+  },
+  {
+    "src_rel": "Microsoft_Fullstack/HowToCreateUnitTesting.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Microsoft_Fullstack\\HowToCreateUnitTesting.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Microsoft_Fullstack__HowToCreateUnitTesting.docx.txt",
+    "word_count": 886,
+    "category_legacy": "13-Testing"
+  },
+  {
+    "src_rel": "Microsoft_Fullstack/The Complete Guide to Unit Testing.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Microsoft_Fullstack\\The Complete Guide to Unit Testing.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Microsoft_Fullstack__The Complete Guide to Unit Testing.docx.txt",
+    "word_count": 2687,
+    "category_legacy": "13-Testing"
+  },
+  {
+    "src_rel": "Microsoft_Fullstack/UnitTestingTutorial.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Microsoft_Fullstack\\UnitTestingTutorial.pdf",
+    "src_ext": ".pdf",
+    "has_text": false,
+    "text_abs": null,
+    "word_count": 0,
+    "category_legacy": "13-Testing"
+  },
+  {
+    "src_rel": "📘 Loadings_Includes_virtuals.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\📘 Loadings_Includes_virtuals.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\📘 Loadings_Includes_virtuals.docx.txt",
+    "word_count": 678,
+    "category_legacy": "07-Database-EF-SQL"
+  }
+]

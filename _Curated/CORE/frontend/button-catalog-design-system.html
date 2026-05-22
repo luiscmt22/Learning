@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo de Botões Padrão</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            /* Cores base */
+            --primary: #000000;    /* Vermelho primário */
+            --secondary: #f8f8f8;  /* Fundo secundário */
+            --success: #2ecc71;    /* Verde */
+            --info: #3498db;       /* Azul */
+            --warning: #f39c12;    /* Laranja */
+            --danger: #e74c3c;     /* Vermelho */
+            --purple: #9b59b6;     /* Roxo */
+            --dark: #333333;       /* Texto escuro */
+            --light: #ffffff;      /* Branco */
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        h1, h2 {
+            color: var(--primary);
+        }
+
+        .category {
+            background-color: var(--light);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            text-align: left;
+            gap: 8px;
+            position: relative;
+        }
+
+        /* Primary Buttons */
+        .btn-primary {
+            background-color: var(--primary);
+            color: var(--light);
+        }
+        .btn-primary:hover {
+            background-color: #5b5859;
+            transform: translateY(-2px);
+        }
+
+        /* Secondary Buttons */
+        .btn-secondary {
+            background-color: var(--secondary);
+            color: var(--dark);
+            border: 1px solid #ddd;
+        }
+        .btn-secondary:hover {
+            background-color: #e0e0e0;
+        }
+
+        /* Success Buttons */
+        .btn-success {
+            background-color: var(--success);
+            color: var(--light);
+			
+        }
+        .btn-success:hover {
+            background-color: #27ae60;
+        }
+
+        /* Info Buttons */
+        .btn-info {
+            background-color: var(--info);
+            color: var(--light);
+        }
+        .btn-info:hover {
+            background-color: #2980b9;
+        }
+
+        /* Warning Buttons */
+        .btn-warning {
+            background-color: var(--warning);
+            color: var(--light);
+        }
+        .btn-warning:hover {
+            background-color: #d35400;
+        }
+
+        /* Danger Buttons */
+        .btn-danger {
+            background-color: var(--danger);
+            color: var(--light);
+        }
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+
+        /* Purple Buttons */
+        .btn-purple {
+            background-color: var(--purple);
+            color: var(--light);
+        }
+        .btn-purple:hover {
+            background-color: #8e44ad;
+        }
+
+        /* Tertiary Buttons */
+        .btn-tertiary {
+            background-color: transparent;
+            color: var(--dark);
+            border: 1px solid #ddd;
+        }
+        .btn-tertiary:hover {
+            background-color: #f5f5f5;
+        }
+
+        /* Ações de Arquivo (contorno + texto) */
+        .btn-file {
+            background-color: transparent;
+            border: 2px solid;
+            font-weight: 600;
+        }
+        .btn-file-download {
+            border-color: var(--info);
+            color: var(--info);
+        }
+        .btn-file-download:hover {
+            background-color: var(--info);
+            color: white;
+        }
+        .btn-file-export {
+            border-color: var(--info);
+            color: var(--info);
+        }
+        .btn-file-export:hover {
+            background-color: var(--info);
+            color: white;
+        }
+        .btn-file-import {
+            border-color: var(--success);
+            color: var(--success);
+        }
+        .btn-file-import:hover {
+            background-color: var(--success);
+            color: white;
+        }
+
+        /* Ações de Sistema (apenas ícone) */
+        .btn-icon {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border-radius: 50%;
+            background-color: transparent;
+            color: var(--dark);
+            position: relative;
+        }
+        .btn-icon:hover {
+            background-color: rgba(0,0,0,0.1);
+            animation: pulse 0.5s ease;
+        }
+        .btn-icon::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--dark);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+        .btn-icon:hover::after {
+            opacity: 1;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .icon {
+            width: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div style="background:rgba(7,9,15,0.94);border-bottom:1px solid #1f2940;padding:12px 24px;font:13px/1.4 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;position:fixed;top:0;left:0;right:0;z-index:99999;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);display:flex;align-items:center;gap:10px;color:#94a3bf;box-sizing:border-box;min-height:48px;"><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;">Learning</a><span style="color:#5f6b86;">›</span><a href="../_Hub.html" style="color:#94a3bf;text-decoration:none;">CORE</a><span style="color:#5f6b86;">›</span><a href="_Category.html" style="color:#94a3bf;text-decoration:none;">Blazor &amp; Frontend</a><span style="color:#5f6b86;">›</span><span style="color:#e9eef8;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">Catálogo de Botões Padrão</span><a href="button-catalog-design-system.html" download style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">↓ Download</a><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">All docs</a></div><div style="height:48px;"></div><div style="background:linear-gradient(135deg,#0a0e1a 0%,#11182a 100%);border:1px solid #1f2940;border-radius:14px;padding:24px 28px;margin:20px;font:15px/1.7 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;color:#e9eef8;box-shadow:0 12px 40px rgba(0,0,0,0.35);"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.6px;color:#6aa6ff;font-weight:600;margin-bottom:8px;">▸ Curated · Concept · Frontend</div><div style="font-size:24px;font-weight:700;color:#e9eef8;margin-bottom:10px;letter-spacing:-0.02em;line-height:1.2;">Catálogo de Botões Padrão</div><div style="font-size:16px;color:#94a3bf;margin-bottom:18px;line-height:1.5;">A Portuguese-language standalone HTML/CSS demo page cataloging a button design system with primary, file, navigation, secondary, tertiary, and icon-only button variants.</div><div style="font-style:italic;border-left:3px solid #6aa6ff;padding:6px 0 6px 16px;margin:14px 0;color:#e9eef8;">The fourth time you catch yourself copy-pasting a MudButton with the same color and icon, you know it&#x27;s time. Left to evolve organically, a codebase grows 37 slightly-different Save buttons - nine blue, twelve green, a rogue purple, and one that someone made orange for a demo and never fixed. This page is the antidote: one file that says &#x27;this is the Save button, here is what it looks like, copy this markup.&#x27;</div><div style="background:rgba(106,166,255,0.06);border:1px solid rgba(106,166,255,0.20);border-radius:10px;padding:14px 18px;margin:14px 0;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#6aa6ff;margin-bottom:6px;font-weight:600;">Executive summary</div><div style="font-size:14px;color:#e9eef8;line-height:1.6;">This is a self-contained HTML page that renders a visual catalog of reusable button styles organized into categories: Primary (Add/Save/Edit/Delete/Clone), File Actions (Download/Export PDF/Import), Navigation (Back/Refresh/Sync/Login), Secondary (Details/Cancel/Complete/Reopen), Tertiary (List/Close/Expand/Collapse), and System (icon-only buttons with CSS tooltips for Menu/Settings/Show/Hide/User). It uses Font Awesome icons, CSS variables for theming, and defines hover animations. The page contains almost no prose - it&#x27;s effectively a live style guide for copy-pasting button markup. There is no JavaScript despite being in the JScript folder.</div></div><div style="background:rgba(184,106,255,0.06);border:1px solid rgba(184,106,255,0.25);border-radius:10px;padding:14px 18px;margin:14px 0;display:flex;gap:12px;"><div style="font-size:20px;flex-shrink:0;">💡</div><div style="flex:1;font-size:14px;color:#e9eef8;line-height:1.6;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#b86aff;margin-bottom:4px;font-weight:700;">Metaphor</div>This is the swatch book a painter carries to every job. Before you start mixing colors on site, you flip to the page with all the standard shades - &#x27;wall primary&#x27;, &#x27;trim secondary&#x27;, &#x27;danger red&#x27; - and point at what you want. Doing it this way guarantees every room in every house painted by your crew looks like it belongs to the same company, and no junior painter has to guess whether red means &#x27;delete&#x27; or &#x27;accent&#x27;.</div></div><div style="margin-top:14px;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#5f6b86;margin-bottom:8px;font-weight:600;">Key concepts</div><div><span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">button design system</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">CSS variables for theming</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">Font Awesome integration</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">category-based grouping</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">icon-only buttons with tooltips</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">hover state patterns</span></div></div><div style="margin-top:18px;padding-top:14px;border-top:1px solid #1f2940;font-size:11px;color:#5f6b86;">↑ Curated overlay added by render_curated.py · the original document follows below</div></div>
+    <h1>Catálogo de Botões Padrão</h1>
+
+    <!-- Ações Primárias -->
+    <div class="category">
+        <h2>Ações Primárias</h2>
+        <div class="button-grid">
+            <button class="btn btn-primary">
+                <i class="fas fa-plus icon"></i> Adicionar
+            </button>
+            <button class="btn btn-info">
+                <i class="fas fa-save icon"></i> Guardar
+            </button>
+            <button class="btn btn-warning">
+                <i class="fas fa-pen icon"></i> Editar
+            </button>
+            <button class="btn btn-danger">
+                <i class="fas fa-trash icon"></i> Eliminar
+            </button>
+            <button class="btn btn-purple">
+                <i class="fas fa-clone icon"></i> Clonar
+            </button>
+        </div>
+    </div>
+
+    <!-- Ações de Arquivo -->
+    <div class="category">
+        <h2>Ações de Arquivo</h2>
+        <div class="button-grid">
+            <button class="btn btn-file btn-file-download">
+                <i class="fas fa-download icon"></i> Download
+            </button>
+            <button class="btn btn-file btn-file-export">
+                <i class="fas fa-file-pdf icon"></i> Exportar PDF
+            </button>
+            <button class="btn btn-file btn-file-import">
+                <i class="fas fa-file-import icon"></i> Importar
+            </button>
+        </div>
+    </div>
+
+    <!-- Ações de Navegação -->
+    <div class="category">
+        <h2>Ações de Navegação</h2>
+        <div class="button-grid">
+            <button class="btn btn-secondary">
+                <i class="fas fa-arrow-left icon"></i> Voltar
+            </button>
+            <button class="btn btn-info">
+                <i class="fas fa-sync-alt icon"></i> Atualizar
+            </button>
+            <button class="btn btn-success">
+                <i class="fas fa-exchange-alt icon"></i> Sincronizar
+            </button>
+            <button class="btn btn-primary">
+                <i class="fas fa-sign-in-alt icon"></i> Login
+            </button>
+        </div>
+    </div>
+
+    <!-- Ações Secundárias -->
+    <div class="category">
+        <h2>Ações Secundárias</h2>
+        <div class="button-grid">
+            <button class="btn btn-secondary">
+                <i class="fas fa-folder-open icon"></i> Detalhes Lista
+            </button>
+            <button class="btn btn-danger">
+                <i class="fas fa-ban icon"></i> Cancelar
+            </button>
+            <button class="btn btn-success">
+                <i class="fas fa-check icon"></i> Concluir
+            </button>
+            <button class="btn btn-warning">
+                <i class="fas fa-rotate-left icon"></i> Reabrir
+            </button>
+        </div>
+    </div>
+
+    <!-- Ações Terciárias -->
+    <div class="category">
+        <h2>Ações Terciárias</h2>
+        <div class="button-grid">
+            <button class="btn btn-tertiary">
+                <i class="fas fa-list-check icon"></i> Listar (Check)
+            </button>
+            <button class="btn btn-tertiary">
+                <i class="fas fa-list-ul icon"></i> Listar (UL)
+            </button>
+            <button class="btn btn-tertiary">
+                <i class="fas fa-xmark icon"></i> Fechar
+            </button>
+            <button class="btn btn-tertiary">
+                <i class="fas fa-arrow-up icon"></i> Expandir
+            </button>
+            <button class="btn btn-tertiary">
+                <i class="fas fa-arrow-down icon"></i> Diminuir
+            </button>
+        </div>
+    </div>
+
+    <!-- Ações de Sistema (ALTERADO: apenas ícones com tooltip) -->
+    <div class="category">
+        <h2>Ações de Sistema</h2>
+        <div class="button-grid">
+            <button class="btn btn-icon" data-tooltip="Menu">
+                <i class="fas fa-bars"></i>
+            </button>
+            <button class="btn btn-icon" data-tooltip="Configurações">
+                <i class="fas fa-gear"></i>
+            </button>
+            <button class="btn btn-icon" data-tooltip="Mostrar">
+                <i class="fas fa-eye"></i>
+            </button>
+            <button class="btn btn-icon" data-tooltip="Ocultar">
+                <i class="fas fa-eye-slash"></i>
+            </button>
+            <button class="btn btn-icon" data-tooltip="Utilizador">
+                <i class="fas fa-user"></i>
+            </button>
+        </div>
+    </div>
+</body>
+</html>

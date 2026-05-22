@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>IdentityProjectKnowledgeEditable</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 06-Auth-and-Identity</div>
+  <h1>IdentityProjectKnowledgeEditable</h1>
+  <div class="meta">Source: <code>Identity/IdentityProjectKnowledgeEditable.docx</code> &middot; <a href="IdentityProjectKnowledgeEditable.docx">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<div class="dup-banner"><strong>Same-stem variants</strong> (likely same content, different format): <code>Identity/IdentityProjectKnowledge.pdf</code></div><p>IdentityLearning Project Knowledge Base &amp; Instructions</p>
+<p>📋 Project Overview</p>
+<p>Project Name</p>
+<p>IdentityLearning - Enterprise Authentication &amp; User Management System</p>
+<p>Purpose</p>
+<p>A comprehensive ASP.NET Core Blazor application demonstrating enterprise-grade authentication, authorization, and user management capabilities using ASP.NET Core Identity, designed as both a learning platform and production-ready showcase.</p>
+<p>Technology Stack</p>
+<p>Framework: .NET 9.0, Blazor Server-Side Rendering (SSR)</p>
+<p>Authentication: ASP.NET Core Identity</p>
+<p>UI Framework: MudBlazor 8.x</p>
+<p>Database: SQL Server with Entity Framework Core</p>
+<p>Email Service: Custom SOAP integration (AgileEmailService)</p>
+<p>Additional: Extensions.MudBlazor.StaticInput, QR Code Generator</p>
+<p>🏗️ Architecture Overview</p>
+<p>Solution Structure</p>
+<p>IdentityLearning/</p>
+<p>├── Components/</p>
+<p>│   ├── Account/          # Identity-related components and pages</p>
+<p>│   │   ├── Pages/        # Login, Register, Manage pages</p>
+<p>│   │   ├── Shared/       # Shared Identity components</p>
+<p>│   │   └── *.cs          # Identity services and helpers</p>
+<p>│   ├── Layout/           # Application layouts</p>
+<p>│   ├── Pages/            # Application pages</p>
+<p>│   └── _Imports.razor    # Global imports</p>
+<p>├── Data/</p>
+<p>│   ├── ApplicationDbContext.cs</p>
+<p>│   ├── ApplicationUser.cs</p>
+<p>│   └── Migrations/       # EF Core migrations</p>
+<p>├── Services/</p>
+<p>│   └── AgileEmailService.cs  # Email service implementation</p>
+<p>├── Properties/           # Launch settings and dependencies</p>
+<p>├── wwwroot/             # Static files</p>
+<p>├── Program.cs           # Application entry point</p>
+<p>├── appsettings.json     # Configuration</p>
+<p>└── IdentityLearning.csproj</p>
+<p>Key Components</p>
+<ol>
+<li>Identity System</li>
+</ol>
+<p>ApplicationUser: Extended IdentityUser with custom properties</p>
+<p>Department (string)</p>
+<p>IsActive (bool)</p>
+<p>ColaboratorId (int?)</p>
+<ol>
+<li>Email Service Architecture</li>
+</ol>
+<p>SOAP-based email service integration</p>
+<p>Support for HTML tables in emails</p>
+<p>Configurable SMTP settings</p>
+<p>Template-based email sending</p>
+<ol>
+<li>Authentication Features</li>
+</ol>
+<p>Email/Password authentication</p>
+<p>Two-factor authentication (2FA) with QR codes</p>
+<p>Email confirmation</p>
+<p>Password reset functionality</p>
+<p>Account lockout protection</p>
+<p>External authentication providers (ready for configuration)</p>
+<p>🔧 Development Setup</p>
+<p>Prerequisites</p>
+<p>.NET 9 SDK or later</p>
+<p>SQL Server (Express or Developer edition)</p>
+<p>Visual Studio 2022 (v17.14+) or VS Code</p>
+<p>Git for version control</p>
+<p>Initial Setup Steps</p>
+<ol>
+<li>Clone and Configure</li>
+</ol>
+<h1 id="clone-the-repository">Clone the repository</h1>
+<p>git clone [repository-url]</p>
+<p>cd IdentityLearning</p>
+<h1 id="restore-packages">Restore packages</h1>
+<p>dotnet restore</p>
+<ol>
+<li>Database Configuration</li>
+</ol>
+<p>Update appsettings.json with your SQL Server connection:</p>
+<p>{</p>
+<p>&quot;ConnectionStrings&quot;: {</p>
+<p>&quot;DefaultConnection&quot;: &quot;Server=YOUR_SERVER;Database=IdentityLearning;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true&quot;</p>
+<p>}</p>
+<p>}</p>
+<ol>
+<li>User Secrets Setup</li>
+</ol>
+<p>Configure sensitive data using User Secrets:</p>
+<h1 id="initialize-user-secrets">Initialize user secrets</h1>
+<p>dotnet user-secrets init</p>
+<h1 id="set-email-service-credentials">Set email service credentials</h1>
+<p>dotnet user-secrets set &quot;EmailSettings:ServiceKey&quot; &quot;your-service-key&quot;</p>
+<p>dotnet user-secrets set &quot;EmailSettings:Password&quot; &quot;your-email-password&quot;</p>
+<ol>
+<li>Database Migration</li>
+</ol>
+<h1 id="apply-existing-migrations">Apply existing migrations</h1>
+<p>dotnet ef database update</p>
+<h1 id="create-new-migration-if-needed">Create new migration (if needed)</h1>
+<p>dotnet ef migrations add YourMigrationName</p>
+<ol>
+<li>Run the Application</li>
+</ol>
+<h1 id="development-mode">Development mode</h1>
+<p>dotnet run --launch-profile https</p>
+<h1 id="or-use-visual-studio-f5-debugging">Or use Visual Studio F5 debugging</h1>
+<p>🚀 Feature Implementation Guide</p>
+<p>Adding New Identity Features</p>
+<ol>
+<li>Extending User Properties</li>
+</ol>
+<p>// In Data/ApplicationUser.cs</p>
+<p>public class ApplicationUser : IdentityUser</p>
+<p>{</p>
+<p>public string? Department { get; set; }</p>
+<p>public bool IsActive { get; set; }</p>
+<p>public int? ColaboratorId { get; set; }</p>
+<p>// Add new properties here</p>
+<p>public DateTime? LastLoginDate { get; set; }</p>
+<p>public string? ProfilePicture { get; set; }</p>
+<p>}</p>
+<p>After adding properties:</p>
+<p>dotnet ef migrations add AddUserProperties</p>
+<p>dotnet ef database update</p>
+<ol>
+<li>Creating Custom Identity Pages</li>
+</ol>
+<p>Place new pages in Components/Account/Pages/:</p>
+<p>@page &quot;/Account/CustomPage&quot;</p>
+<p>@using Microsoft.AspNetCore.Identity</p>
+<p>@inject UserManager&lt;ApplicationUser&gt; UserManager</p>
+<p>&lt;PageTitle&gt;Custom Page&lt;/PageTitle&gt;</p>
+<p>&lt;MudText Typo=&quot;Typo.h3&quot;&gt;Custom Identity Page&lt;/MudText&gt;</p>
+<p>@code {</p>
+<p>// Implementation</p>
+<p>}</p>
+<ol>
+<li>Adding Role Management</li>
+</ol>
+<p>// In Program.cs</p>
+<p>builder.Services.AddIdentityCore&lt;ApplicationUser&gt;(options =&gt; {</p>
+<p>// Configuration</p>
+<p>})</p>
+<p>.AddRoles&lt;IdentityRole&gt;()  // Add this line</p>
+<p>.AddEntityFrameworkStores&lt;ApplicationDbContext&gt;();</p>
+<p>Email Service Integration</p>
+<ol>
+<li>Email Configuration</li>
+</ol>
+<p>The email service uses a SOAP endpoint. Configuration in appsettings.json:</p>
+<p>{</p>
+<p>&quot;EmailSettings&quot;: {</p>
+<p>&quot;ServiceUrl&quot;: &quot;https://axrm.agileincloud.com/agMailService/agEmailService.asmx&quot;,</p>
+<p>&quot;ServiceKey&quot;: &quot;&quot;,  // Use User Secrets</p>
+<p>&quot;SmtpServer&quot;: &quot;smtp-pt.securemail.pro&quot;,</p>
+<p>&quot;SmtpPort&quot;: 465,</p>
+<p>&quot;UseSsl&quot;: true,</p>
+<p>&quot;Username&quot;: &quot;noreply@agileincloud.com&quot;,</p>
+<p>&quot;Password&quot;: &quot;&quot;,     // Use User Secrets</p>
+<p>&quot;FromEmail&quot;: &quot;noreply@agileincloud.com&quot;,</p>
+<p>&quot;FromName&quot;: &quot;Your Company Name&quot;</p>
+<p>}</p>
+<p>}</p>
+<ol>
+<li>Sending Emails with Tables</li>
+</ol>
+<p>// Example of sending email with table</p>
+<p>var emailBody = @&quot;Order Confirmation</p>
+<p>[TABLE:Order Details]</p>
+<p>Product|Quantity|Price</p>
+<p>Widget A|2|$10.00</p>
+<p>Widget B|1|$15.00</p>
+<p>[/TABLE]</p>
+<p>Thank you for your order!&quot;;</p>
+<p>await EmailService.SendEmailAsync(toEmail, subject, emailBody);</p>
+<p>MudBlazor Components</p>
+<ol>
+<li>Static Input Components</li>
+</ol>
+<p>Use MudStaticTextField for SSR compatibility:</p>
+<p>&lt;MudStaticTextField</p>
+<p>@bind-Value=&quot;Input.Email&quot;</p>
+<p>For=&quot;@(() =&gt; Input.Email)&quot;</p>
+<p>Label=&quot;Email&quot;</p>
+<p>Placeholder=&quot;name@example.com&quot; /&gt;</p>
+<ol>
+<li>Form Handling</li>
+</ol>
+<p>&lt;EditForm Model=&quot;Input&quot; OnValidSubmit=&quot;HandleSubmit&quot; FormName=&quot;unique-form-name&quot;&gt;</p>
+<p>&lt;DataAnnotationsValidator /&gt;</p>
+<p>&lt;MudGrid&gt;</p>
+<p>&lt;!-- Form fields --&gt;</p>
+<p>&lt;/MudGrid&gt;</p>
+<p>&lt;/EditForm&gt;</p>
+<p>🔒 Security Best Practices</p>
+<ol>
+<li>Password Requirements</li>
+</ol>
+<p>Configure in Program.cs:</p>
+<p>builder.Services.AddIdentityCore&lt;ApplicationUser&gt;(options =&gt;</p>
+<p>{</p>
+<p>options.Password.RequiredLength = 8;</p>
+<p>options.Password.RequireDigit = true;</p>
+<p>options.Password.RequireUppercase = true;</p>
+<p>options.Password.RequireLowercase = true;</p>
+<p>options.Password.RequireNonAlphanumeric = true;</p>
+<p>});</p>
+<ol>
+<li>Account Lockout</li>
+</ol>
+<p>options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);</p>
+<p>options.Lockout.MaxFailedAccessAttempts = 5;</p>
+<p>options.Lockout.AllowedForNewUsers = true;</p>
+<ol>
+<li>Two-Factor Authentication</li>
+</ol>
+<p>Already implemented with QR code generation. Users can enable via: /Account/Manage/TwoFactorAuthentication</p>
+<ol>
+<li>Security Headers</li>
+</ol>
+<p>Add to Program.cs:</p>
+<p>app.UseHsts();</p>
+<p>app.UseHttpsRedirection();</p>
+<p>🧪 Testing Guidelines</p>
+<ol>
+<li>Test Accounts</li>
+</ol>
+<p>Create test accounts with different roles:</p>
+<p>Admin: admin@test.com</p>
+<p>User: user@test.com</p>
+<p>Manager: manager@test.com</p>
+<ol>
+<li>Test Scenarios</li>
+</ol>
+<p>[ ] Registration with email confirmation</p>
+<p>[ ] Login with wrong password (lockout testing)</p>
+<p>[ ] Password reset flow</p>
+<p>[ ] 2FA setup and login</p>
+<p>[ ] Profile management</p>
+<p>[ ] Email delivery</p>
+<ol>
+<li>Unit Testing Structure</li>
+</ol>
+<p>[TestClass]</p>
+<p>public class AuthenticationTests</p>
+<p>{</p>
+<p>[TestMethod]</p>
+<p>public async Task User_Can_Register_With_Valid_Data()</p>
+<p>{</p>
+<p>// Arrange</p>
+<p>// Act</p>
+<p>// Assert</p>
+<p>}</p>
+<p>}</p>
+<p>📝 Configuration Management</p>
+<p>Development Settings</p>
+<p>appsettings.Development.json:</p>
+<p>{</p>
+<p>&quot;Logging&quot;: {</p>
+<p>&quot;LogLevel&quot;: {</p>
+<p>&quot;Default&quot;: &quot;Debug&quot;,</p>
+<p>&quot;Microsoft.AspNetCore&quot;: &quot;Warning&quot;,</p>
+<p>&quot;IdentityLearning.Services&quot;: &quot;Debug&quot;</p>
+<p>}</p>
+<p>}</p>
+<p>}</p>
+<p>Production Settings</p>
+<p>Use environment variables or Azure Key Vault:</p>
+<h1 id="linux-mac">Linux/Mac</h1>
+<p>export EmailSettings__ServiceKey=&quot;production-key&quot;</p>
+<h1 id="windows">Windows</h1>
+<p>set EmailSettings__ServiceKey=production-key</p>
+<p>🚢 Deployment Instructions</p>
+<ol>
+<li>Publish Profile</li>
+</ol>
+<p>&lt;Project&gt;</p>
+<p>&lt;PropertyGroup&gt;</p>
+<p>&lt;PublishProfile&gt;Production&lt;/PublishProfile&gt;</p>
+<p>&lt;Configuration&gt;Release&lt;/Configuration&gt;</p>
+<p>&lt;Platform&gt;Any CPU&lt;/Platform&gt;</p>
+<p>&lt;TargetFramework&gt;net9.0&lt;/TargetFramework&gt;</p>
+<p>&lt;RuntimeIdentifier&gt;win-x64&lt;/RuntimeIdentifier&gt;</p>
+<p>&lt;/PropertyGroup&gt;</p>
+<p>&lt;/Project&gt;</p>
+<ol>
+<li>Database Deployment</li>
+</ol>
+<p>-- Ensure database exists</p>
+<p>CREATE DATABASE IdentityLearning;</p>
+<p>-- Run migrations</p>
+<p>dotnet ef database update --connection &quot;Production Connection String&quot;</p>
+<ol>
+<li>IIS Deployment</li>
+</ol>
+<p>Install .NET 9 Hosting Bundle</p>
+<p>Create application pool (No Managed Code)</p>
+<p>Set up website pointing to published folder</p>
+<p>Configure environment variables</p>
+<ol>
+<li>Azure Deployment</li>
+</ol>
+<h1 id="using-azure-cli">Using Azure CLI</h1>
+<p>az webapp up --name YourAppName --resource-group YourRG</p>
+<p>🐛 Troubleshooting</p>
+<p>Common Issues</p>
+<ol>
+<li>Database Connection Errors</li>
+</ol>
+<p>Verify SQL Server is running</p>
+<p>Check connection string format</p>
+<p>Ensure database exists</p>
+<p>Verify user permissions</p>
+<ol>
+<li>Email Service Failures</li>
+</ol>
+<p>Check SOAP endpoint availability</p>
+<p>Verify credentials in User Secrets</p>
+<p>Check firewall/network settings</p>
+<p>Review email service logs</p>
+<ol>
+<li>Authentication Issues</li>
+</ol>
+<p>Clear browser cookies</p>
+<p>Check security stamp</p>
+<p>Verify email confirmation</p>
+<p>Review Identity logs</p>
+<ol>
+<li>Migration Errors</li>
+</ol>
+<h1 id="reset-migrations-if-needed">Reset migrations if needed</h1>
+<p>dotnet ef database drop</p>
+<p>dotnet ef migrations remove</p>
+<p>dotnet ef migrations add Initial</p>
+<p>dotnet ef database update</p>
+<p>📊 Monitoring &amp; Logging</p>
+<ol>
+<li>Application Insights (Azure)</li>
+</ol>
+<p>builder.Services.AddApplicationInsightsTelemetry();</p>
+<ol>
+<li>Serilog Configuration</li>
+</ol>
+<p>builder.Host.UseSerilog((context, configuration) =&gt;</p>
+<p>configuration.ReadFrom.Configuration(context.Configuration));</p>
+<ol>
+<li>Custom Logging</li>
+</ol>
+<p>_logger.LogInformation(&quot;User {Email} logged in at {Time}&quot;,</p>
+<p>user.Email, DateTime.UtcNow);</p>
+<p>🔄 Maintenance Tasks</p>
+<p>Daily</p>
+<p>Monitor error logs</p>
+<p>Check email delivery status</p>
+<p>Review failed login attempts</p>
+<p>Weekly</p>
+<p>Database backup</p>
+<p>Security audit log review</p>
+<p>Performance metrics review</p>
+<p>Monthly</p>
+<p>Update NuGet packages</p>
+<p>Security patches</p>
+<p>User access review</p>
+<p>Certificate renewal check</p>
+<p>📚 Additional Resources</p>
+<p>Documentation</p>
+<p>ASP.NET Core Identity Docs</p>
+<p>MudBlazor Documentation</p>
+<p>Entity Framework Core</p>
+<p>Support Channels</p>
+<p>GitHub Issues: [Report bugs]</p>
+<p>Email: support@yourcompany.com</p>
+<p>Teams Channel: #identity-learning</p>
+<p>Version History</p>
+<p>v1.0.0 - Initial release with basic Identity</p>
+<p>v1.1.0 - Added 2FA support</p>
+<p>v1.2.0 - Email service integration</p>
+<p>v1.3.0 - MudBlazor UI upgrade</p>
+<p>⚠️ Important Notes</p>
+<p>Never commit secrets to source control</p>
+<p>Always use HTTPS in production</p>
+<p>Keep dependencies updated for security</p>
+<p>Regular backups are essential</p>
+<p>Monitor security advisories for .NET Core</p>
+<p>Test thoroughly before production deployment</p>
+<p>Document all customizations for maintenance</p>
+<p>Follow GDPR/compliance requirements</p>
+<p>🎯 Quick Start Checklist</p>
+<p>For New Developers</p>
+<p>[ ] Install prerequisites</p>
+<p>[ ] Clone repository</p>
+<p>[ ] Configure database</p>
+<p>[ ] Set up user secrets</p>
+<p>[ ] Run migrations</p>
+<p>[ ] Start application</p>
+<p>[ ] Create test account</p>
+<p>[ ] Review documentation</p>
+<p>For Deployment</p>
+<p>[ ] Update connection strings</p>
+<p>[ ] Configure email settings</p>
+<p>[ ] Set environment to Production</p>
+<p>[ ] Run database migrations</p>
+<p>[ ] Configure SSL certificate</p>
+<p>[ ] Set up monitoring</p>
+<p>[ ] Verify email delivery</p>
+<p>[ ] Test authentication flow</p>
+<p>📞 Contact Information</p>
+<p>Project Lead: [Your Name] Email: [your.email@company.com] Teams: @YourHandle</p>
+<p>Last Updated: August 2024 Version: 1.3.0 License: [Your License]</p>
+</div>
+</body>
+</html>

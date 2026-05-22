@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL Server - Backup, Restore & Maintenance Reference</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a2e; color: #e0e0e0; padding: 40px; line-height: 1.6; max-width: 1100px; margin: 0 auto; }
+        h1 { color: #7e6fff; margin-bottom: 8px; font-size: 28px; }
+        .subtitle { color: #888; margin-bottom: 32px; font-size: 14px; }
+        .toc { background: #16213e; border-radius: 12px; padding: 24px; margin-bottom: 32px; }
+        .toc h2 { color: #a99bff; margin-bottom: 12px; font-size: 18px; }
+        .toc a { color: #7e6fff; text-decoration: none; display: block; padding: 4px 0; font-size: 14px; }
+        .toc a:hover { color: #a99bff; text-decoration: underline; }
+        .section { background: #16213e; border-radius: 12px; padding: 24px; margin-bottom: 24px; border-left: 4px solid #7e6fff; }
+        .section h2 { color: #a99bff; margin-bottom: 16px; font-size: 20px; }
+        .section h3 { color: #ccc; margin: 20px 0 8px; font-size: 16px; }
+        .section p { font-size: 14px; color: #bbb; margin: 8px 0; }
+        .note { background: #1a1a3e; border-left: 3px solid #ffb545; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 13px; color: #ccc; }
+        .note strong { color: #ffb545; }
+        .info { background: #1a2a3e; border-left: 3px solid #4a86ff; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 13px; color: #ccc; }
+        .info strong { color: #4a86ff; }
+        .success { background: #1a2a1a; border-left: 3px solid #3dcb6c; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 13px; color: #ccc; }
+        .success strong { color: #3dcb6c; }
+        .warning { background: #2a1a1a; border-left: 3px solid #ff3f5f; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 13px; color: #ccc; }
+        .warning strong { color: #ff3f5f; }
+        pre { background: #0f0f23; border-radius: 8px; padding: 16px; overflow-x: auto; margin: 12px 0; font-size: 14px; }
+        code { font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace; }
+        .keyword { color: #569cd6; }
+        .string { color: #ce9178; }
+        .comment { color: #6a9955; }
+        .function { color: #dcdcaa; }
+        .number { color: #b5cea8; }
+        .placeholder { color: #ff79c6; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+        th { background: #0f0f23; color: #7e6fff; text-align: left; padding: 10px 14px; font-size: 13px; }
+        td { padding: 10px 14px; border-bottom: 1px solid #1a1a3e; font-size: 13px; }
+        tr:hover td { background: #1a1a3e; }
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+        .tag-express { background: #2a1a3a; color: #a99bff; }
+        .tag-standard { background: #1a2a1a; color: #3dcb6c; }
+        .tag-destructive { background: #2a1a1a; color: #ff3f5f; }
+        .tag-safe { background: #1a2a3e; color: #4a86ff; }
+        hr { border: none; border-top: 1px solid #2a2a4e; margin: 32px 0; }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } body { padding: 16px; } }
+    </style>
+</head>
+<body>
+<div style="background:rgba(7,9,15,0.94);border-bottom:1px solid #1f2940;padding:12px 24px;font:13px/1.4 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;position:fixed;top:0;left:0;right:0;z-index:99999;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);display:flex;align-items:center;gap:10px;color:#94a3bf;box-sizing:border-box;min-height:48px;"><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;">Learning</a><span style="color:#5f6b86;">›</span><a href="../_Hub.html" style="color:#94a3bf;text-decoration:none;">CORE</a><span style="color:#5f6b86;">›</span><a href="_Category.html" style="color:#94a3bf;text-decoration:none;">Data &amp; Persistence</a><span style="color:#5f6b86;">›</span><span style="color:#e9eef8;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">SQL Server Backup, Restore and Maintenance Reference</span><a href="sql-server-backup-maintenance.html" download style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">↓ Download</a><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">All docs</a></div><div style="height:48px;"></div><div style="background:linear-gradient(135deg,#0a0e1a 0%,#11182a 100%);border:1px solid #1f2940;border-radius:14px;padding:24px 28px;margin:20px;font:15px/1.7 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;color:#e9eef8;box-shadow:0 12px 40px rgba(0,0,0,0.35);"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.6px;color:#6aa6ff;font-weight:600;margin-bottom:8px;">▸ Curated · Concept · Data</div><div style="font-size:24px;font-weight:700;color:#e9eef8;margin-bottom:10px;letter-spacing:-0.02em;line-height:1.2;">SQL Server Backup, Restore and Maintenance Reference</div><div style="font-size:16px;color:#94a3bf;margin-bottom:18px;line-height:1.5;">Reference guide for SQL Server DBA operations: backup, restore, clone, user management, inspection, maintenance, SQLCMD scripting, linked servers, UPSERT patterns, idempotent schema changes, and real-world data migration recipes.</div><div style="font-style:italic;border-left:3px solid #6aa6ff;padding:6px 0 6px 16px;margin:14px 0;color:#e9eef8;">Your boss says &#x27;clone production into a test environment named Staging, but don&#x27;t let it connect to the live users, and keep the old backup chain intact.&#x27; You have thirty minutes. Can you name the three T-SQL options that make this safe - and the one NULL trap that will silently destroy your UPSERT if you forget it?</div><div style="background:rgba(106,166,255,0.06);border:1px solid rgba(106,166,255,0.20);border-radius:10px;padding:14px 18px;margin:14px 0;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#6aa6ff;margin-bottom:6px;font-weight:600;">Executive summary</div><div style="font-size:14px;color:#e9eef8;line-height:1.6;">A hands-on cookbook of SQL Server administration and migration tasks organized into 16 sections covering the full lifecycle: backup with FORMAT/INIT/COMPRESSION, drop with SINGLE_USER rollback, restore with REPLACE and RECOVERY, cloning with MOVE clauses, user/permission management, inspection queries (sys.databases, dm_exec_sessions, backup history), maintenance (DBCC SHRINKDATABASE, index rebuild, UPDATE STATISTICS, CHECKDB), SQLCMD mode variable substitution, linked server OPENQUERY with temp-table staging, UPSERT patterns (UPDATE-then-INSERT beats MERGE), idempotent schema changes using INFORMATION_SCHEMA checks, transactional stored procedure templates with TRY/CATCH, and a long final section on real-world data migration tasks like remapping foreign keys, extracting data from concatenated fields, and populating new tables from existing ones.</div></div><div style="background:rgba(184,106,255,0.06);border:1px solid rgba(184,106,255,0.25);border-radius:10px;padding:14px 18px;margin:14px 0;display:flex;gap:12px;"><div style="font-size:20px;flex-shrink:0;">💡</div><div style="flex:1;font-size:14px;color:#e9eef8;line-height:1.6;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#b86aff;margin-bottom:4px;font-weight:700;">Metaphor</div>This doc is the DBA&#x27;s cookbook-meets-survival-kit. Most SQL tutorials teach you to bake a cake; this one teaches you how to unbake it, repackage it, move it to a new pantry, check if anyone is still eating it, and re-bake it under a different name without giving anyone food poisoning.</div></div><div style="margin-top:14px;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#5f6b86;margin-bottom:8px;font-weight:600;">Key concepts</div><div><span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">BACKUP/RESTORE options</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">SINGLE_USER rollback</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">MOVE clause</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">SQLCMD variables</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">OPENQUERY staging</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">NOT EXISTS vs NOT IN NULL trap</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">idempotent schema changes</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">TRY/CATCH transactions</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">COLLATE for cross-database string matching</span></div></div><div style="margin-top:18px;padding-top:14px;border-top:1px solid #1f2940;font-size:11px;color:#5f6b86;">↑ Curated overlay added by render_curated.py · the original document follows below</div></div>
+
+    <h1>SQL Server - Backup, Restore & Maintenance</h1>
+    <p class="subtitle">Reference guide for database administration operations | Last updated March 2026</p>
+
+    <!-- Table of Contents -->
+    <div class="toc">
+        <h2>Contents</h2>
+        <a href="#backup">1. Backup Databases</a>
+        <a href="#drop">2. Drop Databases</a>
+        <a href="#restore">3. Restore Databases</a>
+        <a href="#clone">4. Clone a Database (Restore as New Name)</a>
+        <a href="#create">5. Create Empty Databases</a>
+        <a href="#users">6. Users & Permissions</a>
+        <a href="#inspect">7. Inspect & Monitor</a>
+        <a href="#maintenance">8. Maintenance & Housekeeping</a>
+        <a href="#express">9. SQL Express Limitations</a>
+        <a href="#options">10. BACKUP/RESTORE Options Cheat Sheet</a>
+        <a href="#sqlcmd">11. SQLCMD Mode & Variables</a>
+        <a href="#linked-servers">12. Linked Servers & OPENQUERY</a>
+        <a href="#upsert">13. UPSERT Patterns (UPDATE + INSERT)</a>
+        <a href="#idempotent">14. Idempotent Schema Changes</a>
+        <a href="#stored-procs">15. Stored Procedures with Error Handling</a>
+        <a href="#data-migration">16. Data Migration & Cleanup Patterns</a>
+    </div>
+
+    <!-- 1. Backup -->
+    <div class="section" id="backup">
+        <h2>1. Backup Databases <span class="tag tag-safe">safe / read-only</span></h2>
+
+        <h3>Create a backup directory on the server</h3>
+        <pre><code><span class="keyword">EXEC</span> master.dbo.<span class="function">xp_create_subdir</span> <span class="string">N'<span class="placeholder">C:\SqlBackups\MyBackupFolder</span>'</span>;</code></pre>
+
+        <h3>Full backup (single database)</h3>
+        <pre><code><span class="keyword">BACKUP DATABASE</span> [<span class="placeholder">MyDatabase</span>]
+    <span class="keyword">TO DISK</span> = <span class="string">N'<span class="placeholder">C:\SqlBackups\MyDatabase.bak</span>'</span>
+    <span class="keyword">WITH</span> FORMAT, INIT;</code></pre>
+
+        <h3>Backup multiple databases at once</h3>
+        <pre><code><span class="keyword">BACKUP DATABASE</span> [<span class="placeholder">Database1</span>]
+    <span class="keyword">TO DISK</span> = <span class="string">N'<span class="placeholder">C:\SqlBackups\Database1.bak</span>'</span>
+    <span class="keyword">WITH</span> FORMAT, INIT;
+
+<span class="keyword">BACKUP DATABASE</span> [<span class="placeholder">Database2</span>]
+    <span class="keyword">TO DISK</span> = <span class="string">N'<span class="placeholder">C:\SqlBackups\Database2.bak</span>'</span>
+    <span class="keyword">WITH</span> FORMAT, INIT;</code></pre>
+
+        <h3>Backup with compression (Standard/Enterprise only)</h3>
+        <pre><code><span class="comment">-- NOT supported on Express Edition!</span>
+<span class="keyword">BACKUP DATABASE</span> [<span class="placeholder">MyDatabase</span>]
+    <span class="keyword">TO DISK</span> = <span class="string">N'<span class="placeholder">C:\SqlBackups\MyDatabase.bak</span>'</span>
+    <span class="keyword">WITH</span> FORMAT, INIT, COMPRESSION;</code></pre>
+
+        <h3>Backup with a description and timestamp</h3>
+        <pre><code><span class="keyword">BACKUP DATABASE</span> [<span class="placeholder">MyDatabase</span>]
+    <span class="keyword">TO DISK</span> = <span class="string">N'<span class="placeholder">C:\SqlBackups\MyDatabase_20260306.bak</span>'</span>
+    <span class="keyword">WITH</span> FORMAT, INIT,
+    NAME = <span class="string">N'MyDatabase - Full Backup before migration'</span>,
+    DESCRIPTION = <span class="string">N'Pre-cleanup backup March 2026'</span>;</code></pre>
+
+        <h3>Verify backups exist on disk</h3>
+        <pre><code><span class="keyword">EXEC</span> master.dbo.<span class="function">xp_dirtree</span> <span class="string">N'<span class="placeholder">C:\SqlBackups</span>'</span>, <span class="number">1</span>, <span class="number">1</span>;</code></pre>
+
+        <h3>Verify a backup is valid (without restoring)</h3>
+        <pre><code><span class="keyword">RESTORE VERIFYONLY FROM DISK</span> = <span class="string">N'<span class="placeholder">C:\SqlBackups\MyDatabase.bak</span>'</span>;</code></pre>
+
+        <div class="note"><strong>FORMAT</strong> overwrites the backup media header (starts fresh). <strong>INIT</strong> overwrites existing backup sets. Together they ensure a clean single-backup file.</div>
+    </div>
+
+    <!-- 2. Drop -->
+    <div class="section" id="drop">
+        <h2>2. Drop Databases <span class="tag tag-destructive">destructive</span></h2>
+
+        <div class="warning"><strong>IRREVERSIBLE:</strong> This permanently deletes the database and its files. Always verify backups exist before dropping!</div>
+
+        <h3>Drop a single database (force disconnect users first)</h3>
+        <pre><code><span class="keyword">ALTER DATABASE</span> [<span class="placeholder">MyDatabase</span>] <span class="keyword">SET</span> SINGLE_USER <span class="keyword">WITH</span> ROLLBACK IMMEDIATE;
+<span class="keyword">DROP DATABASE</span> [<span class="placeholder">MyDatabase</span>];</code></pre>
+
+        <h3>Safe drop (only if exists)</h3>
+        <pre><code><span class="keyword">IF</span> <span class="function">DB_ID</span>(<span class="string">'<span class="placeholder">MyDatabase</span>'</span>) <span class="keyword">IS NOT NULL</span>
+<span class="keyword">BEGIN</span>
+    <span class="keyword">ALTER DATABASE</span> [<span class="placeholder">MyDatabase</span>] <span class="keyword">SET</span> SINGLE_USER <span class="keyword">WITH</span> ROLLBACK IMMEDIATE;
+    <span class="keyword">DROP DATABASE</span> [<span class="placeholder">MyDatabase</span>];
+    <span class="keyword">PRINT</span> <span class="string">'Dropped MyDatabase'</span>;
+<span class="keyword">END</span>
+<span class="keyword">ELSE</span>
+    <span class="keyword">PRINT</span> <span class="string">'MyDatabase does not exist'</span>;</code></pre>
+
+        <h3>Confirm databases are gone</h3>
+        <pre><code><span class="keyword">SELECT</span> name <span class="keyword">FROM</span> sys.databases
+<span class="keyword">WHERE</span> name <span class="keyword">NOT IN</span> (<span class="string">'master'</span>, <span class="string">'tempdb'</span>, <span class="string">'model'</span>, <span class="string">'msdb'</span>)
+<span class="keyword">ORDER BY</span> name;</code></pre>
+
+        <div class="info"><strong>Why SINGLE_USER?</strong> You can't drop a database while connections are active. <code>SET SINGLE_USER WITH ROLLBACK IMMEDIATE</code> kicks everyone out and rolls back their transactions instantly.</div>
+    </div>
+
+    <!-- 3. Restore -->
+    <div class="section" id="restore">
+        <h2>3. Restore Databases <span class="tag tag-destructive">overwrites if exists</span></h2>
+
+        <h3>Restore a database (same name as original)</h3>
+        <pre><code><span class="keyword">RESTORE DATABASE</span> [<span class="placeholder">MyDatabase</span>]
+    <span class="keyword">FROM DISK</span> = <span class="string">N'<span class="placeholder">C:\SqlBackups\MyDatabase.bak</span>'</span>
+    <span class="keyword">WITH</span> REPLACE, RECOVERY;</code></pre>
+
+        <h3>Check what's inside a backup before restoring</h3>
+        <pre><code><span class="comment">-- Shows logical file names, sizes, and physical paths</span>
+<span class="keyword">RESTORE FILELISTONLY FROM DISK</span> = <span class="string">N'<span class="placeholder">C:\SqlBackups\MyDatabase.bak</span>'</span>;
+
+<span class="comment">-- Shows backup sets (date, type, description)</span>
+<span class="keyword">RESTORE HEADERONLY FROM DISK</span> = <span class="string">N'<span class="placeholder">C:\SqlBackups\MyDatabase.bak</span>'</span>;</code></pre>
+
+        <div class="info"><strong>REPLACE</strong> overwrites the existing database (if one exists with that name). <strong>RECOVERY</strong> makes the DB immediately usable. Without RECOVERY, the DB stays in "restoring" state (useful for applying multiple backups in sequence).</div>
+    </div>
+
+    <!-- 4. Clone -->
+    <div class="section" id="clone">
+        <h2>4. Clone a Database (Restore as New Name) <span class="tag tag-safe">creates new DB</span></h2>
+
+        <p>This restores a backup into a <strong>brand new database with a different name</strong>. It's the SQL Server way of cloning/duplicating a database. The original backup is untouched.</p>
+
+        <h3>Step 1: Check the logical file names inside the backup</h3>
+        <pre><code><span class="keyword">RESTORE FILELISTONLY FROM DISK</span> = <span class="string">N'<span class="placeholder">C:\SqlBackups\OriginalDB.bak</span>'</span>;</code></pre>
+        <div class="note"><strong>Look for:</strong> The <code>LogicalName</code> column. You'll typically see two rows: one for the data file (.mdf) and one for the log file (.ldf). You need these names for the MOVE clauses below.</div>
+
+        <h3>Step 2: Restore with MOVE to give it new file names</h3>
+        <pre><code><span class="comment">-- Replace the logical names and paths from Step 1</span>
+<span class="keyword">RESTORE DATABASE</span> [<span class="placeholder">ClonedDB</span>]
+    <span class="keyword">FROM DISK</span> = <span class="string">N'<span class="placeholder">C:\SqlBackups\OriginalDB.bak</span>'</span>
+    <span class="keyword">WITH</span> RECOVERY,
+    <span class="keyword">MOVE</span> <span class="string">N'<span class="placeholder">OriginalDB_Data</span>'</span> <span class="keyword">TO</span> <span class="string">N'<span class="placeholder">C:\SQLData\ClonedDB.mdf</span>'</span>,
+    <span class="keyword">MOVE</span> <span class="string">N'<span class="placeholder">OriginalDB_Log</span>'</span> <span class="keyword">TO</span> <span class="string">N'<span class="placeholder">C:\SQLData\ClonedDB_log.ldf</span>'</span>;</code></pre>
+
+        <div class="success"><strong>Result:</strong> You now have a complete, independent copy of the original database under a new name. Changes to one don't affect the other. This is perfect for creating test environments from production backups.</div>
+
+        <h3>Find the default data directory (for the MOVE paths)</h3>
+        <pre><code><span class="keyword">SELECT</span>
+    <span class="function">SERVERPROPERTY</span>(<span class="string">'InstanceDefaultDataPath'</span>) <span class="keyword">AS</span> DataPath,
+    <span class="function">SERVERPROPERTY</span>(<span class="string">'InstanceDefaultLogPath'</span>) <span class="keyword">AS</span> LogPath;</code></pre>
+    </div>
+
+    <!-- 5. Create -->
+    <div class="section" id="create">
+        <h2>5. Create Empty Databases</h2>
+
+        <h3>Simple create (uses server defaults)</h3>
+        <pre><code><span class="keyword">CREATE DATABASE</span> [<span class="placeholder">MyNewDatabase</span>];</code></pre>
+
+        <h3>Create with specific file locations and sizes</h3>
+        <pre><code><span class="keyword">CREATE DATABASE</span> [<span class="placeholder">MyNewDatabase</span>]
+<span class="keyword">ON PRIMARY</span> (
+    NAME = <span class="string">N'<span class="placeholder">MyNewDatabase_Data</span>'</span>,
+    FILENAME = <span class="string">N'<span class="placeholder">C:\SQLData\MyNewDatabase.mdf</span>'</span>,
+    SIZE = <span class="number">64</span>MB,
+    FILEGROWTH = <span class="number">64</span>MB
+)
+<span class="keyword">LOG ON</span> (
+    NAME = <span class="string">N'<span class="placeholder">MyNewDatabase_Log</span>'</span>,
+    FILENAME = <span class="string">N'<span class="placeholder">C:\SQLData\MyNewDatabase_log.ldf</span>'</span>,
+    SIZE = <span class="number">32</span>MB,
+    FILEGROWTH = <span class="number">32</span>MB
+);</code></pre>
+
+        <h3>Create and set recovery model</h3>
+        <pre><code><span class="keyword">CREATE DATABASE</span> [<span class="placeholder">MyNewDatabase</span>];
+<span class="keyword">ALTER DATABASE</span> [<span class="placeholder">MyNewDatabase</span>] <span class="keyword">SET</span> RECOVERY SIMPLE;
+<span class="comment">-- SIMPLE = no log backups needed (good for dev/test)</span>
+<span class="comment">-- FULL = supports point-in-time recovery (good for production)</span></code></pre>
+    </div>
+
+    <!-- 6. Users -->
+    <div class="section" id="users">
+        <h2>6. Users & Permissions</h2>
+
+        <h3>Create a SQL login</h3>
+        <pre><code><span class="keyword">CREATE LOGIN</span> [<span class="placeholder">myuser</span>] <span class="keyword">WITH PASSWORD</span> = <span class="string">N'<span class="placeholder">StrongPassword123!</span>'</span>;</code></pre>
+
+        <h3>Create a database user mapped to the login</h3>
+        <pre><code><span class="keyword">USE</span> [<span class="placeholder">MyDatabase</span>];
+<span class="keyword">CREATE USER</span> [<span class="placeholder">myuser</span>] <span class="keyword">FOR LOGIN</span> [<span class="placeholder">myuser</span>];
+<span class="keyword">ALTER ROLE</span> db_owner <span class="keyword">ADD MEMBER</span> [<span class="placeholder">myuser</span>];</code></pre>
+
+        <h3>Grant read-only access</h3>
+        <pre><code><span class="keyword">USE</span> [<span class="placeholder">MyDatabase</span>];
+<span class="keyword">CREATE USER</span> [<span class="placeholder">readonly_user</span>] <span class="keyword">FOR LOGIN</span> [<span class="placeholder">readonly_user</span>];
+<span class="keyword">ALTER ROLE</span> db_datareader <span class="keyword">ADD MEMBER</span> [<span class="placeholder">readonly_user</span>];</code></pre>
+
+        <h3>Common database roles</h3>
+        <table>
+            <thead><tr><th>Role</th><th>Access</th></tr></thead>
+            <tbody>
+                <tr><td><code>db_owner</code></td><td>Full control (DDL + DML + admin)</td></tr>
+                <tr><td><code>db_datareader</code></td><td>SELECT on all tables</td></tr>
+                <tr><td><code>db_datawriter</code></td><td>INSERT, UPDATE, DELETE on all tables</td></tr>
+                <tr><td><code>db_ddladmin</code></td><td>CREATE, ALTER, DROP objects</td></tr>
+                <tr><td><code>db_backupoperator</code></td><td>BACKUP DATABASE and BACKUP LOG</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Check who's connected to a database</h3>
+        <pre><code><span class="keyword">SELECT</span> session_id, login_name, host_name, program_name, login_time
+<span class="keyword">FROM</span> sys.dm_exec_sessions
+<span class="keyword">WHERE</span> database_id = <span class="function">DB_ID</span>(<span class="string">'<span class="placeholder">MyDatabase</span>'</span>);</code></pre>
+    </div>
+
+    <!-- 7. Inspect -->
+    <div class="section" id="inspect">
+        <h2>7. Inspect & Monitor <span class="tag tag-safe">read-only</span></h2>
+
+        <h3>List all databases with details</h3>
+        <pre><code><span class="keyword">SELECT</span> name, database_id, create_date, state_desc, recovery_model_desc,
+       <span class="keyword">CAST</span>((<span class="keyword">SELECT</span> <span class="function">SUM</span>(size) * <span class="number">8.0</span> / <span class="number">1024</span>
+             <span class="keyword">FROM</span> sys.master_files <span class="keyword">WHERE</span> database_id = d.database_id)
+       <span class="keyword">AS DECIMAL</span>(<span class="number">10</span>,<span class="number">2</span>)) <span class="keyword">AS</span> total_size_mb
+<span class="keyword">FROM</span> sys.databases d
+<span class="keyword">WHERE</span> name <span class="keyword">NOT IN</span> (<span class="string">'master'</span>, <span class="string">'tempdb'</span>, <span class="string">'model'</span>, <span class="string">'msdb'</span>)
+<span class="keyword">ORDER BY</span> name;</code></pre>
+
+        <h3>Check table sizes in a database</h3>
+        <pre><code><span class="keyword">USE</span> [<span class="placeholder">MyDatabase</span>];
+<span class="keyword">SELECT</span>
+    s.name + <span class="string">'.'</span> + t.name <span class="keyword">AS</span> table_name,
+    p.rows <span class="keyword">AS</span> row_count,
+    <span class="keyword">CAST</span>(<span class="function">SUM</span>(a.total_pages) * <span class="number">8.0</span> / <span class="number">1024</span> <span class="keyword">AS DECIMAL</span>(<span class="number">10</span>,<span class="number">2</span>)) <span class="keyword">AS</span> total_mb
+<span class="keyword">FROM</span> sys.tables t
+<span class="keyword">JOIN</span> sys.schemas s <span class="keyword">ON</span> t.schema_id = s.schema_id
+<span class="keyword">JOIN</span> sys.indexes i <span class="keyword">ON</span> t.object_id = i.object_id
+<span class="keyword">JOIN</span> sys.partitions p <span class="keyword">ON</span> i.object_id = p.object_id <span class="keyword">AND</span> i.index_id = p.index_id
+<span class="keyword">JOIN</span> sys.allocation_units a <span class="keyword">ON</span> p.partition_id = a.container_id
+<span class="keyword">WHERE</span> i.index_id <= <span class="number">1</span>
+<span class="keyword">GROUP BY</span> s.name, t.name, p.rows
+<span class="keyword">ORDER BY</span> total_mb <span class="keyword">DESC</span>;</code></pre>
+
+        <h3>Check backup history</h3>
+        <pre><code><span class="keyword">SELECT</span> database_name, type <span class="keyword">AS</span> backup_type,
+       backup_start_date, backup_finish_date,
+       <span class="keyword">CAST</span>(backup_size / <span class="number">1024.0</span> / <span class="number">1024.0</span> <span class="keyword">AS DECIMAL</span>(<span class="number">10</span>,<span class="number">2</span>)) <span class="keyword">AS</span> size_mb,
+       name <span class="keyword">AS</span> backup_name
+<span class="keyword">FROM</span> msdb.dbo.backupset
+<span class="keyword">ORDER BY</span> backup_start_date <span class="keyword">DESC</span>;</code></pre>
+        <div class="note"><strong>backup type:</strong> D = Full, I = Differential, L = Log</div>
+
+        <h3>Check server version and edition</h3>
+        <pre><code><span class="keyword">SELECT</span>
+    <span class="function">SERVERPROPERTY</span>(<span class="string">'ProductVersion'</span>) <span class="keyword">AS</span> Version,
+    <span class="function">SERVERPROPERTY</span>(<span class="string">'ProductLevel'</span>) <span class="keyword">AS</span> PatchLevel,
+    <span class="function">SERVERPROPERTY</span>(<span class="string">'Edition'</span>) <span class="keyword">AS</span> Edition,
+    <span class="function">SERVERPROPERTY</span>(<span class="string">'MachineName'</span>) <span class="keyword">AS</span> MachineName,
+    <span class="function">SERVERPROPERTY</span>(<span class="string">'InstanceName'</span>) <span class="keyword">AS</span> InstanceName;</code></pre>
+
+        <h3>Kill all connections to a specific database</h3>
+        <pre><code><span class="keyword">DECLARE</span> @kill <span class="keyword">VARCHAR</span>(<span class="number">8000</span>) = <span class="string">''</span>;
+<span class="keyword">SELECT</span> @kill = @kill + <span class="string">'KILL '</span> + <span class="keyword">CONVERT</span>(<span class="keyword">VARCHAR</span>(<span class="number">5</span>), session_id) + <span class="string">';'</span>
+<span class="keyword">FROM</span> sys.dm_exec_sessions
+<span class="keyword">WHERE</span> database_id = <span class="function">DB_ID</span>(<span class="string">'<span class="placeholder">MyDatabase</span>'</span>);
+<span class="keyword">EXEC</span>(@kill);</code></pre>
+
+        <h3>Find currently running queries</h3>
+        <pre><code><span class="keyword">SELECT</span> r.session_id, r.status, r.command, r.wait_type,
+       r.total_elapsed_time / <span class="number">1000</span> <span class="keyword">AS</span> elapsed_sec,
+       <span class="function">DB_NAME</span>(r.database_id) <span class="keyword">AS</span> db_name,
+       t.text <span class="keyword">AS</span> query_text
+<span class="keyword">FROM</span> sys.dm_exec_requests r
+<span class="keyword">CROSS APPLY</span> sys.dm_exec_sql_text(r.sql_handle) t
+<span class="keyword">WHERE</span> r.session_id > <span class="number">50</span>
+<span class="keyword">ORDER BY</span> r.total_elapsed_time <span class="keyword">DESC</span>;</code></pre>
+    </div>
+
+    <!-- 8. Maintenance -->
+    <div class="section" id="maintenance">
+        <h2>8. Maintenance & Housekeeping</h2>
+
+        <h3>Shrink a database (reclaim unused space)</h3>
+        <pre><code><span class="keyword">USE</span> [<span class="placeholder">MyDatabase</span>];
+<span class="keyword">DBCC</span> <span class="function">SHRINKDATABASE</span>(<span class="placeholder">MyDatabase</span>, <span class="number">10</span>);
+<span class="comment">-- 10 = target percentage of free space to leave</span></code></pre>
+        <div class="warning"><strong>Use sparingly!</strong> Shrink causes index fragmentation. Only use after massive deletes or one-time cleanup. Not for regular maintenance.</div>
+
+        <h3>Rebuild all indexes in a database</h3>
+        <pre><code><span class="keyword">USE</span> [<span class="placeholder">MyDatabase</span>];
+<span class="keyword">EXEC</span> sp_MSforeachtable <span class="string">'ALTER INDEX ALL ON ? REBUILD'</span>;</code></pre>
+
+        <h3>Update statistics for all tables</h3>
+        <pre><code><span class="keyword">USE</span> [<span class="placeholder">MyDatabase</span>];
+<span class="keyword">EXEC</span> sp_updatestats;</code></pre>
+
+        <h3>Check database integrity</h3>
+        <pre><code><span class="keyword">DBCC</span> <span class="function">CHECKDB</span>(<span class="string">'<span class="placeholder">MyDatabase</span>'</span>) <span class="keyword">WITH</span> NO_INFOMSGS;</code></pre>
+
+        <h3>Clean up backup history (older than 30 days)</h3>
+        <pre><code><span class="keyword">DECLARE</span> @cutoff <span class="keyword">DATETIME</span> = <span class="function">DATEADD</span>(DAY, -<span class="number">30</span>, <span class="function">GETDATE</span>());
+<span class="keyword">EXEC</span> msdb.dbo.sp_delete_backuphistory @oldest_date = @cutoff;</code></pre>
+
+        <h3>Rename a database</h3>
+        <pre><code><span class="keyword">ALTER DATABASE</span> [<span class="placeholder">OldName</span>] <span class="keyword">SET</span> SINGLE_USER <span class="keyword">WITH</span> ROLLBACK IMMEDIATE;
+<span class="keyword">ALTER DATABASE</span> [<span class="placeholder">OldName</span>] <span class="keyword">MODIFY</span> NAME = [<span class="placeholder">NewName</span>];
+<span class="keyword">ALTER DATABASE</span> [<span class="placeholder">NewName</span>] <span class="keyword">SET</span> MULTI_USER;</code></pre>
+        <div class="note"><strong>Note:</strong> This only changes the logical name. The physical .mdf/.ldf files keep their old names on disk. This is cosmetic but functional.</div>
+    </div>
+
+    <!-- 9. Express Limits -->
+    <div class="section" id="express">
+        <h2>9. SQL Server Express Limitations <span class="tag tag-express">Express</span></h2>
+        <table>
+            <thead><tr><th>Feature</th><th>Express Limit</th><th>Standard</th></tr></thead>
+            <tbody>
+                <tr><td>Max database size</td><td>10 GB</td><td>524 PB</td></tr>
+                <tr><td>Max RAM (buffer pool)</td><td>1 GB</td><td>128 GB</td></tr>
+                <tr><td>CPU</td><td>1 socket / 4 cores</td><td>4 sockets / 24 cores</td></tr>
+                <tr><td>Backup compression</td><td>Not supported</td><td>Supported</td></tr>
+                <tr><td>SQL Agent (scheduled jobs)</td><td>Not included</td><td>Included</td></tr>
+                <tr><td>Full-text search</td><td>Supported</td><td>Supported</td></tr>
+                <tr><td>Partitioning</td><td>Not supported</td><td>Not supported (Enterprise only)</td></tr>
+                <tr><td>Always On AG</td><td>Basic AG only</td><td>Basic AG</td></tr>
+            </tbody>
+        </table>
+        <div class="info"><strong>Workaround for no SQL Agent:</strong> Use Windows Task Scheduler + <code>sqlcmd</code> scripts to schedule backups and maintenance on Express.</div>
+    </div>
+
+    <!-- 10. Options Cheat Sheet -->
+    <div class="section" id="options">
+        <h2>10. BACKUP / RESTORE Options Cheat Sheet</h2>
+
+        <h3>BACKUP options</h3>
+        <table>
+            <thead><tr><th>Option</th><th>What it does</th></tr></thead>
+            <tbody>
+                <tr><td><code>FORMAT</code></td><td>Writes a new media header, erases all existing backups on the media</td></tr>
+                <tr><td><code>INIT</code></td><td>Overwrites existing backup sets (but keeps media header unless FORMAT is used)</td></tr>
+                <tr><td><code>NOINIT</code></td><td>Appends to existing backup sets (default)</td></tr>
+                <tr><td><code>COMPRESSION</code></td><td>Compresses the backup (Standard/Enterprise only)</td></tr>
+                <tr><td><code>COPY_ONLY</code></td><td>Doesn't affect the backup chain (safe for ad-hoc backups)</td></tr>
+                <tr><td><code>CHECKSUM</code></td><td>Verifies page checksums during backup</td></tr>
+                <tr><td><code>NAME</code></td><td>Friendly name for the backup set</td></tr>
+                <tr><td><code>DESCRIPTION</code></td><td>Description text stored with the backup</td></tr>
+            </tbody>
+        </table>
+
+        <h3>RESTORE options</h3>
+        <table>
+            <thead><tr><th>Option</th><th>What it does</th></tr></thead>
+            <tbody>
+                <tr><td><code>RECOVERY</code></td><td>Makes DB usable immediately (default). No more restores after this.</td></tr>
+                <tr><td><code>NORECOVERY</code></td><td>Keeps DB in "restoring" state for additional restores (diff/log)</td></tr>
+                <tr><td><code>REPLACE</code></td><td>Overwrites an existing database with the same name</td></tr>
+                <tr><td><code>MOVE</code></td><td>Redirect physical files to new paths (required when cloning)</td></tr>
+                <tr><td><code>STATS = N</code></td><td>Print progress every N percent (e.g., <code>STATS = 10</code>)</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Inspect backup contents (before restoring)</h3>
+        <table>
+            <thead><tr><th>Command</th><th>What it shows</th></tr></thead>
+            <tbody>
+                <tr><td><code>RESTORE FILELISTONLY</code></td><td>Logical file names, sizes, paths inside the backup</td></tr>
+                <tr><td><code>RESTORE HEADERONLY</code></td><td>Backup set metadata (date, type, description, server)</td></tr>
+                <tr><td><code>RESTORE VERIFYONLY</code></td><td>Validates the backup is readable and consistent</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <hr>
+
+    <!-- 11. SQLCMD -->
+    <div class="section" id="sqlcmd">
+        <h2>11. SQLCMD Mode & Variables <span class="tag tag-safe">scripting</span></h2>
+
+        <p>SQLCMD mode lets you use variables in SQL scripts, making them portable across environments. Enable it in SSMS: <strong>Query &gt; SQLCMD Mode</strong>.</p>
+
+        <h3>Define variables at the top of a script</h3>
+        <pre><code><span class="comment">-- These get text-replaced BEFORE SQL executes</span>
+<span class="keyword">:setvar</span> <span class="placeholder">DestinationDB</span> <span class="string">"MyProductionDB"</span>
+<span class="keyword">:setvar</span> <span class="placeholder">SourceProcDB</span>  <span class="string">"IntegrationDB"</span>
+
+<span class="keyword">USE</span> [<span class="placeholder">$(DestinationDB)</span>]
+<span class="keyword">GO</span>
+
+<span class="keyword">SELECT</span> * <span class="keyword">FROM</span> [<span class="placeholder">$(DestinationDB)</span>].[dbo].[MyTable];</code></pre>
+
+        <div class="info"><strong>How it works:</strong> <code>$(VariableName)</code> is pure text substitution at parse time. It's replaced before the SQL is sent to the engine. This means variables work inside stored procedure bodies too &mdash; the literal value gets baked in at CREATE time.</div>
+
+        <h3>Override variables from the command line (batch files)</h3>
+        <pre><code><span class="comment">:: Run a .sql file with variable overrides</span>
+sqlcmd -S <span class="placeholder">MyServer</span> -d <span class="placeholder">MyDB</span> -U <span class="placeholder">user</span> -P <span class="placeholder">pass</span> ^
+    -v DestinationDB=<span class="string">"ProductionDB"</span> ^
+    -v SourceProcDB=<span class="string">"IntegrationDB"</span> ^
+    -i <span class="string">"C:\Scripts\025_import.sql"</span>
+
+<span class="comment">:: Or just run a stored procedure directly</span>
+sqlcmd -S <span class="placeholder">MyServer</span> -d <span class="placeholder">MyDB</span> -U <span class="placeholder">user</span> -P <span class="placeholder">pass</span> ^
+    -Q <span class="string">"EXEC dbo.MyProcedure @Param = 1;"</span></code></pre>
+
+        <h3>Typical batch file pattern</h3>
+        <pre><code><span class="comment">@echo off</span>
+<span class="keyword">set</span> SERVER=<span class="string">"MyServer,14433"</span>
+<span class="keyword">set</span> DATABASE=<span class="placeholder">IntegrationDB</span>
+<span class="keyword">set</span> USER=<span class="placeholder">my_user</span>
+<span class="keyword">set</span> PASSWORD=<span class="placeholder">my_password</span>
+
+<span class="string">"C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn\sqlcmd.exe"</span> ^
+    -S %SERVER% -d %DATABASE% -U %USER% -P %PASSWORD% ^
+    -Q <span class="string">"EXEC dbo.Proc1 @UserId = 1; EXEC dbo.Proc2 @UserId = 1;"</span>
+
+<span class="keyword">exit /b</span> %ERRORLEVEL%</code></pre>
+
+        <div class="note"><strong>Tip:</strong> Use the full path to <code>sqlcmd.exe</code> instead of <code>cd</code>'ing to its directory. Cleaner and avoids working directory side effects.</div>
+    </div>
+
+    <!-- 12. Linked Servers -->
+    <div class="section" id="linked-servers">
+        <h2>12. Linked Servers & OPENQUERY <span class="tag tag-safe">cross-server</span></h2>
+
+        <p>Query data from external databases (e.g., PHC, legacy systems) via linked servers.</p>
+
+        <h3>Basic OPENQUERY syntax</h3>
+        <pre><code><span class="comment">-- Query runs on the REMOTE server, results come back</span>
+<span class="keyword">SELECT</span> *
+<span class="keyword">FROM</span> <span class="function">OPENQUERY</span>(<span class="placeholder">srvphc</span>, <span class="string">'
+    SELECT cl.no, cl.nome, cl.clstamp
+    FROM inersel.dbo.cl
+    WHERE cl.inactivo = 0
+'</span>);</code></pre>
+
+        <div class="info"><strong>Key rule:</strong> The query string inside OPENQUERY runs on the <em>remote</em> server. Use the remote server's database/table names, not local ones.</div>
+
+        <h3>Stage remote data into a temp table</h3>
+        <pre><code><span class="comment">-- Pull remote data into a local temp table for joining</span>
+<span class="keyword">IF</span> <span class="function">OBJECT_ID</span>(<span class="string">'tempdb..#PHCClients'</span>) <span class="keyword">IS NOT NULL</span>
+    <span class="keyword">DROP TABLE</span> #PHCClients;
+
+<span class="keyword">SELECT</span>
+    clstamp                      <span class="keyword">AS</span> PHCId,
+    <span class="keyword">CAST</span>([no] <span class="keyword">AS NVARCHAR</span>(<span class="number">150</span>))  <span class="keyword">AS</span> Code,
+    nome                         <span class="keyword">AS</span> Name
+<span class="keyword">INTO</span> #PHCClients
+<span class="keyword">FROM</span> <span class="function">OPENQUERY</span>(<span class="placeholder">srvphc</span>, <span class="string">'
+    SELECT cl.clstamp, cl.no, cl.nome
+    FROM inersel.dbo.cl
+    WHERE cl.inactivo = 0
+'</span>);
+
+<span class="comment">-- Now join locally &mdash; much faster than cross-server joins</span>
+<span class="keyword">SELECT</span> * <span class="keyword">FROM</span> #PHCClients <span class="keyword">WHERE</span> Code = <span class="string">'210010'</span>;</code></pre>
+
+        <div class="success"><strong>Pattern:</strong> Always stage into temp tables first, then join locally. Cross-server JOINs are extremely slow because the engine can't optimize across linked servers.</div>
+
+        <h3>Handle text columns from legacy systems</h3>
+        <pre><code><span class="comment">-- Legacy 'text' type breaks RTRIM/LEN/etc. Cast first!</span>
+<span class="keyword">SELECT</span>
+    <span class="keyword">CAST</span>(obs <span class="keyword">AS NVARCHAR</span>(<span class="keyword">MAX</span>)) <span class="keyword">AS</span> Description
+<span class="keyword">FROM</span> <span class="function">OPENQUERY</span>(<span class="placeholder">srvphc</span>, <span class="string">'SELECT obs FROM inersel.dbo.opc'</span>);</code></pre>
+
+        <div class="warning"><strong>Gotcha:</strong> Old databases often have <code>text</code>/<code>ntext</code>/<code>image</code> columns. Functions like <code>RTRIM()</code>, <code>LEN()</code>, and <code>SUBSTRING()</code> don't accept <code>text</code>. Always <code>CAST(col AS NVARCHAR(MAX))</code> in the outer SELECT.</div>
+
+        <h3>Truncate to fit destination columns</h3>
+        <pre><code><span class="comment">-- Remote data can be any length. Truncate to match your schema.</span>
+<span class="keyword">SELECT</span>
+    <span class="function">LEFT</span>(<span class="keyword">RTRIM</span>(descricao), <span class="number">250</span>)  <span class="keyword">AS</span> Name,         <span class="comment">-- Jobs.Name is NVARCHAR(250)</span>
+    <span class="function">LEFT</span>(telefone, <span class="number">50</span>)             <span class="keyword">AS</span> ContactPhone, <span class="comment">-- Jobs.ContactPhone is NVARCHAR(50)</span>
+    <span class="function">LEFT</span>(email, <span class="number">250</span>)               <span class="keyword">AS</span> ContactEmail  <span class="comment">-- Jobs.ContactEmail is NVARCHAR(250)</span>
+<span class="keyword">FROM</span> <span class="function">OPENQUERY</span>(<span class="placeholder">srvphc</span>, <span class="string">'SELECT descricao, telefone, email FROM inersel.dbo.opc'</span>);</code></pre>
+
+        <div class="note"><strong>Why?</strong> PHC fields are often oversized or contain concatenated data (e.g., phone + contact name in one field). Without <code>LEFT()</code>, you get: <em>"String or binary data would be truncated"</em>.</div>
+    </div>
+
+    <!-- 13. UPSERT -->
+    <div class="section" id="upsert">
+        <h2>13. UPSERT Patterns (UPDATE + INSERT) <span class="tag tag-standard">data sync</span></h2>
+
+        <p>SQL Server doesn't have a native UPSERT keyword. Use UPDATE-then-INSERT or MERGE.</p>
+
+        <h3>Pattern 1: UPDATE existing, then INSERT new (recommended)</h3>
+        <pre><code><span class="comment">-- Step 1: Update rows that already exist (matched by Code)</span>
+<span class="keyword">UPDATE</span> target <span class="keyword">SET</span>
+    target.Name      = source.Name,
+    target.UpdatedAt = <span class="function">GETDATE</span>()
+<span class="keyword">FROM</span> [dbo].[Clients] target
+<span class="keyword">INNER JOIN</span> #StagedData source
+    <span class="keyword">ON</span> target.Code = source.Code <span class="keyword">COLLATE</span> SQL_Latin1_General_CP1_CI_AI;
+
+<span class="comment">-- Step 2: Insert rows that don't exist yet</span>
+<span class="keyword">INSERT INTO</span> [dbo].[Clients] ([Name], [Code], [IsActive], [CreatedAt])
+<span class="keyword">SELECT</span> source.Name, source.Code, <span class="number">1</span>, <span class="function">GETDATE</span>()
+<span class="keyword">FROM</span> #StagedData source
+<span class="keyword">WHERE NOT EXISTS</span> (
+    <span class="keyword">SELECT</span> <span class="number">1</span> <span class="keyword">FROM</span> [dbo].[Clients] c
+    <span class="keyword">WHERE</span> c.Code = source.Code <span class="keyword">COLLATE</span> SQL_Latin1_General_CP1_CI_AI
+);</code></pre>
+
+        <div class="success"><strong>Why this pattern?</strong> It's explicit, easy to debug, and you can capture <code>@@ROWCOUNT</code> separately for updates vs inserts. MERGE exists but has known bugs and is harder to read.</div>
+
+        <h3>Capture row counts for reporting</h3>
+        <pre><code><span class="keyword">UPDATE</span> ... ;
+<span class="keyword">DECLARE</span> @Updated <span class="keyword">INT</span> = <span class="function">@@ROWCOUNT</span>;
+
+<span class="keyword">INSERT INTO</span> ... ;
+<span class="keyword">DECLARE</span> @Inserted <span class="keyword">INT</span> = <span class="function">@@ROWCOUNT</span>;
+
+<span class="keyword">SELECT</span> @Updated <span class="keyword">AS</span> Updated, @Inserted <span class="keyword">AS</span> Inserted;</code></pre>
+
+        <div class="note"><strong>COLLATE:</strong> When matching strings from different databases or linked servers, always add <code>COLLATE SQL_Latin1_General_CP1_CI_AI</code> to avoid collation conflicts. CI = Case Insensitive, AI = Accent Insensitive.</div>
+
+        <h3>NOT EXISTS vs NOT IN</h3>
+        <pre><code><span class="comment">-- BAD: NOT IN fails silently with NULLs!</span>
+<span class="keyword">WHERE</span> Code <span class="keyword">NOT IN</span> (<span class="keyword">SELECT</span> Code <span class="keyword">FROM</span> Targets)
+<span class="comment">-- If any Code in Targets is NULL, the ENTIRE NOT IN returns empty!</span>
+
+<span class="comment">-- GOOD: NOT EXISTS handles NULLs correctly</span>
+<span class="keyword">WHERE NOT EXISTS</span> (
+    <span class="keyword">SELECT</span> <span class="number">1</span> <span class="keyword">FROM</span> Targets t <span class="keyword">WHERE</span> t.Code = source.Code
+)</code></pre>
+
+        <div class="warning"><strong>NULL trap:</strong> <code>NOT IN</code> with a subquery that can return NULLs will return zero rows. Always prefer <code>NOT EXISTS</code> or guard with <code>WHERE ISNULL(Code, '') &lt;&gt; ''</code>.</div>
+    </div>
+
+    <!-- 14. Idempotent Schema -->
+    <div class="section" id="idempotent">
+        <h2>14. Idempotent Schema Changes <span class="tag tag-safe">re-runnable</span></h2>
+
+        <p>Scripts that can be run multiple times without error. Essential for migration scripts.</p>
+
+        <h3>Add column only if it doesn't exist</h3>
+        <pre><code><span class="keyword">IF NOT EXISTS</span> (
+    <span class="keyword">SELECT</span> <span class="number">1</span> <span class="keyword">FROM</span> INFORMATION_SCHEMA.COLUMNS
+    <span class="keyword">WHERE</span> TABLE_NAME = <span class="string">'Jobs'</span> <span class="keyword">AND</span> COLUMN_NAME = <span class="string">'TenderType'</span>
+)
+<span class="keyword">BEGIN</span>
+    <span class="keyword">ALTER TABLE</span> [dbo].[Jobs] <span class="keyword">ADD</span> [TenderType] <span class="keyword">NVARCHAR</span>(<span class="number">100</span>) <span class="keyword">NULL</span>;
+<span class="keyword">END</span>
+<span class="keyword">GO</span></code></pre>
+
+        <h3>Add column with default constraint (named)</h3>
+        <pre><code><span class="keyword">IF NOT EXISTS</span> (
+    <span class="keyword">SELECT</span> <span class="number">1</span> <span class="keyword">FROM</span> INFORMATION_SCHEMA.COLUMNS
+    <span class="keyword">WHERE</span> TABLE_NAME = <span class="string">'Clients'</span> <span class="keyword">AND</span> COLUMN_NAME = <span class="string">'IsActive'</span>
+)
+<span class="keyword">BEGIN</span>
+    <span class="keyword">ALTER TABLE</span> [dbo].[Clients]
+        <span class="keyword">ADD</span> [IsActive] <span class="keyword">BIT NOT NULL</span>
+        <span class="keyword">CONSTRAINT</span> DF_Clients_IsActive <span class="keyword">DEFAULT</span> <span class="number">1</span>;
+<span class="keyword">END</span></code></pre>
+
+        <div class="info"><strong>Named constraints:</strong> Always name your DEFAULT constraints (<code>DF_Table_Column</code>). Anonymous constraints get random names, making them impossible to drop later.</div>
+
+        <h3>Create index only if it doesn't exist</h3>
+        <pre><code><span class="keyword">IF NOT EXISTS</span> (
+    <span class="keyword">SELECT</span> <span class="number">1</span> <span class="keyword">FROM</span> sys.indexes
+    <span class="keyword">WHERE</span> name = <span class="string">'IX_Clients_Code'</span>
+      <span class="keyword">AND</span> object_id = <span class="function">OBJECT_ID</span>(<span class="string">'dbo.Clients'</span>)
+)
+<span class="keyword">BEGIN</span>
+    <span class="keyword">CREATE UNIQUE INDEX</span> [IX_Clients_Code] <span class="keyword">ON</span> [dbo].[Clients] ([Code]);
+<span class="keyword">END</span></code></pre>
+
+        <h3>Drop and recreate a stored procedure</h3>
+        <pre><code><span class="keyword">IF</span> <span class="function">OBJECT_ID</span>(<span class="string">'[dbo].[MyProcedure]'</span>, <span class="string">'P'</span>) <span class="keyword">IS NOT NULL</span>
+    <span class="keyword">DROP PROCEDURE</span> [dbo].[MyProcedure];
+<span class="keyword">GO</span>
+
+<span class="keyword">CREATE PROCEDURE</span> [dbo].[MyProcedure]
+<span class="keyword">AS</span>
+<span class="keyword">BEGIN</span>
+    <span class="comment">-- ...</span>
+<span class="keyword">END</span>
+<span class="keyword">GO</span></code></pre>
+
+        <h3>Reset identity seed (after TRUNCATE or manual cleanup)</h3>
+        <pre><code><span class="comment">-- Reset to 0 (next INSERT gets Id = 1)</span>
+<span class="keyword">DBCC</span> <span class="function">CHECKIDENT</span> (<span class="string">'Clients'</span>, RESEED, <span class="number">0</span>);
+
+<span class="comment">-- Or let SQL Server figure out the next value</span>
+<span class="keyword">DBCC</span> <span class="function">CHECKIDENT</span> (<span class="string">'Clients'</span>, RESEED);</code></pre>
+
+        <div class="note"><strong>TRUNCATE vs DELETE:</strong> <code>TRUNCATE TABLE</code> auto-resets the identity seed. <code>DELETE FROM</code> does not &mdash; you need <code>DBCC CHECKIDENT</code> manually.</div>
+    </div>
+
+    <!-- 15. Stored Procedures -->
+    <div class="section" id="stored-procs">
+        <h2>15. Stored Procedures with Error Handling <span class="tag tag-standard">patterns</span></h2>
+
+        <h3>Template: Transaction + TRY/CATCH</h3>
+        <pre><code><span class="keyword">CREATE PROCEDURE</span> [dbo].[<span class="placeholder">MyImportProcedure</span>]
+    @CreatedByUserId <span class="keyword">INT</span> = <span class="keyword">NULL</span>
+<span class="keyword">AS</span>
+<span class="keyword">BEGIN</span>
+    <span class="keyword">SET NOCOUNT ON</span>;
+
+    <span class="comment">-- Stage external data into temp table first</span>
+    <span class="keyword">IF</span> <span class="function">OBJECT_ID</span>(<span class="string">'tempdb..#Staged'</span>) <span class="keyword">IS NOT NULL</span>
+        <span class="keyword">DROP TABLE</span> #Staged;
+
+    <span class="keyword">SELECT</span> ...
+    <span class="keyword">INTO</span> #Staged
+    <span class="keyword">FROM</span> <span class="function">OPENQUERY</span>(...);
+
+    <span class="keyword">BEGIN TRY</span>
+        <span class="keyword">BEGIN TRANSACTION</span>;
+
+        <span class="comment">-- 1. UPDATE existing</span>
+        <span class="keyword">UPDATE</span> ... ;
+        <span class="keyword">DECLARE</span> @Updated <span class="keyword">INT</span> = <span class="function">@@ROWCOUNT</span>;
+
+        <span class="comment">-- 2. INSERT new</span>
+        <span class="keyword">INSERT INTO</span> ... ;
+        <span class="keyword">DECLARE</span> @Inserted <span class="keyword">INT</span> = <span class="function">@@ROWCOUNT</span>;
+
+        <span class="keyword">COMMIT TRANSACTION</span>;
+
+        <span class="comment">-- Summary (returned as result set)</span>
+        <span class="keyword">SELECT</span> @Updated <span class="keyword">AS</span> Updated, @Inserted <span class="keyword">AS</span> Inserted;
+
+    <span class="keyword">END TRY</span>
+    <span class="keyword">BEGIN CATCH</span>
+        <span class="keyword">IF</span> <span class="function">@@TRANCOUNT</span> > <span class="number">0</span>
+            <span class="keyword">ROLLBACK TRANSACTION</span>;
+
+        <span class="keyword">DECLARE</span> @Msg  <span class="keyword">NVARCHAR</span>(<span class="number">4000</span>) = <span class="function">ERROR_MESSAGE</span>();
+        <span class="keyword">DECLARE</span> @Sev  <span class="keyword">INT</span>            = <span class="function">ERROR_SEVERITY</span>();
+        <span class="keyword">DECLARE</span> @State <span class="keyword">INT</span>           = <span class="function">ERROR_STATE</span>();
+
+        <span class="keyword">RAISERROR</span>(@Msg, @Sev, @State);
+    <span class="keyword">END CATCH</span>
+
+    <span class="comment">-- Cleanup</span>
+    <span class="keyword">IF</span> <span class="function">OBJECT_ID</span>(<span class="string">'tempdb..#Staged'</span>) <span class="keyword">IS NOT NULL</span>
+        <span class="keyword">DROP TABLE</span> #Staged;
+<span class="keyword">END</span></code></pre>
+
+        <div class="success"><strong>Why this pattern?</strong> If any statement fails, the CATCH block rolls back the entire transaction &mdash; no partial data. The RAISERROR re-throws the error so the caller (SSMS, sqlcmd, app) sees it.</div>
+
+        <div class="warning"><strong>Transaction count mismatch:</strong> If you see <em>"Transaction count after EXECUTE indicates a mismatching number of BEGIN and COMMIT"</em>, it means an error occurred inside the TRY but the CATCH didn't roll back properly, or an error happened outside the TRY/CATCH. Always check <code>@@TRANCOUNT > 0</code> before rolling back.</div>
+
+        <h3>SET NOCOUNT ON</h3>
+        <pre><code><span class="keyword">SET NOCOUNT ON</span>;
+<span class="comment">-- Suppresses "(X rows affected)" messages</span>
+<span class="comment">-- Essential in procedures! Without it, every UPDATE/INSERT</span>
+<span class="comment">-- sends a message that can confuse client applications</span></code></pre>
+    </div>
+
+    <!-- 16. Data Migration -->
+    <div class="section" id="data-migration">
+        <h2>16. Data Migration & Cleanup Patterns <span class="tag tag-standard">real-world</span></h2>
+
+        <h3>Remap foreign keys (old ID &rarr; new ID)</h3>
+        <pre><code><span class="comment">-- Jobs had raw PHC client numbers (e.g., 210010) as ClientId.</span>
+<span class="comment">-- After creating a Clients table, remap to Clients.Id.</span>
+<span class="keyword">UPDATE</span> j <span class="keyword">SET</span>
+    j.ClientId = c.Id
+<span class="keyword">FROM</span> Jobs j
+<span class="keyword">INNER JOIN</span> Clients c
+    <span class="keyword">ON</span> <span class="keyword">CAST</span>(j.ClientId <span class="keyword">AS NVARCHAR</span>(<span class="number">150</span>)) = c.Code
+<span class="keyword">WHERE</span> j.ClientId <span class="keyword">IS NOT NULL</span>
+  <span class="keyword">AND</span> j.ClientId &lt;&gt; c.Id
+  <span class="comment">-- Guard: don't remap if ClientId already points to a valid Client</span>
+  <span class="keyword">AND NOT EXISTS</span> (
+      <span class="keyword">SELECT</span> <span class="number">1</span> <span class="keyword">FROM</span> Clients x <span class="keyword">WHERE</span> x.Id = j.ClientId
+  );</code></pre>
+
+        <div class="info"><strong>The NOT EXISTS guard</strong> is crucial for idempotency. Without it, re-running the script could wrongly remap already-correct IDs (e.g., ClientId=1 matching Code='1').</div>
+
+        <h3>Remap by name (when IDs are lost)</h3>
+        <pre><code><span class="comment">-- Recovery: ClientId was NULLed but ClientName still has data</span>
+<span class="keyword">UPDATE</span> j <span class="keyword">SET</span> j.ClientId = c.Id
+<span class="keyword">FROM</span> Jobs j
+<span class="keyword">INNER JOIN</span> Clients c
+    <span class="keyword">ON</span> j.ClientName = c.Name <span class="keyword">COLLATE</span> SQL_Latin1_General_CP1_CI_AI
+<span class="keyword">WHERE</span> j.ClientId <span class="keyword">IS NULL</span>
+  <span class="keyword">AND</span> j.ClientName <span class="keyword">IS NOT NULL</span>;</code></pre>
+
+        <h3>Extract data from concatenated fields</h3>
+        <pre><code><span class="comment">-- Old import crammed email + phone into Notes:</span>
+<span class="comment">-- "Email: john@example.com | Tel: 912345678"</span>
+
+<span class="comment">-- Extract email</span>
+<span class="keyword">UPDATE</span> j <span class="keyword">SET</span>
+    j.ContactEmail = <span class="keyword">RTRIM</span>(<span class="keyword">LTRIM</span>(
+        <span class="function">SUBSTRING</span>(
+            j.Notes,
+            <span class="function">CHARINDEX</span>(<span class="string">'Email:'</span>, j.Notes) + <span class="number">6</span>,
+            <span class="keyword">CASE</span>
+                <span class="keyword">WHEN</span> <span class="function">CHARINDEX</span>(<span class="string">'|'</span>, j.Notes, <span class="function">CHARINDEX</span>(<span class="string">'Email:'</span>, j.Notes)) > <span class="number">0</span>
+                <span class="keyword">THEN</span> <span class="function">CHARINDEX</span>(<span class="string">'|'</span>, j.Notes, <span class="function">CHARINDEX</span>(<span class="string">'Email:'</span>, j.Notes))
+                     - <span class="function">CHARINDEX</span>(<span class="string">'Email:'</span>, j.Notes) - <span class="number">6</span>
+                <span class="keyword">ELSE</span> <span class="function">LEN</span>(j.Notes)
+            <span class="keyword">END</span>
+        )
+    ))
+<span class="keyword">FROM</span> Jobs j
+<span class="keyword">WHERE</span> j.ContactEmail <span class="keyword">IS NULL</span>
+  <span class="keyword">AND</span> j.Notes <span class="keyword">LIKE</span> <span class="string">'%Email:%'</span>;</code></pre>
+
+        <div class="note"><strong>Pattern:</strong> <code>CHARINDEX</code> finds the marker, <code>SUBSTRING</code> extracts from there to the next delimiter (<code>|</code>) or end of string. Always <code>RTRIM(LTRIM(...))</code> the result.</div>
+
+        <h3>Move data between columns (fix wrong mappings)</h3>
+        <pre><code><span class="comment">-- Old import put tender type in Status column</span>
+<span class="keyword">UPDATE</span> Jobs <span class="keyword">SET</span>
+    TenderType = Status,
+    Status = <span class="string">'Planned'</span>
+<span class="keyword">WHERE</span> Status <span class="keyword">IN</span> (
+    <span class="string">N'Proposta'</span>, <span class="string">N'Concurso P&uacute;blico'</span>, <span class="string">N'Ajuste Direto'</span>,
+    <span class="string">N'Concurso Limitado'</span>, <span class="string">N'Convite'</span>, <span class="string">N'Outros'</span>
+);</code></pre>
+
+        <h3>Populate a new table from existing data</h3>
+        <pre><code><span class="comment">-- Create Client rows from distinct ClientId/ClientName in Jobs</span>
+<span class="keyword">INSERT INTO</span> Clients ([Name], [Code], [IsActive], [CreatedAt])
+<span class="keyword">SELECT</span>
+    <span class="function">COALESCE</span>(j.ClientName, <span class="string">'Cliente '</span> + <span class="keyword">CAST</span>(j.ClientId <span class="keyword">AS NVARCHAR</span>(<span class="number">50</span>))),
+    <span class="keyword">CAST</span>(j.ClientId <span class="keyword">AS NVARCHAR</span>(<span class="number">150</span>)),
+    <span class="number">1</span>,
+    <span class="function">GETDATE</span>()
+<span class="keyword">FROM</span> (
+    <span class="keyword">SELECT DISTINCT</span> ClientId, ClientName
+    <span class="keyword">FROM</span> Jobs
+    <span class="keyword">WHERE</span> ClientId <span class="keyword">IS NOT NULL</span>
+) j
+<span class="keyword">WHERE NOT EXISTS</span> (
+    <span class="keyword">SELECT</span> <span class="number">1</span> <span class="keyword">FROM</span> Clients c
+    <span class="keyword">WHERE</span> c.Code = <span class="keyword">CAST</span>(j.ClientId <span class="keyword">AS NVARCHAR</span>(<span class="number">150</span>))
+);</code></pre>
+
+        <div class="success"><strong>COALESCE for fallbacks:</strong> <code>COALESCE(ClientName, 'Cliente ' + Id)</code> ensures you always get a meaningful name, even if the original was NULL.</div>
+
+        <h3>Subquery in UPDATE for cross-table lookup</h3>
+        <pre><code><span class="comment">-- Set ClientId by looking up from another table</span>
+<span class="keyword">UPDATE</span> j <span class="keyword">SET</span>
+    j.ClientId = (<span class="keyword">SELECT TOP</span> <span class="number">1</span> Id <span class="keyword">FROM</span> Clients <span class="keyword">WHERE</span> Code = p.PHCClientNo)
+<span class="keyword">FROM</span> Jobs j
+<span class="keyword">INNER JOIN</span> #PHCJobs p <span class="keyword">ON</span> j.Code = p.Code;</code></pre>
+
+        <div class="note"><strong>TOP 1:</strong> Use <code>SELECT TOP 1</code> in subqueries that should return a single value. If there's ever a duplicate, the query won't fail &mdash; it just picks one. Without TOP 1, a multi-row result causes an error.</div>
+    </div>
+
+</body>
+</html>

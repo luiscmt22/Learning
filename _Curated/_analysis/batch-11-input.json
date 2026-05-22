@@ -1,0 +1,74 @@
+[
+  {
+    "src_rel": "JScript/Document 1.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\JScript\\Document 1.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\JScript__Document 1.pdf.txt",
+    "word_count": 3825,
+    "category_legacy": "12-JavaScript"
+  },
+  {
+    "src_rel": "JScript/Select2_JQuery_explanation.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\JScript\\Select2_JQuery_explanation.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\JScript__Select2_JQuery_explanation.docx.txt",
+    "word_count": 3014,
+    "category_legacy": "12-JavaScript"
+  },
+  {
+    "src_rel": "Education/17-Database-Reset-And-Migration.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\17-Database-Reset-And-Migration.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__17-Database-Reset-And-Migration.html.txt",
+    "word_count": 2310,
+    "category_legacy": "07-Database-EF-SQL"
+  },
+  {
+    "src_rel": "Education/Stock/PT/SistemaServiçoStockInfoGráfico.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Stock\\PT\\SistemaServiçoStockInfoGráfico.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Stock__PT__SistemaServiçoStockInfoGráfico.docx.txt",
+    "word_count": 1631,
+    "category_legacy": "17-Domain-Examples-Stock"
+  },
+  {
+    "src_rel": "Education/ForDummies/09-GenericScheduleGrid-ForDummies.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\ForDummies\\09-GenericScheduleGrid-ForDummies.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__ForDummies__09-GenericScheduleGrid-ForDummies.md.txt",
+    "word_count": 1316,
+    "category_legacy": "19-For-Dummies"
+  },
+  {
+    "src_rel": "Microsoft_Fullstack/ASyncPattern.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Microsoft_Fullstack\\ASyncPattern.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Microsoft_Fullstack__ASyncPattern.docx.txt",
+    "word_count": 964,
+    "category_legacy": "08-Concurrency-and-Async"
+  },
+  {
+    "src_rel": "Education/02-Role-Based-Authorization.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\02-Role-Based-Authorization.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__02-Role-Based-Authorization.md.txt",
+    "word_count": 524,
+    "category_legacy": "06-Auth-and-Identity"
+  },
+  {
+    "src_rel": "Microsoft_Fullstack/UnitTestingTutorial.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Microsoft_Fullstack\\UnitTestingTutorial.pdf",
+    "src_ext": ".pdf",
+    "has_text": false,
+    "text_abs": null,
+    "word_count": 0,
+    "category_legacy": "13-Testing"
+  }
+]

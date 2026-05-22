@@ -1,0 +1,74 @@
+[
+  {
+    "src_rel": "Education/Educational_ML/neural-network-journeyV2.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Educational_ML\\neural-network-journeyV2.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Educational_ML__neural-network-journeyV2.html.txt",
+    "word_count": 5191,
+    "category_legacy": "18-Machine-Learning"
+  },
+  {
+    "src_rel": "Education/28-Password-Security-BCrypt.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\28-Password-Security-BCrypt.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__28-Password-Security-BCrypt.html.txt",
+    "word_count": 3632,
+    "category_legacy": "06-Auth-and-Identity"
+  },
+  {
+    "src_rel": "Education/18-Migration-And-Seeding-Mechanism.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\18-Migration-And-Seeding-Mechanism.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__18-Migration-And-Seeding-Mechanism.html.txt",
+    "word_count": 2881,
+    "category_legacy": "07-Database-EF-SQL"
+  },
+  {
+    "src_rel": "Education/Stock/ENG/StockServiceSystemFormalDocumentation.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Stock\\ENG\\StockServiceSystemFormalDocumentation.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Stock__ENG__StockServiceSystemFormalDocumentation.pdf.txt",
+    "word_count": 2064,
+    "category_legacy": "17-Domain-Examples-Stock"
+  },
+  {
+    "src_rel": "Education/FactoryFloor/ENG/FactoryFloorProductionSystem.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\FactoryFloor\\ENG\\FactoryFloorProductionSystem.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__FactoryFloor__ENG__FactoryFloorProductionSystem.pdf.txt",
+    "word_count": 1495,
+    "category_legacy": "16-Domain-Examples-FactoryFloor"
+  },
+  {
+    "src_rel": "Education/FactoryFloor/ENG/FactoryFloorProductionSystemInfoGraphic.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\FactoryFloor\\ENG\\FactoryFloorProductionSystemInfoGraphic.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__FactoryFloor__ENG__FactoryFloorProductionSystemInfoGraphic.docx.txt",
+    "word_count": 1260,
+    "category_legacy": "16-Domain-Examples-FactoryFloor"
+  },
+  {
+    "src_rel": "Education/12-CSharp-Flags-Enum.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\12-CSharp-Flags-Enum.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__12-CSharp-Flags-Enum.md.txt",
+    "word_count": 815,
+    "category_legacy": "04-CSharp-Language"
+  },
+  {
+    "src_rel": "Education/Educational_ML/sigmoid-derivative.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Educational_ML\\sigmoid-derivative.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Educational_ML__sigmoid-derivative.html.txt",
+    "word_count": 336,
+    "category_legacy": "18-Machine-Learning"
+  }
+]

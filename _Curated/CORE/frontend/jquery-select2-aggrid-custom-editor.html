@@ -1,0 +1,1532 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>jQuery, Select2 and AG Grid Custom Editors/Filters - Method Breakdown</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #07090f;
+  --bg-1: #0c111c;
+  --bg-2: #11182a;
+  --bg-3: #1a2238;
+  --bg-4: #232e4a;
+  --border: #1e2840;
+  --border-2: #2a3551;
+  --border-3: #3a4870;
+  --text: #e9eef8;
+  --text-dim: #94a3bf;
+  --text-mut: #5f6b86;
+  --accent: #6aa6ff;
+  --accent-strong: #3b82f6;
+  --accent-2: #b86aff;
+  --accent-3: #f472b6;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+  --info: #38bdf8;
+  --code-bg: #0a1020;
+  --code-border: #1a2340;
+  --shadow: 0 8px 32px rgba(0,0,0,0.55);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.35);
+  --shadow-glow: 0 0 0 1px rgba(106,166,255,0.18), 0 12px 40px rgba(106,166,255,0.10);
+}
+
+/* Doc-type theming */
+[data-doc-type="core-concept"] {
+  --doc-accent: #6aa6ff;
+  --doc-accent-rgb: 106,166,255;
+  --doc-eyebrow: "Concept";
+}
+[data-doc-type="applied-implementation"] {
+  --doc-accent: #b86aff;
+  --doc-accent-rgb: 184,106,255;
+  --doc-eyebrow: "Implementation";
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font: 16px/1.7 -apple-system, "Inter", \'Segoe UI\', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+::selection { background: rgba(106,166,255,0.30); }
+
+/* ═══ Top bar ═══════════════════════════════════════════════════════ */
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(7,9,15,0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 28px;
+  display: flex; align-items: center; gap: 16px;
+}
+.topbar .crumbs {
+  flex: 1; font-size: 13px; color: var(--text-dim);
+  display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden;
+}
+.topbar .crumbs span.sep { color: var(--text-mut); }
+.topbar .crumbs .current {
+  color: var(--text); font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.topbar .crumbs a { color: var(--text-dim); text-decoration: none; }
+.topbar .crumbs a:hover { color: var(--accent); }
+.topbar .actions { display: flex; gap: 6px; flex-shrink: 0; }
+.topbar .action {
+  font-size: 13px; padding: 6px 14px; border-radius: 8px;
+  color: var(--text-dim); text-decoration: none;
+  border: 1px solid transparent; transition: all .15s;
+}
+.topbar .action:hover {
+  color: var(--text); background: var(--bg-2); border-color: var(--border);
+  text-decoration: none;
+}
+
+/* ═══ Document layout ═══════════════════════════════════════════════ */
+.layout {
+  display: grid; grid-template-columns: 280px 1fr;
+  max-width: 1380px; margin: 0 auto; align-items: start;
+}
+.layout.no-toc { grid-template-columns: 1fr; max-width: 940px; }
+
+.toc-sidebar {
+  position: sticky; top: 70px;
+  align-self: start;
+  max-height: calc(100vh - 90px);
+  overflow-y: auto;
+  padding: 40px 8px 40px 28px;
+  border-right: 1px solid var(--border);
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+.toc-sidebar::-webkit-scrollbar { width: 6px; }
+.toc-sidebar::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
+.toc-sidebar h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px; padding-left: 14px; font-weight: 600;
+}
+.toc-sidebar ol { list-style: none; margin: 0; padding: 0; }
+.toc-sidebar li { margin: 0; }
+.toc-sidebar a {
+  display: block;
+  padding: 5px 14px;
+  border-left: 2px solid transparent;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 13px;
+  line-height: 1.5;
+  transition: all .15s;
+  word-break: break-word;
+}
+.toc-sidebar a:hover {
+  color: var(--text); border-left-color: var(--border-2); text-decoration: none;
+}
+.toc-sidebar a.active {
+  color: var(--doc-accent, var(--accent));
+  border-left-color: var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.07);
+}
+.toc-sidebar .lvl-3 a { padding-left: 28px; font-size: 12.5px; }
+.toc-sidebar .lvl-4 a, .toc-sidebar .lvl-5 a, .toc-sidebar .lvl-6 a {
+  padding-left: 42px; font-size: 12px;
+}
+
+.content { padding: 40px 64px 120px; min-width: 0; }
+
+/* ═══ Hero (per-doc) ════════════════════════════════════════════════ */
+.doc-hero {
+  position: relative;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 32px;
+  margin-bottom: 36px;
+}
+.doc-hero::before {
+  content: ''; position: absolute;
+  top: -40px; left: -64px; right: -64px; height: 220px;
+  background: radial-gradient(ellipse 60% 100% at 0% 0%, rgba(var(--doc-accent-rgb, 106,166,255),0.10), transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+.doc-hero > * { position: relative; z-index: 1; }
+.doc-hero .eyebrow {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  color: var(--doc-accent, var(--accent)); font-weight: 600;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.doc-hero .eyebrow .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--doc-accent, var(--accent));
+  box-shadow: 0 0 8px var(--doc-accent, var(--accent));
+}
+.doc-hero h1 {
+  font-size: 40px; line-height: 1.1;
+  margin: 12px 0 16px;
+  font-weight: 700; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.doc-hero .one-liner {
+  font-size: 18px; line-height: 1.55;
+  color: var(--text-dim);
+  margin: 0 0 20px;
+  max-width: 70ch;
+}
+.doc-hero .meta-row {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  font-size: 12.5px;
+}
+.meta-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--bg-2); border: 1px solid var(--border);
+  padding: 5px 12px; border-radius: 14px;
+  font-size: 12px; color: var(--text-dim);
+}
+.meta-pill .num { color: var(--text); font-weight: 600; font-feature-settings: "tnum"; }
+.meta-pill.fmt-md   { color: #6aa6ff; border-color: rgba(106,166,255,0.30); background: rgba(106,166,255,0.06); }
+.meta-pill.fmt-pdf  { color: #f87171; border-color: rgba(248,113,113,0.30); background: rgba(248,113,113,0.06); }
+.meta-pill.fmt-docx { color: #38bdf8; border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.fmt-html { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.fmt-htm  { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.complexity-beginner    { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.06); }
+.meta-pill.complexity-intermediate { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.complexity-advanced     { color: #fb923c; border-color: rgba(251,146,60,0.30); background: rgba(251,146,60,0.06); }
+.meta-pill.complexity-unknown      { color: var(--text-mut); }
+.meta-pill.source code { background: transparent; padding: 0; border: 0; font-size: 11px; color: var(--text-dim); }
+
+/* ═══ Curation panels ═══════════════════════════════════════════════ */
+
+.curation {
+  margin-bottom: 36px;
+}
+
+.intro-hook {
+  font-size: 18px;
+  line-height: 1.65;
+  color: var(--text);
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  padding: 8px 0 8px 20px;
+  margin: 0 0 28px;
+  font-style: italic;
+  font-weight: 350;
+}
+
+.exec-summary {
+  background: linear-gradient(135deg, rgba(var(--doc-accent-rgb, 106,166,255),0.07), rgba(var(--doc-accent-rgb, 106,166,255),0.02));
+  border: 1px solid rgba(var(--doc-accent-rgb, 106,166,255),0.20);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 0 0 24px;
+}
+.exec-summary h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent, var(--accent));
+  font-weight: 600;
+}
+.exec-summary p {
+  margin: 0; font-size: 15px; line-height: 1.65; color: var(--text);
+}
+
+.metaphor-callout {
+  display: flex; gap: 14px; align-items: flex-start;
+  background: rgba(184,106,255,0.06);
+  border: 1px solid rgba(184,106,255,0.25);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 0 0 24px;
+}
+.metaphor-callout .icon {
+  font-size: 22px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 4px rgba(184,106,255,0.4));
+}
+.metaphor-callout .body {
+  flex: 1; font-size: 14.5px; line-height: 1.6;
+  color: var(--text);
+}
+.metaphor-callout .body .label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--accent-2); font-weight: 700;
+  display: block; margin-bottom: 4px;
+}
+
+.tutorial-structure {
+  display: grid; grid-template-columns: 1fr; gap: 14px;
+  margin: 0 0 28px;
+}
+.tutorial-section {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--doc-accent);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+}
+.tutorial-section h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent);
+  font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.tutorial-section h3 .num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--doc-accent); color: var(--bg);
+  font-size: 10px; font-weight: 700;
+}
+.tutorial-section p {
+  margin: 0; font-size: 14.5px; line-height: 1.65; color: var(--text);
+}
+
+.context-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin: 0 0 28px;
+}
+.context-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.context-card h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut);
+  font-weight: 600;
+}
+.context-card ul {
+  margin: 0; padding: 0; list-style: none;
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.context-card li {
+  background: var(--bg-3);
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--text-dim);
+  border: 1px solid var(--border-2);
+}
+.context-card.prereqs li { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.05); }
+.context-card.builds li { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.05); }
+.context-card.concepts li { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.05); }
+
+.takeaways {
+  background: linear-gradient(135deg, rgba(74,222,128,0.05), rgba(74,222,128,0.01));
+  border: 1px solid rgba(74,222,128,0.20);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin: 36px 0 0;
+}
+.takeaways h3 {
+  margin: 0 0 10px;
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--ok); font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.takeaways h3::before {
+  content: '✓';
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(74,222,128,0.18);
+  font-size: 12px; font-weight: 700;
+}
+.takeaways ul { margin: 0; padding-left: 22px; }
+.takeaways li {
+  font-size: 14.5px; line-height: 1.6; color: var(--text);
+  margin: 6px 0;
+}
+
+/* ═══ Article body ══════════════════════════════════════════════════ */
+article { font-size: 16px; line-height: 1.78; color: var(--text); max-width: 78ch; }
+article > * + * { margin-top: 1.0em; }
+article p { margin: 0; }
+article h1, article h2, article h3, article h4 {
+  font-weight: 650; letter-spacing: -0.01em; color: var(--text);
+  scroll-margin-top: 90px; position: relative;
+}
+article h1 { font-size: 28px; margin-top: 56px; }
+article h2 {
+  font-size: 24px; margin-top: 56px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+article h3 { font-size: 19px; margin-top: 36px; }
+article h4 { font-size: 16.5px; margin-top: 24px; color: var(--text-dim); }
+article h2::before, article h3::before {
+  content: '#'; position: absolute; left: -28px;
+  color: var(--text-mut); font-weight: 400;
+  opacity: 0; transition: opacity .15s;
+}
+article h2:hover::before, article h3:hover::before { opacity: 1; }
+
+article ul, article ol { padding-left: 1.5em; margin: 0; }
+article li { margin: .35em 0; }
+article li > p { margin: 0; }
+
+article hr {
+  border: 0; height: 1px; background: var(--border); margin: 36px 0;
+}
+
+article blockquote {
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.05);
+  padding: 14px 18px;
+  margin: 22px 0;
+  border-radius: 0 8px 8px 0;
+  color: var(--text-dim);
+}
+article blockquote p { margin: 0; }
+
+article pre {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-size: 13.5px;
+  line-height: 1.65;
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+article pre::-webkit-scrollbar { height: 7px; }
+article pre::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+article code, article pre {
+  font-family: "JetBrains Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+  font-feature-settings: "calt" 1;
+}
+article code.il {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  padding: 1px 7px; border-radius: 5px;
+  font-size: 0.88em;
+  color: var(--accent);
+}
+.code-block { position: relative; }
+.code-block .copy-btn {
+  position: absolute; top: 8px; right: 8px;
+  background: var(--bg-3); border: 1px solid var(--border);
+  color: var(--text-dim); padding: 4px 11px; border-radius: 5px;
+  font-size: 11px; font-family: inherit; cursor: pointer;
+  opacity: 0; transition: all .15s;
+}
+.code-block:hover .copy-btn { opacity: 1; }
+.code-block .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+.code-block .copy-btn.copied { color: var(--ok); border-color: var(--ok); }
+
+article pre .kw   { color: #c084fc; font-weight: 500; }
+article pre .type { color: #67e8f9; }
+article pre .str  { color: #fcd34d; }
+article pre .num  { color: #fb923c; }
+article pre .cmt  { color: #6b7d99; font-style: italic; }
+
+article .tbl-wrap {
+  overflow-x: auto; margin: 22px 0;
+  border-radius: 10px; border: 1px solid var(--border);
+}
+article table { border-collapse: collapse; width: 100%; font-size: 14px; }
+article th {
+  background: var(--bg-3); padding: 11px 14px; text-align: left;
+  font-weight: 600; color: var(--text);
+  border-bottom: 1px solid var(--border-2);
+}
+article td {
+  padding: 11px 14px; border-top: 1px solid var(--border); vertical-align: top;
+}
+article tr:nth-child(even) td { background: rgba(255,255,255,0.013); }
+
+article .diagram-box {
+  background: linear-gradient(135deg, #1c2540 0%, #0e1424 100%);
+  border: 1px solid var(--border-2);
+  border-radius: 12px;
+  padding: 22px 26px;
+  margin: 24px 0;
+  box-shadow: var(--shadow);
+}
+article .diagram-box pre {
+  background: transparent; border: 0; padding: 0;
+  color: #e8edf5; font-size: 13px; line-height: 1.55;
+}
+
+article .img-ref {
+  display: inline-block;
+  background: var(--bg-2); color: var(--text-mut);
+  padding: 1px 8px; border-radius: 4px;
+  font-size: 11px; font-style: normal;
+  border: 1px dashed var(--border-2);
+}
+
+/* ═══ Duplicate banners ═════════════════════════════════════════════ */
+.dup-banner {
+  background: linear-gradient(135deg, rgba(251,191,36,0.10), rgba(251,191,36,0.04));
+  border: 1px solid rgba(251,191,36,0.35);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 18px;
+  font-size: 14px; line-height: 1.55;
+  display: flex; gap: 14px; align-items: flex-start;
+}
+.dup-banner + .dup-banner { margin-top: 0; }
+.dup-banner .icon { font-size: 22px; line-height: 1.2; flex-shrink: 0; }
+.dup-banner .body { flex: 1; min-width: 0; }
+.dup-banner h4 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--warn); text-transform: uppercase; letter-spacing: 1px; }
+.dup-banner p { margin: 0; color: var(--text-dim); }
+.dup-banner ul { margin: 6px 0 0; padding-left: 22px; color: var(--text-dim); }
+.dup-banner ul li { margin: 3px 0; word-break: break-word; }
+.dup-banner code {
+  background: var(--bg-3); padding: 2px 7px; border-radius: 5px;
+  font-size: 0.92em; color: var(--text);
+}
+.dup-banner.exact {
+  border-color: rgba(248,113,113,0.40);
+  background: linear-gradient(135deg, rgba(248,113,113,0.10), rgba(248,113,113,0.04));
+}
+.dup-banner.exact h4 { color: var(--bad); }
+.dup-banner.near {
+  border-color: rgba(56,189,248,0.40);
+  background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(56,189,248,0.04));
+}
+.dup-banner.near h4 { color: var(--info); }
+.banner-stack { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+
+/* ═══ PDF page cards ════════════════════════════════════════════════ */
+.pdf-page {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin: 24px 0;
+  overflow: hidden;
+  scroll-margin-top: 90px;
+}
+.pdf-page .page-head {
+  background: var(--bg-3);
+  padding: 9px 20px;
+  font-size: 11px; font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 1.4px;
+  border-bottom: 1px solid var(--border);
+}
+.pdf-page .page-body { padding: 18px 24px 22px; }
+.pdf-page pre {
+  margin: 0; background: transparent; border: 0; padding: 0;
+  white-space: pre-wrap; word-wrap: break-word;
+  color: var(--text); font-size: 13px; line-height: 1.6;
+}
+
+.empty-note {
+  background: var(--bg-2);
+  border: 1px dashed var(--border-2);
+  border-radius: 10px;
+  padding: 18px 22px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* ═══ Cross-references + related ════════════════════════════════════ */
+.cross-refs {
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.cross-refs h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.cross-ref-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.cross-ref-list a {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: all .15s;
+}
+.cross-ref-list a:hover {
+  color: var(--text);
+  border-color: var(--doc-accent, var(--accent));
+  background: var(--bg-3);
+  text-decoration: none;
+}
+.cross-ref-list a .arrow { color: var(--doc-accent, var(--accent)); margin-right: 6px; }
+
+.related {
+  margin-top: 48px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.related h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 18px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.related-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+.related-card {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+}
+.related-card:hover {
+  border-color: var(--doc-accent, var(--accent));
+  transform: translateY(-1px);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+}
+.related-card .title {
+  font-weight: 600; font-size: 13.5px; line-height: 1.35;
+  color: var(--text);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.related-card .meta {
+  font-size: 11px; color: var(--text-mut); margin-top: 6px;
+  display: flex; gap: 8px; align-items: center;
+}
+.related-card .meta .badge {
+  padding: 1px 6px; border-radius: 3px;
+  background: var(--bg-3); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* ═══ Master index page ═════════════════════════════════════════════ */
+
+.index-hero {
+  text-align: center;
+  padding: 80px 24px 56px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.index-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 30% 0%, rgba(106,166,255,0.13), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 70% 30%, rgba(184,106,255,0.10), transparent 70%);
+  pointer-events: none;
+}
+.index-hero > * { position: relative; z-index: 1; }
+.index-hero .eyebrow {
+  color: var(--accent); font-size: 12px;
+  text-transform: uppercase; letter-spacing: 1.8px; font-weight: 600;
+}
+.index-hero h1 {
+  font-size: 56px; margin: 16px 0 12px;
+  font-weight: 750; letter-spacing: -0.025em;
+  background: linear-gradient(135deg, #6aa6ff 0%, #b86aff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.index-hero .tagline {
+  color: var(--text-dim); font-size: 18px;
+  max-width: 720px; margin: 14px auto 0; line-height: 1.6;
+}
+.search-row {
+  display: flex; gap: 12px;
+  max-width: 720px; margin: 36px auto 0;
+}
+.search-row input {
+  flex: 1;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 15px;
+  padding: 14px 22px;
+  border-radius: 14px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color .15s, box-shadow .15s;
+}
+.search-row input::placeholder { color: var(--text-mut); }
+.search-row input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(106,166,255,0.13);
+}
+
+.summary-stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  max-width: 1080px; margin: 36px auto 56px; padding: 0 24px;
+}
+.stat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  text-align: center;
+  transition: border-color .15s;
+}
+.stat-card:hover { border-color: var(--border-2); }
+.stat-card .num {
+  font-size: 32px; font-weight: 700; color: var(--accent);
+  font-feature-settings: "tnum"; line-height: 1.1;
+}
+.stat-card .lbl {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--text-mut); margin-top: 6px;
+}
+
+.split-view {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  max-width: 1320px; margin: 0 auto; padding: 0 24px 60px;
+}
+@media (max-width: 980px) {
+  .split-view { grid-template-columns: 1fr; }
+}
+
+.hub-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 32px 36px;
+  position: relative;
+  overflow: hidden;
+  transition: all .2s;
+}
+.hub-card.core::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 0% 0%, rgba(106,166,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card.applications::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 100% 0%, rgba(184,106,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card > * { position: relative; z-index: 1; }
+.hub-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.hub-card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 700;
+}
+.hub-card.core .label { color: var(--accent); }
+.hub-card.applications .label { color: var(--accent-2); }
+.hub-card h2 {
+  font-size: 32px; line-height: 1.15;
+  margin: 8px 0 12px;
+  font-weight: 700; letter-spacing: -0.02em;
+  color: var(--text);
+}
+.hub-card .desc {
+  font-size: 15px; line-height: 1.6; color: var(--text-dim);
+  margin: 0 0 24px;
+}
+.hub-card .stats {
+  display: flex; gap: 18px; margin-bottom: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-card .stats .num { color: var(--text); font-weight: 600; }
+.hub-card .cta {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 10px;
+  font-size: 13.5px; font-weight: 600;
+  text-decoration: none;
+}
+.hub-card.core .cta {
+  background: rgba(106,166,255,0.12);
+  color: var(--accent);
+  border: 1px solid rgba(106,166,255,0.30);
+}
+.hub-card.applications .cta {
+  background: rgba(184,106,255,0.12);
+  color: var(--accent-2);
+  border: 1px solid rgba(184,106,255,0.30);
+}
+.hub-card .cta:hover { text-decoration: none; transform: translateX(2px); }
+.hub-card .quick {
+  margin-top: 24px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.hub-card .quick h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut); font-weight: 600;
+}
+.hub-card .quick ul { list-style: none; margin: 0; padding: 0; }
+.hub-card .quick li { padding: 4px 0; font-size: 13px; }
+.hub-card .quick li a { color: var(--text-dim); text-decoration: none; }
+.hub-card .quick li a:hover { color: var(--text); }
+
+/* ═══ Hub page (CORE / APPLICATIONS landing) ════════════════════════ */
+
+.hub-hero {
+  padding: 64px 32px 36px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1240px; margin: 0 auto;
+}
+.hub-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 600;
+}
+.hub-hero h1 {
+  font-size: 48px; margin: 12px 0 14px;
+  font-weight: 750; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.hub-hero p {
+  color: var(--text-dim); font-size: 17px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.hub-hero .stats {
+  display: flex; gap: 22px; margin-top: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-hero .stats .num { color: var(--text); font-weight: 600; }
+
+.cat-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 18px;
+  max-width: 1280px; margin: 28px auto; padding: 0 32px 80px;
+}
+.cat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 24px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.cat-card:hover {
+  border-color: var(--border-3);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+}
+.cat-card .head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 12px;
+}
+.cat-card .head .icon {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 18px;
+  color: var(--accent);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.cat-card.app .head .icon { color: var(--accent-2); }
+.cat-card .title {
+  font-size: 18px; font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  flex: 1;
+}
+.cat-card .head .count {
+  font-size: 12px; color: var(--text-mut);
+  flex-shrink: 0;
+}
+.cat-card .tagline {
+  font-size: 13px; color: var(--accent);
+  font-weight: 500;
+  margin: 0;
+}
+.cat-card.app .tagline { color: var(--accent-2); }
+.cat-card .desc {
+  font-size: 13.5px; color: var(--text-dim);
+  line-height: 1.55;
+  margin: 4px 0 0;
+}
+
+/* ═══ Category landing (per family/domain) ══════════════════════════ */
+
+.cat-hero {
+  padding: 56px 32px 32px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1180px; margin: 0 auto;
+}
+.cat-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px; font-weight: 600;
+}
+.cat-hero h1 {
+  font-size: 42px; margin: 10px 0 14px;
+  font-weight: 700; letter-spacing: -0.02em;
+}
+.cat-hero p {
+  color: var(--text-dim); font-size: 16px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.cat-hero .stats {
+  display: flex; gap: 20px; margin-top: 22px;
+  font-size: 13px; color: var(--text-mut);
+}
+.cat-hero .stats .num { color: var(--text); font-weight: 600; }
+.cat-hero .search-row {
+  max-width: 520px; margin: 24px 0 0;
+}
+.cat-hero .search-row input { padding: 12px 18px; font-size: 14px; }
+
+.doc-cards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 14px;
+  max-width: 1180px; margin: 36px auto 96px;
+  padding: 0 32px;
+}
+.doc-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 22px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .18s;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.doc-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.doc-card.app:hover { border-color: var(--accent-2); }
+.doc-card .head {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+}
+.doc-card .title {
+  font-size: 16px; font-weight: 650; line-height: 1.3;
+  color: var(--text); flex: 1;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  letter-spacing: -0.01em;
+}
+.doc-card .badges { display: flex; gap: 4px; flex-shrink: 0; }
+.doc-card .badge {
+  font-size: 9px; padding: 2px 7px; border-radius: 3px;
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px;
+  background: var(--bg-3); color: var(--text-mut);
+}
+.doc-card .badge.dup { background: rgba(248,113,113,0.18); color: var(--bad); }
+.doc-card .badge.fmt-md { background: rgba(106,166,255,0.18); color: #6aa6ff; }
+.doc-card .badge.fmt-pdf { background: rgba(248,113,113,0.18); color: #f87171; }
+.doc-card .badge.fmt-docx { background: rgba(56,189,248,0.18); color: #38bdf8; }
+.doc-card .badge.fmt-html { background: rgba(251,191,36,0.18); color: #fbbf24; }
+.doc-card .one-liner {
+  font-size: 13.5px; color: var(--text-dim); line-height: 1.55;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  flex: 1;
+}
+.doc-card .meta {
+  display: flex; gap: 14px; font-size: 11px; color: var(--text-mut);
+  border-top: 1px solid var(--border); padding-top: 12px;
+  margin-top: auto;
+}
+.doc-card .meta .num { color: var(--text-dim); font-weight: 600; font-feature-settings: "tnum"; }
+
+/* ═══ Mobile ════════════════════════════════════════════════════════ */
+@media (max-width: 980px) {
+  .layout { grid-template-columns: 1fr; }
+  .toc-sidebar { display: none; }
+  .content { padding: 28px 24px 80px; }
+  .doc-hero h1 { font-size: 30px; }
+  .doc-hero .one-liner { font-size: 16px; }
+  .topbar { padding: 10px 18px; }
+  .index-hero h1 { font-size: 38px; }
+  .index-hero { padding: 56px 20px 36px; }
+  .hub-hero h1 { font-size: 34px; }
+  .hub-hero { padding: 40px 20px 24px; }
+  .cat-hero h1 { font-size: 32px; }
+  .cat-hero { padding: 36px 20px 24px; }
+  .doc-cards, .cat-grid { padding: 0 20px 60px; }
+  .split-view { padding: 0 20px 40px; }
+}
+</style>
+</head>
+<body data-doc-type="core-concept">
+<nav class="topbar">
+<div class="crumbs"><a href="../../00-Index.html">Learning</a><span class="sep">›</span><a href="../_Hub.html">CORE</a><span class="sep">›</span><a href="_Category.html">Blazor &amp; Frontend</a><span class="sep">›</span><span class="current">jQuery, Select2 and AG Grid Custom Editors/Filters - Method Breakdown</span></div>
+<div class="actions"><a class="action" href="jquery-select2-aggrid-custom-editor.docx" download>↓ Download</a><a class="action" href="../../00-Index.html">All docs</a></div>
+</nav>
+<div class="layout">
+<aside class="toc-sidebar"><h3>On this page</h3><ol><li class="lvl-2"><a href="#method-breakdown-initializeselect2">Method Breakdown: initializeSelect2()</a></li><li class="lvl-3"><a href="#1-function-declaration">1. Function Declaration</a></li><li class="lvl-3"><a href="#2-debug-logging">2. Debug Logging</a></li><li class="lvl-3"><a href="#3-safety-check-library-availability">3. Safety Check - Library Availability</a></li><li class="lvl-3"><a href="#4-error-handling">4. Error Handling</a></li><li class="lvl-3"><a href="#5-main-initialization-block">5. Main Initialization Block</a></li><li class="lvl-3"><a href="#6-configuration-options">6. Configuration Options</a></li><li class="lvl-4"><a href="#placeholder-text">Placeholder Text</a></li><li class="lvl-4"><a href="#clear-button">Clear Button</a></li><li class="lvl-4"><a href="#width-setting">Width Setting</a></li><li class="lvl-4"><a href="#language-configuration">Language Configuration</a></li><li class="lvl-2"><a href="#how-this-method-works-in-practice">How This Method Works in Practice:</a></li><li class="lvl-2"><a href="#key-things-to-understand">Key Things to Understand:</a></li><li class="lvl-2"><a href="#method-breakdown-jquery-document-ready">Method Breakdown: jQuery Document Ready</a></li><li class="lvl-3"><a href="#1-jquery-object-access">1. jQuery Object Access</a></li><li class="lvl-3"><a href="#2-the-parameter-function">2. The Parameter: function ($)</a></li><li class="lvl-3"><a href="#3-function-body">3. Function Body</a></li><li class="lvl-3"><a href="#4-closing-brackets">4. Closing Brackets</a></li><li class="lvl-2"><a href="#what-this-pattern-accomplishes">What This Pattern Accomplishes:</a></li><li class="lvl-3"><a href="#dom-ready-vs-window-load">DOM Ready vs Window Load</a></li><li class="lvl-3"><a href="#execution-timeline">Execution Timeline:</a></li><li class="lvl-4"><a href="#browser-starts-loading-page">Browser starts loading page</a></li><li class="lvl-4"><a href="#css-images-external-resources-load">CSS, images, external resources load</a></li><li class="lvl-4"><a href="#window-load-event-fires">Window load event fires</a></li><li class="lvl-2"><a href="#alternative-ways-to-write-this">Alternative Ways to Write This:</a></li><li class="lvl-3"><a href="#1-using-shorthand-if-safe">1. Using $ Shorthand (if safe)</a></li><li class="lvl-3"><a href="#2-shorter-syntax">2. Shorter Syntax</a></li><li class="lvl-3"><a href="#3-modern-alternative-es6">3. Modern Alternative (ES6+)</a></li><li class="lvl-3"><a href="#4-arrow-function-es6">4. Arrow Function (ES6+)</a></li><li class="lvl-2"><a href="#why-this-pattern-exists">Why This Pattern Exists:</a></li><li class="lvl-3"><a href="#problem-without-document-ready">Problem Without Document Ready:</a></li><li class="lvl-3"><a href="#solution-with-document-ready">Solution With Document Ready:</a></li><li class="lvl-2"><a href="#in-your-context">In Your Context:</a></li><li class="lvl-2"><a href="#common-use-cases">Common Use Cases:</a></li><li class="lvl-2"><a href="#method-by-method-analysis-of-your-customselecteditor">Method-by-Method Analysis of Your CustomSelectEditor</a></li><li class="lvl-3"><a href="#1-customselecteditor-constructor">1. CustomSelectEditor() - Constructor</a></li><li class="lvl-3"><a href="#2-init-params-initialization-method">2. init(params) - Initialization Method</a></li><li class="lvl-4"><a href="#what-it-does-step-by-step">What it does step by step:</a></li><li class="lvl-3"><a href="#3-getgui-returns-dom-element">3. getGui() - Returns DOM Element</a></li><li class="lvl-3"><a href="#4-afterguiattached-post-attachment-logic">4. afterGuiAttached() - Post-Attachment Logic</a></li><li class="lvl-3"><a href="#5-getvalue-returns-selected-value">5. getValue() - Returns Selected Value</a></li><li class="lvl-3"><a href="#6-destroy-cleanup">6. destroy() - Cleanup</a></li><li class="lvl-3"><a href="#7-ispopup-popup-indicator">7. isPopup() - Popup Indicator</a></li><li class="lvl-3"><a href="#8-onkeydown-keyboard-handling">8. onKeyDown() - Keyboard Handling</a></li><li class="lvl-2"><a href="#method-by-method-analysis-of-your-customtextfilter">Method-by-Method Analysis of Your CustomTextFilter</a></li><li class="lvl-3"><a href="#1-constructor">1. Constructor</a></li><li class="lvl-3"><a href="#2-init-params-the-main-setup-method">2. init(params) - The Main Setup Method</a></li><li class="lvl-4"><a href="#2a-initial-setup">2A. Initial Setup</a></li><li class="lvl-4"><a href="#2b-main-container-creation">2B. Main Container Creation</a></li><li class="lvl-4"><a href="#2c-filter-header-section-dropdown">2C. Filter Header Section (Dropdown)</a></li><li class="lvl-4"><a href="#2d-filter-type-dropdown">2D. Filter Type Dropdown</a></li><li class="lvl-4"><a href="#2e-dropdown-options">2E. Dropdown Options</a></li><li class="lvl-4"><a href="#2f-search-input-section">2F. Search Input Section</a></li><li class="lvl-4"><a href="#2g-text-input-field">2G. Text Input Field</a></li><li class="lvl-4"><a href="#2h-clear-button-section">2H. Clear Button Section</a></li><li class="lvl-4"><a href="#2i-event-listeners">2I. Event Listeners</a></li><li class="lvl-4"><a href="#2j-state-restoration">2J. State Restoration</a></li><li class="lvl-3"><a href="#3-afterguiattached-post-display-setup">3. afterGuiAttached() - Post-Display Setup</a></li><li class="lvl-3"><a href="#4-getgui-returns-filter-ui">4. getGui() - Returns Filter UI</a></li><li class="lvl-3"><a href="#5-isfilteractive-filter-state-check">5. isFilterActive() - Filter State Check</a></li><li class="lvl-2"><a href="#6-doesfilterpass-params-the-core-filtering-logic-updated">6. doesFilterPass(params) - The Core Filtering Logic (Updated)</a></li><li class="lvl-4"><a href="#what-it-does">What it does:</a></li><li class="lvl-3"><a href="#7-getmodel-save-filter-state">7. getModel() - Save Filter State</a></li><li class="lvl-3"><a href="#8-setmodel-model-restore-filter-state">8. setModel(model) - Restore Filter State</a></li><li class="lvl-3"><a href="#9-event-handlers">9. Event Handlers</a></li><li class="lvl-4"><a href="#9a-onfiltertypechanged">9A. onFilterTypeChanged()</a></li><li class="lvl-4"><a href="#9b-onfilterchanged">9B. onFilterChanged()</a></li><li class="lvl-4"><a href="#9c-onclearfilter">9C. onClearFilter()</a></li><li class="lvl-3"><a href="#10-getmodelasstring-display-current-filter">10. getModelAsString() - Display Current Filter</a></li><li class="lvl-2"><a href="#overall-architecture">Overall Architecture:</a></li></ol></aside>
+<main class="content">
+
+<header class="doc-hero">
+  <div class="eyebrow"><span class="dot"></span>Concept · Blazor &amp; Frontend</div>
+  <h1>jQuery, Select2 and AG Grid Custom Editors/Filters - Method Breakdown</h1>
+  <p class="one-liner">A line-by-line breakdown of a jQuery + Select2 initialization function, an AG Grid CustomSelectEditor and a CustomTextFilter, explaining what each piece does and flagging the focus/event-handling pitfalls.</p>
+  <div class="meta-row">
+    <span class="meta-pill fmt-docx">DOCX</span>
+    <span class="meta-pill complexity-intermediate">Intermediate</span>
+    <span class="meta-pill"><span class="num">3,237</span> words</span>
+    <span class="meta-pill"><span class="num">16</span> min read</span>
+    <span class="meta-pill source">Source: <code>JScript/Document 1.docx</code></span>
+  </div>
+</header>
+<div class="banner-stack"><div class="dup-banner near"><div class="icon">≈</div><div class="body"><h4>Near-duplicate content</h4><p>Significant text overlap (Jaccard ≥ 0.65) with — likely audience variants (ENG/PT, ForDummies/Formal) of the same source:</p><ul><li><code>JScript/Document 1.pdf</code></li><li><code>JScript/JS_Select2&amp;CustomMethods.pdf</code></li><li><code>JScript/Select2_JQuery_explanation.docx</code></li></ul></div></div></div>
+<div class="curation"><p class="intro-hook">Ever wonder why your fancy AG Grid Select2 editor steals focus from a totally different cell halfway across the screen? It is almost always the same one-line bug, and this doc shows you the exact line.</p>
+<div class="exec-summary"><h3>Executive summary</h3><p>This document walks through three pieces of legacy frontend code in painful detail: an initializeSelect2() helper that defensively sets up Select2 dropdowns with Portuguese localization, an AG Grid CustomSelectEditor that wires Select2 into editable grid cells, and a CustomTextFilter that recreates AG Grid&#x27;s text filter with Portuguese labels and an enhanced array-column filter. Beyond the explanations, the doc calls out four bugs in the editor (global selectors causing focus to jump between Select2 instances, overly broad event.stopPropagation, dropdownParent: document.body issues, opening Select2 before init), making it half tutorial and half code review.</p></div>
+<div class="metaphor-callout"><div class="icon">💡</div><div class="body"><span class="label">Metaphor</span>Reading this doc is like watching a mechanic with a paint marker circle every loose bolt on a working car. The car drives, but you would not want to take it onto the highway: a global $(&#x27;.select2-search__field&#x27;).focus() is the one bolt that will fly off and hit somebody.</div></div>
+<div class="context-row"><div class="context-card prereqs"><h4>You should know first</h4><ul><li>JavaScript fundamentals</li><li>jQuery basics</li><li>AG Grid basic usage</li></ul></div><div class="context-card concepts"><h4>Key concepts covered</h4><ul><li>jQuery document.ready</li><li>Select2 plugin initialization</li><li>AG Grid custom cell editors</li><li>AG Grid custom filters</li><li>DOM event delegation pitfalls</li><li>global vs scoped selectors</li><li>filter state save/restore (getModel/setModel)</li></ul></div><div class="context-card builds"><h4>Opens the door to</h4><ul><li>writing reusable AG Grid editors</li><li>migrating jQuery widgets to vanilla JS</li><li>Blazor JS interop for grids</li></ul></div></div></div>
+<article>
+<h2 id="method-breakdown-initializeselect2">Method Breakdown: initializeSelect2()</h2>
+<h3 id="1-function-declaration">1. Function Declaration</h3>
+<pre><code class="lang-text">javascript
+function initializeSelect2() {</code></pre>
+<ul>
+<li>What it is: A regular JavaScript function declaration</li>
+<li>Purpose: Creates a reusable function to initialize Select2 on elements</li>
+<li>Scope: Can be called from anywhere in the code after it&#x27;s defined</li>
+</ul>
+<h3 id="2-debug-logging">2. Debug Logging</h3>
+<pre><code class="lang-text">javascript
+console.log(&#x27;Inicializando Select2&#x27;);</code></pre>
+<ul>
+<li>What it does: Prints &quot;Inicializando Select2&quot; (Initializing Select2) to browser console</li>
+<li>Purpose: Helps developers track when this function runs</li>
+<li>When you&#x27;ll see it: Open browser DevTools → Console tab when this function executes</li>
+</ul>
+<h3 id="3-safety-check-library-availability">3. Safety Check - Library Availability</h3>
+<pre><code class="lang-text">javascript
+if ($.fn.select2 === undefined) {</code></pre>
+<p>Breaking this down:</p>
+<ul>
+<li>$ = jQuery object (alias for jQuery)</li>
+<li>$.fn = jQuery&#x27;s prototype (where all jQuery methods live)</li>
+<li>$.fn.select2 = The Select2 plugin method added to jQuery</li>
+<li>=== undefined = Strict equality check to see if Select2 plugin exists</li>
+<li>Translation: &quot;If the Select2 plugin is not loaded/available...&quot;</li>
+</ul>
+<h3 id="4-error-handling">4. Error Handling</h3>
+<pre><code class="lang-text">javascript
+console.error(&#x27;Select2 não está disponível&#x27;);</code></pre>
+<ul>
+<li>What it does: Prints red error message &quot;Select2 não está disponível&quot; (Select2 is not available)</li>
+<li>When it runs: Only if Select2 library isn&#x27;t loaded</li>
+<li>Purpose: Prevents JavaScript errors and alerts developer to missing dependency</li>
+</ul>
+<h3 id="5-main-initialization-block">5. Main Initialization Block</h3>
+<pre><code class="lang-text">javascript</code></pre>
+<p>} else {     $(&#x27;.select2&#x27;).select2({         // configuration options     }); }</p>
+<p>Breaking this down:</p>
+<ul>
+<li>else = &quot;If Select2 IS available, then do this...&quot;</li>
+<li>$(&#x27;.select2&#x27;) = jQuery selector that finds ALL elements with CSS class &quot;select2&quot;</li>
+<li>.select2({...}) = Calls the Select2 initialization method with configuration options</li>
+</ul>
+<h3 id="6-configuration-options">6. Configuration Options</h3>
+<h4 id="placeholder-text">Placeholder Text</h4>
+<pre><code class="lang-text">javascript
+placeholder: &quot;Selecione uma opção&quot;,</code></pre>
+<ul>
+<li>What it does: Sets the text shown when no option is selected</li>
+<li>Translation: &quot;Select an option&quot;</li>
+</ul>
+<h4 id="clear-button">Clear Button</h4>
+<pre><code class="lang-text">javascript
+allowClear: true,</code></pre>
+<ul>
+<li>What it does: Adds an &quot;X&quot; button to clear the selection</li>
+<li>Effect: Users can click &quot;X&quot; to deselect and return to placeholder state</li>
+</ul>
+<h4 id="width-setting">Width Setting</h4>
+<pre><code class="lang-text">javascript
+width: &#x27;100%&#x27;,</code></pre>
+<ul>
+<li>What it does: Makes Select2 take up 100% of its container&#x27;s width</li>
+<li>Alternative options: &#x27;200px&#x27;, &#x27;auto&#x27;, &#x27;resolve&#x27;, etc.</li>
+</ul>
+<h4 id="language-configuration">Language Configuration</h4>
+<pre><code class="lang-text">javascript</code></pre>
+<p>language: {     noResults: function () {         return &quot;Nenhum resultado encontrado&quot;;     } }</p>
+<p>Breaking this down:</p>
+<ul>
+<li>language: {...} = Localization settings object</li>
+<li>noResults: function() {...} = Callback function for &quot;no results&quot; message</li>
+<li>Purpose: When user searches and no matches found, shows &quot;Nenhum resultado encontrado&quot; (No results found)</li>
+<li>Note: This is a function that returns a string (allows for dynamic messages)</li>
+</ul>
+<h2 id="how-this-method-works-in-practice">How This Method Works in Practice:</h2>
+<ul>
+<li>Function gets called → initializeSelect2()</li>
+<li>Logs start message → Console shows &quot;Inicializando Select2&quot;</li>
+<li>Checks if Select2 exists → Prevents errors if library not loaded</li>
+<li>If Select2 missing → Shows error, stops execution</li>
+<li>If Select2 available → Continues to initialization</li>
+<li>Finds all elements → Looks for &lt;select class=&quot;select2&quot;&gt; elements</li>
+<li>Initializes each one → Converts them to fancy Select2 dropdowns</li>
+<li>Applies configuration → Sets placeholder, clear button, width, language</li>
+</ul>
+<h2 id="key-things-to-understand">Key Things to Understand:</h2>
+<ul>
+<li>Global Selector: $(&#x27;.select2&#x27;) affects ALL elements with class &quot;select2&quot; on the page</li>
+<li>Batch Initialization: This initializes multiple Select2 instances at once</li>
+<li>Safety First: Checks library availability before using it</li>
+<li>Portuguese Localization: Custom messages in Portuguese</li>
+<li>Defensive Programming: Won&#x27;t crash if Select2 isn&#x27;t loaded</li>
+</ul>
+<p>This is a utility function designed to be called when the page loads or when new Select2 elements are added to the DOM.</p>
+<h2 id="method-breakdown-jquery-document-ready">Method Breakdown: jQuery Document Ready</h2>
+<h3 id="1-jquery-object-access">1. jQuery Object Access</h3>
+<pre><code class="lang-text">javascript
+jQuery(document).ready(function ($) {</code></pre>
+<p>Breaking this down:</p>
+<ul>
+<li>jQuery = The full jQuery library object (not the $ shorthand)</li>
+<li>(document) = Passes the HTML document object to jQuery</li>
+<li>.ready() = jQuery method that waits for DOM to be fully loaded</li>
+<li>function ($) { = Anonymous callback function that receives jQuery as parameter $</li>
+</ul>
+<p>Why use jQuery instead of $?</p>
+<ul>
+<li>Conflict Prevention: Other libraries might use $ symbol</li>
+<li>Explicit: Makes it clear we&#x27;re using jQuery</li>
+<li>Best Practice: Ensures jQuery is available even if $ is overridden</li>
+</ul>
+<h3 id="2-the-parameter-function">2. The Parameter: function ($)</h3>
+<pre><code class="lang-text">javascript
+function ($) {</code></pre>
+<p>What this does:</p>
+<ul>
+<li>Parameter Mapping: Maps the full jQuery object to the shorthand $</li>
+<li>Local Scope: Inside this function, $ definitely refers to jQuery</li>
+<li>Safety: Even if $ is used by another library globally, inside this function it&#x27;s jQuery</li>
+<li>Alternative: You could write function (jq) and use jq instead of $</li>
+</ul>
+<h3 id="3-function-body">3. Function Body</h3>
+<pre><code class="lang-text">javascript
+initializeSelect2();</code></pre>
+<ul>
+<li>Simple Call: Executes the initializeSelect2() function we analyzed earlier</li>
+<li>Context: Runs after DOM is ready but before images/external resources load</li>
+</ul>
+<h3 id="4-closing-brackets">4. Closing Brackets</h3>
+<pre><code class="lang-text">javascript
+});</code></pre>
+<ul>
+<li>First } closes the anonymous function</li>
+<li>) closes the .ready() method call</li>
+<li>; ends the statement</li>
+</ul>
+<h2 id="what-this-pattern-accomplishes">What This Pattern Accomplishes:</h2>
+<h3 id="dom-ready-vs-window-load">DOM Ready vs Window Load</h3>
+<pre><code class="lang-text">javascript</code></pre>
+<p>// DOM Ready (what this code uses) jQuery(document).ready(function ($) {     // Runs when HTML structure is loaded     // Images, stylesheets may still be loading });</p>
+<p>// vs Window Load jQuery(window).load(function ($) {     // Runs when EVERYTHING is loaded (images, etc.)     // Takes longer to execute });</p>
+<h3 id="execution-timeline">Execution Timeline:</h3>
+<h4 id="browser-starts-loading-page">Browser starts loading page</h4>
+<ul>
+<li>HTML structure loads ← DOM Ready fires here</li>
+</ul>
+<h4 id="css-images-external-resources-load">CSS, images, external resources load</h4>
+<h4 id="window-load-event-fires">Window load event fires</h4>
+<h2 id="alternative-ways-to-write-this">Alternative Ways to Write This:</h2>
+<h3 id="1-using-shorthand-if-safe">1. Using $ Shorthand (if safe)</h3>
+<pre><code class="lang-text">javascript</code></pre>
+<p>$(document).ready(function() {     initializeSelect2(); });</p>
+<h3 id="2-shorter-syntax">2. Shorter Syntax</h3>
+<pre><code class="lang-text">javascript</code></pre>
+<p>jQuery(function($) {     initializeSelect2(); });</p>
+<h3 id="3-modern-alternative-es6">3. Modern Alternative (ES6+)</h3>
+<pre><code class="lang-text">javascript</code></pre>
+<p>document.addEventListener(&#x27;DOMContentLoaded&#x27;, function() {     initializeSelect2(); });</p>
+<h3 id="4-arrow-function-es6">4. Arrow Function (ES6+)</h3>
+<pre><code class="lang-text">javascript</code></pre>
+<p>jQuery(document).ready(() =&gt; {     initializeSelect2(); });</p>
+<h2 id="why-this-pattern-exists">Why This Pattern Exists:</h2>
+<h3 id="problem-without-document-ready">Problem Without Document Ready:</h3>
+<pre><code class="lang-text">javascript</code></pre>
+<p>// BAD - This might run before HTML elements exist initializeSelect2(); // Could fail if &lt;select&gt; elements not loaded yet</p>
+<h3 id="solution-with-document-ready">Solution With Document Ready:</h3>
+<pre><code class="lang-text">javascript</code></pre>
+<p>// GOOD - This waits for HTML elements to exist jQuery(document).ready(function ($) {     initializeSelect2(); // Will work because DOM is ready });</p>
+<h2 id="in-your-context">In Your Context:</h2>
+<p>This code ensures that:</p>
+<ul>
+<li>DOM Elements Exist: All &lt;select class=&quot;select2&quot;&gt; elements are loaded</li>
+<li>jQuery is Available: The $ parameter guarantees jQuery access</li>
+<li>Select2 Can Initialize: Elements exist for Select2 to enhance</li>
+<li>No Race Conditions: Won&#x27;t try to initialize before elements are ready</li>
+</ul>
+<h2 id="common-use-cases">Common Use Cases:</h2>
+<pre><code class="lang-text">javascript</code></pre>
+<p>jQuery(document).ready(function ($) {     // Initialize plugins     initializeSelect2();</p>
+<p>    // Bind events     $(&#x27;.button&#x27;).click(function() { ... });</p>
+<p>    // Set up components     $(&#x27;.datepicker&#x27;).datepicker();</p>
+<p>    // Any DOM manipulation that needs elements to exist });</p>
+<p>Bottom Line: This is jQuery&#x27;s way of saying &quot;Wait until the page structure is ready, then run my initialization code safely.&quot;</p>
+<h2 id="method-by-method-analysis-of-your-customselecteditor">Method-by-Method Analysis of Your CustomSelectEditor</h2>
+<h3 id="1-customselecteditor-constructor">1. CustomSelectEditor() - Constructor</h3>
+<pre><code class="lang-text">javascript
+function CustomSelectEditor() {}</code></pre>
+<ul>
+<li>Purpose: Empty constructor function</li>
+<li>Issues: No initialization logic here (which is fine, AG Grid calls init() separately)</li>
+</ul>
+<h3 id="2-init-params-initialization-method">2. init(params) - Initialization Method</h3>
+<pre><code class="lang-text">javascript</code></pre>
+<p>CustomSelectEditor.prototype.init = function(params) {     this.params = params;     this.isDestroyed = false;     // ... rest of method }</p>
+<h4 id="what-it-does-step-by-step">What it does step by step:</h4>
+<ul>
+<li>Store parameters: this.params = params - Stores AG Grid&#x27;s parameters</li>
+<li>Create wrapper div:</li>
+</ul>
+<pre><code class="lang-text">javascript</code></pre>
+<p>this.eWrapper = document.createElement(&#x27;div&#x27;); this.eWrapper.style.width = &#x27;200px&#x27;; this.eWrapper.style.height = &#x27;100%&#x27;;</p>
+<ul>
+<li>Creates a container div with fixed 200px width</li>
+<li>Create select element:</li>
+</ul>
+<pre><code class="lang-text">javascript</code></pre>
+<p>this.eInput = document.createElement(&#x27;select&#x27;); this.eInput.style.width = &#x27;100%&#x27;; this.eInput.style.height = &#x27;100%&#x27;;</p>
+<ul>
+<li>Creates the actual &lt;select&gt; element</li>
+<li>Determine data source:</li>
+</ul>
+<pre><code class="lang-text">javascript</code></pre>
+<p>let idToNameMap; if (params.column.colDef.field === &#x27;motoristaId&#x27;) {     idToNameMap = params.context.profissionaisDict; } // ... etc</p>
+<ul>
+<li>Chooses which dictionary to use based on the column field name</li>
+<li>Add empty option:</li>
+</ul>
+<pre><code class="lang-text">javascript</code></pre>
+<p>const emptyOption = document.createElement(&#x27;option&#x27;); emptyOption.value = &#x27;&#x27;; emptyOption.text = &#x27;Selecione...&#x27;; this.eInput.appendChild(emptyOption);</p>
+<ul>
+<li>Adds a placeholder option</li>
+<li>Populate options:</li>
+</ul>
+<pre><code class="lang-text">javascript</code></pre>
+<p>if (params.values &amp;&amp; params.values.length &gt; 0) {     params.values.forEach(value =&gt; {         const option = document.createElement(&#x27;option&#x27;);         option.value = value;         option.text = idToNameMap[value] || value;         this.eInput.appendChild(option);     }); }</p>
+<ul>
+<li>Loops through available values and creates option elements</li>
+<li>Set current value:</li>
+</ul>
+<pre><code class="lang-text">javascript</code></pre>
+<p>if (params.value) {     this.eInput.value = params.value; }</p>
+<ul>
+<li>Pre-selects the current cell value</li>
+<li>Add select to wrapper: this.eWrapper.appendChild(this.eInput);</li>
+<li>Initialize Select2 (inside setTimeout):</li>
+</ul>
+<pre><code class="lang-text">javascript</code></pre>
+<p>setTimeout(() =&gt; {     $(this.eInput).select2({         dropdownParent: document.body, // 🚨 PROBLEM #1         width: &#x27;100%&#x27;,         placeholder: &#x27;Selecione...&#x27;,         allowClear: true     });</p>
+<ul>
+<li>ISSUE: dropdownParent: document.body causes focus problems</li>
+<li>Event handling:</li>
+</ul>
+<pre><code class="lang-text">javascript</code></pre>
+<p>const select2Container = $(this.eInput).next(&#x27;.select2-container&#x27;); select2Container.on(&#x27;click mousedown touchend&#x27;, (e) =&gt; {     e.stopPropagation(); // 🚨 PROBLEM #2 - Too broad });</p>
+<ul>
+<li>ISSUE: Stopping all events on container</li>
+<li>Focus handling:</li>
+</ul>
+<pre><code class="lang-text">javascript</code></pre>
+<p>$(this.eInput).on(&#x27;select2:open&#x27;, () =&gt; {     setTimeout(() =&gt; {         $(&#x27;.select2-search__field&#x27;).focus(); // 🚨 PROBLEM #3     }, 0); });</p>
+<ul>
+<li>MAJOR ISSUE: Uses global selector $(&#x27;.select2-search__field&#x27;) which targets ALL Select2 search fields on the page, causing focus to jump to other Select2 instances</li>
+</ul>
+<h3 id="3-getgui-returns-dom-element">3. getGui() - Returns DOM Element</h3>
+<pre><code class="lang-text">javascript</code></pre>
+<p>CustomSelectEditor.prototype.getGui = function() {     return this.eWrapper; };</p>
+<ul>
+<li>Purpose: Returns the wrapper element for AG Grid to display</li>
+<li>Status: ✅ Correct</li>
+</ul>
+<h3 id="4-afterguiattached-post-attachment-logic">4. afterGuiAttached() - Post-Attachment Logic</h3>
+<pre><code class="lang-text">javascript</code></pre>
+<p>CustomSelectEditor.prototype.afterGuiAttached = function() {     setTimeout(() =&gt; {         $(this.eInput).select2(&#x27;open&#x27;); // 🚨 PROBLEM #4     }, 50);     this.eInput.focus(); };</p>
+<ul>
+<li>ISSUES:</li>
+<li>Tries to open Select2 that may not be initialized yet</li>
+<li>Focuses on raw input instead of Select2</li>
+</ul>
+<h3 id="5-getvalue-returns-selected-value">5. getValue() - Returns Selected Value</h3>
+<pre><code class="lang-text">javascript</code></pre>
+<p>CustomSelectEditor.prototype.getValue = function() {     return $(this.eInput).val(); };</p>
+<ul>
+<li>Purpose: Returns the currently selected value</li>
+<li>Status: ✅ Generally correct, but no error handling</li>
+</ul>
+<h3 id="6-destroy-cleanup">6. destroy() - Cleanup</h3>
+<pre><code class="lang-text">javascript</code></pre>
+<p>CustomSelectEditor.prototype.destroy = function() {     if ($(this.eInput).data(&#x27;select2&#x27;)) {         $(this.eInput).select2(&#x27;destroy&#x27;);     } };</p>
+<ul>
+<li>Status: ✅ Basic cleanup, but incomplete (no event cleanup)</li>
+</ul>
+<h3 id="7-ispopup-popup-indicator">7. isPopup() - Popup Indicator</h3>
+<pre><code class="lang-text">javascript</code></pre>
+<p>CustomSelectEditor.prototype.isPopup = function() {     return true; };</p>
+<ul>
+<li>Purpose: Tells AG Grid this editor should be treated as a popup</li>
+<li>Status: ✅ Correct</li>
+</ul>
+<h3 id="8-onkeydown-keyboard-handling">8. onKeyDown() - Keyboard Handling</h3>
+<pre><code class="lang-text">javascript</code></pre>
+<p>CustomSelectEditor.prototype.onKeyDown = function(event) {     const key = event.key;     if (key === &#x27;Enter&#x27; || key === &#x27;Tab&#x27;) {         this.params.stopEditing();         return true;     }     if (key === &#x27;Escape&#x27;) {         return true;     }     return false; };</p>
+<h2 id="method-by-method-analysis-of-your-customtextfilter">Method-by-Method Analysis of Your CustomTextFilter</h2>
+<h3 id="1-constructor">1. Constructor</h3>
+<pre><code class="lang-text">javascript
+function CustomTextFilter() {}
+Purpose: Empty constructor for AG Grid custom filter
+Note: AG Grid will call init() to actually set up the filter</code></pre>
+<h3 id="2-init-params-the-main-setup-method">2. init(params) - The Main Setup Method</h3>
+<h4 id="2a-initial-setup">2A. Initial Setup</h4>
+<pre><code class="lang-text">javascript</code></pre>
+<p>CustomTextFilter.prototype.init = function(params) {     this.params = params;     this.filterText = null;     this.filterType = &#x27;contains&#x27;; // Default filter type     this.gridApi = params.api; // Store the grid API for scrolling to bottom</p>
+<pre><code class="lang-csharp"><span class="type">What</span> it does:
+<span class="type">Store</span> parameters: <span class="type">Saves</span> <span class="type">AG</span> <span class="type">Grid</span>&#x27;s parameters <span class="kw">for</span> later use
+<span class="type">Initialize</span> filter state: filterText = <span class="kw">null</span> (no filter active initially)
+<span class="type">Set</span> <span class="kw">default</span> filter type: &#x27;contains&#x27; (like <span class="str">&quot;text contains &#x27;abc&#x27;&quot;</span>)
+<span class="type">Store</span> grid <span class="type">API</span>: <span class="type">For</span> operations like scrolling after clearing filter</code></pre>
+<h4 id="2b-main-container-creation">2B. Main Container Creation</h4>
+<pre><code class="lang-text">javascript</code></pre>
+<p>// Create the main container with AG Grid&#x27;s filter styling this.eGui = document.createElement(&#x27;div&#x27;); this.eGui.className = &#x27;ag-filter-wrapper ag-focus-managed&#x27;; this.eGui.style.padding = &#x27;0&#x27;; this.eGui.style.backgroundColor = &#x27;white&#x27;; this.eGui.style.borderRadius = &#x27;3px&#x27;; this.eGui.style.boxShadow = &#x27;0 1px 4px rgba(0, 0, 0, 0.2)&#x27;;</p>
+<pre><code class="lang-text">What it creates:
+Main wrapper div: The container for the entire filter UI
+AG Grid styling: Uses AG Grid&#x27;s CSS classes for consistent look
+Visual styling: White background, rounded corners, subtle shadow
+this.eGui: This becomes the main element AG Grid will display</code></pre>
+<h4 id="2c-filter-header-section-dropdown">2C. Filter Header Section (Dropdown)</h4>
+<pre><code class="lang-text">javascript</code></pre>
+<p>// Create filter header with dropdown in AG Grid style const filterHeader = document.createElement(&#x27;div&#x27;); filterHeader.className = &#x27;ag-filter-header&#x27;; filterHeader.style.padding = &#x27;6px 8px 4px 8px&#x27;; filterHeader.style.borderBottom = &#x27;none&#x27;;</p>
+<pre><code class="lang-text">Purpose: Creates the top section that will contain the filter type dropdown</code></pre>
+<h4 id="2d-filter-type-dropdown">2D. Filter Type Dropdown</h4>
+<pre><code class="lang-text">javascript</code></pre>
+<p>// Create filter type dropdown styled like AG Grid&#x27;s this.eFilterType = document.createElement(&#x27;select&#x27;); this.eFilterType.className = &#x27;ag-filter-select&#x27;; // ... styling code ...</p>
+<p>// Add focus styling (blue shadow) on click this.eFilterType.addEventListener(&#x27;focus&#x27;, function() {     this.style.boxShadow = &#x27;0 0 0 2px rgba(24, 144, 255, 0.2)&#x27;;     this.style.borderColor = &#x27;#40a9ff&#x27;; }); this.eFilterType.addEventListener(&#x27;blur&#x27;, function() {     this.style.boxShadow = &#x27;none&#x27;;     this.style.borderColor = &#x27;#babfc7&#x27;; });</p>
+<pre><code class="lang-text">What it does:
+Creates dropdown: For selecting filter type (contains, equals, etc.)
+Styling: Matches AG Grid&#x27;s visual style
+Focus effects: Blue glow when user clicks on it
+Blur effects: Removes glow when user clicks away</code></pre>
+<h4 id="2e-dropdown-options">2E. Dropdown Options</h4>
+<pre><code class="lang-text">javascript</code></pre>
+<p>// Add filter type options const filterOptions = [     { value: &#x27;contains&#x27;, text: &#x27;Contém&#x27; },     { value: &#x27;notContains&#x27;, text: &#x27;Não contém&#x27; },     { value: &#x27;equals&#x27;, text: &#x27;Igual a&#x27; },     { value: &#x27;notEqual&#x27;, text: &#x27;Diferente de&#x27; },     { value: &#x27;startsWith&#x27;, text: &#x27;Começa com&#x27; },     { value: &#x27;endsWith&#x27;, text: &#x27;Termina com&#x27; } ];</p>
+<p>filterOptions.forEach(option =&gt; {     const optElement = document.createElement(&#x27;option&#x27;);     optElement.value = option.value;     optElement.text = option.text;     this.eFilterType.appendChild(optElement); });</p>
+<pre><code class="lang-text">What it creates:
+Filter options array: Defines all available filter types
+Portuguese labels: User-friendly text in Portuguese
+Option elements: Adds each option to the dropdown
+Value vs Text: value is for code, text is what user sees</code></pre>
+<h4 id="2f-search-input-section">2F. Search Input Section</h4>
+<pre><code class="lang-text">javascript</code></pre>
+<p>// Create filter input section with search icon const filterInputSection = document.createElement(&#x27;div&#x27;); filterInputSection.className = &#x27;ag-filter-body&#x27;; // ... styling ...</p>
+<p>// Add search icon container const searchIconContainer = document.createElement(&#x27;div&#x27;); // ... positioning code ...</p>
+<p>// Add a clean SVG magnifying glass icon searchIconContainer.innerHTML = <code class="il">&lt;svg&gt;...&lt;/svg&gt;</code>;</p>
+<pre><code class="lang-text">What it creates:
+Input section: Container for the text input area
+Search icon: SVG magnifying glass icon positioned absolutely
+Icon positioning: Places icon on the left side of input field</code></pre>
+<h4 id="2g-text-input-field">2G. Text Input Field</h4>
+<pre><code class="lang-text">javascript</code></pre>
+<p>// Create filter input with padding for the icon this.eFilterInput = document.createElement(&#x27;input&#x27;); this.eFilterInput.className = &#x27;ag-filter-filter ag-focus-managed&#x27;; this.eFilterInput.type = &#x27;text&#x27;; this.eFilterInput.style.width = &#x27;100%&#x27;; this.eFilterInput.style.padding = &#x27;6px 10px 6px 30px&#x27;; // Extra padding on left for icon // ... more styling ... this.eFilterInput.placeholder = &#x27;A Filtrar...&#x27;;</p>
+<pre><code class="lang-csharp"><span class="type">Key</span> details:
+<span class="type">Text</span> input: <span class="type">Where</span> user types their filter text
+<span class="type">Left</span> padding: <span class="num">6</span>px <span class="num">1</span><span class="num">0</span>px <span class="num">6</span>px <span class="num">3</span><span class="num">0</span>px - extra <span class="num">3</span><span class="num">0</span>px on left <span class="kw">for</span> the search icon
+<span class="type">Placeholder</span>: <span class="str">&quot;A Filtrar...&quot;</span> (<span class="type">Portuguese</span> <span class="kw">for</span> <span class="str">&quot;Filtering...&quot;</span>)
+<span class="kw">this</span>.eFilterInput: <span class="type">Stored</span> <span class="kw">for</span> later access</code></pre>
+<h4 id="2h-clear-button-section">2H. Clear Button Section</h4>
+<pre><code class="lang-text">javascript</code></pre>
+<p>// Create clear button section with AG Grid styling const filterFooter = document.createElement(&#x27;div&#x27;); // ... styling ...</p>
+<p>// Create clear button this.eClearButton = document.createElement(&#x27;button&#x27;); this.eClearButton.innerHTML = &#x27;Limpar Filtro&#x27;; // ... styling and hover effects ...</p>
+<pre><code class="lang-text">What it creates:
+Footer section: Bottom area of the filter
+Clear button: Button to remove the current filter
+Hover effects: Changes background color on mouse over
+Portuguese text: &quot;Limpar Filtro&quot; (Clear Filter)</code></pre>
+<h4 id="2i-event-listeners">2I. Event Listeners</h4>
+<pre><code class="lang-text">javascript</code></pre>
+<p>// Add event listeners this.eFilterType.addEventListener(&#x27;change&#x27;, this.onFilterTypeChanged.bind(this)); this.eFilterInput.addEventListener(&#x27;input&#x27;, this.onFilterChanged.bind(this)); this.eClearButton.addEventListener(&#x27;click&#x27;, this.onClearFilter.bind(this));</p>
+<pre><code class="lang-text">What it does:
+Dropdown change: When user selects different filter type
+Input typing: When user types in the text field (real-time filtering)
+Clear button: When user clicks &quot;Clear Filter&quot;
+.bind(this): Ensures this refers to the filter instance inside the event handlers</code></pre>
+<h4 id="2j-state-restoration">2J. State Restoration</h4>
+<pre><code class="lang-text">javascript</code></pre>
+<p>// Initialize with saved state if available const existingModel = params.filterModel; if (existingModel) {     this.filterType = existingModel.type || &#x27;contains&#x27;;     this.filterText = existingModel.filter || &#x27;&#x27;;     this.eFilterType.value = this.filterType;     this.eFilterInput.value = this.filterText; }</p>
+<pre><code class="lang-text">Purpose: If the filter was previously applied, restore its settings when reopened</code></pre>
+<h3 id="3-afterguiattached-post-display-setup">3. afterGuiAttached() - Post-Display Setup</h3>
+<pre><code class="lang-text">javascript</code></pre>
+<p>CustomTextFilter.prototype.afterGuiAttached = function() {     // Auto-focus the filter textbox when the filter is attached     setTimeout(() =&gt; {         this.eFilterInput.focus();         this.eFilterInput.select(); // Select any existing text     }, 0); };</p>
+<pre><code class="lang-text">What it does:
+Auto-focus: Automatically puts cursor in the text input
+Text selection: If there&#x27;s existing text, selects it all
+setTimeout: Ensures DOM is ready before focusing</code></pre>
+<h3 id="4-getgui-returns-filter-ui">4. getGui() - Returns Filter UI</h3>
+<pre><code class="lang-text">javascript</code></pre>
+<p>CustomTextFilter.prototype.getGui = function() {     return this.eGui; };</p>
+<pre><code class="lang-text">Purpose: AG Grid calls this to get the filter&#x27;s HTML element to display</code></pre>
+<h3 id="5-isfilteractive-filter-state-check">5. isFilterActive() - Filter State Check</h3>
+<pre><code class="lang-text">javascript</code></pre>
+<p>CustomTextFilter.prototype.isFilterActive = function() {     return this.filterText !== null &amp;&amp; this.filterText !== &#x27;&#x27;; };</p>
+<pre><code class="lang-text">What it checks: Whether there&#x27;s currently an active filter (user has typed something)</code></pre>
+<h2 id="6-doesfilterpass-params-the-core-filtering-logic-updated">6. doesFilterPass(params) - The Core Filtering Logic (Updated)</h2>
+<pre><code class="lang-text">Javascript</code></pre>
+<p>CustomTextFilter.prototype.doesFilterPass = function(params) {     // Get cell value     const cellValue = this.params.valueGetter(params);     const filterText = this.filterText;</p>
+<p>    // Early exit for null/undefined     if (cellValue === null || cellValue === undefined) {         return false;     }</p>
+<p>    // Get column field to determine data type     const columnField = this.params.column.colDef.field;</p>
+<p>    // Choose the right Dictionary for array columns     let dictionary;     if (columnField === &#x27;servicosIds&#x27;) {         dictionary = this.params.context.servicesDict;     } else if (columnField === &#x27;viaturasIds&#x27;) {         dictionary = this.params.context.viaturasDict;     }</p>
+<p>    // Convert to searchable string (handles both arrays and single values)     let cellValueStr;     if (Array.isArray(cellValue)) {         // Handle array columns (servicosIds, viaturasIds)         const readableValues = cellValue.map(id =&gt; {             const dictValue = dictionary[id];             return dictValue?.Nome || dictValue || id; // Handle both object and string values         });         cellValueStr = readableValues.join(&#x27; &#x27;).toLowerCase();     } else {         // Handle single value columns (motoristaId, data, etc.)         cellValueStr = cellValue.toString().toLowerCase();     }</p>
+<p>    // Prepare filter text for comparison     const filterTextLower = filterText.toLowerCase();</p>
+<p>    // Apply filter based on filter type     switch (this.filterType) {         case &#x27;equals&#x27;:             return cellValueStr === filterTextLower;         case &#x27;notEqual&#x27;:             return cellValueStr !== filterTextLower;         case &#x27;contains&#x27;:             return cellValueStr.indexOf(filterTextLower) &gt;= 0;         case &#x27;notContains&#x27;:             return cellValueStr.indexOf(filterTextLower) === -1;         case &#x27;startsWith&#x27;:             return cellValueStr.indexOf(filterTextLower) === 0;         case &#x27;endsWith&#x27;:             return cellValueStr.indexOf(filterTextLower, cellValueStr.length - filterTextLower.length) !== -1;         default:             return false;     } };</p>
+<h4 id="what-it-does">What it does:</h4>
+<ul>
+<li>Gets cell value: Extracts the value from the current row/cell</li>
+<li>Null check: Returns false for empty values</li>
+<li>Column detection: Identifies which column is being filtered to choose correct dictionary</li>
+<li>Dictionary selection: Uses servicesDict for servicosIds, viaturasDict for viaturasIds</li>
+<li>Array handling: For array columns, converts IDs to readable values using dictionary lookup</li>
+<li>Object values: Extracts .Nome property (for services)</li>
+<li>String values: Uses the string directly (for viaturas)</li>
+<li>Fallback: Uses original ID if dictionary lookup fails</li>
+<li>Array joining: Combines multiple values into single searchable string with spaces</li>
+<li>Single value handling: Converts non-array values directly to lowercase string</li>
+<li>Case conversion: Converts both cell and filter text to lowercase for case-insensitive comparison</li>
+<li>Filter logic: Uses switch statement to apply different filter types:</li>
+<li>equals: Exact match</li>
+<li>contains: Cell value contains the filter text (works across multiple array values)</li>
+<li>startsWith: Cell value begins with filter text</li>
+<li>endsWith: Cell value ends with filter text</li>
+<li>notContains/notEqual: Opposite logic</li>
+</ul>
+<p>Key Enhancement: Now supports filtering by human-readable values instead of raw IDs for array columns, while maintaining backward compatibility with single-value columns.</p>
+<h3 id="7-getmodel-save-filter-state">7. getModel() - Save Filter State</h3>
+<pre><code class="lang-text">javascript</code></pre>
+<p>CustomTextFilter.prototype.getModel = function() {     if (!this.isFilterActive()) {         return null;     }</p>
+<p>    return {         type: this.filterType,         filter: this.filterText     }; };</p>
+<pre><code class="lang-text">Purpose: Returns current filter settings so AG Grid can save/restore them</code></pre>
+<h3 id="8-setmodel-model-restore-filter-state">8. setModel(model) - Restore Filter State</h3>
+<pre><code class="lang-text">javascript</code></pre>
+<p>CustomTextFilter.prototype.setModel = function(model) {     if (model) {         this.filterType = model.type;         this.filterText = model.filter;         this.eFilterType.value = this.filterType;         this.eFilterInput.value = this.filterText;     } else {         this.filterType = &#x27;contains&#x27;;         this.filterText = null;         this.eFilterType.value = this.filterType;         this.eFilterInput.value = &#x27;&#x27;;     } };</p>
+<pre><code class="lang-text">What it does: Restores filter to a previously saved state (or clears it)</code></pre>
+<h3 id="9-event-handlers">9. Event Handlers</h3>
+<h4 id="9a-onfiltertypechanged">9A. onFilterTypeChanged()</h4>
+<pre><code class="lang-text">javascript</code></pre>
+<p>CustomTextFilter.prototype.onFilterTypeChanged = function() {     this.filterType = this.eFilterType.value;     this.params.filterChangedCallback(); };</p>
+<pre><code class="lang-text">When called: User changes dropdown selection What it does: Updates filter type and triggers grid refresh</code></pre>
+<h4 id="9b-onfilterchanged">9B. onFilterChanged()</h4>
+<pre><code class="lang-text">javascript</code></pre>
+<p>CustomTextFilter.prototype.onFilterChanged = function() {     const inputValue = this.eFilterInput.value;     if (!inputValue || inputValue === &#x27;&#x27;) {         this.onClearFilter();         return;     }</p>
+<p>    this.filterText = inputValue;     this.params.filterChangedCallback(); };</p>
+<pre><code class="lang-text">When called: User types in text input What it does: Updates filter text and triggers grid refresh (or clears if empty)</code></pre>
+<h4 id="9c-onclearfilter">9C. onClearFilter()</h4>
+<pre><code class="lang-text">javascript</code></pre>
+<p>CustomTextFilter.prototype.onClearFilter = function() {     this.filterText = null;     this.eFilterInput.value = &#x27;&#x27;;     this.params.filterChangedCallback();</p>
+<p>    // Scroll to the bottom row when filter is cleared     setTimeout(() =&gt; {         const gridApi = this.params.api;         const rowCount = gridApi.getDisplayedRowCount();         if (rowCount &gt; 0) {             const lastRowIndex = rowCount - 1;             gridApi.ensureIndexVisible(lastRowIndex, &#x27;bottom&#x27;);         }     }, 100); };</p>
+<pre><code class="lang-text">What it does:
+Clears the filter
+Empties the input field
+Refreshes grid
+Bonus feature: Scrolls to bottom of grid after clearing</code></pre>
+<h3 id="10-getmodelasstring-display-current-filter">10. getModelAsString() - Display Current Filter</h3>
+<pre><code class="lang-text">javascript</code></pre>
+<p>CustomTextFilter.prototype.getModelAsString = function() {     if (!this.isFilterActive()) {         return &#x27;&#x27;;     }</p>
+<p>    const filterType = this.filterType;     let filterTypeDisplay = &#x27;&#x27;;</p>
+<p>    switch (filterType) {         case &#x27;equals&#x27;: filterTypeDisplay = &#x27;igual a&#x27;; break;         case &#x27;notEqual&#x27;: filterTypeDisplay = &#x27;diferente de&#x27;; break;         case &#x27;contains&#x27;: filterTypeDisplay = &#x27;contém&#x27;; break;         case &#x27;notContains&#x27;: filterTypeDisplay = &#x27;não contém&#x27;; break;         case &#x27;startsWith&#x27;: filterTypeDisplay = &#x27;começa com&#x27;; break;         case &#x27;endsWith&#x27;: filterTypeDisplay = &#x27;termina com&#x27;; break;     }</p>
+<p>    return <code class="il">${filterTypeDisplay} &quot;${this.filterText}&quot;</code>; };</p>
+<pre><code class="lang-text">Purpose: Creates human-readable description of current filter (e.g., &quot;contém &#x27;João&#x27;&quot;)</code></pre>
+<h2 id="overall-architecture">Overall Architecture:</h2>
+<pre><code class="lang-text">This is a comprehensive custom filter that:
+Looks like AG Grid: Uses AG Grid&#x27;s styling classes
+Multiple filter types: Contains, equals, starts with, etc.
+Portuguese localized: All text in Portuguese
+Auto-focus: Puts cursor in input when opened
+Visual feedback: Hover effects, focus styling
+State management: Can save/restore filter settings
+Smart clearing: Scrolls to bottom when filter is cleared
+It&#x27;s essentially a complete replacement for AG Grid&#x27;s default text filter with enhanced Portuguese localization and custom styling!</code></pre>
+</article>
+<div class="takeaways"><h3>Key takeaways</h3><ul><li>Always namespace your jQuery selectors to the current instance, never use document-wide selectors inside per-cell editors</li><li>AG Grid custom editors must implement init/getGui/getValue/destroy and return true from isPopup() for popup-style editors</li><li>Custom filters need getModel/setModel so AG Grid can save and restore filter state</li><li>Defensive checks like if ($.fn.select2 === undefined) keep pages from crashing when a CDN dependency fails to load</li></ul></div>
+<aside class="cross-refs"><h2>Cross-references</h2><div class="cross-ref-list"><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>javascript-dom-fundamentals</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>ag-grid-custom-components</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>blazor-js-interop</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>jquery-best-practices</a></div></aside>
+<aside class="related"><h2>More in this category</h2><div class="related-grid"><a class="related-card" href="../../CORE/frontend/ag-grid-custom-cell-editor-js-prototypes.html"><div class="title">AG Grid Custom Cell Editor — JavaScript Prototypes &amp; DOM Fundamentals</div><div class="meta"><span class="badge">DOCX</span><span>1,261 words</span></div></a><a class="related-card" href="../../CORE/frontend/blazor-js-interop-instance-isolation.html"><div class="title">Blazor JS Interop — Static Events vs Instance-Isolated Callbacks</div><div class="meta"><span class="badge">MD</span><span>835 words</span></div></a><a class="related-card" href="../../CORE/frontend/blazor-server-fundamentals.html"><div class="title">Blazor Server For Dummies</div><div class="meta"><span class="badge">PDF</span><span>2,975 words</span></div></a><a class="related-card" href="../../CORE/frontend/reactive-login-svg-css-state-machine.html"><div class="title">Build a Reactive Login Page From Zero — SVG, CSS State Machine, JS</div><div class="meta"><span class="badge">HTML</span><span>3,752 words</span></div></a><a class="related-card" href="../../CORE/frontend/button-catalog-design-system.html"><div class="title">Catálogo de Botões Padrão</div><div class="meta"><span class="badge">HTML</span><span>48 words</span></div></a><a class="related-card" href="../../CORE/frontend/css-color-system-example.html"><div class="title">Exemplo Cores - CSS Color System Example</div><div class="meta"><span class="badge">HTML</span><span>62 words</span></div></a></div></aside>
+</main>
+</div>
+<script>
+// ─── Active TOC item on scroll ────────────────────────────────────
+(function() {
+  const tocLinks = document.querySelectorAll('.toc-sidebar a[href^="#"]');
+  if (!tocLinks.length) return;
+  const headings = Array.from(document.querySelectorAll(
+    'article h1[id], article h2[id], article h3[id], article h4[id], .pdf-page[id]'
+  ));
+  if (!headings.length) return;
+  function setActive(id) {
+    tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+  }
+  let lastVisible = headings[0].id;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) lastVisible = e.target.id; });
+    setActive(lastVisible);
+  }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+  headings.forEach(h => observer.observe(h));
+  setActive(headings[0].id);
+})();
+
+// ─── Copy code buttons ────────────────────────────────────────────
+(function() {
+  document.querySelectorAll('article pre').forEach(pre => {
+    if (pre.closest('.diagram-box')) return;
+    if (pre.closest('.pdf-page')) return;
+    if (pre.parentElement && pre.parentElement.classList.contains('code-block')) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'code-block';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.type = 'button';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', () => {
+      const code = pre.querySelector('code') || pre;
+      const text = code.innerText;
+      const done = () => {
+        btn.textContent = 'Copied';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(() => {});
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+    });
+    wrap.appendChild(btn);
+  });
+})();
+
+// ─── Live filter (master + hub + category pages) ─────────────────
+(function() {
+  const search = document.getElementById('search-input');
+  if (!search) return;
+  const items = document.querySelectorAll('[data-search]');
+  function apply() {
+    const q = search.value.toLowerCase().trim();
+    items.forEach(el => {
+      const match = !q || el.dataset.search.includes(q);
+      el.style.display = match ? '' : 'none';
+    });
+    document.querySelectorAll('[data-search-parent]').forEach(parent => {
+      const visible = Array.from(parent.querySelectorAll('[data-search]'))
+        .some(el => el.style.display !== 'none');
+      parent.style.display = visible ? '' : 'none';
+    });
+  }
+  search.addEventListener('input', apply);
+})();
+</script>
+</body>
+</html>

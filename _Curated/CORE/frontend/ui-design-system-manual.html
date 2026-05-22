@@ -1,0 +1,1755 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Manual de Processos - Design (Process 3)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #07090f;
+  --bg-1: #0c111c;
+  --bg-2: #11182a;
+  --bg-3: #1a2238;
+  --bg-4: #232e4a;
+  --border: #1e2840;
+  --border-2: #2a3551;
+  --border-3: #3a4870;
+  --text: #e9eef8;
+  --text-dim: #94a3bf;
+  --text-mut: #5f6b86;
+  --accent: #6aa6ff;
+  --accent-strong: #3b82f6;
+  --accent-2: #b86aff;
+  --accent-3: #f472b6;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+  --info: #38bdf8;
+  --code-bg: #0a1020;
+  --code-border: #1a2340;
+  --shadow: 0 8px 32px rgba(0,0,0,0.55);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.35);
+  --shadow-glow: 0 0 0 1px rgba(106,166,255,0.18), 0 12px 40px rgba(106,166,255,0.10);
+}
+
+/* Doc-type theming */
+[data-doc-type="core-concept"] {
+  --doc-accent: #6aa6ff;
+  --doc-accent-rgb: 106,166,255;
+  --doc-eyebrow: "Concept";
+}
+[data-doc-type="applied-implementation"] {
+  --doc-accent: #b86aff;
+  --doc-accent-rgb: 184,106,255;
+  --doc-eyebrow: "Implementation";
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font: 16px/1.7 -apple-system, "Inter", \'Segoe UI\', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+::selection { background: rgba(106,166,255,0.30); }
+
+/* ═══ Top bar ═══════════════════════════════════════════════════════ */
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(7,9,15,0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 28px;
+  display: flex; align-items: center; gap: 16px;
+}
+.topbar .crumbs {
+  flex: 1; font-size: 13px; color: var(--text-dim);
+  display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden;
+}
+.topbar .crumbs span.sep { color: var(--text-mut); }
+.topbar .crumbs .current {
+  color: var(--text); font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.topbar .crumbs a { color: var(--text-dim); text-decoration: none; }
+.topbar .crumbs a:hover { color: var(--accent); }
+.topbar .actions { display: flex; gap: 6px; flex-shrink: 0; }
+.topbar .action {
+  font-size: 13px; padding: 6px 14px; border-radius: 8px;
+  color: var(--text-dim); text-decoration: none;
+  border: 1px solid transparent; transition: all .15s;
+}
+.topbar .action:hover {
+  color: var(--text); background: var(--bg-2); border-color: var(--border);
+  text-decoration: none;
+}
+
+/* ═══ Document layout ═══════════════════════════════════════════════ */
+.layout {
+  display: grid; grid-template-columns: 280px 1fr;
+  max-width: 1380px; margin: 0 auto; align-items: start;
+}
+.layout.no-toc { grid-template-columns: 1fr; max-width: 940px; }
+
+.toc-sidebar {
+  position: sticky; top: 70px;
+  align-self: start;
+  max-height: calc(100vh - 90px);
+  overflow-y: auto;
+  padding: 40px 8px 40px 28px;
+  border-right: 1px solid var(--border);
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+.toc-sidebar::-webkit-scrollbar { width: 6px; }
+.toc-sidebar::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
+.toc-sidebar h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px; padding-left: 14px; font-weight: 600;
+}
+.toc-sidebar ol { list-style: none; margin: 0; padding: 0; }
+.toc-sidebar li { margin: 0; }
+.toc-sidebar a {
+  display: block;
+  padding: 5px 14px;
+  border-left: 2px solid transparent;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 13px;
+  line-height: 1.5;
+  transition: all .15s;
+  word-break: break-word;
+}
+.toc-sidebar a:hover {
+  color: var(--text); border-left-color: var(--border-2); text-decoration: none;
+}
+.toc-sidebar a.active {
+  color: var(--doc-accent, var(--accent));
+  border-left-color: var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.07);
+}
+.toc-sidebar .lvl-3 a { padding-left: 28px; font-size: 12.5px; }
+.toc-sidebar .lvl-4 a, .toc-sidebar .lvl-5 a, .toc-sidebar .lvl-6 a {
+  padding-left: 42px; font-size: 12px;
+}
+
+.content { padding: 40px 64px 120px; min-width: 0; }
+
+/* ═══ Hero (per-doc) ════════════════════════════════════════════════ */
+.doc-hero {
+  position: relative;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 32px;
+  margin-bottom: 36px;
+}
+.doc-hero::before {
+  content: ''; position: absolute;
+  top: -40px; left: -64px; right: -64px; height: 220px;
+  background: radial-gradient(ellipse 60% 100% at 0% 0%, rgba(var(--doc-accent-rgb, 106,166,255),0.10), transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+.doc-hero > * { position: relative; z-index: 1; }
+.doc-hero .eyebrow {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  color: var(--doc-accent, var(--accent)); font-weight: 600;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.doc-hero .eyebrow .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--doc-accent, var(--accent));
+  box-shadow: 0 0 8px var(--doc-accent, var(--accent));
+}
+.doc-hero h1 {
+  font-size: 40px; line-height: 1.1;
+  margin: 12px 0 16px;
+  font-weight: 700; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.doc-hero .one-liner {
+  font-size: 18px; line-height: 1.55;
+  color: var(--text-dim);
+  margin: 0 0 20px;
+  max-width: 70ch;
+}
+.doc-hero .meta-row {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  font-size: 12.5px;
+}
+.meta-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--bg-2); border: 1px solid var(--border);
+  padding: 5px 12px; border-radius: 14px;
+  font-size: 12px; color: var(--text-dim);
+}
+.meta-pill .num { color: var(--text); font-weight: 600; font-feature-settings: "tnum"; }
+.meta-pill.fmt-md   { color: #6aa6ff; border-color: rgba(106,166,255,0.30); background: rgba(106,166,255,0.06); }
+.meta-pill.fmt-pdf  { color: #f87171; border-color: rgba(248,113,113,0.30); background: rgba(248,113,113,0.06); }
+.meta-pill.fmt-docx { color: #38bdf8; border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.fmt-html { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.fmt-htm  { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.complexity-beginner    { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.06); }
+.meta-pill.complexity-intermediate { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.complexity-advanced     { color: #fb923c; border-color: rgba(251,146,60,0.30); background: rgba(251,146,60,0.06); }
+.meta-pill.complexity-unknown      { color: var(--text-mut); }
+.meta-pill.source code { background: transparent; padding: 0; border: 0; font-size: 11px; color: var(--text-dim); }
+
+/* ═══ Curation panels ═══════════════════════════════════════════════ */
+
+.curation {
+  margin-bottom: 36px;
+}
+
+.intro-hook {
+  font-size: 18px;
+  line-height: 1.65;
+  color: var(--text);
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  padding: 8px 0 8px 20px;
+  margin: 0 0 28px;
+  font-style: italic;
+  font-weight: 350;
+}
+
+.exec-summary {
+  background: linear-gradient(135deg, rgba(var(--doc-accent-rgb, 106,166,255),0.07), rgba(var(--doc-accent-rgb, 106,166,255),0.02));
+  border: 1px solid rgba(var(--doc-accent-rgb, 106,166,255),0.20);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 0 0 24px;
+}
+.exec-summary h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent, var(--accent));
+  font-weight: 600;
+}
+.exec-summary p {
+  margin: 0; font-size: 15px; line-height: 1.65; color: var(--text);
+}
+
+.metaphor-callout {
+  display: flex; gap: 14px; align-items: flex-start;
+  background: rgba(184,106,255,0.06);
+  border: 1px solid rgba(184,106,255,0.25);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 0 0 24px;
+}
+.metaphor-callout .icon {
+  font-size: 22px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 4px rgba(184,106,255,0.4));
+}
+.metaphor-callout .body {
+  flex: 1; font-size: 14.5px; line-height: 1.6;
+  color: var(--text);
+}
+.metaphor-callout .body .label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--accent-2); font-weight: 700;
+  display: block; margin-bottom: 4px;
+}
+
+.tutorial-structure {
+  display: grid; grid-template-columns: 1fr; gap: 14px;
+  margin: 0 0 28px;
+}
+.tutorial-section {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--doc-accent);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+}
+.tutorial-section h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent);
+  font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.tutorial-section h3 .num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--doc-accent); color: var(--bg);
+  font-size: 10px; font-weight: 700;
+}
+.tutorial-section p {
+  margin: 0; font-size: 14.5px; line-height: 1.65; color: var(--text);
+}
+
+.context-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin: 0 0 28px;
+}
+.context-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.context-card h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut);
+  font-weight: 600;
+}
+.context-card ul {
+  margin: 0; padding: 0; list-style: none;
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.context-card li {
+  background: var(--bg-3);
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--text-dim);
+  border: 1px solid var(--border-2);
+}
+.context-card.prereqs li { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.05); }
+.context-card.builds li { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.05); }
+.context-card.concepts li { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.05); }
+
+.takeaways {
+  background: linear-gradient(135deg, rgba(74,222,128,0.05), rgba(74,222,128,0.01));
+  border: 1px solid rgba(74,222,128,0.20);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin: 36px 0 0;
+}
+.takeaways h3 {
+  margin: 0 0 10px;
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--ok); font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.takeaways h3::before {
+  content: '✓';
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(74,222,128,0.18);
+  font-size: 12px; font-weight: 700;
+}
+.takeaways ul { margin: 0; padding-left: 22px; }
+.takeaways li {
+  font-size: 14.5px; line-height: 1.6; color: var(--text);
+  margin: 6px 0;
+}
+
+/* ═══ Article body ══════════════════════════════════════════════════ */
+article { font-size: 16px; line-height: 1.78; color: var(--text); max-width: 78ch; }
+article > * + * { margin-top: 1.0em; }
+article p { margin: 0; }
+article h1, article h2, article h3, article h4 {
+  font-weight: 650; letter-spacing: -0.01em; color: var(--text);
+  scroll-margin-top: 90px; position: relative;
+}
+article h1 { font-size: 28px; margin-top: 56px; }
+article h2 {
+  font-size: 24px; margin-top: 56px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+article h3 { font-size: 19px; margin-top: 36px; }
+article h4 { font-size: 16.5px; margin-top: 24px; color: var(--text-dim); }
+article h2::before, article h3::before {
+  content: '#'; position: absolute; left: -28px;
+  color: var(--text-mut); font-weight: 400;
+  opacity: 0; transition: opacity .15s;
+}
+article h2:hover::before, article h3:hover::before { opacity: 1; }
+
+article ul, article ol { padding-left: 1.5em; margin: 0; }
+article li { margin: .35em 0; }
+article li > p { margin: 0; }
+
+article hr {
+  border: 0; height: 1px; background: var(--border); margin: 36px 0;
+}
+
+article blockquote {
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.05);
+  padding: 14px 18px;
+  margin: 22px 0;
+  border-radius: 0 8px 8px 0;
+  color: var(--text-dim);
+}
+article blockquote p { margin: 0; }
+
+article pre {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-size: 13.5px;
+  line-height: 1.65;
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+article pre::-webkit-scrollbar { height: 7px; }
+article pre::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+article code, article pre {
+  font-family: "JetBrains Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+  font-feature-settings: "calt" 1;
+}
+article code.il {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  padding: 1px 7px; border-radius: 5px;
+  font-size: 0.88em;
+  color: var(--accent);
+}
+.code-block { position: relative; }
+.code-block .copy-btn {
+  position: absolute; top: 8px; right: 8px;
+  background: var(--bg-3); border: 1px solid var(--border);
+  color: var(--text-dim); padding: 4px 11px; border-radius: 5px;
+  font-size: 11px; font-family: inherit; cursor: pointer;
+  opacity: 0; transition: all .15s;
+}
+.code-block:hover .copy-btn { opacity: 1; }
+.code-block .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+.code-block .copy-btn.copied { color: var(--ok); border-color: var(--ok); }
+
+article pre .kw   { color: #c084fc; font-weight: 500; }
+article pre .type { color: #67e8f9; }
+article pre .str  { color: #fcd34d; }
+article pre .num  { color: #fb923c; }
+article pre .cmt  { color: #6b7d99; font-style: italic; }
+
+article .tbl-wrap {
+  overflow-x: auto; margin: 22px 0;
+  border-radius: 10px; border: 1px solid var(--border);
+}
+article table { border-collapse: collapse; width: 100%; font-size: 14px; }
+article th {
+  background: var(--bg-3); padding: 11px 14px; text-align: left;
+  font-weight: 600; color: var(--text);
+  border-bottom: 1px solid var(--border-2);
+}
+article td {
+  padding: 11px 14px; border-top: 1px solid var(--border); vertical-align: top;
+}
+article tr:nth-child(even) td { background: rgba(255,255,255,0.013); }
+
+article .diagram-box {
+  background: linear-gradient(135deg, #1c2540 0%, #0e1424 100%);
+  border: 1px solid var(--border-2);
+  border-radius: 12px;
+  padding: 22px 26px;
+  margin: 24px 0;
+  box-shadow: var(--shadow);
+}
+article .diagram-box pre {
+  background: transparent; border: 0; padding: 0;
+  color: #e8edf5; font-size: 13px; line-height: 1.55;
+}
+
+article .img-ref {
+  display: inline-block;
+  background: var(--bg-2); color: var(--text-mut);
+  padding: 1px 8px; border-radius: 4px;
+  font-size: 11px; font-style: normal;
+  border: 1px dashed var(--border-2);
+}
+
+/* ═══ Duplicate banners ═════════════════════════════════════════════ */
+.dup-banner {
+  background: linear-gradient(135deg, rgba(251,191,36,0.10), rgba(251,191,36,0.04));
+  border: 1px solid rgba(251,191,36,0.35);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 18px;
+  font-size: 14px; line-height: 1.55;
+  display: flex; gap: 14px; align-items: flex-start;
+}
+.dup-banner + .dup-banner { margin-top: 0; }
+.dup-banner .icon { font-size: 22px; line-height: 1.2; flex-shrink: 0; }
+.dup-banner .body { flex: 1; min-width: 0; }
+.dup-banner h4 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--warn); text-transform: uppercase; letter-spacing: 1px; }
+.dup-banner p { margin: 0; color: var(--text-dim); }
+.dup-banner ul { margin: 6px 0 0; padding-left: 22px; color: var(--text-dim); }
+.dup-banner ul li { margin: 3px 0; word-break: break-word; }
+.dup-banner code {
+  background: var(--bg-3); padding: 2px 7px; border-radius: 5px;
+  font-size: 0.92em; color: var(--text);
+}
+.dup-banner.exact {
+  border-color: rgba(248,113,113,0.40);
+  background: linear-gradient(135deg, rgba(248,113,113,0.10), rgba(248,113,113,0.04));
+}
+.dup-banner.exact h4 { color: var(--bad); }
+.dup-banner.near {
+  border-color: rgba(56,189,248,0.40);
+  background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(56,189,248,0.04));
+}
+.dup-banner.near h4 { color: var(--info); }
+.banner-stack { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+
+/* ═══ PDF page cards ════════════════════════════════════════════════ */
+.pdf-page {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin: 24px 0;
+  overflow: hidden;
+  scroll-margin-top: 90px;
+}
+.pdf-page .page-head {
+  background: var(--bg-3);
+  padding: 9px 20px;
+  font-size: 11px; font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 1.4px;
+  border-bottom: 1px solid var(--border);
+}
+.pdf-page .page-body { padding: 18px 24px 22px; }
+.pdf-page pre {
+  margin: 0; background: transparent; border: 0; padding: 0;
+  white-space: pre-wrap; word-wrap: break-word;
+  color: var(--text); font-size: 13px; line-height: 1.6;
+}
+
+.empty-note {
+  background: var(--bg-2);
+  border: 1px dashed var(--border-2);
+  border-radius: 10px;
+  padding: 18px 22px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* ═══ Cross-references + related ════════════════════════════════════ */
+.cross-refs {
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.cross-refs h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.cross-ref-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.cross-ref-list a {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: all .15s;
+}
+.cross-ref-list a:hover {
+  color: var(--text);
+  border-color: var(--doc-accent, var(--accent));
+  background: var(--bg-3);
+  text-decoration: none;
+}
+.cross-ref-list a .arrow { color: var(--doc-accent, var(--accent)); margin-right: 6px; }
+
+.related {
+  margin-top: 48px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.related h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 18px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.related-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+.related-card {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+}
+.related-card:hover {
+  border-color: var(--doc-accent, var(--accent));
+  transform: translateY(-1px);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+}
+.related-card .title {
+  font-weight: 600; font-size: 13.5px; line-height: 1.35;
+  color: var(--text);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.related-card .meta {
+  font-size: 11px; color: var(--text-mut); margin-top: 6px;
+  display: flex; gap: 8px; align-items: center;
+}
+.related-card .meta .badge {
+  padding: 1px 6px; border-radius: 3px;
+  background: var(--bg-3); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* ═══ Master index page ═════════════════════════════════════════════ */
+
+.index-hero {
+  text-align: center;
+  padding: 80px 24px 56px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.index-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 30% 0%, rgba(106,166,255,0.13), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 70% 30%, rgba(184,106,255,0.10), transparent 70%);
+  pointer-events: none;
+}
+.index-hero > * { position: relative; z-index: 1; }
+.index-hero .eyebrow {
+  color: var(--accent); font-size: 12px;
+  text-transform: uppercase; letter-spacing: 1.8px; font-weight: 600;
+}
+.index-hero h1 {
+  font-size: 56px; margin: 16px 0 12px;
+  font-weight: 750; letter-spacing: -0.025em;
+  background: linear-gradient(135deg, #6aa6ff 0%, #b86aff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.index-hero .tagline {
+  color: var(--text-dim); font-size: 18px;
+  max-width: 720px; margin: 14px auto 0; line-height: 1.6;
+}
+.search-row {
+  display: flex; gap: 12px;
+  max-width: 720px; margin: 36px auto 0;
+}
+.search-row input {
+  flex: 1;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 15px;
+  padding: 14px 22px;
+  border-radius: 14px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color .15s, box-shadow .15s;
+}
+.search-row input::placeholder { color: var(--text-mut); }
+.search-row input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(106,166,255,0.13);
+}
+
+.summary-stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  max-width: 1080px; margin: 36px auto 56px; padding: 0 24px;
+}
+.stat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  text-align: center;
+  transition: border-color .15s;
+}
+.stat-card:hover { border-color: var(--border-2); }
+.stat-card .num {
+  font-size: 32px; font-weight: 700; color: var(--accent);
+  font-feature-settings: "tnum"; line-height: 1.1;
+}
+.stat-card .lbl {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--text-mut); margin-top: 6px;
+}
+
+.split-view {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  max-width: 1320px; margin: 0 auto; padding: 0 24px 60px;
+}
+@media (max-width: 980px) {
+  .split-view { grid-template-columns: 1fr; }
+}
+
+.hub-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 32px 36px;
+  position: relative;
+  overflow: hidden;
+  transition: all .2s;
+}
+.hub-card.core::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 0% 0%, rgba(106,166,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card.applications::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 100% 0%, rgba(184,106,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card > * { position: relative; z-index: 1; }
+.hub-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.hub-card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 700;
+}
+.hub-card.core .label { color: var(--accent); }
+.hub-card.applications .label { color: var(--accent-2); }
+.hub-card h2 {
+  font-size: 32px; line-height: 1.15;
+  margin: 8px 0 12px;
+  font-weight: 700; letter-spacing: -0.02em;
+  color: var(--text);
+}
+.hub-card .desc {
+  font-size: 15px; line-height: 1.6; color: var(--text-dim);
+  margin: 0 0 24px;
+}
+.hub-card .stats {
+  display: flex; gap: 18px; margin-bottom: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-card .stats .num { color: var(--text); font-weight: 600; }
+.hub-card .cta {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 10px;
+  font-size: 13.5px; font-weight: 600;
+  text-decoration: none;
+}
+.hub-card.core .cta {
+  background: rgba(106,166,255,0.12);
+  color: var(--accent);
+  border: 1px solid rgba(106,166,255,0.30);
+}
+.hub-card.applications .cta {
+  background: rgba(184,106,255,0.12);
+  color: var(--accent-2);
+  border: 1px solid rgba(184,106,255,0.30);
+}
+.hub-card .cta:hover { text-decoration: none; transform: translateX(2px); }
+.hub-card .quick {
+  margin-top: 24px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.hub-card .quick h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut); font-weight: 600;
+}
+.hub-card .quick ul { list-style: none; margin: 0; padding: 0; }
+.hub-card .quick li { padding: 4px 0; font-size: 13px; }
+.hub-card .quick li a { color: var(--text-dim); text-decoration: none; }
+.hub-card .quick li a:hover { color: var(--text); }
+
+/* ═══ Hub page (CORE / APPLICATIONS landing) ════════════════════════ */
+
+.hub-hero {
+  padding: 64px 32px 36px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1240px; margin: 0 auto;
+}
+.hub-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 600;
+}
+.hub-hero h1 {
+  font-size: 48px; margin: 12px 0 14px;
+  font-weight: 750; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.hub-hero p {
+  color: var(--text-dim); font-size: 17px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.hub-hero .stats {
+  display: flex; gap: 22px; margin-top: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-hero .stats .num { color: var(--text); font-weight: 600; }
+
+.cat-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 18px;
+  max-width: 1280px; margin: 28px auto; padding: 0 32px 80px;
+}
+.cat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 24px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.cat-card:hover {
+  border-color: var(--border-3);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+}
+.cat-card .head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 12px;
+}
+.cat-card .head .icon {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 18px;
+  color: var(--accent);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.cat-card.app .head .icon { color: var(--accent-2); }
+.cat-card .title {
+  font-size: 18px; font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  flex: 1;
+}
+.cat-card .head .count {
+  font-size: 12px; color: var(--text-mut);
+  flex-shrink: 0;
+}
+.cat-card .tagline {
+  font-size: 13px; color: var(--accent);
+  font-weight: 500;
+  margin: 0;
+}
+.cat-card.app .tagline { color: var(--accent-2); }
+.cat-card .desc {
+  font-size: 13.5px; color: var(--text-dim);
+  line-height: 1.55;
+  margin: 4px 0 0;
+}
+
+/* ═══ Category landing (per family/domain) ══════════════════════════ */
+
+.cat-hero {
+  padding: 56px 32px 32px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1180px; margin: 0 auto;
+}
+.cat-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px; font-weight: 600;
+}
+.cat-hero h1 {
+  font-size: 42px; margin: 10px 0 14px;
+  font-weight: 700; letter-spacing: -0.02em;
+}
+.cat-hero p {
+  color: var(--text-dim); font-size: 16px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.cat-hero .stats {
+  display: flex; gap: 20px; margin-top: 22px;
+  font-size: 13px; color: var(--text-mut);
+}
+.cat-hero .stats .num { color: var(--text); font-weight: 600; }
+.cat-hero .search-row {
+  max-width: 520px; margin: 24px 0 0;
+}
+.cat-hero .search-row input { padding: 12px 18px; font-size: 14px; }
+
+.doc-cards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 14px;
+  max-width: 1180px; margin: 36px auto 96px;
+  padding: 0 32px;
+}
+.doc-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 22px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .18s;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.doc-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.doc-card.app:hover { border-color: var(--accent-2); }
+.doc-card .head {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+}
+.doc-card .title {
+  font-size: 16px; font-weight: 650; line-height: 1.3;
+  color: var(--text); flex: 1;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  letter-spacing: -0.01em;
+}
+.doc-card .badges { display: flex; gap: 4px; flex-shrink: 0; }
+.doc-card .badge {
+  font-size: 9px; padding: 2px 7px; border-radius: 3px;
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px;
+  background: var(--bg-3); color: var(--text-mut);
+}
+.doc-card .badge.dup { background: rgba(248,113,113,0.18); color: var(--bad); }
+.doc-card .badge.fmt-md { background: rgba(106,166,255,0.18); color: #6aa6ff; }
+.doc-card .badge.fmt-pdf { background: rgba(248,113,113,0.18); color: #f87171; }
+.doc-card .badge.fmt-docx { background: rgba(56,189,248,0.18); color: #38bdf8; }
+.doc-card .badge.fmt-html { background: rgba(251,191,36,0.18); color: #fbbf24; }
+.doc-card .one-liner {
+  font-size: 13.5px; color: var(--text-dim); line-height: 1.55;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  flex: 1;
+}
+.doc-card .meta {
+  display: flex; gap: 14px; font-size: 11px; color: var(--text-mut);
+  border-top: 1px solid var(--border); padding-top: 12px;
+  margin-top: auto;
+}
+.doc-card .meta .num { color: var(--text-dim); font-weight: 600; font-feature-settings: "tnum"; }
+
+/* ═══ Mobile ════════════════════════════════════════════════════════ */
+@media (max-width: 980px) {
+  .layout { grid-template-columns: 1fr; }
+  .toc-sidebar { display: none; }
+  .content { padding: 28px 24px 80px; }
+  .doc-hero h1 { font-size: 30px; }
+  .doc-hero .one-liner { font-size: 16px; }
+  .topbar { padding: 10px 18px; }
+  .index-hero h1 { font-size: 38px; }
+  .index-hero { padding: 56px 20px 36px; }
+  .hub-hero h1 { font-size: 34px; }
+  .hub-hero { padding: 40px 20px 24px; }
+  .cat-hero h1 { font-size: 32px; }
+  .cat-hero { padding: 36px 20px 24px; }
+  .doc-cards, .cat-grid { padding: 0 20px 60px; }
+  .split-view { padding: 0 20px 40px; }
+}
+</style>
+</head>
+<body data-doc-type="core-concept">
+<nav class="topbar">
+<div class="crumbs"><a href="../../00-Index.html">Learning</a><span class="sep">›</span><a href="../_Hub.html">CORE</a><span class="sep">›</span><a href="_Category.html">Blazor &amp; Frontend</a><span class="sep">›</span><span class="current">Manual de Processos - Design (Process 3)</span></div>
+<div class="actions"><a class="action" href="ui-design-system-manual.pdf" download>↓ Download</a><a class="action" href="../../00-Index.html">All docs</a></div>
+</nav>
+<div class="layout">
+<aside class="toc-sidebar"><h3>On this page</h3><ol><li class="lvl-2"><a href="#page-1">Page 1</a></li><li class="lvl-2"><a href="#page-2">Page 2</a></li><li class="lvl-2"><a href="#page-3">Page 3</a></li><li class="lvl-2"><a href="#page-4">Page 4</a></li><li class="lvl-2"><a href="#page-5">Page 5</a></li><li class="lvl-2"><a href="#page-6">Page 6</a></li><li class="lvl-2"><a href="#page-7">Page 7</a></li><li class="lvl-2"><a href="#page-8">Page 8</a></li><li class="lvl-2"><a href="#page-9">Page 9</a></li><li class="lvl-2"><a href="#page-10">Page 10</a></li><li class="lvl-2"><a href="#page-11">Page 11</a></li><li class="lvl-2"><a href="#page-12">Page 12</a></li><li class="lvl-2"><a href="#page-13">Page 13</a></li><li class="lvl-2"><a href="#page-14">Page 14</a></li><li class="lvl-2"><a href="#page-15">Page 15</a></li><li class="lvl-2"><a href="#page-16">Page 16</a></li><li class="lvl-2"><a href="#page-17">Page 17</a></li><li class="lvl-2"><a href="#page-18">Page 18</a></li><li class="lvl-2"><a href="#page-19">Page 19</a></li><li class="lvl-2"><a href="#page-20">Page 20</a></li><li class="lvl-2"><a href="#page-21">Page 21</a></li><li class="lvl-2"><a href="#page-22">Page 22</a></li></ol></aside>
+<main class="content">
+
+<header class="doc-hero">
+  <div class="eyebrow"><span class="dot"></span>Concept · Blazor &amp; Frontend</div>
+  <h1>Manual de Processos - Design (Process 3)</h1>
+  <p class="one-liner">A Portuguese-language internal design system manual covering layouts, color palettes, typography, icons, components, responsiveness, and accessibility for MudBlazor-based web applications.</p>
+  <div class="meta-row">
+    <span class="meta-pill fmt-pdf">PDF</span>
+    <span class="meta-pill complexity-intermediate">Intermediate</span>
+    <span class="meta-pill"><span class="num">3,805</span> words</span>
+    <span class="meta-pill"><span class="num">19</span> min read</span>
+    <span class="meta-pill source">Source: <code>JScript/Manual de Processos-Design.pdf</code></span>
+  </div>
+</header>
+
+<div class="curation"><p class="intro-hook">Why does one app feel polished and another feel like five different developers fought a war inside it? Almost always because the polished one had a written rule for where buttons go, what red means, and which icon represents &#x27;delete&#x27; — and the other one didn&#x27;t.</p>
+<div class="exec-summary"><h3>Executive summary</h3><p>This is the &#x27;Design&#x27; chapter (Process 3) of an internal Agile process manual for building consistent web apps in MudBlazor + Blazor. It defines screen templates (login, dashboard, tables, user lists), a primary/secondary color hierarchy with hex values for light/dark modes, WCAG-aligned accessibility contrast rules, a Font Awesome icon catalog mapped to functions (edit, delete, expand), button hierarchy with state behavior, breakpoints, and responsive typography. It is an in-house style guide rather than a tutorial — its job is to make every project the team ships look and behave the same way.</p></div>
+<div class="metaphor-callout"><div class="icon">💡</div><div class="body"><span class="label">Metaphor</span>A design system manual is like a kitchen&#x27;s mise en place: before any chef starts cooking, the salt is in this jar, the knives are at this angle, and the plates are stacked over here. Nobody has to improvise where the pepper lives, so every dish that leaves the pass tastes consistent — even when six different cooks made them.</div></div>
+<div class="context-row"><div class="context-card prereqs"><h4>You should know first</h4><ul><li>basic web design</li><li>MudBlazor familiarity</li><li>CSS fundamentals</li></ul></div><div class="context-card concepts"><h4>Key concepts covered</h4><ul><li>design system</li><li>MudBlazor</li><li>color hierarchy</li><li>WCAG accessibility</li><li>responsive breakpoints</li><li>icon catalog</li><li>button states</li></ul></div><div class="context-card builds"><h4>Opens the door to</h4><ul><li>component library construction</li><li>design tokens</li><li>brand consistency</li></ul></div></div></div>
+<article>
+<div class="pdf-page" id="page-1"><div class="page-head">Page 1</div><div class="page-body"><pre>Construção de Manual de Processos e Subprocessos
+
+Índice Processo 3 - Design
+
+1. Arquitetura do projeto e Protótipos
+
+Objetivo: Estruturar a arquitetura da informação e os fluxos comuns/básicos do projeto
+      a) Criar um escopo com, pelo menos 3 fluxos principais: devem ser representada a distinção
+            das principais funcionalidades do projeto, fluxos de registo e configurações base, por
+            exemplo.
+      b) Apresentar relação entre telas e disposição de componentes em telas principais:
+            apresentação visual de algumas telas basicas, que servirão de explicação do funcionamento
+            ao cliente. Estas telas podem ser uniformizadas e preparadas antecipadamente, para serem
+            utilizadas como recurso para contacto com cliente e avaliação de necessidades.
+      c) Desenvolver uma estrutura básica da interface sem distrações visuais, isto é, uma interface
+            limpa que priorize usabilidade, clareza e eficiência da aplicação, eliminando elementos
+            desnecessários. Por exemplo, deve conter header com logo da app/cliente e menu
+            principal, footer básico com “links” generalistas, e um conteúdo principal com informações
+            relevantes à tarefa principal destinada á app ou homepage.
+      d) Fazer diagrama hierarquico com legenda explicativa (entendível por stakeholders) que
+            represente o curso do projeto.
+      e) Documentar, estilo portefólio, para cada projeto, a anotação de todos os requisitos e
+            especificações definidas para o projeto, onde devem ser também arquivadas alterações de
+            planeamento e/ou requisitos, cronogramas, e restante documentação.
+
+2. Templates predifinidos
+
+      a) Login
+            i. Componentes:
+                   1. Background: imagem alinhada na direita (66,66%) e restante cor de fundo sólida.
+                   2. Main Content: Card e Logos. Logo parceiro deve ser apresentado no fundo Div de
+                         Fundo esquerda. Itens alinhados ao centro.
+                   3. Card: Inputs dados de acesso, botão Login, Link recuperação password. Itens
+                         alinhados ao centro.
+            ii. Exemplo:
+
+                                                                                                                            1</pre></div></div>
+<div class="pdf-page" id="page-2"><div class="page-head">Page 2</div><div class="page-body"><pre>Construção de Manual de Processos e Subprocessos
+
+Deve-se adaptar o layout do Desktop, mantendo a imagem
+como fundo e centrando todos os itens da página.
+Todos os itens devem ter cores que permitam que estes sejam
+legiveis.
+Deve ser utilizada uma paleta de cores que permita a utilização
+dos mesmos estilos dos itens, independentemente do formato
+de visualiuzação, mobile, tablet ou desktop.
+Verificar regras e Telas pre definidas para Layouts responsivos.
+
+      b) Layout Empresas
+            i. Background: gradiente de cor
+            ii. Header: Barra de cor sólida a contrastar com a cor do texto
+            iii. Div Descrição: título da página e breve descrição da ação a fazer para o user
+            iv. Main Content: conjunto de cards distribuídos pelo grid com espaçamento vertical e
+                   horizontal uniforme.
+                   1. Cards: cada card apresentará o nome da empresa e um icon de settings no topo.
+                         O restante espaço apresentará o logo da empresa, centrado. Um exemplo deste
+                                                                                                                            2</pre></div></div>
+<div class="pdf-page" id="page-3"><div class="page-head">Page 3</div><div class="page-body"><pre>Construção de Manual de Processos e Subprocessos
+                         componente para implementação está disponível no MudBlazer definido como
+                         Card/Header. Campos clicáveis do card: icon settings e div de logo da empresa.
+
+            v. Icon Settings: clicar neste icone navega-se para a página de edição de empresa.
+
+Para respeitar a responsividade da página o main
+content deve ficar sempre centrado, com os card
+divididos consoante a largura da tela.
+Ao reduzir a dimensão da tela, existe um ajuste de
+colunas do grid, logo a disposição dos cards também
+sofre alteração, como mostra a figura.
+Verificar regras e Telas pre definidas para Layouts
+responsivos.
+
+      c) Homepage (layout base)
+            i. Header:
+                   1. Logo do cliente/app.
+                   2. Menu principal com itens (ver exemplo em imagem).
+            ii. Main Content:
+                   1. Área principal com informações relevantes à tarefa principal da aplicação ou
+                         conteúdo da homepage.
+                   2. Design limpo, priorizando usabilidade e clareza.
+            iii. Footer:
+                   1. Texto de direitos reservados.
+                   2. Logo agile.
+            iv. Background com imagem/logo do cliente.
+                                                                                                                            3</pre></div></div>
+<div class="pdf-page" id="page-4"><div class="page-head">Page 4</div><div class="page-body"><pre>Construção de Manual de Processos e Subprocessos
+
+Regras de Responsividade:
+      I. Background centrado;
+      II. Ícone Menu passa para a direita (?)
+      III. Secção de menu fecha. Só abre ao clicar ícone.
+      IV. Informação Footer aparece centrada (coluna
+            com varias linhas)
+
+      a) Dashboard
+            i. Header, Footer e Menu: mantém mesmo layout/formatação do Homepage (layout
+                   base)
+            ii. Main Content:
+                   1. Título
+                   2. Breadcrumbs
+                   3. Cards com Gráficos ou widgets de resumo (ex: KPIs, métricas).
+                                                                                                                            4</pre></div></div>
+<div class="pdf-page" id="page-5"><div class="page-head">Page 5</div><div class="page-body"><pre>Construção de Manual de Processos e Subprocessos
+            iii. Seções organizadas em grids ou cards para exibir informações-chave, incluindo botões
+                   e links para ações rápidas.
+            iv. Deve ser considerada a funcionalidade de recolher/expandir os cards com um toggle
+                   button.
+
+      b) Perfil User
+            i. Header, Footer e Menu: mantém mesmo layout/formatação do Homepage (layout
+                   base)
+            ii. Main Content:
+                   1. Foto ou avatar do usuário.
+                   2. Campos de informações pessoais (nome, e-mail, cargo, etc.).
+                   3. Botões para edição de perfil e alteração de password.
+                   4. Histórico de atividades ou preferências (opcional).
+
+                                                                                                                            5</pre></div></div>
+<div class="pdf-page" id="page-6"><div class="page-head">Page 6</div><div class="page-body"><pre>Construção de Manual de Processos e Subprocessos
+
+      c) Utilizadores
+            i. i.Header, Footer e Menu: mantém mesmo layout/formatação do Homepage (layout
+                   base)
+            ii. Main Content:
+                   1. Card Filtros Principais: filtra todos os dados da tabela
+                   2. Card Tabela:
+                         a) Lista ou tabela de usuários com colunas como: Nome, E-mail, Cargo, etc..
+                         b) Botões para adicionar, editar ou remover usuários.
+                         c) Barra de pesquisa
+                         d) Paginação
+
+      d) Tabelas
+Neste layout considera-se, para fins demonstrativos, só o conteúdo dentro do main container.
+
+            i. Título da tabela: componente indicativo com o nome da tabela. Insere-se sempre no
+                   topo do main container, à direita.
+
+            ii. Breadcrumbs: servem para orientar o utilizador relativamente à sua localização.
+                   Apresentam-se na mema linha que o título, à esquerda, sendo separados por barras
+                   (“/”).
+
+            iii. Card Filtros: card inicial que vai apresentar os filtros principais para facilitar a
+                   pesquisa/análise da informação detalhada na tabela. Contém também botões de ação
+                   como apresenta na tabela, podendo ser mais do que um botão, se necessário.
+
+            iv. Card Tabela:
+                   1. Barra de pesquisa (search): para pesquisas detalhadas em tempo real. Para
+                         procurar um dado ou conjuntop de dados esficíficos.
+                   2. Colunas:
+                         a) Título coluna: representa a coluna dos dados da tabela, podendo ter ícones
+                               de ordenação (ascendente/descendente).
+                         b) Filtros secundários: servem para reduzir a mostragem de dados da tabela
+                               por conjuntos de filtros. Apresentam-se a baixo do Título de cada coluna.
+
+                                                                                                                            6</pre></div></div>
+<div class="pdf-page" id="page-7"><div class="page-head">Page 7</div><div class="page-body"><pre>Construção de Manual de Processos e Subprocessos
+                         c) Primeira Coluna: a coluna mais à esquerda destina-se a ícone de detalhe
+                               (folder) ou a ícone de edição, para editar o dado presente naquela linha.
+                         d) Última coluna: apresenta ícone de eliminar (trash), bem identificaso com
+                               hoover e mensagem de aviso para garantir que os dados não são eliminados
+                               acidentalmente. A cor deste ícone está definida na tabela dos mesmoa.
+
+                   3. Linhas:
+                         a) Dados organizados por célula (texto, números, badges, etc.).
+                         b) Botões/ícones de ação por linha (ex: &quot;Editar&quot;, &quot;Eliminar&quot;, “Detalhes”, ...).
+
+                   4. Paginador: Controle de paginação (ex: &quot;1-10 de 100&quot;) + botões
+                         &quot;Anterior&quot;/&quot;Próximo&quot;.
+
+      a) Dropdown User
+            i. Localização: canto superior direito (no header). Surge ao clicar no ícone user.
+            ii. Itens:
+                   1. Nome do usuário (opcional).
+                   2. Links para: Perfil, Configurações, Sair
+            iii. Estilo: Fundo sólido ou com leve sombra.
+
+                                                                                                                            7</pre></div></div>
+<div class="pdf-page" id="page-8"><div class="page-head">Page 8</div><div class="page-body"><pre>Construção de Manual de Processos e Subprocessos
+
+2. Cores
+
+      a) Primárias
+      Objetivo: Estabelecer uma hierarquia visual clara, onde as cores primárias representam
+      identidade e ações-chave, enquanto as secundárias garantem harmonia e suporte.
+
+            i. Padrão:
+                   1. Primárias: Devem ser limitadas a 1–3 cores principais, usadas para elementos
+                         críticos (call-to-actions, ícones ativos, indicadores de estado).
+                   2. Secundárias: Derivadas das primárias através de ajustes de matiz, saturação ou
+                         luminosidade, ou cores neutras complementares. Devem sustentar a primária
+                         sem competir por atenção.
+
+            ii. Flexibilidade: As cores primárias podem variar por projeto, mas a relação entre
+                   primárias e secundárias (ex.: diferença de contraste, proporção de uso) deve manter-
+                   se consistente.
+
+      b) Hierarquia e Função de Cores
+      Objetivo: Associar cores a funções específicas para garantir intuitividade.
+
+            i. Padrão:
+                   1. Interatividade
+                         a) Primária: Ações principais (confirmação, progresso).
+                         b) Secundária: Ações secundárias (cancelar, voltar).
+                   2. Feedback:
+                   Cores dedicadas a estados (sucesso, erro, alerta) devem ser distintas das cores da
+                   marca para evitar confusão.
+                   Padrão:
+                         a) Sucesso (#2ecc71),
+                         b) Erro (#e74c3c),
+                         c) Alerta (#f39c12),
+                         d) Informação (#3498db).
+                   3. Neutras
+                   Fundos, textos e bordas devem seguir uma escala de tons claros/escuros adaptáveis
+                   ao modo de cor (claro/escuro).
+                   Padrão:
+                         a) Fundos (#f8f9fa),
+                         b) Textos (#333333),
+                         c) Bordas (#e0e0e0).
+
+      c) Acessibilidade
+      Objetivo: Garantir legibilidade e usabilidade para todos os usuários.
+
+            i. Padrão:
+                   1. Contraste mínimo: Texto vs. fundo deve atender ao nível AA (4.5:1) ou AAA (7:1)
+                         conforme a criticidade.
+                   2. Componentes interativos: Estados (hover, focus, desativado) devem ter
+                         contraste e indicação visual clara.
+
+                                                                                                                            8</pre></div></div>
+<div class="pdf-page" id="page-9"><div class="page-head">Page 9</div><div class="page-body"><pre>Construção de Manual de Processos e Subprocessos
+                   3. Independência de cor: Não depender apenas de cor para transmitir informação
+                         (ex.: usar ícones + texto em alertas).
+                   4. Flexibilidade: Cores primárias podem ser ajustadas em luminosidade/saturação
+                         para cumprir contraste, mantendo a identidade.
+
+            ii. Regras para Tons:
+                   1. Primária + 20% de brilho → botão hover.
+                   2. Primária com 10% de saturação → fundo desativado.
+
+      d) Tonalidades e Variações
+      Objetivo: Criar escalas de cores adaptáveis a diferentes contextos.
+
+            i. Padrão:
+                   1. Variações: Gerar tons claros/escuros a partir da primária para estados (hover,
+                         active) ou fundos.
+                   2. Neutras: Escalas de cinza com subtons para harmonizar com a paleta.
+                   3. Consistência: As variações devem seguir a lógica predefinida.
+
+      e) Modo Claro vs. Escuro.
+      Objetivo: Oferecer conforto visual em diferentes ambientes. A paleta pode adaptar-se, mas a
+      hierarquia (ex.: primária &gt; secundária) mantém-se.
+
+            i. Padrão:
+                   1. Bases:
+                         a) Modo claro: Fundos claros com texto escuro.
+                         b) Modo escuro: Fundos escuros com texto claro.
+                   2. Ajustes:
+                         a) Cores primárias podem ser clareadas/escurecidas para manter contraste no
+                               modo escuro.
+                         b) Neutras devem inverter sua função (ex.: cinza claro vira cinza escuro).
+
+                                                                                                                            9</pre></div></div>
+<div class="pdf-page" id="page-10"><div class="page-head">Page 10</div><div class="page-body"><pre>Construção de Manual de Processos e Subprocessos
+
+f) Exemplo Cores
+
+Categoria Função      Modo Claro                  Modo Escuro  Relação/Acessibilidade                                  Objetivo
+
+Primária  Base        #DF2E26                     #FF6B6B      Cor principal da marca. Contraste ≥ 4.5:1 sobre fundos  Botões primários, ações
+                                                               claros/escuros.                                         críticas.
+
+          Hover       #B8251E                     #E05555      20% mais escura que a base.                             Feedback visual ao interagir.
+
+          Active/Pressed #9A1D17                  #C43C3C      30% mais escura que a base.                             Estado de clique.
+
+          Desativado  #DF2E26 (50% opac) #FF6B6B (50% opac) Mantém identidade, mas reduz proeminência.                 Ações indisponíveis.
+
+Secundária Base       #F26D28                     #FF8E42      Complementar à primária (harmonia análoga). Contraste   Botões secundários, realces.
+                                                               ≥ 4.5:1.
+
+          Hover       #C25820                     #E07A35      20% mais escura que a base.                             Consistência interativa.
+
+Neutras   Fundo Primário #FFFFFF                  #121212      Neutro puro (claro) vs. quase-preto (escuro).           Base para conteúdo.
+
+          Fundo       #F8F8F8                     #1E1E1E      5% mais escuro/claro que o fundo primário.              Destaques de seções.
+          Secundário
+
+          Texto Primário #333333                  #E0E0E0      Contraste ≥ 7:1 (AAA) sobre fundos.                     Conteúdo principal.
+
+          Texto Secundário #666666                #A0A0A0      Contraste ≥ 4.5:1 (AA).                                 Texto menos importante.
+
+          Bordas      #E0E0E0                     #3A3A3A      Sutil distinção sem competir com conteúdo.              Divisões, cards.
+
+Feedback Sucesso      #2ECC71                     #27AE60      Verde saturado. Contraste ≥ 4.5:1.                      Confirmações, conclusões.
+
+          Erro        #E74C3C                     #C0392B      Vermelho distinto da primária. Contraste ≥ 4.5:1.       Falhas críticas.
+
+                                                                                                                                                 10</pre></div></div>
+<div class="pdf-page" id="page-11"><div class="page-head">Page 11</div><div class="page-body"><pre>Construção de Manual de Processos e Subprocessos
+
+           Alerta      #F39C12                    #D35400  Âmbar. Contraste ≥ 4.5:1.                          Avisos (ex.: campos
+                                                                                                              incompletos).
+           Informação  #3498DB                    #2980B9  Azul claro. Contraste ≥ 4.5:1.                     Notificações, ajuda.
+           Link                                                                                               Navegação clara.
+Interação  Link Hover  #3498DB                    #5DADE2  Azul padrão para hiperlinks. Sublinhado em texto.  Feedback visual.
+Variações  Sombra                                                                                             Elevação de componentes.
+           Overlay     #2874A6                    #7FB3D5  20% mais escuro/claro que o link base.             Foco no conteúdo superior.
+
+                       #000000 (10% opac) #000000 (30% opac) Sutil profundidade em ambos os temas.
+
+                       #000000 (50% opac) #000000 (70% opac) Escurecimento para modais.
+
+                                                                                                              11</pre></div></div>
+<div class="pdf-page" id="page-12"><div class="page-head">Page 12</div><div class="page-body"><pre>Construção de Manual de Processos e Subprocessos
+                                                                                                                                                                                                                 12</pre></div></div>
+<div class="pdf-page" id="page-13"><div class="page-head">Page 13</div><div class="page-body"><pre>Construção de Manual de Processos e Subprocessos
+
+3. Tipografia
+4. Fontes
+
+      a) Primárias, secundárias e fallbacks
+      b) Tamanhos
+      c) Títulos, parágrafos, labels, h1, h2
+
+5. Pesos
+
+      a) Normal, bold, italic
+      b) Exemplos
+
+6. Bordas
+
+      a) Raio
+      b) Espessura
+      c) Estilos
+      d) Exemplos
+
+                                                                                                                           13</pre></div></div>
+<div class="pdf-page" id="page-14"><div class="page-head">Page 14</div><div class="page-body"><pre>Construção de Manual de Processos e Subprocessos
+
+7. Icons
+
+Esta tabela apresenta um resumo dos principais ícones utilizados na aplicação, detalhando sua função, localização padrão e características visuais. Os ícones são baseados
+na biblioteca Font Awesome (versão classic), garantindo consistência e familiaridade para os utilizadores.
+
+      a) Objetivos da Tabela:
+            i. Padronização Visual: Definir cores, fontes e comportamentos para manter uma identidade coesa em toda a plataforma.
+            ii. Facilitar a Implementação: Servir como referência rápida para desenvolvedores e designers durante a construção de interfaces.
+            iii. Melhorar a Usabilidade: Assegurar que os ícones transmitam claramente suas funções (ex: ❌ para &quot;Eliminar&quot;, para &quot;Confirmação&quot;).
+
+      b) Destaques:
+            i. Ícones de Ação Crítica (ex: trash, ban) usam vermelho (#f44336) para sinalizar riscos.
+            ii. Ícones de Expansão/Redução (arrow-up, arrow-down) alternam dinamicamente em componentes como accordions.
+            iii. Flexibilidade: Cores &quot;primária/secundária&quot; adaptam-se ao contexto do layout.
+
+Esta lista abrange os ícones essenciais, mas pode ser expandida conforme necessidades futuras. Para ícones adicionais, consulte o Font Awesome.
+Recomenda-se testar a legibilidade dos ícones em diferentes fundos para garantir acessibilidade (contraste mínimo de 4.5:1 conforme WCAG).
+
+Nome   Preview  Fonte                                     Cor padrão               Localização         Função    Observações
+Check                                                      #00c853                                     Estética
+Trash           https://fontawesome.com/icons/check?f=cl   #f44336    Simboliza confirmação            Eliminar
+Xmark           assic&amp;s=regular                            #f44336                                     Estética
+ Ban                                                       #f44336    Presente em cada linha de        Estética
+                https://fontawesome.com/icons/trash-                  dados | Botão “Eliminar”
+                can?f=classic&amp;s=regular&amp;pc=%23f44336&amp;sc
+                =%23f44336                                            Simboliza erro, inexistência ou
+                                                                      não aplicação
+                https://fontawesome.com/icons/xmark?f=cl
+                assic&amp;s=regular                                       Boão de &quot;Cancelar&quot;
+
+                https://fontawesome.com/icons/ban?f=clas
+                sic&amp;s=regular
+
+                                                                                                                              14</pre></div></div>
+<div class="pdf-page" id="page-15"><div class="page-head">Page 15</div><div class="page-body"><pre>Construção de Manual de Processos e Subprocessos
+
+Arrow-down     https://fontawesome.com/icons/arrow-       primária/   Tabelas de dados                  Expandir Ajustar preenchimento
+Arrow-down-    down?f=classic&amp;s=regular                   secundária                                   informação consoante o fundo.
+
+   fom-line    https://fontawesome.com/icons/arrow-       primária/   Botão de exportação              Estética    Ajustar preenchimento
+ Arrow-left    down-from-line?f=classic&amp;s=regular         secundária                                               consoante o fundo.
+
+ Arrow-right   https://fontawesome.com/icons/arrow-       primária/   Botão “Voltar”                   Estética    Ajustar preenchimento
+               left?f=classic&amp;s=solid                     secundária                                               consoante o fundo.
+Arrow-right-
+ to-bracket    https://fontawesome.com/icons/arrow-       primária/   Esquerda de títulos de           Estética    Ajustar preenchimento
+               right?f=classic&amp;s=regular                  secundária  páginas/telas que são                        consoante o fundo.
+   Arrows-                                                            selecionadas pelo menu.
+    rotate     https://fontawesome.com/icons/arrow-       primária/
+               right-to-bracket?f=classic&amp;s=regular       secundária  Botão “Login                     Estética    Ajustar preenchimento
+  Arrow-up                                                                                                         consoante o fundo.
+               https://fontawesome.com/icons/arrows-      primária/
+     Bars      rotate?f=classic&amp;s=regular                 secundária  Atualizar                        Estética    Ajustar preenchimento
+                                                                                                                   consoante o fundo.
+  Circle plus  https://fontawesome.com/icons/arrow-       primária/
+               up?f=classic&amp;s=regular                     secundária  Ação ao Clicar: troca com          Reduzir Ajustar preenchimento
+     Clock                                                            Expandir. Cor de icone depende   informação consoante o fundo.
+               https://fontawesome.com/icons/bars?f=cla   primária/   da cor de fundo aplicada.
+    Clone      ssic&amp;s=light                               secundária
+                                                                      Header                           Abrir Menu  Ajustar preenchimento
+               https://fontawesome.com/icons/circle-      primária/                                                consoante o fundo.
+               plus?f=classic&amp;s=solid                     secundária
+                                                                      Botões de “Adicionar” em         Estética    Ajustar preenchimento
+               https://fontawesome.com/icons/clock?f=cla  primária/   páginas de dados (tabelas)                   consoante o fundo.
+               ssic&amp;s=regular                             secundária
+                                                                      Semelhante ao botão Adicionar,   Estética    Ajustar preenchimento
+               https://fontawesome.com/icons/clone?f=cl   primária/   mas específico para registos de              consoante o fundo.
+               assic&amp;s=solid                              secundária  entradas/picagens.
+
+                                                                      Replicar/clonar dados            Estética    Ajustar preenchimento
+                                                                                                                   consoante o fundo.
+
+                                                                                                                                          15</pre></div></div>
+<div class="pdf-page" id="page-16"><div class="page-head">Page 16</div><div class="page-body"><pre>Construção de Manual de Processos e Subprocessos
+
+Download      https://fontawesome.com/icons/download      primária/       Download | Botão                    Estética   Ajustar preenchimento
+     Eye      ?f=classic&amp;s=regular                        secundária                                                     consoante o fundo.
+
+ Eye-slash    https://fontawesome.com/icons/eye?f=clas    primária/       Mostrar dados/informação            Visível    Ajustar preenchimento
+File-circle-  sic&amp;s=regular                               secundária                                                     consoante o fundo.
+
+    plus      https://fontawesome.com/icons/eye-          primária/       Esconder dados/informação           Invisível  Ajustar preenchimento
+  File-pdf    slash?f=classic&amp;s=regular                   secundária                                                     consoante o fundo.
+  Arrows-
+   repeat     https://fontawesome.com/icons/file-circle-  primária/       Botão “Criar Documento”             Estética   Ajustar cor. Fica à
+Floppy-disk   plus?f=classic&amp;s=light                      secundária                                                     esquerda do texto.
+Folder-plus
+              https://fontawesome.com/icons/file-         primária/       Transformar dados em PDF, exportar  Estética   Ajustar preenchimento
+    Gear      pdf?f=classic&amp;s=solid                       secundária      documento para pdf.                            consoante o fundo.
+
+    Link      https://fontawesome.com/icons/arrows-          primária/    Sincronização de dados/informações  Estética | Ajustar preenchimento
+    Pen       repeat?f=classic&amp;s=regular                  secundária/Ver                                        Botão consoante a função.
+
+                                                                  de
+
+              https://fontawesome.com/icons/floppy-       primária/       Esquerda de títulos | Botão         Estética | Ajustar preenchimento
+              disk?f=classic&amp;s=solid                      secundária      Gravar/Guardar                        Botão consoante a função.
+
+              https://fontawesome.com/icons/folder-       primária/       Adiconar pastas                     Adicionar Ajustar preenchimento
+              plus?f=classic&amp;s=solid                      secundária                                           pastas consoante o fundo.
+
+              https://fontawesome.com/icons/gear?f=cla    primária/       Icone título secção                 Estética | Ajustar preenchimento
+              ssic&amp;s=light                                secundária      “Administração” | Aceder a            Botão consoante a função.
+                                                                          definições
+
+              https://fontawesome.com/icons/link?f=clas   primária/       Título coluna “Dependências”        Botão      Ajustar preenchimento
+              sic&amp;s=light                                 secundária      de tabela tarefas em processos      Editar     consoante o fundo.
+
+              https://fontawesome.com/icons/pen?f=clas    primária/       Editar dado em tabela                          Ajustar preenchimento
+              sic&amp;s=light                                 secundária                                                     consoante o fundo.
+
+                                                                                                                                                16</pre></div></div>
+<div class="pdf-page" id="page-17"><div class="page-head">Page 17</div><div class="page-body"><pre>Construção de Manual de Processos e Subprocessos
+
+  Pen-to-    https://fontawesome.com/icons/pen-to-      primária/   Dados Tabelas |Botão “Editar”     Editar    Ajustar preenchimento
+   square    square?f=classic&amp;s=regular                 secundária                                              consoante o fundo.
+
+    Plus     https://fontawesome.com/icons/plus?f=cla   primária/   Esquerda de títulos para          Estética  Ajustar preenchimento
+             ssic&amp;s=regular                             secundária  adicionar/editar | Botões de                consoante o fundo.
+Square-plus                                                         criar
+ Up-down-    https://fontawesome.com/icons/square-      primária/
+ left-right  plus?f=classic&amp;s=regular                   secundária  Botão adicionar/criar nova série  Botão     Ajustar preenchimento
+                                                                                                                consoante o fundo.
+  Upload     https://fontawesome.com/icons/up-down-     primária/
+             left-right?f=classic&amp;s=solid               secundária  Mover                             Botão     Ajustar preenchimento
+    User                                                                                                        consoante o fundo.
+             https://fontawesome.com/icons/upload?f=    primária/
+ User-plus   classic&amp;s=regular                          secundária  Upload                            Estética | Ajustar preenchimento
+                                                                                                        Botão consoante o fundo.
+             https://fontawesome.com/icons/user?f=cla   primária/
+             ssic&amp;s=solid                               secundária  Botão canto superior direito |à   Detalhes  Ajustar preenchimento
+                                                                    esquerda de títulos relacionados   User |   consoante o fundo.
+             https://fontawesome.com/icons/user-        primária/   com usuários.                     Estética
+             plus?f=classic&amp;s=solid&amp;rt=flip-horizontal  secundária
+                                                                    Adicionar User                    Botão|Esté Ajustar preenchimento
+
+                                                                                                      tica      consoante o fundo.
+
+                                                                                                                                        17</pre></div></div>
+<div class="pdf-page" id="page-18"><div class="page-head">Page 18</div><div class="page-body"><pre>Construção de Manual de Processos e Subprocessos
+
+      c) Biblioteca/package
+            i. MudBlazer
+            MudBlazor é um framework de componentes UI (User Interface) para Blazor, uma
+            tecnologia da Microsoft que permite criar aplicações web interativas usando C# em vez de
+            JavaScript. Ele oferece uma biblioteca de componentes prontos (como botões, menus, grids,
+            formulários) com um design moderno e customizável, seguindo o padrão Material Design
+            (estilo visual do Google).
+                   1. Principais características:
+                         a) Componentes ricos e estilizados (ex.: MudButton, MudCard, MudTable).
+                         b) Suporte a temas (claro/escuro) e personalização via CSS ou variáveis C#.
+                         c) Integração nativa com Blazor Server e Blazor WebAssembly.
+                         d) Open-source e comunidade ativa.
+                   2. Integração
+            ii. Font Awesome
+            Font Awesome é uma biblioteca de ícones vetoriais amplamente usada em projetos web.
+            Oferece +2.000 ícones gratuitos e +7.000 na versão Pro, com suporte a estilos (sólido,
+            regular, brands).
+                   1. Ícones Modernos:
+                         a) Ícones para ações (salvar, editar), mídias (play, pause) e categorias
+                               (negócios, saúde).
+                         b) Suporte a animações (spin, pulse) e tamanhos escaláveis.
+                   2. Integração Flexível: compatível com Blazor através de classes CSS ou
+                         componentes dedicados.
+                   3. Customização: Cor, tamanho e estilo configuráveis via CSS. Ícones podem ser
+                         usados em botões, menus, textos.
+
+8. Componentes Essenciais:
+
+      a) Botões
+            i. Hierarquia visual
+                   1. Botão Primário (Ação principal, &quot;Submeter&quot;, &quot;Comprar&quot;):Cor mais vibrante (usar
+                         cor primária da marca)
+                   2. Secundário (Ações alternativas, &quot;Voltar&quot;, &quot;Cancelar&quot;): Cor menos proeminente
+                         (cor secundária ou neutra)
+                   3. Terciário (Ações menos críticas, &quot;Saber mais&quot;, &quot;Link&quot;): Estilo minimalista (apenas
+                         texto ou borda)
+            ii. Estados Interativos
+                   1. Default (estado normal)
+                   2. Hover (mouse sobre): Escurecer/clarear a cor base em 15-20% e adicionar
+                         transição suave (transition: 0.2s ease)
+                   3. Active/Pressed (clicado): Efeito de &quot;afundar&quot; (sombra interna ou cor 30% mais
+                         escura)
+                   4. Focused (foco de acessibilidade): Contorno visível (outline ou box-shadow)
+                   5. Disabled (desativado): Reduzir opacidade (50-60%) e remover interação
+
+                                                                                                                           18</pre></div></div>
+<div class="pdf-page" id="page-19"><div class="page-head">Page 19</div><div class="page-body"><pre>Construção de Manual de Processos e Subprocessos
+            iii. Acessibilidade
+                   1. Contraste mínimo: Texto vs. fundo: ≥ 4.5:1 (AA) para botões pequenos, ≥ 3:1
+                         para grandes.
+                   2. Tamanho: Área de toque mínima: 44×44px (mobile/web).
+                   3. Indicadores visuais: Não depender apenas de cor (usar ícones ou texto para
+                         estados como &quot;desativado&quot;).
+            iv. Estilo e Formato
+                   1. Bordas: Radius consistente (ex: 4px para corporate, 8px para friendly).
+                   2. Sombras: Sombra sutil para botões elevados (ex: box-shadow: 0 2px 4px
+                         rgba(0,0,0,0.1)).
+                   3. Ícones: Posicionamento (esquerda/direita do texto) e tamanho padronizado.
+            v. Espaçamento e Tamanhos
+                   1. Defina proporções fixas para: Altura: 36px (pequeno), 44px (médio), 52px
+                         (grande).
+                   2. Padding horizontal: Mínimo 16px para evitar toques acidentais.
+            vi. Exceções
+                   1. Botões Destrutivos (“Apagar”, &quot;Excluir&quot;): Usar vermelho distinto (#E74C3C)
+                         mesmo em interfaces com outra cor primária.
+                   2. Botões Flutuantes (FAB): Círculo com ícone, sombra mais pronunciada e
+                         mensagem descritiva com hoover.
+            vii. Exemplo:
+
+                                                                                                                           19</pre></div></div>
+<div class="pdf-page" id="page-20"><div class="page-head">Page 20</div><div class="page-body"><pre>Construção de Manual de Processos e Subprocessos
+
+9. Responsividade
+
+      a) Comportamento adaptativo: mostrar diferenças de ocultação/mostragem de elementos e
+            do redimensionamento de textos/imagens/componentes.
+
+      b) Breakpoints
+
+Tipo de Tela Breakpoint (max-width)               Tipo de tela
+
+XS   600px                                        Smartphone
+
+S    960px                                        Tablets e Smartphones
+
+M    1280px                                       Laptops e Tablets
+
+L    1920px                                       Desktop
+
+XL   2560px                                       Telas HD e 4k
+
+XXL  &gt;=256px                                      4k+ e ultra-wide
+
+Ao trabalhar com o MudBlazor é necessário considerar a possibilidade da app estar com
+GridSystem definido que, à partida, será de 12 colunas (como no bootstrap) para dividir a
+organização dos conteúdos.
+Nessa situação, os breakpoints já se encontram definidos, devendo-se ter atenção redobrada
+para evitar duplicações de estilização e conteúdos.
+É importante veririficar e estudar o comportamento adaptativo do componente do MudBlazor
+para o inserir no layout, efetuando as modificações necessárias de forma a manter a mesma
+lógica de responsividade.
+c) Tipografia Escalável (exemplo)
+Usar rem ou em para escalabilidade. Evitar fontes abaixo de 14px em qualquer dispositivo.
+
+      i. Mobile:
+            1. Título principal: 1.5rem – 2rem (24px – 32px)
+            2. Texto comum: 1rem (16px)
+            3. Linhas muito longas? Reduza o tamanho ou aumente o line-height.
+
+      ii. Tablet/Desktop:
+            1. Títulos podem aumentar (2rem – 2.5rem).
+            2. Texto: Mantenha entre 1rem – 1.2rem para legibilidade.
+
+d) Toques e Interações
+      i. Tamanho mínimo para a área de toque
+            1. 48px por 48px para botões e links
+            2. Espaçamento entre elementos clicáveis: 8px - 16px.
+      ii. Recomendações
+            1. Em desktop, utilize hover para feedback visual.
+            2. Em mobile, garanta que active ou toques sejam claros (ex: mudança de cor ou
+                   transições).
+
+e) Outras Recomendações a considerar
+
+                                                                         20</pre></div></div>
+<div class="pdf-page" id="page-21"><div class="page-head">Page 21</div><div class="page-body"><pre>Construção de Manual de Processos e Subprocessos
+
+            i. Imagens e Vídeos
+                   1. Tamanho e Compressão:
+                         a) Utilizar o mesmo formato de imagem para toda a app, preferencialmente o
+                               mais leve.
+                         b) Compressão automática via &lt;picture&gt; com fallback
+                         c) Em MudBlazor: utilizar o componente &lt;MudImage&gt; com SrcSet para
+                               diferentes resoluções.
+                   2. Layout Adaptativo:
+                         a) Sempre definir max-width: 100% e height: auto no CSS para evitar overflow.
+                         b) Utilizar CSS Grid ou Flexbox para reposicionamento em breakpoints (ex.:
+                               imagem em coluna em mobile).
+                   3. Vídeos:
+                         a) Utilizar a tag &lt;video&gt; com width=&quot;100%&quot; e atributo playsinline para mobile.
+                         b) Evitar autoplay (pode ser bloqueado em mobile).
+
+            ii. Navegação
+                   1. Menu em Mobile: substituir menus horizontais por drawer (gaveta lateral).
+                   2. Priorizar Conteúdo: esconder itens secundários em mobile (use dropdowns ou
+                         menus aninhados) e garantir que os CTAs principais (ex.: &quot;Criar pedido&quot;) estejam
+                         sempre visíveis.
+                   3. Touch-Friendly: tamanho mínimo de toque: 48x48px (ex.: links/ícones no menu).
+
+            iii. Forms e Inputs
+                   1. Layout Vertical em Mobile: utilizar MudGrid para reorganizar inputs em coluna
+                         única abaixo de breakpoint-md
+                   2. Validação Contextual: mensagens de erro abaixo dos inputs (não em tooltips, que
+                         quebram em mobile).
+
+            iv. Scroll e Paginação
+                   1. Scroll Suave:
+                   2. Evite scroll horizontal (priorize overflow-y: auto).
+                   3. Em tabelas longas, use &lt;MudTable FixedHeader=&quot;true&quot;&gt; para header fixo.
+                   4. Paginação Adaptativa:
+                   5. Substitua paginação numérica por &quot;Carregar mais&quot; em mobile (ex.: via
+                         MudInfiniteScroll).
+
+10. Animações e micro animações (MudBlazor)
+
+      a) Transições: duração e efeitos
+      b) Feedback Visual: confirmação de ações
+      c) Estados de hover/foco
+      d) Loaders
+      e) Cliques
+      f) Drag-and-drop
+      g) Scroll
+
+                                                                                                                           21</pre></div></div>
+<div class="pdf-page" id="page-22"><div class="page-head">Page 22</div><div class="page-body"><pre>Construção de Manual de Processos e Subprocessos
+      h) Mensagens de erro/sucesso
+
+11. Acessibilidade
+
+      a) Cores
+      b) Utilzação de aria-label
+      c) Foco teclado
+
+12. Fluxo de Desenvolvimento
+
+      a) Disponibilização de app com design padrão com componentes básicos e que não sofrem
+            alterações
+
+      b) Nomenclatura: Definição de nomenclaturas para componentes e estilizações repetitivas,
+            sejam classes, divs ou botões pré definidos, para garantir consistência visual em toda a
+            aplicação, manutenção e colaboração eficientes.
+
+13. Documentação de exceções
+
+      a) Definição exceção
+      b) Objetivo
+      c) Justificação
+Nota: se uma exceção se notar muito regular, passa para procedimento ou componente essencial.
+
+Índice Processo 4: Desenvolvimento
+
+1. Registar relação tabelas/entidades
+2. Registar Fluxos de tarefas desenvolvidas do projeto
+3. Anotar a estrutura/organização do projeto (existe uma estrutura adaptada atualmente)
+4. Documentar funções importantes
+5. Confirmar e validar hábitos e regras de boas práticas de programação para existir conformidade nas
+estruturas de código de todos os projetos.
+6. Guia de revisão de código.
+
+                                                                                                                           22</pre></div></div>
+</article>
+<div class="takeaways"><h3>Key takeaways</h3><ul><li>Limit primaries to 1-3 colors; derive hover/active/disabled states by adjusting brightness 20-30%</li><li>Feedback colors (success/error/alert/info) must be distinct from brand colors to avoid confusion</li><li>Maintain WCAG AA (4.5:1) contrast minimum for text; AAA (7:1) for critical content</li><li>Touch targets must be at least 44x44px (preferably 48x48px on mobile) with 8-16px spacing</li><li>Use breakpoints XS&lt;600, S&lt;960, M&lt;1280, L&lt;1920, XL&lt;2560 aligned with the 12-column MudBlazor grid</li></ul></div>
+<aside class="cross-refs"><h2>Cross-references</h2><div class="cross-ref-list"><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>mudblazor-components</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>blazor-fundamentals</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>responsive-design</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>wcag-accessibility</a></div></aside>
+<aside class="related"><h2>More in this category</h2><div class="related-grid"><a class="related-card" href="../../CORE/frontend/ag-grid-custom-cell-editor-js-prototypes.html"><div class="title">AG Grid Custom Cell Editor — JavaScript Prototypes &amp; DOM Fundamentals</div><div class="meta"><span class="badge">DOCX</span><span>1,261 words</span></div></a><a class="related-card" href="../../CORE/frontend/blazor-js-interop-instance-isolation.html"><div class="title">Blazor JS Interop — Static Events vs Instance-Isolated Callbacks</div><div class="meta"><span class="badge">MD</span><span>835 words</span></div></a><a class="related-card" href="../../CORE/frontend/blazor-server-fundamentals.html"><div class="title">Blazor Server For Dummies</div><div class="meta"><span class="badge">PDF</span><span>2,975 words</span></div></a><a class="related-card" href="../../CORE/frontend/reactive-login-svg-css-state-machine.html"><div class="title">Build a Reactive Login Page From Zero — SVG, CSS State Machine, JS</div><div class="meta"><span class="badge">HTML</span><span>3,752 words</span></div></a><a class="related-card" href="../../CORE/frontend/button-catalog-design-system.html"><div class="title">Catálogo de Botões Padrão</div><div class="meta"><span class="badge">HTML</span><span>48 words</span></div></a><a class="related-card" href="../../CORE/frontend/css-color-system-example.html"><div class="title">Exemplo Cores - CSS Color System Example</div><div class="meta"><span class="badge">HTML</span><span>62 words</span></div></a></div></aside>
+</main>
+</div>
+<script>
+// ─── Active TOC item on scroll ────────────────────────────────────
+(function() {
+  const tocLinks = document.querySelectorAll('.toc-sidebar a[href^="#"]');
+  if (!tocLinks.length) return;
+  const headings = Array.from(document.querySelectorAll(
+    'article h1[id], article h2[id], article h3[id], article h4[id], .pdf-page[id]'
+  ));
+  if (!headings.length) return;
+  function setActive(id) {
+    tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+  }
+  let lastVisible = headings[0].id;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) lastVisible = e.target.id; });
+    setActive(lastVisible);
+  }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+  headings.forEach(h => observer.observe(h));
+  setActive(headings[0].id);
+})();
+
+// ─── Copy code buttons ────────────────────────────────────────────
+(function() {
+  document.querySelectorAll('article pre').forEach(pre => {
+    if (pre.closest('.diagram-box')) return;
+    if (pre.closest('.pdf-page')) return;
+    if (pre.parentElement && pre.parentElement.classList.contains('code-block')) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'code-block';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.type = 'button';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', () => {
+      const code = pre.querySelector('code') || pre;
+      const text = code.innerText;
+      const done = () => {
+        btn.textContent = 'Copied';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(() => {});
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+    });
+    wrap.appendChild(btn);
+  });
+})();
+
+// ─── Live filter (master + hub + category pages) ─────────────────
+(function() {
+  const search = document.getElementById('search-input');
+  if (!search) return;
+  const items = document.querySelectorAll('[data-search]');
+  function apply() {
+    const q = search.value.toLowerCase().trim();
+    items.forEach(el => {
+      const match = !q || el.dataset.search.includes(q);
+      el.style.display = match ? '' : 'none';
+    });
+    document.querySelectorAll('[data-search-parent]').forEach(parent => {
+      const visible = Array.from(parent.querySelectorAll('[data-search]'))
+        .some(el => el.style.display !== 'none');
+      parent.style.display = visible ? '' : 'none';
+    });
+  }
+  search.addEventListener('input', apply);
+})();
+</script>
+</body>
+</html>

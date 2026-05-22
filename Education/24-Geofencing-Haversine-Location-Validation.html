@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geofencing & Haversine — GPS-Based Location Validation</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --surface: #16213e;
+            --surface2: #0f3460;
+            --accent: #e94560;
+            --accent2: #533483;
+            --text: #eee;
+            --text-muted: #aab;
+            --success: #4ecca3;
+            --warning: #f0a500;
+            --code-bg: #0d1117;
+            --border: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+
+        h2 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin: 2.5rem 0 1rem 0;
+            padding-bottom: 0.3rem;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        h3 {
+            color: var(--success);
+            font-size: 1.2rem;
+            margin: 1.8rem 0 0.8rem 0;
+        }
+
+        h4 {
+            color: var(--warning);
+            font-size: 1.05rem;
+            margin: 1.2rem 0 0.5rem 0;
+        }
+
+        p { margin-bottom: 1rem; }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.2rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        code {
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9rem;
+        }
+
+        p code, li code {
+            background: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .keyword { color: #569cd6; }
+        .type { color: #4ec9b0; }
+        .string { color: #ce9178; }
+        .comment { color: #6a9955; }
+        .method { color: #dcdcaa; }
+        .number { color: #b5cea8; }
+        .param { color: #9cdcfe; }
+
+        .callout {
+            border-radius: 8px;
+            padding: 1.2rem 1.5rem;
+            margin: 1.5rem 0;
+            border-left: 4px solid;
+        }
+
+        .callout-metaphor {
+            background: rgba(83, 52, 131, 0.2);
+            border-color: var(--accent2);
+        }
+        .callout-metaphor::before {
+            content: "Metaphor";
+            display: block;
+            font-weight: bold;
+            color: var(--accent2);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-english {
+            background: rgba(78, 204, 163, 0.1);
+            border-color: var(--success);
+        }
+        .callout-english::before {
+            content: "Read It Like English";
+            display: block;
+            font-weight: bold;
+            color: var(--success);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-warning {
+            background: rgba(240, 165, 0, 0.1);
+            border-color: var(--warning);
+        }
+        .callout-warning::before {
+            content: "Common Confusion";
+            display: block;
+            font-weight: bold;
+            color: var(--warning);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-rule {
+            background: rgba(233, 69, 96, 0.1);
+            border-color: var(--accent);
+        }
+        .callout-rule::before {
+            content: "Golden Rule";
+            display: block;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        ul, ol {
+            margin: 0.5rem 0 1rem 1.5rem;
+        }
+
+        li { margin-bottom: 0.3rem; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 0.6rem 1rem;
+            text-align: left;
+        }
+
+        th {
+            background: var(--surface2);
+            color: var(--success);
+        }
+
+        td { background: var(--surface); }
+
+        .diagram {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'Cascadia Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            white-space: pre;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Geofencing & Haversine</h1>
+<p class="subtitle">GPS-Based Location Validation — How GivingCare Knows Where You Are</p>
+
+<!-- ============================================================ -->
+<!-- SECTION 1: What Is Geofencing? -->
+<!-- ============================================================ -->
+
+<h2>1. What Is Geofencing?</h2>
+
+<p>
+    A <strong>geofence</strong> is an invisible boundary around a physical location, defined by a center point
+    (latitude + longitude) and a radius (in meters). The system checks whether a person's GPS coordinates fall
+    <em>inside</em> or <em>outside</em> that boundary.
+</p>
+
+<p>
+    In GivingCare, geofencing answers one critical question for attendance: <strong>"Are you actually at the
+    office (or job site) when you check in?"</strong> Without this, employees could clock in from home and
+    the system would have no way to verify their physical presence.
+</p>
+
+<p>
+    The default geofence radius in GivingCare is <strong>100 meters</strong>. This is configurable per Location
+    and per Job.
+</p>
+
+<div class="callout callout-metaphor">
+    A geofence is like an invisible dog fence &mdash; the boundary exists only in software, but if you cross
+    it, the system knows. There is no physical wire or wall. The "fence" lives entirely in the database as
+    a latitude, longitude, and radius. The phone's GPS is the "collar" that tells the system where you are.
+</div>
+
+<div class="diagram">
+        * Employee phone GPS (41.1580, -8.6300)
+       /
+      /  Distance = 87m (Haversine)
+     /
+    O -------- radius: 100m -------- Office center (41.1579, -8.6291)
+
+    Result: INSIDE geofence (87m &lt; 100m) --> CHECK-IN ALLOWED
+</div>
+
+<p>
+    The circle has a center (the office) and a radius (100m). The employee's phone reports GPS coordinates.
+    We calculate the distance between the two points. If <code>distance &lt;= radius</code>, they are inside.
+    If <code>distance &gt; radius</code>, they are outside.
+</p>
+
+<!-- ============================================================ -->
+<!-- SECTION 2: The Math — Haversine Formula -->
+<!-- ============================================================ -->
+
+<h2>2. The Math: Haversine Formula</h2>
+
+<p>
+    The core of geofencing is distance calculation. Given two GPS coordinates, how far apart are they in
+    meters? This is handled by the <code>GeofenceService</code> &mdash; a stateless utility that implements
+    the <strong>Haversine formula</strong>.
+</p>
+
+<h3>The Actual Code</h3>
+
+<p>
+    From <code>Services/Core/Geofence/GeofenceService.cs</code>:
+</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">GeofenceService</span> : <span class="type">IGeofenceService</span>
+{
+    <span class="comment">// Earth's radius in meters</span>
+    <span class="keyword">private const double</span> <span class="param">EarthRadiusMeters</span> = <span class="number">6371000</span>;
+
+    <span class="keyword">public</span> <span class="type">double</span> <span class="method">CalculateDistance</span>(<span class="type">decimal</span> <span class="param">lat1</span>, <span class="type">decimal</span> <span class="param">lon1</span>, <span class="type">decimal</span> <span class="param">lat2</span>, <span class="type">decimal</span> <span class="param">lon2</span>)
+    {
+        <span class="comment">// Convert to radians</span>
+        <span class="keyword">var</span> <span class="param">lat1Rad</span> = (<span class="type">double</span>)<span class="param">lat1</span> * <span class="type">Math</span>.PI / <span class="number">180</span>;
+        <span class="keyword">var</span> <span class="param">lat2Rad</span> = (<span class="type">double</span>)<span class="param">lat2</span> * <span class="type">Math</span>.PI / <span class="number">180</span>;
+        <span class="keyword">var</span> <span class="param">deltaLat</span> = ((<span class="type">double</span>)<span class="param">lat2</span> - (<span class="type">double</span>)<span class="param">lat1</span>) * <span class="type">Math</span>.PI / <span class="number">180</span>;
+        <span class="keyword">var</span> <span class="param">deltaLon</span> = ((<span class="type">double</span>)<span class="param">lon2</span> - (<span class="type">double</span>)<span class="param">lon1</span>) * <span class="type">Math</span>.PI / <span class="number">180</span>;
+
+        <span class="comment">// Haversine formula</span>
+        <span class="keyword">var</span> <span class="param">a</span> = <span class="type">Math</span>.<span class="method">Sin</span>(<span class="param">deltaLat</span> / <span class="number">2</span>) * <span class="type">Math</span>.<span class="method">Sin</span>(<span class="param">deltaLat</span> / <span class="number">2</span>) +
+                <span class="type">Math</span>.<span class="method">Cos</span>(<span class="param">lat1Rad</span>) * <span class="type">Math</span>.<span class="method">Cos</span>(<span class="param">lat2Rad</span>) *
+                <span class="type">Math</span>.<span class="method">Sin</span>(<span class="param">deltaLon</span> / <span class="number">2</span>) * <span class="type">Math</span>.<span class="method">Sin</span>(<span class="param">deltaLon</span> / <span class="number">2</span>);
+
+        <span class="keyword">var</span> <span class="param">c</span> = <span class="number">2</span> * <span class="type">Math</span>.<span class="method">Atan2</span>(<span class="type">Math</span>.<span class="method">Sqrt</span>(<span class="param">a</span>), <span class="type">Math</span>.<span class="method">Sqrt</span>(<span class="number">1</span> - <span class="param">a</span>));
+
+        <span class="keyword">return</span> <span class="param">EarthRadiusMeters</span> * <span class="param">c</span>;
+    }
+}</code></pre>
+
+<h3>Breaking Down the Math Step by Step</h3>
+
+<h4>Step 1: Convert Degrees to Radians</h4>
+
+<p>
+    GPS coordinates are in <strong>degrees</strong> (e.g., 41.1579). Trigonometric functions like
+    <code>Math.Sin</code> and <code>Math.Cos</code> expect <strong>radians</strong>. The conversion is
+    simple: multiply by <code>&pi;/180</code>.
+</p>
+
+<pre><code><span class="keyword">var</span> <span class="param">lat1Rad</span> = (<span class="type">double</span>)<span class="param">lat1</span> * <span class="type">Math</span>.PI / <span class="number">180</span>;
+<span class="comment">// 41.1579&deg; becomes 0.7185 radians</span></code></pre>
+
+<h4>Step 2: Calculate the Deltas</h4>
+
+<p>
+    <code>deltaLat</code> and <code>deltaLon</code> are the differences between the two points, also
+    converted to radians. These represent "how far apart are the two points in each axis?"
+</p>
+
+<pre><code><span class="keyword">var</span> <span class="param">deltaLat</span> = ((<span class="type">double</span>)<span class="param">lat2</span> - (<span class="type">double</span>)<span class="param">lat1</span>) * <span class="type">Math</span>.PI / <span class="number">180</span>;
+<span class="keyword">var</span> <span class="param">deltaLon</span> = ((<span class="type">double</span>)<span class="param">lon2</span> - (<span class="type">double</span>)<span class="param">lon1</span>) * <span class="type">Math</span>.PI / <span class="number">180</span>;
+<span class="comment">// Small differences: ~0.000017 radians for 1 meter</span></code></pre>
+
+<h4>Step 3: The Haversine Formula (variable <code>a</code>)</h4>
+
+<p>
+    This is the heart of the algorithm. It calculates a value <code>a</code> that represents the
+    square of the half-chord length between the two points on the sphere:
+</p>
+
+<pre><code><span class="keyword">var</span> <span class="param">a</span> = <span class="type">Math</span>.<span class="method">Sin</span>(<span class="param">deltaLat</span> / <span class="number">2</span>) * <span class="type">Math</span>.<span class="method">Sin</span>(<span class="param">deltaLat</span> / <span class="number">2</span>) +
+        <span class="type">Math</span>.<span class="method">Cos</span>(<span class="param">lat1Rad</span>) * <span class="type">Math</span>.<span class="method">Cos</span>(<span class="param">lat2Rad</span>) *
+        <span class="type">Math</span>.<span class="method">Sin</span>(<span class="param">deltaLon</span> / <span class="number">2</span>) * <span class="type">Math</span>.<span class="method">Sin</span>(<span class="param">deltaLon</span> / <span class="number">2</span>);</code></pre>
+
+<p>
+    The formula is: <strong>a = sin&sup2;(&Delta;lat/2) + cos(lat1) &times; cos(lat2) &times;
+    sin&sup2;(&Delta;lon/2)</strong>
+</p>
+
+<p>
+    Think of it this way: the first term (<code>sin&sup2;(&Delta;lat/2)</code>) handles the north-south
+    distance. The second term handles the east-west distance, but it is <strong>weighted by
+    <code>cos(lat1) &times; cos(lat2)</code></strong> because longitude lines converge at the poles.
+    At the equator, <code>cos(0&deg;) = 1</code>, so longitude has full weight. At the North Pole,
+    <code>cos(90&deg;) = 0</code>, so longitude contributes nothing (because all longitude lines meet
+    at the poles).
+</p>
+
+<h4>Step 4: Angular Distance (variable <code>c</code>)</h4>
+
+<pre><code><span class="keyword">var</span> <span class="param">c</span> = <span class="number">2</span> * <span class="type">Math</span>.<span class="method">Atan2</span>(<span class="type">Math</span>.<span class="method">Sqrt</span>(<span class="param">a</span>), <span class="type">Math</span>.<span class="method">Sqrt</span>(<span class="number">1</span> - <span class="param">a</span>));</code></pre>
+
+<p>
+    <code>c</code> is the <strong>angular distance in radians</strong> between the two points on the
+    sphere's surface. The <code>atan2</code> function is used instead of <code>asin</code> because it is
+    more numerically stable for small distances (which is exactly our use case &mdash; we are measuring
+    tens to hundreds of meters, not thousands of kilometers).
+</p>
+
+<h4>Step 5: Multiply by Earth's Radius</h4>
+
+<pre><code><span class="keyword">return</span> <span class="param">EarthRadiusMeters</span> * <span class="param">c</span>;
+<span class="comment">// 6,371,000 meters &times; angular distance = surface distance in meters</span></code></pre>
+
+<p>
+    The angular distance <code>c</code> (in radians) times the sphere's radius gives the <strong>arc
+    length</strong> &mdash; the actual distance along the Earth's surface. This is the number we compare
+    against the geofence radius.
+</p>
+
+<div class="callout callout-english">
+    The Haversine formula reads as: "Given two points on a sphere, how far apart are they along the surface?"
+    It accounts for the curve of the Earth. You cannot just use <code>sqrt((x2-x1)&sup2; + (y2-y1)&sup2;)</code>
+    because that would be a straight line through the Earth, not along the surface. And more importantly,
+    degrees of longitude are not the same physical distance at every latitude.
+</div>
+
+<h3>Why Not Pythagorean Distance?</h3>
+
+<p>
+    You might think: "Can't I just calculate <code>sqrt((lat2-lat1)&sup2; + (lon2-lon1)&sup2;)</code> and
+    multiply by some constant?" The answer is <strong>no</strong>, for two reasons:
+</p>
+
+<ol>
+    <li><strong>The Earth is a sphere, not a flat plane.</strong> Distances along the surface are curved,
+        not straight lines.</li>
+    <li><strong>Longitude degrees are not constant.</strong> At the equator (latitude 0&deg;),
+        1&deg; of longitude = ~111 km. At latitude 41&deg; (Porto, Portugal), 1&deg; of longitude = ~85 km.
+        At latitude 60&deg; (Helsinki), 1&deg; of longitude = ~55 km. At the poles, 1&deg; of longitude = 0 km.
+        The Pythagorean formula treats longitude and latitude as equal, which would produce wildly wrong
+        distances at non-equatorial latitudes.</li>
+</ol>
+
+<div class="callout callout-rule">
+    Never use Pythagorean distance for GPS coordinates. The Earth is a sphere. Use Haversine. At latitude
+    41&deg; (Porto), 1&deg; of longitude is only ~85km, not 111km like at the equator. Using flat-plane
+    math would overestimate east-west distances by ~30% at Porto's latitude, potentially blocking employees
+    who are legitimately inside the geofence.
+</div>
+
+<table>
+    <tr>
+        <th>Latitude</th>
+        <th>City</th>
+        <th>1&deg; Longitude (km)</th>
+        <th>1&deg; Latitude (km)</th>
+    </tr>
+    <tr>
+        <td>0&deg;</td>
+        <td>Equator</td>
+        <td>111.3</td>
+        <td>110.6</td>
+    </tr>
+    <tr>
+        <td>41&deg;</td>
+        <td>Porto</td>
+        <td>84.0</td>
+        <td>111.0</td>
+    </tr>
+    <tr>
+        <td>60&deg;</td>
+        <td>Helsinki</td>
+        <td>55.8</td>
+        <td>111.4</td>
+    </tr>
+    <tr>
+        <td>90&deg;</td>
+        <td>North Pole</td>
+        <td>0.0</td>
+        <td>111.7</td>
+    </tr>
+</table>
+
+<p>
+    Notice that latitude degrees stay roughly constant (~111 km) everywhere, but longitude degrees shrink
+    as you move toward the poles. Haversine handles this correctly with the <code>cos(lat)</code> weighting
+    in the formula.
+</p>
+
+<!-- ============================================================ -->
+<!-- SECTION 3: Getting the User's Location -->
+<!-- ============================================================ -->
+
+<h2>3. Getting the User's Location &mdash; JavaScript Interop</h2>
+
+<p>
+    Before we can validate a geofence, we need the employee's GPS coordinates. Since Blazor Server runs on
+    the server, it cannot directly access the phone's GPS. We use <strong>JavaScript Interop</strong> to
+    call the browser's Geolocation API, then pass the result back to C#.
+</p>
+
+<h3>The JavaScript Fallback Chain</h3>
+
+<p>
+    From <code>App.razor</code> &mdash; the geolocation function uses a three-step fallback:
+</p>
+
+<pre><code><span class="comment">// Geolocation Function with fallback chain: GPS -> Network -> IP</span>
+<span class="param">window</span>.<span class="method">getGeolocation</span> = <span class="keyword">async</span> () => {
+    <span class="keyword">if</span> (<span class="param">location</span>.protocol !== <span class="string">'https:'</span> && <span class="param">location</span>.hostname !== <span class="string">'localhost'</span>) {
+        <span class="keyword">return</span> { <span class="param">success</span>: <span class="keyword">false</span>, <span class="param">error</span>: <span class="string">"HTTPS necessario para geolocalizacao"</span> };
+    }
+
+    <span class="keyword">if</span> (!<span class="param">navigator</span>.geolocation) {
+        <span class="keyword">return await</span> <span class="method">getIpGeolocation</span>();
+    }
+
+    <span class="comment">// Step 1: Try high accuracy (GPS) - 5 second timeout</span>
+    <span class="keyword">const</span> <span class="param">highAccuracy</span> = <span class="keyword">await</span> <span class="method">tryBrowserGeolocation</span>(<span class="keyword">true</span>, <span class="number">5000</span>);
+    <span class="keyword">if</span> (<span class="param">highAccuracy</span>.success) <span class="keyword">return</span> <span class="param">highAccuracy</span>;
+
+    <span class="comment">// Step 2: Try low accuracy (cell tower/network) - 2 second timeout</span>
+    <span class="keyword">const</span> <span class="param">lowAccuracy</span> = <span class="keyword">await</span> <span class="method">tryBrowserGeolocation</span>(<span class="keyword">false</span>, <span class="number">2000</span>);
+    <span class="keyword">if</span> (<span class="param">lowAccuracy</span>.success) <span class="keyword">return</span> <span class="param">lowAccuracy</span>;
+
+    <span class="comment">// Step 3: Fall back to IP geolocation</span>
+    <span class="keyword">return await</span> <span class="method">getIpGeolocation</span>();
+};</code></pre>
+
+<h4>The Browser Geolocation Helper</h4>
+
+<pre><code><span class="keyword">const</span> <span class="method">tryBrowserGeolocation</span> = (<span class="param">highAccuracy</span>, <span class="param">timeout</span>) => {
+    <span class="keyword">return new</span> <span class="type">Promise</span>((<span class="param">resolve</span>) => {
+        <span class="param">navigator</span>.geolocation.<span class="method">getCurrentPosition</span>(
+            (<span class="param">pos</span>) => <span class="method">resolve</span>({
+                <span class="param">success</span>: <span class="keyword">true</span>,
+                <span class="param">latitude</span>: <span class="param">pos</span>.coords.latitude,
+                <span class="param">longitude</span>: <span class="param">pos</span>.coords.longitude
+            }),
+            (<span class="param">err</span>) => <span class="method">resolve</span>({ <span class="param">success</span>: <span class="keyword">false</span>, <span class="param">error</span>: <span class="param">err</span>.message }),
+            { <span class="param">enableHighAccuracy</span>: <span class="param">highAccuracy</span>, <span class="param">timeout</span>: <span class="param">timeout</span>, <span class="param">maximumAge</span>: <span class="number">60000</span> }
+        );
+    });
+};</code></pre>
+
+<h4>The IP Geolocation Fallback</h4>
+
+<pre><code><span class="keyword">const</span> <span class="method">getIpGeolocation</span> = <span class="keyword">async</span> () => {
+    <span class="keyword">try</span> {
+        <span class="keyword">const</span> <span class="param">response</span> = <span class="keyword">await</span> <span class="method">fetch</span>(<span class="string">'http://ip-api.com/json/?fields=status,lat,lon,message'</span>);
+        <span class="keyword">const</span> <span class="param">data</span> = <span class="keyword">await</span> <span class="param">response</span>.<span class="method">json</span>();
+        <span class="keyword">if</span> (<span class="param">data</span>.status === <span class="string">'success'</span>) {
+            <span class="keyword">return</span> { <span class="param">success</span>: <span class="keyword">true</span>, <span class="param">latitude</span>: <span class="param">data</span>.lat, <span class="param">longitude</span>: <span class="param">data</span>.lon };
+        }
+    } <span class="keyword">catch</span> (<span class="param">e</span>) {
+        <span class="comment">// IP geolocation failed</span>
+    }
+    <span class="keyword">return</span> {
+        <span class="param">success</span>: <span class="keyword">false</span>,
+        <span class="param">error</span>: <span class="string">'Nao foi possivel obter localizacao. Ative o GPS.'</span>
+    };
+};</code></pre>
+
+<h3>Understanding the Three Levels</h3>
+
+<table>
+    <tr>
+        <th>Step</th>
+        <th>Method</th>
+        <th>Accuracy</th>
+        <th>Speed</th>
+        <th>Battery</th>
+        <th>Requires</th>
+    </tr>
+    <tr>
+        <td>1</td>
+        <td>GPS chip (high accuracy)</td>
+        <td>3-10 meters</td>
+        <td>Slow (1-5s)</td>
+        <td>High</td>
+        <td>GPS hardware + clear sky</td>
+    </tr>
+    <tr>
+        <td>2</td>
+        <td>Cell tower/WiFi (low accuracy)</td>
+        <td>30-100 meters</td>
+        <td>Fast (&lt;1s)</td>
+        <td>Low</td>
+        <td>Cell/WiFi signal</td>
+    </tr>
+    <tr>
+        <td>3</td>
+        <td>IP geolocation (fallback)</td>
+        <td>1-50 km</td>
+        <td>Fast (&lt;1s)</td>
+        <td>None</td>
+        <td>Internet connection</td>
+    </tr>
+</table>
+
+<p><strong>Key constraints:</strong></p>
+<ul>
+    <li><strong>HTTPS is required.</strong> The <code>navigator.geolocation</code> API only works on
+        secure contexts (HTTPS or localhost). The code checks this first and returns an error if not
+        over HTTPS.</li>
+    <li><strong>High accuracy = GPS chip.</strong> Precise but slow and battery-heavy. The phone
+        literally talks to satellites.</li>
+    <li><strong>Low accuracy = cell tower triangulation.</strong> Fast but imprecise. Fine for
+        "are you in the right city?" but not for "are you in the right building?"</li>
+    <li><strong>IP geolocation = last resort.</strong> City-level accuracy at best. Essentially useless
+        for geofencing but lets us at least record an approximate location.</li>
+</ul>
+
+<h3>The C# Side: DeviceLocationService</h3>
+
+<p>
+    From <code>Services/Core/Location/DeviceLocationService.cs</code>:
+</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">DeviceLocationService</span> : <span class="type">IDeviceLocationService</span>
+{
+    <span class="keyword">private readonly</span> <span class="type">IJSRuntime</span> <span class="param">_jsRuntime</span>;
+
+    <span class="keyword">public</span> <span class="method">DeviceLocationService</span>(<span class="type">IJSRuntime</span> <span class="param">jsRuntime</span>)
+    {
+        <span class="param">_jsRuntime</span> = <span class="param">jsRuntime</span>;
+    }
+
+    <span class="keyword">public async</span> <span class="type">Task</span>&lt;<span class="type">LocationResult</span>&gt; <span class="method">GetCurrentLocationAsync</span>()
+    {
+        <span class="keyword">try</span>
+        {
+            <span class="keyword">var</span> <span class="param">result</span> = <span class="keyword">await</span> <span class="param">_jsRuntime</span>.<span class="method">InvokeAsync</span>&lt;<span class="type">JsLocationResult</span>&gt;(<span class="string">"getGeolocation"</span>);
+
+            <span class="keyword">if</span> (<span class="param">result</span>?.Success == <span class="keyword">true</span>)
+            {
+                <span class="keyword">return</span> <span class="type">LocationResult</span>.<span class="method">Ok</span>(<span class="param">result</span>.Latitude, <span class="param">result</span>.Longitude);
+            }
+
+            <span class="keyword">return</span> <span class="type">LocationResult</span>.<span class="method">Fail</span>(<span class="param">result</span>?.Error ?? <span class="string">"Nao foi possivel obter localizacao GPS"</span>);
+        }
+        <span class="keyword">catch</span> (<span class="type">Exception</span> <span class="param">ex</span>)
+        {
+            <span class="keyword">return</span> <span class="type">LocationResult</span>.<span class="method">Fail</span>(<span class="string">$"Erro GPS: </span>{<span class="param">ex</span>.Message}<span class="string">"</span>);
+        }
+    }
+}</code></pre>
+
+<p>
+    The flow is: <strong>C# calls JavaScript</strong> (via <code>IJSRuntime.InvokeAsync</code>) &rarr;
+    <strong>JavaScript calls browser API</strong> (<code>navigator.geolocation</code>) &rarr;
+    <strong>browser asks operating system</strong> (GPS chip, WiFi, etc.) &rarr; <strong>result
+    comes back to C#</strong> as a <code>LocationResult</code>.
+</p>
+
+<!-- ============================================================ -->
+<!-- SECTION 4: The Data Models -->
+<!-- ============================================================ -->
+
+<h2>4. The Data Models</h2>
+
+<h3>Location &mdash; Where the Geofence Lives</h3>
+
+<p>
+    From <code>Models/HR/Location.cs</code>:
+</p>
+
+<pre><code><span class="keyword">public partial class</span> <span class="type">Location</span>
+{
+    [<span class="type">Key</span>]
+    <span class="keyword">public int</span> Id { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+
+    [<span class="type">Required</span>]
+    [<span class="type">StringLength</span>(<span class="number">100</span>)]
+    <span class="keyword">public string</span> Name { <span class="keyword">get</span>; <span class="keyword">set</span>; } = <span class="keyword">string</span>.Empty;
+
+    <span class="comment">// Geofence center point</span>
+    <span class="keyword">public double</span>? Latitude { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public double</span>? Longitude { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+
+    <span class="comment">/// Geofence radius in meters (default: 100m)</span>
+    <span class="comment">/// Employees must check-in within this radius from the center point</span>
+    <span class="keyword">public int</span> GeofenceRadius { <span class="keyword">get</span>; <span class="keyword">set</span>; } = <span class="number">100</span>;
+
+    <span class="comment">/// Checks if this location has valid GPS coordinates for geofencing</span>
+    [<span class="type">NotMapped</span>]
+    <span class="keyword">public bool</span> HasGeofence => Latitude.HasValue && Longitude.HasValue;
+}</code></pre>
+
+<p>
+    Key design decisions:
+</p>
+
+<ul>
+    <li><code>Latitude</code> and <code>Longitude</code> are <strong>nullable</strong> (<code>double?</code>).
+        Not every location has GPS coordinates. An office might exist in the system for organizational
+        purposes without a geofence.</li>
+    <li><code>GeofenceRadius</code> defaults to <strong>100 meters</strong> and is non-nullable. If
+        coordinates exist, there is always a radius.</li>
+    <li><code>HasGeofence</code> is a <strong><code>[NotMapped]</code></strong> computed property. It is
+        not stored in the database &mdash; it is calculated on the fly from the nullable coordinates.
+        The database does not need to store a redundant boolean.</li>
+</ul>
+
+<p>
+    Jobs have the exact same geofence properties:
+</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">Job</span>
+{
+    <span class="keyword">public double</span>? Latitude { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public double</span>? Longitude { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public int</span> GeofenceRadius { <span class="keyword">get</span>; <span class="keyword">set</span>; } = <span class="number">100</span>; <span class="comment">// meters</span>
+}</code></pre>
+
+<h3>CheckInContext &mdash; The Geofence State Bag</h3>
+
+<p>
+    From <code>Models/HR/CheckInContext.cs</code> &mdash; the region that holds geofence state:
+</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">CheckInContext</span>
+{
+    <span class="keyword">#region</span> Geofence State
+
+    <span class="comment">/// True if employee is within the geofence</span>
+    <span class="keyword">public bool</span> IsWithinGeofence { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+
+    <span class="comment">/// Distance from employee to target location (meters)</span>
+    <span class="keyword">public double</span> DistanceToLocation { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+
+    <span class="comment">/// Geofence radius from configuration (meters)</span>
+    <span class="keyword">public double</span> GeofenceRadius { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+
+    <span class="comment">/// Name of the geofence target (Job name or Location name)</span>
+    <span class="keyword">public string</span>? GeofenceTargetName { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+
+    <span class="comment">/// Latitude of the target location</span>
+    <span class="keyword">public decimal</span>? TargetLatitude { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+
+    <span class="comment">/// Longitude of the target location</span>
+    <span class="keyword">public decimal</span>? TargetLongitude { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+
+    <span class="keyword">#endregion</span>
+
+    <span class="keyword">#region</span> Configuration Flags
+
+    <span class="comment">/// True if employee requires geolocation for check-in</span>
+    <span class="keyword">public bool</span> RequiresGeolocation { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+
+    <span class="comment">/// True if employee is bound to a job for check-in</span>
+    <span class="keyword">public bool</span> IsJobBound { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+
+    <span class="keyword">#endregion</span>
+}</code></pre>
+
+<p>
+    The <code>CheckInContext</code> acts as a <strong>state bag</strong> that is populated step by step:
+</p>
+
+<ol>
+    <li><code>LoadCheckInContextAsync()</code> loads the employee, schedules, and configuration flags</li>
+    <li><code>ValidateGeofence()</code> calculates distance and sets <code>IsWithinGeofence</code>,
+        <code>DistanceToLocation</code>, <code>GeofenceRadius</code>, and <code>GeofenceTargetName</code></li>
+    <li>The validator pipeline reads these values to decide if check-in is allowed</li>
+</ol>
+
+<h3>LocationResult &mdash; The GPS Acquisition Result</h3>
+
+<p>
+    From <code>Models/HR/LocationResult.cs</code>:
+</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">LocationResult</span>
+{
+    <span class="keyword">public bool</span> Success { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public double</span> Latitude { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public double</span> Longitude { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public string</span>? Error { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+
+    <span class="keyword">public static</span> <span class="type">LocationResult</span> <span class="method">Ok</span>(<span class="type">double</span> <span class="param">latitude</span>, <span class="type">double</span> <span class="param">longitude</span>) => <span class="keyword">new</span>()
+    {
+        Success = <span class="keyword">true</span>,
+        Latitude = <span class="param">latitude</span>,
+        Longitude = <span class="param">longitude</span>
+    };
+
+    <span class="keyword">public static</span> <span class="type">LocationResult</span> <span class="method">Fail</span>(<span class="type">string</span> <span class="param">error</span>) => <span class="keyword">new</span>()
+    {
+        Success = <span class="keyword">false</span>,
+        Error = <span class="param">error</span>
+    };
+}</code></pre>
+
+<p>
+    This follows the same <strong>Result pattern</strong> used throughout GivingCare (like
+    <code>ServiceResult&lt;T&gt;</code>). It forces the caller to check <code>Success</code> before
+    using the coordinates. No exceptions for "normal" failures like GPS being unavailable.
+</p>
+
+<!-- ============================================================ -->
+<!-- SECTION 5: The Validation Pipeline -->
+<!-- ============================================================ -->
+
+<h2>5. The Validation Pipeline</h2>
+
+<p>
+    Check-in validation uses a <strong>chain of responsibility</strong> pattern. Each validator checks
+    one thing and returns either <code>Ok()</code> or <code>Fail("reason")</code>. They run in order.
+    The first failure stops the chain.
+</p>
+
+<h3>The Validator Interface</h3>
+
+<pre><code><span class="keyword">public interface</span> <span class="type">ICheckInValidator</span>
+{
+    <span class="comment">/// Execution order (lower = earlier)</span>
+    <span class="keyword">int</span> Order { <span class="keyword">get</span>; }
+
+    <span class="comment">/// Validates the check-in context. Returns Ok or Fail with message.</span>
+    <span class="type">CheckInValidationResult</span> <span class="method">Validate</span>(<span class="type">CheckInContext</span> <span class="param">context</span>, <span class="type">CheckInValidationOptions</span> <span class="param">options</span>);
+}
+
+<span class="keyword">public record</span> <span class="type">CheckInValidationResult</span>(<span class="keyword">bool</span> <span class="param">IsValid</span>, <span class="keyword">string</span>? <span class="param">Message</span>)
+{
+    <span class="keyword">public static</span> <span class="type">CheckInValidationResult</span> <span class="method">Ok</span>() => <span class="keyword">new</span>(<span class="keyword">true</span>, <span class="keyword">null</span>);
+    <span class="keyword">public static</span> <span class="type">CheckInValidationResult</span> <span class="method">Fail</span>(<span class="keyword">string</span> <span class="param">message</span>) => <span class="keyword">new</span>(<span class="keyword">false</span>, <span class="param">message</span>);
+}</code></pre>
+
+<h3>The Pipeline Order</h3>
+
+<div class="diagram">
+  Order 10           Order 20               Order 30            Order 40
++-----------+   +-----------------+   +-----------------+   +-------------------+
+| Active    |-->| Schedule Source  |-->|   Time Window   |-->|   Geolocation     |
+| CheckIn   |   |   Validator     |   |   Validator     |   |   Validator       |
+| Validator |   |                 |   |                 |   |                   |
++-----------+   +-----------------+   +-----------------+   +-------------------+
+  "Already        "No schedule"         "Too early"           "Outside geofence"
+  checked in?"    "All shifts done?"    "Before window?"      "Too far away?"
+</div>
+
+<p>
+    Each validator has a single responsibility (SRP). If validator at Order 10 fails, the ones at 20, 30,
+    and 40 never run. This means we do not waste time calculating GPS distance if the employee is already
+    checked in.
+</p>
+
+<h3>The GeolocationValidator (Check-In)</h3>
+
+<p>
+    From <code>Services/CheckIn/Validators/GeolocationValidator.cs</code> &mdash; the last validator in
+    the chain (Order 40):
+</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">GeolocationValidator</span> : <span class="type">ICheckInValidator</span>
+{
+    <span class="keyword">public int</span> Order => <span class="number">40</span>;
+
+    <span class="keyword">public</span> <span class="type">CheckInValidationResult</span> <span class="method">Validate</span>(<span class="type">CheckInContext</span> <span class="param">context</span>, <span class="type">CheckInValidationOptions</span> <span class="param">options</span>)
+    {
+        <span class="comment">// Skip if geolocation not required for this employee</span>
+        <span class="keyword">if</span> (!<span class="param">context</span>.RequiresGeolocation)
+            <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Ok</span>();
+
+        <span class="comment">// Location not yet obtained (still acquiring GPS)</span>
+        <span class="keyword">if</span> (!<span class="param">options</span>.LocationObtained)
+            <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Fail</span>(<span class="string">"A obter localizacao..."</span>);
+
+        <span class="comment">// No valid geofence target (Location/Job missing coordinates)</span>
+        <span class="keyword">if</span> (!<span class="param">context</span>.TargetLatitude.HasValue || !<span class="param">context</span>.TargetLongitude.HasValue)
+            <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Fail</span>(
+                <span class="string">"Localizacao de trabalho sem coordenadas GPS configuradas"</span>);
+
+        <span class="comment">// Outside geofence</span>
+        <span class="keyword">if</span> (!<span class="param">context</span>.IsWithinGeofence)
+        {
+            <span class="keyword">var</span> <span class="param">distanceOutside</span> = <span class="param">context</span>.DistanceToLocation - <span class="param">context</span>.GeofenceRadius;
+            <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Fail</span>(
+                <span class="string">$"Fora da area autorizada (</span>{<span class="param">distanceOutside</span>:<span class="string">F0</span>}<span class="string">m fora)"</span>);
+        }
+
+        <span class="keyword">return</span> <span class="type">CheckInValidationResult</span>.<span class="method">Ok</span>();
+    }
+}</code></pre>
+
+<p>
+    Notice the progression of early returns. The method checks the simplest, cheapest condition first
+    (<code>RequiresGeolocation</code> is just a boolean) and only reaches the expensive check
+    (<code>IsWithinGeofence</code>) if everything else passed. This is <strong>polite code</strong>
+    &mdash; fail fast, fail cheap.
+</p>
+
+<h3>How the Pipeline Runs</h3>
+
+<p>
+    From <code>CheckInValidationService.CanPerformCheckIn()</code>:
+</p>
+
+<pre><code><span class="keyword">public</span> (<span class="keyword">bool</span> CanCheckIn, <span class="keyword">string</span>? BlockReason) <span class="method">CanPerformCheckIn</span>(
+    <span class="type">CheckInContext</span> <span class="param">context</span>,
+    <span class="keyword">bool</span> <span class="param">locationObtained</span>)
+{
+    <span class="keyword">var</span> <span class="param">options</span> = <span class="keyword">new</span> <span class="type">CheckInValidationOptions</span>(
+        LocationObtained: <span class="param">locationObtained</span>,
+        EarlyCheckInToleranceMinutes: <span class="param">_config</span>.EarlyCheckInToleranceMinutes
+    );
+
+    <span class="comment">// Run validators in order (SOLID: OCP - add new validators without modifying this)</span>
+    <span class="keyword">foreach</span> (<span class="keyword">var</span> <span class="param">validator</span> <span class="keyword">in</span> <span class="param">_validators</span>)
+    {
+        <span class="keyword">var</span> <span class="param">result</span> = <span class="param">validator</span>.<span class="method">Validate</span>(<span class="param">context</span>, <span class="param">options</span>);
+        <span class="keyword">if</span> (!<span class="param">result</span>.IsValid)
+        {
+            <span class="keyword">return</span> (<span class="keyword">false</span>, <span class="param">result</span>.Message);
+        }
+    }
+
+    <span class="keyword">return</span> (<span class="keyword">true</span>, <span class="keyword">null</span>);
+}</code></pre>
+
+<p>
+    The <code>_validators</code> collection is injected via DI as
+    <code>IEnumerable&lt;ICheckInValidator&gt;</code>, sorted by <code>Order</code> in the constructor.
+    Adding a new validator is a matter of creating a class and registering it &mdash; no changes to
+    existing code (Open/Closed Principle).
+</p>
+
+<!-- ============================================================ -->
+<!-- SECTION 6: Check-In vs Check-Out -->
+<!-- ============================================================ -->
+
+<h2>6. Check-In vs Check-Out &mdash; The Critical Difference</h2>
+
+<p>
+    The geofence behaves <strong>differently</strong> for check-in and check-out. This is by design.
+</p>
+
+<table>
+    <tr>
+        <th>Operation</th>
+        <th>Outside Geofence?</th>
+        <th>Behavior</th>
+    </tr>
+    <tr>
+        <td>Check-In</td>
+        <td>BLOCKED</td>
+        <td>"You can't start work if you're not here"</td>
+    </tr>
+    <tr>
+        <td>Check-Out</td>
+        <td>ALLOWED but RECORDED</td>
+        <td>"You can end your shift anywhere, but we note it"</td>
+    </tr>
+</table>
+
+<div class="callout callout-warning">
+    Check-in <strong>blocks</strong> you outside the geofence. Check-out <strong>records</strong> it but
+    lets you leave. This is intentional &mdash; you cannot fake arriving at work, but you should not be
+    stuck unable to clock out because you left for lunch, drove to a client meeting, or just walked to
+    the car park. The system records the checkout location for auditing but does not prevent the action.
+</div>
+
+<h3>Check-Out GeolocationValidator</h3>
+
+<p>
+    From <code>Services/CheckOut/Validators/GeolocationValidator.cs</code>:
+</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">GeolocationValidator</span> : <span class="type">ICheckOutValidator</span>
+{
+    <span class="keyword">private readonly</span> <span class="type">IGeofenceService</span> <span class="param">_geofenceService</span>;
+
+    <span class="keyword">public int</span> Order => <span class="number">30</span>;
+
+    <span class="keyword">public</span> <span class="type">CheckOutValidationResult</span> <span class="method">Validate</span>(
+        <span class="type">CheckOutContext</span> <span class="param">context</span>,
+        <span class="type">CheckOutValidationOptions</span> <span class="param">options</span>)
+    {
+        <span class="keyword">if</span> (!<span class="param">context</span>.RequiresGeolocation)
+        {
+            <span class="param">context</span>.IsValidLocation = <span class="keyword">true</span>;
+            <span class="keyword">return</span> <span class="type">CheckOutValidationResult</span>.<span class="method">Ok</span>();
+        }
+
+        <span class="keyword">if</span> (!<span class="param">options</span>.LocationObtained)
+            <span class="keyword">return</span> <span class="type">CheckOutValidationResult</span>.<span class="method">Fail</span>(<span class="string">"A obter localizacao..."</span>);
+
+        <span class="keyword">if</span> (!<span class="param">context</span>.TargetLatitude.HasValue || !<span class="param">context</span>.TargetLongitude.HasValue)
+        {
+            <span class="comment">// Allow checkout but mark as invalid location</span>
+            <span class="param">context</span>.IsValidLocation = <span class="keyword">false</span>;
+            <span class="param">context</span>.GeofenceMessage = <span class="string">"Localizacao sem coordenadas GPS configuradas"</span>;
+            <span class="keyword">return</span> <span class="type">CheckOutValidationResult</span>.<span class="method">Ok</span>();  <span class="comment">// &lt;-- Always allows!</span>
+        }
+
+        <span class="comment">// Calculate distance</span>
+        <span class="keyword">var</span> <span class="param">distance</span> = <span class="param">_geofenceService</span>.<span class="method">CalculateDistance</span>(
+            <span class="param">options</span>.Latitude, <span class="param">options</span>.Longitude,
+            <span class="param">context</span>.TargetLatitude.Value, <span class="param">context</span>.TargetLongitude.Value);
+
+        <span class="param">context</span>.Distance = (<span class="type">decimal</span>)<span class="param">distance</span>;
+        <span class="param">context</span>.IsValidLocation = <span class="param">distance</span> &lt;= <span class="param">context</span>.GeofenceRadius;
+
+        <span class="keyword">if</span> (<span class="param">context</span>.IsValidLocation)
+        {
+            <span class="param">context</span>.GeofenceMessage = <span class="string">$"Valido - </span>{<span class="param">context</span>.GeofenceTargetName}<span class="string"> (</span>{<span class="param">distance</span>:<span class="string">F0</span>}<span class="string">m)"</span>;
+        }
+        <span class="keyword">else</span>
+        {
+            <span class="keyword">var</span> <span class="param">distanceOutside</span> = <span class="param">distance</span> - <span class="param">context</span>.GeofenceRadius;
+            <span class="param">context</span>.GeofenceMessage = <span class="string">$"Fora da area (</span>{<span class="param">distanceOutside</span>:<span class="string">F0</span>}<span class="string">m fora)"</span>;
+        }
+
+        <span class="comment">// Allow checkout even if outside geofence</span>
+        <span class="comment">// The IsValidLocation flag records whether they were inside or not</span>
+        <span class="keyword">return</span> <span class="type">CheckOutValidationResult</span>.<span class="method">Ok</span>();  <span class="comment">// &lt;-- ALWAYS returns Ok</span>
+    }
+}</code></pre>
+
+<p>
+    Observe the key difference from the check-in validator: this validator <strong>always returns
+    <code>Ok()</code></strong>. It never blocks. Instead, it populates <code>context.IsValidLocation</code>
+    and <code>context.GeofenceMessage</code> &mdash; recording the facts for the attendance record without
+    preventing the action.
+</p>
+
+<p>
+    The <code>CheckOutContext</code> even has a separate <code>Distance</code> property (as
+    <code>decimal?</code>) that gets snapshotted into the attendance record for later auditing.
+</p>
+
+<!-- ============================================================ -->
+<!-- SECTION 7: Geofence Priority Resolution -->
+<!-- ============================================================ -->
+
+<h2>7. Geofence Priority Resolution</h2>
+
+<p>
+    An employee might have multiple potential geofence targets: they could be assigned to a Job <em>and</em>
+    have an office Location. The <code>GeofenceResolutionService</code> resolves which geofence to validate
+    against, using a strict priority chain.
+</p>
+
+<div class="diagram">
+  Priority 1: Job
+  Does the employee have a Job with GPS coordinates?
+  YES --> Use Job's geofence (construction site, client office, etc.)
+   |
+   NO
+   |
+  Priority 2: EmployeeLocation
+  Does the employee have an assigned Location with GPS?
+  YES --> Use Location's geofence (HQ, warehouse, regional office)
+   |
+   NO
+   |
+  Priority 3: No geofence
+  Geolocation not required. Allow without location check.
+</div>
+
+<p>
+    From <code>Services/Integration/GeofenceResolutionService.cs</code>:
+</p>
+
+<pre><code><span class="keyword">public async</span> <span class="type">Task</span>&lt;<span class="type">GeofenceValidationResult</span>&gt; <span class="method">ValidateLocationAsync</span>(
+    <span class="keyword">int</span> <span class="param">employeeId</span>, <span class="type">decimal</span> <span class="param">latitude</span>, <span class="type">decimal</span> <span class="param">longitude</span>,
+    <span class="keyword">int</span>? <span class="param">jobId</span>, <span class="keyword">string</span> <span class="param">companyDatabase</span>)
+{
+    <span class="keyword">await using var</span> <span class="param">context</span> = <span class="param">_contextFactory</span>.<span class="method">CreateCompanyContext</span>(<span class="param">companyDatabase</span>);
+
+    <span class="comment">// Priority 1: Validate against Job geofence if jobId provided</span>
+    <span class="keyword">if</span> (<span class="param">jobId</span>.HasValue)
+    {
+        <span class="keyword">var</span> <span class="param">job</span> = <span class="keyword">await</span> <span class="param">context</span>.<span class="method">Set</span>&lt;<span class="type">Job</span>&gt;()
+            .<span class="method">AsNoTracking</span>()
+            .<span class="method">FirstOrDefaultAsync</span>(<span class="param">j</span> => <span class="param">j</span>.Id == <span class="param">jobId</span>.Value);
+
+        <span class="keyword">if</span> (<span class="param">job</span>?.Latitude.HasValue == <span class="keyword">true</span> && <span class="param">job</span>.Longitude.HasValue)
+        {
+            <span class="keyword">var</span> <span class="param">distance</span> = <span class="param">_geofenceService</span>.<span class="method">CalculateDistance</span>(
+                <span class="param">latitude</span>, <span class="param">longitude</span>,
+                (<span class="type">decimal</span>)<span class="param">job</span>.Latitude.Value, (<span class="type">decimal</span>)<span class="param">job</span>.Longitude.Value);
+
+            <span class="keyword">var</span> <span class="param">isValid</span> = <span class="param">distance</span> &lt;= <span class="param">job</span>.GeofenceRadius;
+            <span class="keyword">return new</span> <span class="type">GeofenceValidationResult</span> { ... };
+        }
+    }
+
+    <span class="comment">// Priority 2: Validate against EmployeeLocation</span>
+    <span class="keyword">var</span> <span class="param">employeeLocation</span> = <span class="keyword">await</span> <span class="param">context</span>.<span class="method">Set</span>&lt;<span class="type">EmployeeLocation</span>&gt;()
+        .<span class="method">AsNoTracking</span>()
+        .<span class="method">Include</span>(<span class="param">el</span> => <span class="param">el</span>.Location)
+        .<span class="method">Where</span>(<span class="param">el</span> => <span class="param">el</span>.EmployeeId == <span class="param">employeeId</span> &&
+                    <span class="param">el</span>.IsActive &&
+                    (!<span class="param">el</span>.EndDate.HasValue || <span class="param">el</span>.EndDate >= <span class="type">DateTime</span>.Today))
+        .<span class="method">FirstOrDefaultAsync</span>();
+
+    <span class="keyword">if</span> (<span class="param">employeeLocation</span>?.Location != <span class="keyword">null</span> && <span class="param">employeeLocation</span>.Location.HasGeofence)
+    {
+        <span class="comment">// Same pattern: calculate distance, compare to radius</span>
+        ...
+    }
+
+    <span class="comment">// No geofence configured - consider valid by default</span>
+    <span class="keyword">return new</span> <span class="type">GeofenceValidationResult</span> { IsValid = <span class="keyword">true</span>, Source = <span class="type">GeofenceSourceType</span>.None };
+}</code></pre>
+
+<p>
+    The priority chain also exists in <code>CheckInValidationService.ValidateGeofence()</code>, which
+    validates inline rather than through the resolution service. For job-bound employees, it always
+    checks against the job. For non-job-bound employees, it resolves the schedule source based on the
+    current time window and checks against the appropriate location.
+</p>
+
+<!-- ============================================================ -->
+<!-- SECTION 8: The Full Flow -->
+<!-- ============================================================ -->
+
+<h2>8. The Full Flow</h2>
+
+<p>
+    Here is the complete journey from "employee taps Check In" to "attendance record created":
+</p>
+
+<div class="diagram">
+Employee opens app --> taps "Check In"
+         |
+         v
+Browser: navigator.geolocation.getCurrentPosition()
+         |  Step 1: High accuracy GPS (5s timeout)
+         |  Step 2: Low accuracy network (2s timeout)
+         |  Step 3: IP geolocation (fallback)
+         |
+         v  GPS: (41.1580, -8.6300)
+DeviceLocationService --> LocationResult.Ok(lat, lon)
+         |
+         v
+CheckInValidationService.LoadCheckInContextAsync()
+         |  Loads employee, schedules, configuration
+         |  Sets RequiresGeolocation, IsJobBound
+         |
+         v
+CheckInValidationService.ValidateGeofence(context, lat, lon)
+         |  Resolves target: "Employee has Job #42 at (41.1579, -8.6291), radius 100m"
+         |  GeofenceService.CalculateDistance() --> 87 meters
+         |  Sets: IsWithinGeofence = true (87m &lt; 100m)
+         |
+         v
+Validator Pipeline: CanPerformCheckIn()
+         |
+         |  [Order 10] ActiveCheckInValidator --> OK (no active check-in)
+         |  [Order 20] ScheduleSourceValidator --> OK (JobSchedule found)
+         |  [Order 30] TimeWindowValidator --> OK (within time window)
+         |  [Order 40] GeolocationValidator --> OK (inside geofence)
+         |
+         v
+All validators passed --> Attendance record created
+         |
+         v
+Attendance saved with geofence snapshot:
+  - CheckInLatitude: 41.1580
+  - CheckInLongitude: -8.6300
+  - GeofenceDistance: 87m
+  - GeofenceValid: true
+</div>
+
+<p>
+    Every step is a separate concern: GPS acquisition, context loading, geofence calculation, and
+    validation. If any step fails, the employee gets a clear Portuguese error message explaining why.
+</p>
+
+<!-- ============================================================ -->
+<!-- SECTION 9: Singleton Registration -->
+<!-- ============================================================ -->
+
+<h2>9. Singleton Registration</h2>
+
+<p>
+    The <code>GeofenceService</code> is registered as a <strong>Singleton</strong> in
+    <code>Program.cs</code>:
+</p>
+
+<pre><code><span class="keyword">#region</span> Core Utility Services (Shared across modules - no database dependencies)
+
+<span class="param">builder</span>.Services.<span class="method">AddSingleton</span>&lt;<span class="type">IGeofenceService</span>, <span class="type">GeofenceService</span>&gt;();
+<span class="param">builder</span>.Services.<span class="method">AddSingleton</span>&lt;<span class="type">IHoursCalculationService</span>, <span class="type">HoursCalculationService</span>&gt;();
+<span class="param">builder</span>.Services.<span class="method">AddScoped</span>&lt;<span class="type">IWorkingDaysCalculationService</span>, <span class="type">WorkingDaysCalculationService</span>&gt;();</code></pre>
+
+<p>
+    Why Singleton? Three reasons:
+</p>
+
+<ol>
+    <li><strong>Pure math, no state.</strong> The service has no fields that change. <code>EarthRadiusMeters</code>
+        is a <code>const</code>. There are no instance variables to corrupt.</li>
+    <li><strong>No database, no DI dependencies.</strong> The class has zero constructor parameters. It
+        does not inject anything. It cannot hold a reference to a scoped DbContext.</li>
+    <li><strong>Thread-safe by nature.</strong> Since there are no mutable fields, any number of threads
+        can call <code>CalculateDistance</code> simultaneously without interference. The method is
+        <strong>referentially transparent</strong> &mdash; the same inputs always produce the same outputs.</li>
+</ol>
+
+<p>
+    Contrast this with <code>GeofenceResolutionService</code>, which is <strong>Scoped</strong> because it
+    accesses the database. It needs a fresh <code>IDbContextFactoryService</code> per request.
+</p>
+
+<div class="callout callout-english">
+    "If a service has no state and no dependencies, make it a Singleton. If it touches the database or
+    user-specific data, make it Scoped. If it is used once and thrown away (validators, generators), make
+    it Transient." This simple heuristic covers 95% of DI lifetime decisions.
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 10: Testing Geofences -->
+<!-- ============================================================ -->
+
+<h2>10. Testing Geofences</h2>
+
+<h3>Using Browser DevTools to Override GPS</h3>
+
+<p>
+    You do not need to physically travel to a location to test geofencing. Chrome DevTools lets you
+    set fake GPS coordinates:
+</p>
+
+<ol>
+    <li>Open Chrome DevTools (F12)</li>
+    <li>Click the three-dot menu (&hellip;) &rarr; <strong>More tools</strong> &rarr; <strong>Sensors</strong></li>
+    <li>Under <strong>Location</strong>, select "Custom location" or one of the presets</li>
+    <li>Enter your test latitude and longitude</li>
+    <li>The browser will report these fake coordinates to <code>navigator.geolocation</code></li>
+</ol>
+
+<p>
+    Test scenarios to cover:
+</p>
+
+<table>
+    <tr>
+        <th>Scenario</th>
+        <th>Test Coordinates</th>
+        <th>Expected Result</th>
+    </tr>
+    <tr>
+        <td>Inside geofence (center)</td>
+        <td>Exact office coordinates</td>
+        <td>Distance ~0m, check-in allowed</td>
+    </tr>
+    <tr>
+        <td>Inside geofence (edge)</td>
+        <td>~95m from center</td>
+        <td>Distance &lt; 100m, check-in allowed</td>
+    </tr>
+    <tr>
+        <td>Outside geofence (barely)</td>
+        <td>~105m from center</td>
+        <td>Blocked: "Fora da area autorizada (5m fora)"</td>
+    </tr>
+    <tr>
+        <td>Far outside geofence</td>
+        <td>Different city</td>
+        <td>Blocked: "Fora da area autorizada (50000m fora)"</td>
+    </tr>
+    <tr>
+        <td>No GPS available</td>
+        <td>Block geolocation in Sensors</td>
+        <td>Blocked: "A obter localizacao..."</td>
+    </tr>
+    <tr>
+        <td>Location without coordinates</td>
+        <td>Any coordinates</td>
+        <td>Blocked: "Localizacao sem coordenadas GPS configuradas"</td>
+    </tr>
+</table>
+
+<h3>Common Pitfalls</h3>
+
+<h4>GPS Accuracy Indoors</h4>
+
+<p>
+    GPS accuracy indoors is poor: typically <strong>30-50 meters</strong> of error. Inside buildings,
+    the GPS signal bounces off walls and ceilings (multipath interference), making the reported position
+    jump around. This is why the default geofence radius is 100 meters &mdash; it accounts for the fact
+    that even a phone sitting on your desk at the office might report a position 30 meters away from the
+    actual office center.
+</p>
+
+<h4>Why 100 Meters?</h4>
+
+<ul>
+    <li><strong>GPS accuracy indoors:</strong> 30-50m error is normal</li>
+    <li><strong>Building size:</strong> A typical office building is 30-50m across</li>
+    <li><strong>Parking lot:</strong> Employees often check in from the car park, which might be 50-80m
+        from the building center</li>
+    <li><strong>100m = comfortable margin</strong> that covers all these cases without being so large that
+        employees could check in from a neighboring building</li>
+</ul>
+
+<p>
+    The radius is configurable per Location and per Job, so a small retail shop might use 50m while a
+    large construction site might use 500m.
+</p>
+
+<h4>Edge Case: Exact Boundary</h4>
+
+<p>
+    If the employee is at <em>exactly</em> 100.0 meters from the center and the radius is 100m, they
+    <strong>pass</strong>. The comparison is <code>distance &lt;= radius</code> (less than <strong>or
+    equal to</strong>). Even 1 meter inside the boundary is a pass. At 100.1 meters, it is a fail.
+</p>
+
+<pre><code><span class="comment">// From GeofenceService.IsWithinRadius()</span>
+<span class="keyword">var</span> <span class="param">distance</span> = <span class="method">CalculateDistance</span>(<span class="param">latitude</span>, <span class="param">longitude</span>, <span class="param">targetLatitude</span>, <span class="param">targetLongitude</span>);
+<span class="keyword">return</span> <span class="param">distance</span> &lt;= <span class="param">radiusMeters</span>;  <span class="comment">// &lt;= not &lt;</span></code></pre>
+
+<h4>Caching Gotcha: maximumAge</h4>
+
+<p>
+    Notice in the JavaScript code: <code>maximumAge: 60000</code> (60 seconds). This means the browser
+    can return a cached GPS position up to 60 seconds old instead of getting a fresh one. This is
+    acceptable for check-in (you are not moving between buildings in 60 seconds), but be aware that
+    if you teleport in DevTools, you may need to wait up to 60 seconds for the new position to take
+    effect.
+</p>
+
+<!-- ============================================================ -->
+<!-- SECTION 11: Key Takeaways -->
+<!-- ============================================================ -->
+
+<h2>11. Summary &mdash; Key Takeaways</h2>
+
+<h3>Architecture Layers</h3>
+
+<table>
+    <tr>
+        <th>Layer</th>
+        <th>File</th>
+        <th>Responsibility</th>
+    </tr>
+    <tr>
+        <td>Browser</td>
+        <td><code>App.razor</code> (JS)</td>
+        <td>GPS acquisition via fallback chain</td>
+    </tr>
+    <tr>
+        <td>Interop</td>
+        <td><code>DeviceLocationService.cs</code></td>
+        <td>Bridge JS to C# via IJSRuntime</td>
+    </tr>
+    <tr>
+        <td>Math</td>
+        <td><code>GeofenceService.cs</code></td>
+        <td>Haversine distance calculation (Singleton)</td>
+    </tr>
+    <tr>
+        <td>Resolution</td>
+        <td><code>GeofenceResolutionService.cs</code></td>
+        <td>Determine which geofence to use (Scoped)</td>
+    </tr>
+    <tr>
+        <td>Context</td>
+        <td><code>CheckInValidationService.cs</code></td>
+        <td>Load context + validate geofence</td>
+    </tr>
+    <tr>
+        <td>Validation</td>
+        <td><code>GeolocationValidator.cs</code></td>
+        <td>Block/allow based on geofence result</td>
+    </tr>
+    <tr>
+        <td>Models</td>
+        <td><code>Location.cs</code>, <code>CheckInContext.cs</code></td>
+        <td>Data structures and state bags</td>
+    </tr>
+</table>
+
+<h3>Design Patterns Used</h3>
+
+<ul>
+    <li><strong>Chain of Responsibility:</strong> Validators run in order; first failure stops the chain</li>
+    <li><strong>Strategy:</strong> Check-in validators vs check-out validators have different behavior for the same geofence data</li>
+    <li><strong>Result Pattern:</strong> <code>LocationResult</code>, <code>CheckInValidationResult</code>,
+        <code>GeofenceResult</code> &mdash; no exceptions for expected failures</li>
+    <li><strong>Factory:</strong> <code>GeofenceTarget.FromJob()</code>, <code>GeofenceTarget.FromLocation()</code>
+        &mdash; static factory methods for clean construction</li>
+    <li><strong>Fallback Chain:</strong> GPS &rarr; Network &rarr; IP geolocation &mdash; graceful degradation</li>
+</ul>
+
+<h3>The Core Formula</h3>
+
+<div class="diagram">
+a = sin^2(delta_lat / 2) + cos(lat1) * cos(lat2) * sin^2(delta_lon / 2)
+c = 2 * atan2(sqrt(a), sqrt(1 - a))
+distance = Earth_Radius * c
+
+Where:
+  Earth_Radius = 6,371,000 meters
+  All angles in radians (degrees * pi / 180)
+</div>
+
+<h3>Remember</h3>
+
+<ul>
+    <li><strong>Check-in blocks</strong> outside the geofence &mdash; check-out <strong>records but allows</strong></li>
+    <li><strong>Haversine, not Pythagorean</strong> &mdash; the Earth is a sphere</li>
+    <li><strong>100m default radius</strong> accounts for GPS imprecision indoors</li>
+    <li><strong>Priority: Job &rarr; Location &rarr; None</strong> for geofence target resolution</li>
+    <li><strong>Singleton for pure math</strong>, Scoped for database access</li>
+    <li><strong>HTTPS required</strong> for browser geolocation API</li>
+</ul>
+
+</body>
+</html>

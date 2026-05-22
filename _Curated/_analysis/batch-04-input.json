@@ -1,0 +1,74 @@
+[
+  {
+    "src_rel": "Education/24-Geofencing-Haversine-Location-Validation.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\24-Geofencing-Haversine-Location-Validation.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__24-Geofencing-Haversine-Location-Validation.html.txt",
+    "word_count": 4774,
+    "category_legacy": "10-Integrations"
+  },
+  {
+    "src_rel": "Education/SQL/backup-and-cleanup.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\SQL\\backup-and-cleanup.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__SQL__backup-and-cleanup.html.txt",
+    "word_count": 3554,
+    "category_legacy": "07-Database-EF-SQL"
+  },
+  {
+    "src_rel": "Education/delegates-lambdas-expression-bodies.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\delegates-lambdas-expression-bodies.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__delegates-lambdas-expression-bodies.html.txt",
+    "word_count": 2771,
+    "category_legacy": "04-CSharp-Language"
+  },
+  {
+    "src_rel": "Education/14-SignalR-Notification-System.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\14-SignalR-Notification-System.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__14-SignalR-Notification-System.md.txt",
+    "word_count": 1842,
+    "category_legacy": "09-Realtime-SignalR"
+  },
+  {
+    "src_rel": "Education/Stock/ENG/StockServiceSystemInfoGraphic.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Stock\\ENG\\StockServiceSystemInfoGraphic.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Stock__ENG__StockServiceSystemInfoGraphic.docx.txt",
+    "word_count": 1495,
+    "category_legacy": "17-Domain-Examples-Stock"
+  },
+  {
+    "src_rel": "Education/ForDummies/11-SignalR-Real-Time-Communication-ForDummies.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\ForDummies\\11-SignalR-Real-Time-Communication-ForDummies.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__ForDummies__11-SignalR-Real-Time-Communication-ForDummies.md.txt",
+    "word_count": 1224,
+    "category_legacy": "19-For-Dummies"
+  },
+  {
+    "src_rel": "Education/ForDummies/15-Notification-Recipient-Resolver-Pipeline-ForDummies.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\ForDummies\\15-Notification-Recipient-Resolver-Pipeline-ForDummies.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__ForDummies__15-Notification-Recipient-Resolver-Pipeline-ForDummies.md.txt",
+    "word_count": 798,
+    "category_legacy": "19-For-Dummies"
+  },
+  {
+    "src_rel": "Education/README.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\README.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__README.md.txt",
+    "word_count": 297,
+    "category_legacy": "00-Meta"
+  }
+]

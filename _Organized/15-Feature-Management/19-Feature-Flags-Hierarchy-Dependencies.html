@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feature Flags with Hierarchy &amp; Dependencies</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --surface: #16213e;
+            --surface2: #0f3460;
+            --accent: #e94560;
+            --accent2: #533483;
+            --text: #eee;
+            --text-muted: #aab;
+            --success: #4ecca3;
+            --warning: #f0a500;
+            --code-bg: #0d1117;
+            --border: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+
+        h2 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin: 2.5rem 0 1rem 0;
+            padding-bottom: 0.3rem;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        h3 {
+            color: var(--success);
+            font-size: 1.2rem;
+            margin: 1.8rem 0 0.8rem 0;
+        }
+
+        h4 {
+            color: var(--warning);
+            font-size: 1.05rem;
+            margin: 1.2rem 0 0.5rem 0;
+        }
+
+        p { margin-bottom: 1rem; }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.2rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        code {
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9rem;
+        }
+
+        p code, li code, td code {
+            background: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .keyword { color: #569cd6; }
+        .type { color: #4ec9b0; }
+        .string { color: #ce9178; }
+        .comment { color: #6a9955; }
+        .method { color: #dcdcaa; }
+        .number { color: #b5cea8; }
+        .param { color: #9cdcfe; }
+
+        .callout {
+            border-radius: 8px;
+            padding: 1.2rem 1.5rem;
+            margin: 1.5rem 0;
+            border-left: 4px solid;
+        }
+
+        .callout-metaphor {
+            background: rgba(83, 52, 131, 0.2);
+            border-color: var(--accent2);
+        }
+        .callout-metaphor::before {
+            content: "Metaphor";
+            display: block;
+            font-weight: bold;
+            color: var(--accent2);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-english {
+            background: rgba(78, 204, 163, 0.1);
+            border-color: var(--success);
+        }
+        .callout-english::before {
+            content: "Read It Like English";
+            display: block;
+            font-weight: bold;
+            color: var(--success);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-warning {
+            background: rgba(240, 165, 0, 0.1);
+            border-color: var(--warning);
+        }
+        .callout-warning::before {
+            content: "Common Confusion";
+            display: block;
+            font-weight: bold;
+            color: var(--warning);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-rule {
+            background: rgba(233, 69, 96, 0.1);
+            border-color: var(--accent);
+        }
+        .callout-rule::before {
+            content: "Golden Rule";
+            display: block;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        ul, ol {
+            margin: 0.5rem 0 1rem 1.5rem;
+        }
+
+        li { margin-bottom: 0.3rem; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 0.6rem 1rem;
+            text-align: left;
+        }
+
+        th {
+            background: var(--surface2);
+            color: var(--success);
+        }
+
+        td { background: var(--surface); }
+
+        .diagram {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'Cascadia Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            white-space: pre;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Feature Flags with Hierarchy &amp; Dependencies</h1>
+<p class="subtitle">Tutorial #19 &mdash; Turn modules on/off per company, with parent-child cascading and cross-module dependencies</p>
+
+<!-- ============================================================ -->
+<h2>1. What Are Feature Flags?</h2>
+
+<p>
+    A feature flag is a toggle that lets you turn an entire module on or off for a specific company
+    <strong>without redeploying the application</strong>. In GivingCare, every company can have a
+    different combination of modules active. One company might use HR + Jobs + Attendance, while
+    another only uses CRM + Leads + Documents.
+</p>
+
+<p>Each feature has two orthogonal dimensions:</p>
+
+<h3>Three States (Is it on?)</h3>
+<table>
+    <tr><th>State</th><th>Value</th><th>Meaning</th></tr>
+    <tr><td><code>Enabled</code></td><td><code>0</code></td><td>Feature is fully active</td></tr>
+    <tr><td><code>Disabled</code></td><td><code>1</code></td><td>Feature is turned off &mdash; users see "Module Disabled" page</td></tr>
+    <tr><td><code>Maintenance</code></td><td><code>2</code></td><td>Temporarily unavailable &mdash; users see "Under Maintenance" page</td></tr>
+</table>
+
+<pre><code><span class="keyword">public</span> <span class="keyword">enum</span> <span class="type">FeatureState</span>
+{
+    <span class="comment">/// &lt;summary&gt;Feature is fully enabled&lt;/summary&gt;</span>
+    <span class="method">Enabled</span> = <span class="number">0</span>,
+
+    <span class="comment">/// &lt;summary&gt;Feature is disabled&lt;/summary&gt;</span>
+    <span class="method">Disabled</span> = <span class="number">1</span>,
+
+    <span class="comment">/// &lt;summary&gt;Feature is temporarily unavailable (maintenance)&lt;/summary&gt;</span>
+    <span class="method">Maintenance</span> = <span class="number">2</span>
+}</code></pre>
+
+<h3>Three Access Tiers (How much can they do?)</h3>
+<table>
+    <tr><th>Tier</th><th>Value</th><th>Meaning</th></tr>
+    <tr><td><code>ReadOnly</code></td><td><code>1</code></td><td>View and search only. No create/edit/delete.</td></tr>
+    <tr><td><code>Simple</code></td><td><code>2</code></td><td>Basic CRUD with simplified fields/features.</td></tr>
+    <tr><td><code>Full</code></td><td><code>3</code></td><td>Full access to all module features.</td></tr>
+</table>
+
+<pre><code><span class="keyword">public</span> <span class="keyword">enum</span> <span class="type">AccessTier</span>
+{
+    <span class="comment">/// &lt;summary&gt;View/search only. No create/edit/delete.&lt;/summary&gt;</span>
+    <span class="method">ReadOnly</span> = <span class="number">1</span>,
+
+    <span class="comment">/// &lt;summary&gt;Basic CRUD with simplified fields/features.&lt;/summary&gt;</span>
+    <span class="method">Simple</span> = <span class="number">2</span>,
+
+    <span class="comment">/// &lt;summary&gt;Full access to all module features.&lt;/summary&gt;</span>
+    <span class="method">Full</span> = <span class="number">3</span>
+}</code></pre>
+
+<div class="callout callout-warning">
+    <code>FeatureState</code> and <code>AccessTier</code> are <strong>orthogonal</strong>.
+    State answers "is this module turned on?" while Tier answers "how much can they do within it?"
+    A module can be <code>Enabled</code> with <code>ReadOnly</code> tier &mdash; meaning users can
+    see the data but cannot create, edit, or delete anything. The tier only matters when the state is <code>Enabled</code>.
+</div>
+
+<div class="callout callout-metaphor">
+    Think of it like a power grid. <code>FeatureState</code> is the circuit breaker &mdash; is the
+    power on or off? <code>AccessTier</code> is the voltage regulator &mdash; how much power flows
+    through once the breaker is on. Flipping the breaker off makes the voltage irrelevant.
+</div>
+
+
+<!-- ============================================================ -->
+<h2>2. The Registry &mdash; FeatureKeys.cs</h2>
+
+<p>
+    Every feature module in the system is registered as a string constant in the
+    <code>FeatureKeys</code> static class. This is the single source of truth for all feature
+    identifiers. There are currently <strong>18 feature modules</strong> organized into four groups.
+</p>
+
+<h3>The Constants</h3>
+
+<pre><code><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="type">FeatureKeys</span>
+{
+    <span class="comment">// Standalone modules</span>
+    <span class="keyword">public</span> <span class="keyword">const</span> <span class="keyword">string</span> <span class="param">EntitiesModule</span>   = <span class="string">"Entities"</span>;
+    <span class="keyword">public</span> <span class="keyword">const</span> <span class="keyword">string</span> <span class="param">ArticlesModule</span>   = <span class="string">"Articles"</span>;
+    <span class="keyword">public</span> <span class="keyword">const</span> <span class="keyword">string</span> <span class="param">DocumentsModule</span>  = <span class="string">"Documents"</span>;
+    <span class="keyword">public</span> <span class="keyword">const</span> <span class="keyword">string</span> <span class="param">EquipmentModule</span>  = <span class="string">"Equipment"</span>;
+    <span class="keyword">public</span> <span class="keyword">const</span> <span class="keyword">string</span> <span class="param">TasksModule</span>      = <span class="string">"Tasks"</span>;
+    <span class="keyword">public</span> <span class="keyword">const</span> <span class="keyword">string</span> <span class="param">FormsModule</span>      = <span class="string">"Forms"</span>;
+    <span class="keyword">public</span> <span class="keyword">const</span> <span class="keyword">string</span> <span class="param">StockModule</span>      = <span class="string">"Stock"</span>;
+    <span class="keyword">public</span> <span class="keyword">const</span> <span class="keyword">string</span> <span class="param">ChatModule</span>       = <span class="string">"Chat"</span>;
+
+    <span class="comment">// HR parent + children</span>
+    <span class="keyword">public</span> <span class="keyword">const</span> <span class="keyword">string</span> <span class="param">HrModule</span>         = <span class="string">"HR"</span>;
+    <span class="keyword">public</span> <span class="keyword">const</span> <span class="keyword">string</span> <span class="param">AttendanceModule</span> = <span class="string">"Attendance"</span>;
+    <span class="keyword">public</span> <span class="keyword">const</span> <span class="keyword">string</span> <span class="param">LeaveModule</span>      = <span class="string">"Leave"</span>;
+    <span class="keyword">public</span> <span class="keyword">const</span> <span class="keyword">string</span> <span class="param">CoursesModule</span>    = <span class="string">"Courses"</span>;
+    <span class="keyword">public</span> <span class="keyword">const</span> <span class="keyword">string</span> <span class="param">JobsModule</span>       = <span class="string">"Jobs"</span>;
+    <span class="keyword">public</span> <span class="keyword">const</span> <span class="keyword">string</span> <span class="param">SchedulingModule</span> = <span class="string">"Scheduling"</span>;
+
+    <span class="comment">// CRM parent + children</span>
+    <span class="keyword">public</span> <span class="keyword">const</span> <span class="keyword">string</span> <span class="param">CrmModule</span>             = <span class="string">"CRM"</span>;
+    <span class="keyword">public</span> <span class="keyword">const</span> <span class="keyword">string</span> <span class="param">LeadsModule</span>           = <span class="string">"Leads"</span>;
+    <span class="keyword">public</span> <span class="keyword">const</span> <span class="keyword">string</span> <span class="param">OportunidadesModule</span>  = <span class="string">"Oportunidades"</span>;
+    <span class="keyword">public</span> <span class="keyword">const</span> <span class="keyword">string</span> <span class="param">EmailMonitoringModule</span> = <span class="string">"EmailMonitoring"</span>;
+
+    <span class="comment">// Support/ITSM parent</span>
+    <span class="keyword">public</span> <span class="keyword">const</span> <span class="keyword">string</span> <span class="param">SupportModule</span> = <span class="string">"Support"</span>;
+}</code></pre>
+
+<h3>Module Map</h3>
+
+<div class="diagram">
+                         GivingCare Feature Modules
+    ================================================================
+
+    STANDALONE                  HR (parent)             CRM (parent)
+    ----------                  -----------             ------------
+    Entities                    Attendance              Leads
+    Articles  <---+             Leave                   Oportunidades
+    Documents <---+--deps       Courses                 EmailMonitoring
+    Equipment     |             Jobs
+    Tasks         |             Scheduling              SUPPORT (parent)
+    Forms         |                                     ----------------
+    Stock   <-----+                                     (no children yet)
+    Chat
+</div>
+
+<h3>Parent-Child Relationships: ChildModules</h3>
+
+<p>
+    The <code>ChildModules</code> dictionary declares which modules are children of a parent.
+    When a parent is disabled, <strong>all its children are implicitly disabled</strong>, regardless
+    of their own state.
+</p>
+
+<pre><code><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">readonly</span> <span class="type">IReadOnlyDictionary</span>&lt;<span class="keyword">string</span>, <span class="keyword">string</span>[]&gt; <span class="param">ChildModules</span> =
+    <span class="keyword">new</span> <span class="type">Dictionary</span>&lt;<span class="keyword">string</span>, <span class="keyword">string</span>[]&gt;
+{
+    [<span class="param">HrModule</span>]      = <span class="keyword">new</span>[] { <span class="param">AttendanceModule</span>, <span class="param">LeaveModule</span>, <span class="param">CoursesModule</span>, <span class="param">JobsModule</span>, <span class="param">SchedulingModule</span> },
+    [<span class="param">CrmModule</span>]     = <span class="keyword">new</span>[] { <span class="param">LeadsModule</span>, <span class="param">OportunidadesModule</span>, <span class="param">EmailMonitoringModule</span> },
+    [<span class="param">SupportModule</span>] = <span class="type">Array</span>.<span class="method">Empty</span>&lt;<span class="keyword">string</span>&gt;()
+};</code></pre>
+
+<h3>Cross-Module Dependencies: DependsOn</h3>
+
+<p>
+    The <code>DependsOn</code> dictionary declares modules that need <em>other</em> modules to function.
+    If any dependency is disabled, the dependent module is effectively disabled too.
+</p>
+
+<pre><code><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">readonly</span> <span class="type">IReadOnlyDictionary</span>&lt;<span class="keyword">string</span>, <span class="keyword">string</span>[]&gt; <span class="param">DependsOn</span> =
+    <span class="keyword">new</span> <span class="type">Dictionary</span>&lt;<span class="keyword">string</span>, <span class="keyword">string</span>[]&gt;
+{
+    [<span class="param">DocumentsModule</span>] = <span class="keyword">new</span>[] { <span class="param">ArticlesModule</span>, <span class="param">EntitiesModule</span> },
+    [<span class="param">StockModule</span>]     = <span class="keyword">new</span>[] { <span class="param">ArticlesModule</span> }
+};</code></pre>
+
+<p>
+    This means: you cannot use Documents without both Articles and Entities enabled (because
+    invoices reference articles and are addressed to entities). You cannot use Stock without
+    Articles enabled (because stock tracks article quantities).
+</p>
+
+
+<!-- ============================================================ -->
+<h2>3. The Hierarchy Engine &mdash; IsEffectivelyEnabled</h2>
+
+<p>
+    The core algorithm that resolves whether a module is truly usable is
+    <code>IsEffectivelyEnabled</code>. It checks three things in order:
+</p>
+
+<ol>
+    <li><strong>Own state</strong> &mdash; Is this module itself set to Enabled?</li>
+    <li><strong>Parent state</strong> &mdash; If this module is a child, is its parent Enabled?</li>
+    <li><strong>Dependency state</strong> &mdash; Are all modules this one depends on effectively enabled? (recursive)</li>
+</ol>
+
+<pre><code><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="method">IsEffectivelyEnabled</span>(
+    <span class="type">Dictionary</span>&lt;<span class="keyword">string</span>, <span class="type">FeatureState</span>&gt; <span class="param">features</span>,
+    <span class="keyword">string</span> <span class="param">featureKey</span>)
+{
+    <span class="keyword">return</span> <span class="method">IsEffectivelyEnabledInternal</span>(<span class="param">features</span>, <span class="param">featureKey</span>, <span class="keyword">new</span> <span class="type">HashSet</span>&lt;<span class="keyword">string</span>&gt;());
+}
+
+<span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">bool</span> <span class="method">IsEffectivelyEnabledInternal</span>(
+    <span class="type">Dictionary</span>&lt;<span class="keyword">string</span>, <span class="type">FeatureState</span>&gt; <span class="param">features</span>,
+    <span class="keyword">string</span> <span class="param">featureKey</span>,
+    <span class="type">HashSet</span>&lt;<span class="keyword">string</span>&gt; <span class="param">visited</span>)
+{
+    <span class="comment">// Prevent infinite recursion from circular dependencies</span>
+    <span class="keyword">if</span> (!<span class="param">visited</span>.<span class="method">Add</span>(<span class="param">featureKey</span>)) <span class="keyword">return</span> <span class="keyword">true</span>;
+
+    <span class="comment">// Check the module's own state (default to enabled if not configured)</span>
+    <span class="keyword">var</span> <span class="param">selfEnabled</span> = !<span class="param">features</span>.<span class="method">TryGetValue</span>(<span class="param">featureKey</span>, <span class="keyword">out</span> <span class="keyword">var</span> <span class="param">state</span>)
+                      || <span class="param">state</span> == <span class="type">FeatureState</span>.<span class="method">Enabled</span>;
+    <span class="keyword">if</span> (!<span class="param">selfEnabled</span>) <span class="keyword">return</span> <span class="keyword">false</span>;
+
+    <span class="comment">// Check if any parent is disabled</span>
+    <span class="keyword">foreach</span> (<span class="keyword">var</span> (<span class="param">parent</span>, <span class="param">children</span>) <span class="keyword">in</span> <span class="param">ChildModules</span>)
+    {
+        <span class="keyword">if</span> (<span class="param">children</span>.<span class="method">Contains</span>(<span class="param">featureKey</span>))
+        {
+            <span class="keyword">var</span> <span class="param">parentEnabled</span> = !<span class="param">features</span>.<span class="method">TryGetValue</span>(<span class="param">parent</span>, <span class="keyword">out</span> <span class="keyword">var</span> <span class="param">parentState</span>)
+                              || <span class="param">parentState</span> == <span class="type">FeatureState</span>.<span class="method">Enabled</span>;
+            <span class="keyword">if</span> (!<span class="param">parentEnabled</span>) <span class="keyword">return</span> <span class="keyword">false</span>;
+        }
+    }
+
+    <span class="comment">// Check if any dependency is disabled (recursive for transitive deps)</span>
+    <span class="keyword">if</span> (<span class="param">DependsOn</span>.<span class="method">TryGetValue</span>(<span class="param">featureKey</span>, <span class="keyword">out</span> <span class="keyword">var</span> <span class="param">deps</span>))
+    {
+        <span class="keyword">foreach</span> (<span class="keyword">var</span> <span class="param">dep</span> <span class="keyword">in</span> <span class="param">deps</span>)
+        {
+            <span class="keyword">if</span> (!<span class="method">IsEffectivelyEnabledInternal</span>(<span class="param">features</span>, <span class="param">dep</span>, <span class="param">visited</span>))
+                <span class="keyword">return</span> <span class="keyword">false</span>;
+        }
+    }
+
+    <span class="keyword">return</span> <span class="keyword">true</span>;
+}</code></pre>
+
+<div class="callout callout-english">
+    <code>IsEffectivelyEnabled</code> reads as: "Am I on, AND is my parent on, AND are all my
+    dependencies on?" If any link in that chain says no, the module is blocked.
+</div>
+
+<h3>The Circular Dependency Guard</h3>
+
+<p>
+    Notice the <code>HashSet&lt;string&gt; visited</code> parameter. Before processing any module, the
+    algorithm calls <code>visited.Add(featureKey)</code>. If the key was already in the set,
+    <code>Add</code> returns <code>false</code>, and the method returns <code>true</code>
+    (assume enabled to break the cycle). This prevents infinite recursion if someone accidentally
+    creates a circular dependency like A depends on B depends on A.
+</p>
+
+<h3>Visualizing the Parent-Child Cascade</h3>
+
+<p>When a parent module is disabled, every child underneath it is automatically blocked:</p>
+
+<div class="diagram">
+  HR (parent) ─── DISABLED
+  ├── Attendance  ─── (BLOCKED by parent)
+  ├── Leave       ─── (BLOCKED by parent)
+  ├── Courses     ─── (BLOCKED by parent)
+  ├── Jobs        ─── (BLOCKED by parent)
+  └── Scheduling  ─── (BLOCKED by parent)
+
+  Even if Attendance is explicitly set to Enabled in the database,
+  it is still blocked because its parent HR is Disabled.
+</div>
+
+<div class="diagram">
+  CRM (parent) ─── DISABLED
+  ├── Leads            ─── (BLOCKED by parent)
+  ├── Oportunidades    ─── (BLOCKED by parent)
+  └── EmailMonitoring  ─── (BLOCKED by parent)
+</div>
+
+<h3>Visualizing Cross-Dependencies</h3>
+
+<p>Dependencies work across unrelated modules. Disabling Articles creates a chain reaction:</p>
+
+<div class="diagram">
+  Articles ─── DISABLED
+      |
+      ├──dependency──&gt; Documents ─── (BLOCKED: depends on Articles + Entities)
+      |
+      └──dependency──&gt; Stock     ─── (BLOCKED: depends on Articles)
+
+  Even though Documents and Stock are both set to Enabled,
+  they cannot function because their dependency (Articles) is off.
+</div>
+
+<p>And if Entities is disabled instead:</p>
+
+<div class="diagram">
+  Entities ─── DISABLED
+      |
+      └──dependency──&gt; Documents ─── (BLOCKED: depends on Entities)
+
+  Stock is unaffected because Stock only depends on Articles, not Entities.
+</div>
+
+<div class="callout callout-metaphor">
+    Like a power grid &mdash; turning off the main breaker (parent) kills all circuits
+    (children) downstream. And some appliances (Documents) need two separate circuits (Articles
+    + Entities) to be live before they will turn on.
+</div>
+
+
+<!-- ============================================================ -->
+<h2>4. Access Tiers &mdash; ReadOnly / Simple / Full</h2>
+
+<p>
+    Not every module supports access tiers. Only modules listed in the <code>SupportedTiers</code>
+    dictionary have configurable tiers. Modules not in this dictionary always operate at
+    <code>Full</code> when enabled.
+</p>
+
+<p>
+    Access tiers let you sell "lite" versus "full" versions of the same module. A company paying
+    for the basic plan might get <code>Simple</code> access to Articles (CRUD only), while a
+    premium company gets <code>Full</code> access (templates, categories, BOM, production).
+</p>
+
+<pre><code><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">readonly</span> <span class="type">IReadOnlyDictionary</span>&lt;<span class="keyword">string</span>, <span class="type">AccessTierDefinition</span>[]&gt; <span class="param">SupportedTiers</span> =
+    <span class="keyword">new</span> <span class="type">Dictionary</span>&lt;<span class="keyword">string</span>, <span class="type">AccessTierDefinition</span>[]&gt;
+{
+    [<span class="param">ArticlesModule</span>] = <span class="keyword">new</span>[]
+    {
+        <span class="keyword">new</span> <span class="type">AccessTierDefinition</span>(<span class="type">AccessTier</span>.<span class="method">ReadOnly</span>,
+            <span class="string">"Apenas Leitura"</span>,
+            <span class="string">"Visualizar e pesquisar artigos. Sem criar/editar/eliminar."</span>),
+        <span class="keyword">new</span> <span class="type">AccessTierDefinition</span>(<span class="type">AccessTier</span>.<span class="method">Simple</span>,
+            <span class="string">"Simples"</span>,
+            <span class="string">"CRUD basico com template automatico. Sem templates, geracao cartesiana ou familias."</span>),
+        <span class="keyword">new</span> <span class="type">AccessTierDefinition</span>(<span class="type">AccessTier</span>.<span class="method">Full</span>,
+            <span class="string">"Completo"</span>,
+            <span class="string">"Acesso total: templates, categorias, BOM, producao."</span>)
+    },
+    [<span class="param">EntitiesModule</span>] = <span class="keyword">new</span>[]
+    {
+        <span class="keyword">new</span> <span class="type">AccessTierDefinition</span>(<span class="type">AccessTier</span>.<span class="method">ReadOnly</span>,
+            <span class="string">"Apenas Leitura"</span>,
+            <span class="string">"Visualizar entidades. Sem criar/editar/eliminar."</span>),
+        <span class="keyword">new</span> <span class="type">AccessTierDefinition</span>(<span class="type">AccessTier</span>.<span class="method">Simple</span>,
+            <span class="string">"Simples"</span>,
+            <span class="string">"CRUD basico: nome, tipo, NIF, email, telefone, morada."</span>),
+        <span class="keyword">new</span> <span class="type">AccessTierDefinition</span>(<span class="type">AccessTier</span>.<span class="method">Full</span>,
+            <span class="string">"Completo"</span>,
+            <span class="string">"Acesso total: dashboard, armazens, certificacoes, niveis de preco."</span>)
+    },
+    [<span class="param">JobsModule</span>] = <span class="keyword">new</span>[]
+    {
+        <span class="keyword">new</span> <span class="type">AccessTierDefinition</span>(<span class="type">AccessTier</span>.<span class="method">ReadOnly</span>,
+            <span class="string">"Apenas Leitura"</span>,
+            <span class="string">"Visualizar obras e filtrar. Sem criar/editar/eliminar."</span>),
+        <span class="keyword">new</span> <span class="type">AccessTierDefinition</span>(<span class="type">AccessTier</span>.<span class="method">Simple</span>,
+            <span class="string">"Simples"</span>,
+            <span class="string">"CRUD + atribuicao de colaboradores/equipas/equipamentos."</span>),
+        <span class="keyword">new</span> <span class="type">AccessTierDefinition</span>(<span class="type">AccessTier</span>.<span class="method">Full</span>,
+            <span class="string">"Completo"</span>,
+            <span class="string">"Acesso total: grelha de horarios, detecao de conflitos, operacoes em massa."</span>)
+    },
+    [<span class="param">HrModule</span>] = <span class="keyword">new</span>[]
+    {
+        <span class="keyword">new</span> <span class="type">AccessTierDefinition</span>(<span class="type">AccessTier</span>.<span class="method">ReadOnly</span>,
+            <span class="string">"Apenas Leitura"</span>,
+            <span class="string">"Visualizar lista e detalhes de colaboradores. Sem criar/editar."</span>),
+        <span class="keyword">new</span> <span class="type">AccessTierDefinition</span>(<span class="type">AccessTier</span>.<span class="method">Simple</span>,
+            <span class="string">"Simples"</span>,
+            <span class="string">"CRUD basico: dados pessoais e profissionais."</span>),
+        <span class="keyword">new</span> <span class="type">AccessTierDefinition</span>(<span class="type">AccessTier</span>.<span class="method">Full</span>,
+            <span class="string">"Completo"</span>,
+            <span class="string">"Acesso total: configuracao RH, contratos, cargos, horarios, cursos, ausencias."</span>)
+    }
+};</code></pre>
+
+<h3>Tier Comparison Summary</h3>
+
+<table>
+    <tr>
+        <th>Module</th>
+        <th>ReadOnly</th>
+        <th>Simple</th>
+        <th>Full</th>
+    </tr>
+    <tr>
+        <td>Articles</td>
+        <td>View/search</td>
+        <td>+ CRUD with auto template</td>
+        <td>+ Templates, categories, BOM, production</td>
+    </tr>
+    <tr>
+        <td>Entities</td>
+        <td>View entities</td>
+        <td>+ Basic CRUD (name, NIF, email)</td>
+        <td>+ Dashboard, warehouses, certifications, price levels</td>
+    </tr>
+    <tr>
+        <td>Jobs</td>
+        <td>View/filter</td>
+        <td>+ CRUD, assign workers/teams/equipment</td>
+        <td>+ Schedule grid, conflict detection, bulk ops</td>
+    </tr>
+    <tr>
+        <td>HR</td>
+        <td>View employees</td>
+        <td>+ Basic CRUD (personal/professional data)</td>
+        <td>+ HR config, contracts, roles, schedules, courses, leave</td>
+    </tr>
+</table>
+
+<p>Modules <em>not</em> in <code>SupportedTiers</code> (like Tasks, Forms, Chat, all CRM children)
+always run at <code>Full</code> when enabled. They have no tier granularity &mdash; they are either
+fully on or off.</p>
+
+
+<!-- ============================================================ -->
+<h2>5. Database Model &mdash; CompanyFeatureFlag</h2>
+
+<p>
+    Feature flags are stored in the <strong>BaseControle</strong> database (the auth/system DB),
+    not in the per-company tenant database. This makes sense because feature flags control
+    <em>which companies can access which modules</em> &mdash; it is a system-level concern.
+</p>
+
+<pre><code>[<span class="type">Table</span>(<span class="string">"CompanyFeatureFlags"</span>)]
+<span class="keyword">public</span> <span class="keyword">class</span> <span class="type">CompanyFeatureFlag</span>
+{
+    [<span class="type">Key</span>]
+    <span class="keyword">public</span> <span class="keyword">int</span> <span class="param">Id</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+
+    <span class="comment">/// &lt;summary&gt;FK to Company table in BaseControle DB&lt;/summary&gt;</span>
+    <span class="keyword">public</span> <span class="keyword">int</span> <span class="param">CompanyId</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+
+    <span class="comment">/// &lt;summary&gt;Feature key (e.g. "Jobs"). See FeatureKeys.&lt;/summary&gt;</span>
+    [<span class="type">MaxLength</span>(<span class="number">50</span>)]
+    <span class="keyword">public</span> <span class="keyword">string</span> <span class="param">FeatureKey</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; } = <span class="keyword">string</span>.Empty;
+
+    <span class="comment">/// &lt;summary&gt;Current state of the feature for this company&lt;/summary&gt;</span>
+    <span class="keyword">public</span> <span class="type">FeatureState</span> <span class="param">State</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; } = <span class="type">FeatureState</span>.<span class="method">Enabled</span>;
+
+    <span class="comment">/// &lt;summary&gt;Capability tier (only meaningful when State == Enabled)&lt;/summary&gt;</span>
+    <span class="keyword">public</span> <span class="type">AccessTier</span> <span class="param">AccessTier</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; } = <span class="type">AccessTier</span>.<span class="method">Full</span>;
+
+    <span class="keyword">public</span> <span class="type">DateTime</span> <span class="param">ModifiedAt</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public</span> <span class="keyword">int</span>? <span class="param">ModifiedByUserId</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+}</code></pre>
+
+<p>The storage model is simple: <strong>one row per (CompanyId, FeatureKey) pair</strong>. If a
+company has no row for a feature, that feature is treated as <code>Enabled</code> with <code>Full</code>
+access tier. This is the "default to enabled" philosophy.</p>
+
+<div class="callout callout-rule">
+    <strong>Default to ENABLED.</strong> Only store overrides. A missing row means full access.
+    This ensures backward compatibility &mdash; existing companies that predate the feature flag
+    system automatically have all modules active without any data migration.
+</div>
+
+<h3>Example Database Rows</h3>
+
+<table>
+    <tr><th>Id</th><th>CompanyId</th><th>FeatureKey</th><th>State</th><th>AccessTier</th><th>ModifiedAt</th></tr>
+    <tr><td>1</td><td>5</td><td><code>CRM</code></td><td>Disabled (1)</td><td>Full (3)</td><td>2026-03-01</td></tr>
+    <tr><td>2</td><td>5</td><td><code>Articles</code></td><td>Enabled (0)</td><td>Simple (2)</td><td>2026-03-01</td></tr>
+    <tr><td>3</td><td>5</td><td><code>Stock</code></td><td>Maintenance (2)</td><td>Full (3)</td><td>2026-03-10</td></tr>
+    <tr><td>4</td><td>7</td><td><code>HR</code></td><td>Enabled (0)</td><td>ReadOnly (1)</td><td>2026-02-15</td></tr>
+</table>
+
+<p>In this example:</p>
+<ul>
+    <li>Company 5 has CRM disabled &mdash; Leads, Oportunidades, and EmailMonitoring are all blocked by parent.</li>
+    <li>Company 5 has Articles at Simple tier &mdash; they can do basic CRUD but not templates or BOM.</li>
+    <li>Company 5 has Stock in Maintenance &mdash; users see a maintenance page when they navigate to Stock.</li>
+    <li>Company 7 has HR at ReadOnly &mdash; they can view employees but cannot create or edit.</li>
+    <li>Company 7 has no row for Jobs, so Jobs is Enabled/Full by default.</li>
+</ul>
+
+
+<!-- ============================================================ -->
+<h2>6. The Service &mdash; CompanyFeatureFlagService</h2>
+
+<p>
+    The <code>CompanyFeatureFlagService</code> is the centralized runtime service that reads,
+    caches, and writes feature flag data. It operates on the BaseControle database.
+</p>
+
+<h3>The Interface</h3>
+
+<pre><code><span class="keyword">public</span> <span class="keyword">interface</span> <span class="type">ICompanyFeatureFlagService</span>
+{
+    <span class="comment">// Read operations</span>
+    <span class="type">Task</span>&lt;<span class="type">FeatureState</span>&gt; <span class="method">GetFeatureStateAsync</span>(<span class="keyword">int</span> <span class="param">companyId</span>, <span class="keyword">string</span> <span class="param">featureKey</span>);
+    <span class="type">Task</span>&lt;<span class="type">FeatureState</span>&gt; <span class="method">GetFeatureStateAsync</span>(<span class="keyword">string</span> <span class="param">companyDatabase</span>, <span class="keyword">string</span> <span class="param">featureKey</span>);
+    <span class="type">Task</span>&lt;<span class="keyword">bool</span>&gt; <span class="method">IsFeatureEnabledAsync</span>(<span class="keyword">int</span> <span class="param">companyId</span>, <span class="keyword">string</span> <span class="param">featureKey</span>);
+    <span class="type">Task</span>&lt;<span class="keyword">bool</span>&gt; <span class="method">IsFeatureEnabledAsync</span>(<span class="keyword">string</span> <span class="param">companyDatabase</span>, <span class="keyword">string</span> <span class="param">featureKey</span>);
+    <span class="type">Task</span>&lt;<span class="type">Dictionary</span>&lt;<span class="keyword">string</span>, <span class="type">FeatureState</span>&gt;&gt; <span class="method">GetAllFeaturesAsync</span>(<span class="keyword">int</span> <span class="param">companyId</span>);
+    <span class="type">Task</span>&lt;<span class="type">Dictionary</span>&lt;<span class="keyword">string</span>, <span class="type">AccessTier</span>&gt;&gt; <span class="method">GetAllAccessTiersAsync</span>(<span class="keyword">int</span> <span class="param">companyId</span>);
+    <span class="type">Task</span>&lt;<span class="type">AccessTier</span>&gt; <span class="method">GetAccessTierAsync</span>(<span class="keyword">int</span> <span class="param">companyId</span>, <span class="keyword">string</span> <span class="param">featureKey</span>);
+    <span class="type">Task</span>&lt;<span class="type">AccessTier</span>&gt; <span class="method">GetAccessTierAsync</span>(<span class="keyword">string</span> <span class="param">companyDatabase</span>, <span class="keyword">string</span> <span class="param">featureKey</span>);
+
+    <span class="comment">// Write operations</span>
+    <span class="type">Task</span>&lt;<span class="type">ServiceResult</span>&gt; <span class="method">SetFeatureStateAsync</span>(<span class="keyword">int</span> <span class="param">companyId</span>, <span class="keyword">string</span> <span class="param">featureKey</span>, <span class="type">FeatureState</span> <span class="param">state</span>, <span class="keyword">int</span> <span class="param">userId</span>);
+    <span class="type">Task</span>&lt;<span class="type">ServiceResult</span>&gt; <span class="method">SetAccessTierAsync</span>(<span class="keyword">int</span> <span class="param">companyId</span>, <span class="keyword">string</span> <span class="param">featureKey</span>, <span class="type">AccessTier</span> <span class="param">tier</span>, <span class="keyword">int</span> <span class="param">userId</span>);
+
+    <span class="comment">// Cache management</span>
+    <span class="keyword">void</span> <span class="method">InvalidateCache</span>(<span class="keyword">int</span> <span class="param">companyId</span>);
+}</code></pre>
+
+<p>Notice the overloads: every read method has two signatures &mdash; one taking <code>companyId</code>
+(int) and one taking <code>companyDatabase</code> (string). The string overload is for service-layer
+callers that only know the database name, not the company ID.</p>
+
+<h3>Dual Caching Strategy</h3>
+
+<p>The service uses <code>IMemoryCache</code> with two cache levels:</p>
+
+<table>
+    <tr><th>Cache Key</th><th>TTL</th><th>What It Stores</th></tr>
+    <tr>
+        <td><code>FeatureFlags_{companyId}</code></td>
+        <td>5 minutes (sliding)</td>
+        <td>All feature states + access tiers for a company</td>
+    </tr>
+    <tr>
+        <td><code>CompanyDbToId_{databaseName}</code></td>
+        <td>30 minutes (sliding)</td>
+        <td>Company database name to Company ID mapping</td>
+    </tr>
+</table>
+
+<h3>LoadFlagDataAsync &mdash; The Core Data Loader</h3>
+
+<p>This is the method that fetches all flags for a company in a single query and caches the result:</p>
+
+<pre><code><span class="keyword">private</span> <span class="keyword">async</span> <span class="type">Task</span>&lt;<span class="type">FeatureFlagData</span>&gt; <span class="method">LoadFlagDataAsync</span>(<span class="keyword">int</span> <span class="param">companyId</span>)
+{
+    <span class="keyword">var</span> <span class="param">cacheKey</span> = <span class="string">$"FeatureFlags_{companyId}"</span>;
+
+    <span class="keyword">if</span> (<span class="param">_cache</span>.<span class="method">TryGetValue</span>(<span class="param">cacheKey</span>, <span class="keyword">out</span> <span class="type">FeatureFlagData</span>? <span class="param">cached</span>) &amp;&amp; <span class="param">cached</span> != <span class="keyword">null</span>)
+        <span class="keyword">return</span> <span class="param">cached</span>;
+
+    <span class="keyword">try</span>
+    {
+        <span class="keyword">await using</span> <span class="keyword">var</span> <span class="param">context</span> = <span class="param">_contextFactory</span>.<span class="method">CreateBaseControleContext</span>();
+
+        <span class="keyword">var</span> <span class="param">flags</span> = <span class="keyword">await</span> <span class="param">context</span>.CompanyFeatureFlags
+            .<span class="method">AsNoTracking</span>()
+            .<span class="method">Where</span>(<span class="param">f</span> => <span class="param">f</span>.CompanyId == <span class="param">companyId</span>)
+            .<span class="method">ToListAsync</span>();
+
+        <span class="keyword">var</span> <span class="param">data</span> = <span class="keyword">new</span> <span class="type">FeatureFlagData</span>(
+            States: <span class="param">flags</span>.<span class="method">ToDictionary</span>(<span class="param">f</span> => <span class="param">f</span>.FeatureKey, <span class="param">f</span> => <span class="param">f</span>.State),
+            Tiers:  <span class="param">flags</span>.<span class="method">ToDictionary</span>(<span class="param">f</span> => <span class="param">f</span>.FeatureKey, <span class="param">f</span> => <span class="param">f</span>.AccessTier));
+
+        <span class="param">_cache</span>.<span class="method">Set</span>(<span class="param">cacheKey</span>, <span class="param">data</span>, <span class="keyword">new</span> <span class="type">MemoryCacheEntryOptions</span>
+        {
+            SlidingExpiration = <span class="param">FeatureCacheExpiration</span>
+        });
+
+        <span class="keyword">return</span> <span class="param">data</span>;
+    }
+    <span class="keyword">catch</span> (<span class="type">Exception</span> <span class="param">ex</span>)
+    {
+        <span class="param">_logger</span>.<span class="method">LogError</span>(<span class="param">ex</span>, <span class="string">"Error loading feature flags for company {CompanyId}"</span>, <span class="param">companyId</span>);
+        <span class="keyword">return</span> <span class="keyword">new</span> <span class="type">FeatureFlagData</span>(
+            <span class="keyword">new</span> <span class="type">Dictionary</span>&lt;<span class="keyword">string</span>, <span class="type">FeatureState</span>&gt;(),
+            <span class="keyword">new</span> <span class="type">Dictionary</span>&lt;<span class="keyword">string</span>, <span class="type">AccessTier</span>&gt;());
+    }
+}</code></pre>
+
+<h4>Key Design Decisions</h4>
+<ul>
+    <li><strong>Single query</strong>: All flags for one company are loaded at once, not one-by-one. This avoids N+1 queries.</li>
+    <li><strong>AsNoTracking</strong>: Read-only data &mdash; no need for EF change tracking overhead.</li>
+    <li><strong>Graceful failure</strong>: If the database is unreachable, it returns empty dictionaries. Since the default is "enabled", this means all features remain accessible during outages.</li>
+</ul>
+
+<h3>ResolveCompanyIdAsync &mdash; Database Name to ID</h3>
+
+<p>Services often know the company database name (a string like <code>"Empresa_GivingCare"</code>)
+but not the integer Company ID. This method resolves that mapping and caches it for 30 minutes:</p>
+
+<pre><code><span class="keyword">private</span> <span class="keyword">async</span> <span class="type">Task</span>&lt;<span class="keyword">int</span>&gt; <span class="method">ResolveCompanyIdAsync</span>(<span class="keyword">string</span> <span class="param">companyDatabase</span>)
+{
+    <span class="keyword">if</span> (<span class="keyword">string</span>.<span class="method">IsNullOrEmpty</span>(<span class="param">companyDatabase</span>))
+        <span class="keyword">return</span> <span class="number">0</span>;
+
+    <span class="keyword">var</span> <span class="param">cacheKey</span> = <span class="string">$"CompanyDbToId_{companyDatabase}"</span>;
+
+    <span class="keyword">if</span> (<span class="param">_cache</span>.<span class="method">TryGetValue</span>(<span class="param">cacheKey</span>, <span class="keyword">out</span> <span class="keyword">int</span> <span class="param">cachedId</span>))
+        <span class="keyword">return</span> <span class="param">cachedId</span>;
+
+    <span class="keyword">await using</span> <span class="keyword">var</span> <span class="param">context</span> = <span class="param">_contextFactory</span>.<span class="method">CreateBaseControleContext</span>();
+
+    <span class="keyword">var</span> <span class="param">company</span> = <span class="keyword">await</span> <span class="param">context</span>.Companies
+        .<span class="method">AsNoTracking</span>()
+        .<span class="method">FirstOrDefaultAsync</span>(<span class="param">c</span> => <span class="param">c</span>.DatabaseName == <span class="param">companyDatabase</span>);
+
+    <span class="keyword">var</span> <span class="param">id</span> = <span class="param">company</span>?.Id ?? <span class="number">0</span>;
+
+    <span class="keyword">if</span> (<span class="param">id</span> > <span class="number">0</span>)
+        <span class="param">_cache</span>.<span class="method">Set</span>(<span class="param">cacheKey</span>, <span class="param">id</span>, <span class="keyword">new</span> <span class="type">MemoryCacheEntryOptions</span>
+        {
+            SlidingExpiration = <span class="param">CompanyIdCacheExpiration</span>
+        });
+
+    <span class="keyword">return</span> <span class="param">id</span>;
+}</code></pre>
+
+<p>When company ID resolves to <code>0</code> (unknown company), all <code>IsFeatureEnabledAsync</code>
+and <code>GetAccessTierAsync</code> methods return their defaults (<code>true</code> and
+<code>Full</code>). Again: fail-open design.</p>
+
+<h3>Cache Invalidation on Write</h3>
+
+<p>Every write operation (<code>SetFeatureStateAsync</code>, <code>SetAccessTierAsync</code>) calls
+<code>InvalidateCache(companyId)</code> after saving:</p>
+
+<pre><code><span class="keyword">public</span> <span class="keyword">void</span> <span class="method">InvalidateCache</span>(<span class="keyword">int</span> <span class="param">companyId</span>)
+{
+    <span class="param">_cache</span>.<span class="method">Remove</span>(<span class="string">$"FeatureFlags_{companyId}"</span>);
+}</code></pre>
+
+<p>This ensures that the next request after a config change hits the database and gets fresh data.
+The <code>CompanyDbToId</code> cache is not invalidated because company-to-database mappings
+virtually never change.</p>
+
+<h3>The FeatureFlagChangeService</h3>
+
+<p>A small event bus that notifies the UI when flags change (e.g., to re-render the sidebar):</p>
+
+<pre><code><span class="keyword">public</span> <span class="keyword">class</span> <span class="type">FeatureFlagChangeService</span> : <span class="type">IFeatureFlagChangeService</span>
+{
+    <span class="keyword">public</span> <span class="keyword">event</span> <span class="type">Action</span> <span class="param">OnFeatureFlagsChanged</span>;
+
+    <span class="keyword">public</span> <span class="keyword">void</span> <span class="method">NotifyChanged</span>()
+    {
+        <span class="param">OnFeatureFlagsChanged</span>?.<span class="method">Invoke</span>();
+    }
+}</code></pre>
+
+
+<!-- ============================================================ -->
+<h2>7. Component Base Integration &mdash; AuthenticatedComponentBase</h2>
+
+<p>
+    The feature flag system is wired into the Blazor page lifecycle through
+    <code>AuthenticatedComponentBase</code>. Every authenticated page automatically gets feature
+    flag checking.
+</p>
+
+<h3>Declaring Requirements on a Page</h3>
+
+<p>Pages declare which features they need by overriding two properties:</p>
+
+<pre><code><span class="comment">// This page requires the Articles module to be Enabled</span>
+<span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">string</span>[]? <span class="param">RequiredFeatures</span> =>
+    <span class="keyword">new</span>[] { <span class="type">FeatureKeys</span>.<span class="param">ArticlesModule</span> };
+
+<span class="comment">// This page requires at least Simple tier for Articles</span>
+<span class="keyword">protected</span> <span class="keyword">override</span> <span class="type">Dictionary</span>&lt;<span class="keyword">string</span>, <span class="type">AccessTier</span>&gt;? <span class="param">RequiredAccessTiers</span> => <span class="keyword">new</span>()
+{
+    [<span class="type">FeatureKeys</span>.<span class="param">ArticlesModule</span>] = <span class="type">AccessTier</span>.<span class="method">Simple</span>
+};</code></pre>
+
+<h3>The OnInitializedAsync Flow</h3>
+
+<p>Here is what happens when a page loads:</p>
+
+<div class="diagram">
+  OnInitializedAsync()
+  ├── CheckAuthentication()
+  │   ├── Load UserSession
+  │   ├── Check IsActive
+  │   ├── Get UserRole
+  │   ├── Check RequiresCompany
+  │   ├── Check MinimumRequiredRole
+  │   ├── Check RequiredPermissions
+  │   ├── Load EnabledFeatures (all states for this company)
+  │   ├── Load AccessTiers (all tiers for this company)
+  │   ├── Check RequiredFeatures
+  │   │   └── For each: IsEffectivelyEnabled()?
+  │   │       ├── YES ─ continue
+  │   │       └── NO  ─ NavigateTo("/FeatureBlocked/{key}/{state}")
+  │   └── Check RequiredAccessTiers
+  │       └── For each: HasAccessTier(key, minimum)?
+  │           ├── YES ─ continue
+  │           └── NO  ─ NavigateTo("/FeatureBlocked/{key}/0")
+  │
+  ├── if FeatureBlockedState.HasValue || AccessTierBlocked
+  │   └── return (skip derived initialization)
+  │
+  └── OnAuthenticatedInitializedAsync()  ← your page logic runs here
+</div>
+
+<p>If any feature check fails, the user is redirected to the blocked page and
+<code>OnAuthenticatedInitializedAsync</code> never runs. This is a hard gate &mdash; no data loads,
+no database queries, no service calls for blocked pages.</p>
+
+<h3>Convenience Methods for UI Logic</h3>
+
+<p>Inside any component that extends <code>AuthenticatedComponentBase</code>, you have access to
+these helper methods that work with the already-loaded dictionaries (no async calls needed):</p>
+
+<pre><code><span class="comment">// Is this module effectively enabled? (respects hierarchy + dependencies)</span>
+<span class="keyword">protected</span> <span class="keyword">bool</span> <span class="method">IsFeatureEnabled</span>(<span class="keyword">string</span> <span class="param">featureKey</span>)
+{
+    <span class="keyword">return</span> <span class="type">FeatureKeys</span>.<span class="method">IsEffectivelyEnabled</span>(<span class="param">EnabledFeatures</span>, <span class="param">featureKey</span>);
+}
+
+<span class="comment">// Get the raw state (Enabled/Disabled/Maintenance)</span>
+<span class="keyword">protected</span> <span class="type">FeatureState</span> <span class="method">GetFeatureState</span>(<span class="keyword">string</span> <span class="param">featureKey</span>)
+{
+    <span class="keyword">return</span> <span class="param">EnabledFeatures</span>.<span class="method">TryGetValue</span>(<span class="param">featureKey</span>, <span class="keyword">out</span> <span class="keyword">var</span> <span class="param">state</span>)
+        ? <span class="param">state</span> : <span class="type">FeatureState</span>.<span class="method">Enabled</span>;
+}
+
+<span class="comment">// Get the access tier (defaults to Full if not configured)</span>
+<span class="keyword">protected</span> <span class="type">AccessTier</span> <span class="method">GetAccessTier</span>(<span class="keyword">string</span> <span class="param">featureKey</span>)
+{
+    <span class="keyword">return</span> <span class="param">AccessTiers</span>.<span class="method">TryGetValue</span>(<span class="param">featureKey</span>, <span class="keyword">out</span> <span class="keyword">var</span> <span class="param">tier</span>)
+        ? <span class="param">tier</span> : <span class="type">AccessTier</span>.<span class="method">Full</span>;
+}
+
+<span class="comment">// Can this company create/edit/delete? (requires at least Simple tier)</span>
+<span class="keyword">protected</span> <span class="keyword">bool</span> <span class="method">CanWrite</span>(<span class="keyword">string</span> <span class="param">featureKey</span>)
+{
+    <span class="keyword">return</span> <span class="method">GetAccessTier</span>(<span class="param">featureKey</span>) >= <span class="type">AccessTier</span>.<span class="method">Simple</span>;
+}
+
+<span class="comment">// Does this company have full access? (advanced features, bulk ops, etc.)</span>
+<span class="keyword">protected</span> <span class="keyword">bool</span> <span class="method">HasFullAccess</span>(<span class="keyword">string</span> <span class="param">featureKey</span>)
+{
+    <span class="keyword">return</span> <span class="method">GetAccessTier</span>(<span class="param">featureKey</span>) == <span class="type">AccessTier</span>.<span class="method">Full</span>;
+}</code></pre>
+
+
+<!-- ============================================================ -->
+<h2>8. The Blocked Page</h2>
+
+<p>
+    When a required feature is not enabled, the user is redirected to
+    <code>/FeatureBlocked/{FeatureKey}/{StateValue:int}</code>. This is a simple Razor page that
+    shows a styled error depending on whether the module is Disabled or in Maintenance.
+</p>
+
+<pre><code><span class="keyword">@page</span> <span class="string">"/FeatureBlocked/{FeatureKey}/{StateValue:int}"</span>
+<span class="keyword">@using</span> GivingCare.Models.Authorization
+<span class="keyword">@inject</span> <span class="type">NavigationManager</span> <span class="param">NavigationManager</span>
+
+&lt;<span class="type">PageTitle</span>&gt;@(_isMaintenance ? <span class="string">"Em Manutencao"</span> : <span class="string">"Modulo Desativado"</span>)&lt;/<span class="type">PageTitle</span>&gt;
+
+&lt;<span class="type">MudPaper</span>&gt;
+    &lt;<span class="type">GlitchError</span>
+        Preset=<span class="string">"@(_isMaintenance
+            ? GlitchError.ErrorPreset.ServiceUnavailable
+            : GlitchError.ErrorPreset.Forbidden)"</span>
+        Compact=<span class="string">"true"</span> /&gt;
+
+    &lt;<span class="type">MudButton</span>
+        OnClick=<span class="string">"@(() =&gt; NavigationManager.NavigateTo("/", true))"</span>&gt;
+        Ir para o Inicio
+    &lt;/<span class="type">MudButton</span>&gt;
+&lt;/<span class="type">MudPaper</span>&gt;
+
+<span class="keyword">@code</span> {
+    [<span class="type">Parameter</span>] <span class="keyword">public</span> <span class="keyword">string</span> <span class="param">FeatureKey</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    [<span class="type">Parameter</span>] <span class="keyword">public</span> <span class="keyword">int</span> <span class="param">StateValue</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+
+    <span class="keyword">private</span> <span class="keyword">bool</span> <span class="param">_isMaintenance</span>;
+
+    <span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="method">OnParametersSet</span>()
+    {
+        <span class="param">_isMaintenance</span> = (<span class="type">FeatureState</span>)<span class="param">StateValue</span> == <span class="type">FeatureState</span>.<span class="method">Maintenance</span>;
+    }
+}</code></pre>
+
+<p>The page renders two different error presets:</p>
+<ul>
+    <li><strong>Disabled (state 1)</strong>: Shows a <code>Forbidden</code> glitch error &mdash; "Module is not active for your company"</li>
+    <li><strong>Maintenance (state 2)</strong>: Shows a <code>ServiceUnavailable</code> glitch error &mdash; "Module is temporarily under maintenance"</li>
+</ul>
+
+<p>Both include a "Go to Home" button to navigate the user back to the index page.</p>
+
+
+<!-- ============================================================ -->
+<h2>9. Real-World Usage Examples</h2>
+
+<p>Here is how feature flags are used in actual GivingCare Razor pages.</p>
+
+<h3>Example 1: Page-Level Guard (Artigos.razor)</h3>
+
+<p>The simplest pattern &mdash; declare <code>RequiredFeatures</code> and the base class handles the rest:</p>
+
+<pre><code><span class="keyword">@code</span> {
+    <span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">string</span>[]? <span class="param">RequiredFeatures</span> =>
+        <span class="keyword">new</span>[] { <span class="type">FeatureKeys</span>.<span class="param">ArticlesModule</span> };
+
+    <span class="comment">// If Articles is disabled (or its dependencies are off),</span>
+    <span class="comment">// this page redirects to /FeatureBlocked automatically.</span>
+    <span class="comment">// OnAuthenticatedInitializedAsync() never runs.</span>
+}</code></pre>
+
+<h3>Example 2: Read-Only Alert Banner</h3>
+
+<p>When the module is enabled but the access tier is <code>ReadOnly</code>, show an informational banner:</p>
+
+<pre><code><span class="keyword">@if</span> (<span class="method">GetAccessTier</span>(<span class="type">FeatureKeys</span>.<span class="param">ArticlesModule</span>) == <span class="type">AccessTier</span>.<span class="method">ReadOnly</span>)
+{
+    &lt;<span class="type">MudAlert</span> Severity=<span class="string">"Severity.Info"</span>
+              Variant=<span class="string">"Variant.Outlined"</span>
+              Dense=<span class="string">"true"</span>
+              Icon=<span class="string">"@Icons.Material.Filled.Visibility"</span>
+              Class=<span class="string">"mb-2 mt-2"</span>&gt;
+        Modo apenas leitura. Contacte o administrador para acesso completo.
+    &lt;/<span class="type">MudAlert</span>&gt;
+}</code></pre>
+
+<h3>Example 3: Hiding Buttons Unless CanWrite()</h3>
+
+<p>The "Add" and "Delete" buttons only appear when the company has at least <code>Simple</code> tier:</p>
+
+<pre><code><span class="keyword">@if</span> (<span class="method">CanWrite</span>(<span class="type">FeatureKeys</span>.<span class="param">ArticlesModule</span>))
+{
+    &lt;<span class="type">MudButton</span> Variant=<span class="string">"Variant.Filled"</span>
+               Color=<span class="string">"Color.Primary"</span>
+               StartIcon=<span class="string">"@Icons.Material.Filled.Add"</span>
+               OnClick=<span class="string">"@OpenCreateDialog"</span>&gt;
+        Novo Artigo
+    &lt;/<span class="type">MudButton</span>&gt;
+}
+
+<span class="comment">@* In a table row: *@</span>
+<span class="keyword">@if</span> (<span class="method">CanWrite</span>(<span class="type">FeatureKeys</span>.<span class="param">ArticlesModule</span>))
+{
+    &lt;<span class="type">MudButton</span> Color=<span class="string">"Color.Error"</span>
+               OnClick=<span class="string">"@(() =&gt; DeleteArtigo(context.Id))"</span>&gt;
+        Eliminar
+    &lt;/<span class="type">MudButton</span>&gt;
+}</code></pre>
+
+<h3>Example 4: Disabling Advanced Tabs Unless HasFullAccess()</h3>
+
+<p>On the Jobs page, the schedule grid tab requires <code>Full</code> tier (it includes conflict
+detection and bulk operations):</p>
+
+<pre><code>&lt;<span class="type">MudTabPanel</span> Text=<span class="string">"Agendamento"</span>
+             Icon=<span class="string">"@Icons.Material.Filled.EditCalendar"</span>
+             Disabled=<span class="string">"@(!HasFullAccess(FeatureKeys.JobsModule))"</span>&gt;
+    <span class="comment">@* Schedule grid, conflict detection, bulk operations *@</span>
+    &lt;<span class="type">JobEmployeeScheduleView</span> /&gt;
+&lt;/<span class="type">MudTabPanel</span>&gt;</code></pre>
+
+<h3>Example 5: Passing AccessTier to a Dialog</h3>
+
+<p>When opening an edit dialog, pass the current tier so the dialog knows which fields to show:</p>
+
+<pre><code><span class="keyword">var</span> <span class="param">parameters</span> = <span class="keyword">new</span> <span class="type">DialogParameters</span>
+{
+    { <span class="keyword">nameof</span>(<span class="type">EntityEditDialog</span>.UserId), CurrentUserId },
+    { <span class="keyword">nameof</span>(<span class="type">EntityEditDialog</span>.CompanyDatabase), CompanyDatabase },
+    { <span class="keyword">nameof</span>(<span class="type">EntityEditDialog</span>.AccessTier),
+      <span class="method">GetAccessTier</span>(<span class="type">FeatureKeys</span>.<span class="param">EntitiesModule</span>) }
+};
+
+<span class="keyword">var</span> <span class="param">dialog</span> = <span class="keyword">await</span> DialogService.<span class="method">ShowAsync</span>&lt;<span class="type">EntityEditDialog</span>&gt;(
+    <span class="string">"Nova Entidade"</span>, <span class="param">parameters</span>, <span class="param">options</span>);</code></pre>
+
+<p>The dialog can then conditionally render advanced fields (warehouses, certifications, price levels)
+only when <code>AccessTier == Full</code>.</p>
+
+<h3>Example 6: Checking Features in the Sidebar (MainLayout.razor)</h3>
+
+<p>The navigation sidebar uses <code>IsFeatureEnabled()</code> to show/hide menu items:</p>
+
+<pre><code><span class="keyword">@if</span> (<span class="method">IsFeatureEnabled</span>(<span class="type">FeatureKeys</span>.<span class="param">HrModule</span>))
+{
+    &lt;<span class="type">MudNavLink</span> Href=<span class="string">"/Colaboradores"</span> Icon=<span class="string">"@Icons.Material.Filled.Groups"</span>&gt;
+        Recursos Humanos
+    &lt;/<span class="type">MudNavLink</span>&gt;
+}
+
+<span class="keyword">@if</span> (<span class="method">IsFeatureEnabled</span>(<span class="type">FeatureKeys</span>.<span class="param">CrmModule</span>))
+{
+    &lt;<span class="type">MudNavLink</span> Href=<span class="string">"/CRM"</span> Icon=<span class="string">"@Icons.Material.Filled.Handshake"</span>&gt;
+        CRM
+    &lt;/<span class="type">MudNavLink</span>&gt;
+}</code></pre>
+
+
+<!-- ============================================================ -->
+<h2>10. Adding a New Feature Flag &mdash; Step by Step</h2>
+
+<p>Suppose you want to add a new "Invoicing" module. Here is the complete checklist:</p>
+
+<h3>Step 1: Add the Constant to FeatureKeys.cs</h3>
+
+<pre><code><span class="comment">// In FeatureKeys.cs, add to the appropriate group:</span>
+<span class="keyword">public</span> <span class="keyword">const</span> <span class="keyword">string</span> <span class="param">InvoicingModule</span> = <span class="string">"Invoicing"</span>;</code></pre>
+
+<h3>Step 2: Add to GetAll()</h3>
+
+<p>This makes it appear in the Configuracoes admin UI:</p>
+
+<pre><code><span class="keyword">new</span> <span class="type">FeatureDefinition</span>(
+    Key: <span class="param">InvoicingModule</span>,
+    Name: <span class="string">"Modulo Faturacao"</span>,
+    Description: <span class="string">"Emissao e gestao de faturas"</span>,
+    Icon: <span class="string">"Receipt"</span>,
+    Color: <span class="string">"#FF5722"</span>)</code></pre>
+
+<h3>Step 3 (Optional): Add Parent-Child Relationship</h3>
+
+<p>If Invoicing is a child of Documents:</p>
+
+<pre><code><span class="comment">// You would need to add Documents as a parent with children,</span>
+<span class="comment">// or add Invoicing to an existing parent's children array.</span>
+[<span class="param">DocumentsModule</span>] = <span class="keyword">new</span>[] { <span class="param">InvoicingModule</span> }</code></pre>
+
+<h3>Step 4 (Optional): Add Cross-Module Dependencies</h3>
+
+<p>If Invoicing depends on both Documents and Entities:</p>
+
+<pre><code>[<span class="param">InvoicingModule</span>] = <span class="keyword">new</span>[] { <span class="param">DocumentsModule</span>, <span class="param">EntitiesModule</span> }</code></pre>
+
+<h3>Step 5 (Optional): Add Access Tiers</h3>
+
+<p>If you want tiered access for the new module:</p>
+
+<pre><code>[<span class="param">InvoicingModule</span>] = <span class="keyword">new</span>[]
+{
+    <span class="keyword">new</span> <span class="type">AccessTierDefinition</span>(<span class="type">AccessTier</span>.<span class="method">ReadOnly</span>,
+        <span class="string">"Apenas Leitura"</span>, <span class="string">"Ver faturas emitidas."</span>),
+    <span class="keyword">new</span> <span class="type">AccessTierDefinition</span>(<span class="type">AccessTier</span>.<span class="method">Simple</span>,
+        <span class="string">"Simples"</span>, <span class="string">"Emitir faturas simples."</span>),
+    <span class="keyword">new</span> <span class="type">AccessTierDefinition</span>(<span class="type">AccessTier</span>.<span class="method">Full</span>,
+        <span class="string">"Completo"</span>, <span class="string">"Faturacao completa com recibos, notas de credito e relatorios."</span>)
+}</code></pre>
+
+<h3>Step 6: Guard the Page</h3>
+
+<pre><code><span class="keyword">@code</span> {
+    <span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">string</span>[]? <span class="param">RequiredFeatures</span> =>
+        <span class="keyword">new</span>[] { <span class="type">FeatureKeys</span>.<span class="param">InvoicingModule</span> };
+}</code></pre>
+
+<h3>Step 7: Use Tier Checks in the UI</h3>
+
+<pre><code><span class="keyword">@if</span> (<span class="method">CanWrite</span>(<span class="type">FeatureKeys</span>.<span class="param">InvoicingModule</span>))
+{
+    &lt;<span class="type">MudButton</span>&gt;Emitir Fatura&lt;/<span class="type">MudButton</span>&gt;
+}</code></pre>
+
+<p>That is it. No database migration needed &mdash; the system defaults to Enabled/Full for any
+feature without an explicit database row.</p>
+
+<div class="callout callout-rule">
+    The complete checklist: <strong>(1)</strong> Add const to <code>FeatureKeys</code>,
+    <strong>(2)</strong> Add to <code>GetAll()</code>,
+    <strong>(3)</strong> Optionally add to <code>ChildModules</code> / <code>DependsOn</code> / <code>SupportedTiers</code>,
+    <strong>(4)</strong> Add <code>RequiredFeatures</code> to the page,
+    <strong>(5)</strong> Use <code>CanWrite()</code> / <code>HasFullAccess()</code> in the template.
+    No migration, no deployment, no restart.
+</div>
+
+
+<!-- ============================================================ -->
+<h2>11. The Complete Data Flow</h2>
+
+<p>Putting it all together, here is the lifecycle of a feature flag check from page load to UI render:</p>
+
+<div class="diagram">
+  User navigates to /Artigos
+  │
+  ├─ Artigos.razor extends AuthenticatedComponentBase
+  │  └─ RequiredFeatures = ["Articles"]
+  │
+  ├─ OnInitializedAsync()
+  │  └─ CheckAuthentication()
+  │     ├─ Load UserSession, check auth, check role
+  │     ├─ FeatureFlagService.GetAllFeaturesAsync(CompanyId)
+  │     │  └─ LoadFlagDataAsync(CompanyId)
+  │     │     ├─ Check IMemoryCache ("FeatureFlags_5")
+  │     │     │  ├─ HIT  → return cached FeatureFlagData
+  │     │     │  └─ MISS → query BaseControle DB
+  │     │     │           → cache for 5 min sliding
+  │     │     └─ Return { States: {...}, Tiers: {...} }
+  │     │
+  │     ├─ FeatureFlagService.GetAllAccessTiersAsync(CompanyId)
+  │     │  └─ (same cached data, no extra query)
+  │     │
+  │     ├─ FeatureKeys.IsEffectivelyEnabled(states, "Articles")
+  │     │  ├─ Check Articles own state → Enabled ✓
+  │     │  ├─ Check parent → Articles has no parent ✓
+  │     │  └─ Check dependencies → Articles has no deps ✓
+  │     │     → return true
+  │     │
+  │     └─ Check RequiredAccessTiers → none declared
+  │
+  ├─ OnAuthenticatedInitializedAsync()
+  │  └─ (load articles from service)
+  │
+  └─ Render template
+     ├─ GetAccessTier("Articles") → Simple
+     ├─ Show ReadOnly alert? No (Simple ≠ ReadOnly)
+     ├─ CanWrite("Articles")? Yes (Simple ≥ Simple)
+     │  → show "Novo Artigo" button
+     └─ HasFullAccess("Articles")? No (Simple ≠ Full)
+        → hide template/BOM features
+</div>
+
+
+<!-- ============================================================ -->
+<h2>12. Summary of Key Files</h2>
+
+<table>
+    <tr><th>File</th><th>Purpose</th></tr>
+    <tr>
+        <td><code>Models/Authorization/FeatureKeys.cs</code></td>
+        <td>Registry: constants, hierarchy, dependencies, tiers, definitions</td>
+    </tr>
+    <tr>
+        <td><code>Models/Authorization/FeatureState.cs</code></td>
+        <td>Enum: Enabled (0), Disabled (1), Maintenance (2)</td>
+    </tr>
+    <tr>
+        <td><code>Models/Authorization/AccessTier.cs</code></td>
+        <td>Enum: ReadOnly (1), Simple (2), Full (3)</td>
+    </tr>
+    <tr>
+        <td><code>Models/Authorization/CompanyFeatureFlag.cs</code></td>
+        <td>EF entity stored in BaseControle database</td>
+    </tr>
+    <tr>
+        <td><code>Services/Authorization/ICompanyFeatureFlagService.cs</code></td>
+        <td>Interface: read/write/cache feature data</td>
+    </tr>
+    <tr>
+        <td><code>Services/Authorization/CompanyFeatureFlagService.cs</code></td>
+        <td>Implementation with IMemoryCache dual-caching</td>
+    </tr>
+    <tr>
+        <td><code>Services/FeatureFlags/FeatureFlagChangeService.cs</code></td>
+        <td>Event bus for UI refresh on flag changes</td>
+    </tr>
+    <tr>
+        <td><code>Shared/AuthenticatedComponentBase.cs</code></td>
+        <td>Page-level guards and convenience methods</td>
+    </tr>
+    <tr>
+        <td><code>Pages/Controle/FeatureBlocked.razor</code></td>
+        <td>Blocked page UI (Disabled vs Maintenance)</td>
+    </tr>
+</table>
+
+<div class="callout callout-english">
+    The entire system reads like: "Load which features this company has. For each page, check if the
+    required features are effectively enabled (considering parents and dependencies). If not, redirect
+    to the blocked page. If yes, load the access tiers and let the UI conditionally show/hide buttons,
+    tabs, and fields based on whether the company can write or has full access."
+</div>
+
+</body>
+</html>

@@ -1,0 +1,1269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sistema de Produção de Chão de Fábrica - O Guia &#x27;Para Totós&#x27;</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #07090f;
+  --bg-1: #0c111c;
+  --bg-2: #11182a;
+  --bg-3: #1a2238;
+  --bg-4: #232e4a;
+  --border: #1e2840;
+  --border-2: #2a3551;
+  --border-3: #3a4870;
+  --text: #e9eef8;
+  --text-dim: #94a3bf;
+  --text-mut: #5f6b86;
+  --accent: #6aa6ff;
+  --accent-strong: #3b82f6;
+  --accent-2: #b86aff;
+  --accent-3: #f472b6;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+  --info: #38bdf8;
+  --code-bg: #0a1020;
+  --code-border: #1a2340;
+  --shadow: 0 8px 32px rgba(0,0,0,0.55);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.35);
+  --shadow-glow: 0 0 0 1px rgba(106,166,255,0.18), 0 12px 40px rgba(106,166,255,0.10);
+}
+
+/* Doc-type theming */
+[data-doc-type="core-concept"] {
+  --doc-accent: #6aa6ff;
+  --doc-accent-rgb: 106,166,255;
+  --doc-eyebrow: "Concept";
+}
+[data-doc-type="applied-implementation"] {
+  --doc-accent: #b86aff;
+  --doc-accent-rgb: 184,106,255;
+  --doc-eyebrow: "Implementation";
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font: 16px/1.7 -apple-system, "Inter", \'Segoe UI\', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+::selection { background: rgba(106,166,255,0.30); }
+
+/* ═══ Top bar ═══════════════════════════════════════════════════════ */
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(7,9,15,0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 28px;
+  display: flex; align-items: center; gap: 16px;
+}
+.topbar .crumbs {
+  flex: 1; font-size: 13px; color: var(--text-dim);
+  display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden;
+}
+.topbar .crumbs span.sep { color: var(--text-mut); }
+.topbar .crumbs .current {
+  color: var(--text); font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.topbar .crumbs a { color: var(--text-dim); text-decoration: none; }
+.topbar .crumbs a:hover { color: var(--accent); }
+.topbar .actions { display: flex; gap: 6px; flex-shrink: 0; }
+.topbar .action {
+  font-size: 13px; padding: 6px 14px; border-radius: 8px;
+  color: var(--text-dim); text-decoration: none;
+  border: 1px solid transparent; transition: all .15s;
+}
+.topbar .action:hover {
+  color: var(--text); background: var(--bg-2); border-color: var(--border);
+  text-decoration: none;
+}
+
+/* ═══ Document layout ═══════════════════════════════════════════════ */
+.layout {
+  display: grid; grid-template-columns: 280px 1fr;
+  max-width: 1380px; margin: 0 auto; align-items: start;
+}
+.layout.no-toc { grid-template-columns: 1fr; max-width: 940px; }
+
+.toc-sidebar {
+  position: sticky; top: 70px;
+  align-self: start;
+  max-height: calc(100vh - 90px);
+  overflow-y: auto;
+  padding: 40px 8px 40px 28px;
+  border-right: 1px solid var(--border);
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+.toc-sidebar::-webkit-scrollbar { width: 6px; }
+.toc-sidebar::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
+.toc-sidebar h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px; padding-left: 14px; font-weight: 600;
+}
+.toc-sidebar ol { list-style: none; margin: 0; padding: 0; }
+.toc-sidebar li { margin: 0; }
+.toc-sidebar a {
+  display: block;
+  padding: 5px 14px;
+  border-left: 2px solid transparent;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 13px;
+  line-height: 1.5;
+  transition: all .15s;
+  word-break: break-word;
+}
+.toc-sidebar a:hover {
+  color: var(--text); border-left-color: var(--border-2); text-decoration: none;
+}
+.toc-sidebar a.active {
+  color: var(--doc-accent, var(--accent));
+  border-left-color: var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.07);
+}
+.toc-sidebar .lvl-3 a { padding-left: 28px; font-size: 12.5px; }
+.toc-sidebar .lvl-4 a, .toc-sidebar .lvl-5 a, .toc-sidebar .lvl-6 a {
+  padding-left: 42px; font-size: 12px;
+}
+
+.content { padding: 40px 64px 120px; min-width: 0; }
+
+/* ═══ Hero (per-doc) ════════════════════════════════════════════════ */
+.doc-hero {
+  position: relative;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 32px;
+  margin-bottom: 36px;
+}
+.doc-hero::before {
+  content: ''; position: absolute;
+  top: -40px; left: -64px; right: -64px; height: 220px;
+  background: radial-gradient(ellipse 60% 100% at 0% 0%, rgba(var(--doc-accent-rgb, 106,166,255),0.10), transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+.doc-hero > * { position: relative; z-index: 1; }
+.doc-hero .eyebrow {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  color: var(--doc-accent, var(--accent)); font-weight: 600;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.doc-hero .eyebrow .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--doc-accent, var(--accent));
+  box-shadow: 0 0 8px var(--doc-accent, var(--accent));
+}
+.doc-hero h1 {
+  font-size: 40px; line-height: 1.1;
+  margin: 12px 0 16px;
+  font-weight: 700; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.doc-hero .one-liner {
+  font-size: 18px; line-height: 1.55;
+  color: var(--text-dim);
+  margin: 0 0 20px;
+  max-width: 70ch;
+}
+.doc-hero .meta-row {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  font-size: 12.5px;
+}
+.meta-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--bg-2); border: 1px solid var(--border);
+  padding: 5px 12px; border-radius: 14px;
+  font-size: 12px; color: var(--text-dim);
+}
+.meta-pill .num { color: var(--text); font-weight: 600; font-feature-settings: "tnum"; }
+.meta-pill.fmt-md   { color: #6aa6ff; border-color: rgba(106,166,255,0.30); background: rgba(106,166,255,0.06); }
+.meta-pill.fmt-pdf  { color: #f87171; border-color: rgba(248,113,113,0.30); background: rgba(248,113,113,0.06); }
+.meta-pill.fmt-docx { color: #38bdf8; border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.fmt-html { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.fmt-htm  { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.complexity-beginner    { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.06); }
+.meta-pill.complexity-intermediate { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.complexity-advanced     { color: #fb923c; border-color: rgba(251,146,60,0.30); background: rgba(251,146,60,0.06); }
+.meta-pill.complexity-unknown      { color: var(--text-mut); }
+.meta-pill.source code { background: transparent; padding: 0; border: 0; font-size: 11px; color: var(--text-dim); }
+
+/* ═══ Curation panels ═══════════════════════════════════════════════ */
+
+.curation {
+  margin-bottom: 36px;
+}
+
+.intro-hook {
+  font-size: 18px;
+  line-height: 1.65;
+  color: var(--text);
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  padding: 8px 0 8px 20px;
+  margin: 0 0 28px;
+  font-style: italic;
+  font-weight: 350;
+}
+
+.exec-summary {
+  background: linear-gradient(135deg, rgba(var(--doc-accent-rgb, 106,166,255),0.07), rgba(var(--doc-accent-rgb, 106,166,255),0.02));
+  border: 1px solid rgba(var(--doc-accent-rgb, 106,166,255),0.20);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 0 0 24px;
+}
+.exec-summary h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent, var(--accent));
+  font-weight: 600;
+}
+.exec-summary p {
+  margin: 0; font-size: 15px; line-height: 1.65; color: var(--text);
+}
+
+.metaphor-callout {
+  display: flex; gap: 14px; align-items: flex-start;
+  background: rgba(184,106,255,0.06);
+  border: 1px solid rgba(184,106,255,0.25);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 0 0 24px;
+}
+.metaphor-callout .icon {
+  font-size: 22px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 4px rgba(184,106,255,0.4));
+}
+.metaphor-callout .body {
+  flex: 1; font-size: 14.5px; line-height: 1.6;
+  color: var(--text);
+}
+.metaphor-callout .body .label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--accent-2); font-weight: 700;
+  display: block; margin-bottom: 4px;
+}
+
+.tutorial-structure {
+  display: grid; grid-template-columns: 1fr; gap: 14px;
+  margin: 0 0 28px;
+}
+.tutorial-section {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--doc-accent);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+}
+.tutorial-section h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent);
+  font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.tutorial-section h3 .num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--doc-accent); color: var(--bg);
+  font-size: 10px; font-weight: 700;
+}
+.tutorial-section p {
+  margin: 0; font-size: 14.5px; line-height: 1.65; color: var(--text);
+}
+
+.context-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin: 0 0 28px;
+}
+.context-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.context-card h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut);
+  font-weight: 600;
+}
+.context-card ul {
+  margin: 0; padding: 0; list-style: none;
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.context-card li {
+  background: var(--bg-3);
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--text-dim);
+  border: 1px solid var(--border-2);
+}
+.context-card.prereqs li { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.05); }
+.context-card.builds li { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.05); }
+.context-card.concepts li { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.05); }
+
+.takeaways {
+  background: linear-gradient(135deg, rgba(74,222,128,0.05), rgba(74,222,128,0.01));
+  border: 1px solid rgba(74,222,128,0.20);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin: 36px 0 0;
+}
+.takeaways h3 {
+  margin: 0 0 10px;
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--ok); font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.takeaways h3::before {
+  content: '✓';
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(74,222,128,0.18);
+  font-size: 12px; font-weight: 700;
+}
+.takeaways ul { margin: 0; padding-left: 22px; }
+.takeaways li {
+  font-size: 14.5px; line-height: 1.6; color: var(--text);
+  margin: 6px 0;
+}
+
+/* ═══ Article body ══════════════════════════════════════════════════ */
+article { font-size: 16px; line-height: 1.78; color: var(--text); max-width: 78ch; }
+article > * + * { margin-top: 1.0em; }
+article p { margin: 0; }
+article h1, article h2, article h3, article h4 {
+  font-weight: 650; letter-spacing: -0.01em; color: var(--text);
+  scroll-margin-top: 90px; position: relative;
+}
+article h1 { font-size: 28px; margin-top: 56px; }
+article h2 {
+  font-size: 24px; margin-top: 56px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+article h3 { font-size: 19px; margin-top: 36px; }
+article h4 { font-size: 16.5px; margin-top: 24px; color: var(--text-dim); }
+article h2::before, article h3::before {
+  content: '#'; position: absolute; left: -28px;
+  color: var(--text-mut); font-weight: 400;
+  opacity: 0; transition: opacity .15s;
+}
+article h2:hover::before, article h3:hover::before { opacity: 1; }
+
+article ul, article ol { padding-left: 1.5em; margin: 0; }
+article li { margin: .35em 0; }
+article li > p { margin: 0; }
+
+article hr {
+  border: 0; height: 1px; background: var(--border); margin: 36px 0;
+}
+
+article blockquote {
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.05);
+  padding: 14px 18px;
+  margin: 22px 0;
+  border-radius: 0 8px 8px 0;
+  color: var(--text-dim);
+}
+article blockquote p { margin: 0; }
+
+article pre {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-size: 13.5px;
+  line-height: 1.65;
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+article pre::-webkit-scrollbar { height: 7px; }
+article pre::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+article code, article pre {
+  font-family: "JetBrains Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+  font-feature-settings: "calt" 1;
+}
+article code.il {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  padding: 1px 7px; border-radius: 5px;
+  font-size: 0.88em;
+  color: var(--accent);
+}
+.code-block { position: relative; }
+.code-block .copy-btn {
+  position: absolute; top: 8px; right: 8px;
+  background: var(--bg-3); border: 1px solid var(--border);
+  color: var(--text-dim); padding: 4px 11px; border-radius: 5px;
+  font-size: 11px; font-family: inherit; cursor: pointer;
+  opacity: 0; transition: all .15s;
+}
+.code-block:hover .copy-btn { opacity: 1; }
+.code-block .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+.code-block .copy-btn.copied { color: var(--ok); border-color: var(--ok); }
+
+article pre .kw   { color: #c084fc; font-weight: 500; }
+article pre .type { color: #67e8f9; }
+article pre .str  { color: #fcd34d; }
+article pre .num  { color: #fb923c; }
+article pre .cmt  { color: #6b7d99; font-style: italic; }
+
+article .tbl-wrap {
+  overflow-x: auto; margin: 22px 0;
+  border-radius: 10px; border: 1px solid var(--border);
+}
+article table { border-collapse: collapse; width: 100%; font-size: 14px; }
+article th {
+  background: var(--bg-3); padding: 11px 14px; text-align: left;
+  font-weight: 600; color: var(--text);
+  border-bottom: 1px solid var(--border-2);
+}
+article td {
+  padding: 11px 14px; border-top: 1px solid var(--border); vertical-align: top;
+}
+article tr:nth-child(even) td { background: rgba(255,255,255,0.013); }
+
+article .diagram-box {
+  background: linear-gradient(135deg, #1c2540 0%, #0e1424 100%);
+  border: 1px solid var(--border-2);
+  border-radius: 12px;
+  padding: 22px 26px;
+  margin: 24px 0;
+  box-shadow: var(--shadow);
+}
+article .diagram-box pre {
+  background: transparent; border: 0; padding: 0;
+  color: #e8edf5; font-size: 13px; line-height: 1.55;
+}
+
+article .img-ref {
+  display: inline-block;
+  background: var(--bg-2); color: var(--text-mut);
+  padding: 1px 8px; border-radius: 4px;
+  font-size: 11px; font-style: normal;
+  border: 1px dashed var(--border-2);
+}
+
+/* ═══ Duplicate banners ═════════════════════════════════════════════ */
+.dup-banner {
+  background: linear-gradient(135deg, rgba(251,191,36,0.10), rgba(251,191,36,0.04));
+  border: 1px solid rgba(251,191,36,0.35);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 18px;
+  font-size: 14px; line-height: 1.55;
+  display: flex; gap: 14px; align-items: flex-start;
+}
+.dup-banner + .dup-banner { margin-top: 0; }
+.dup-banner .icon { font-size: 22px; line-height: 1.2; flex-shrink: 0; }
+.dup-banner .body { flex: 1; min-width: 0; }
+.dup-banner h4 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--warn); text-transform: uppercase; letter-spacing: 1px; }
+.dup-banner p { margin: 0; color: var(--text-dim); }
+.dup-banner ul { margin: 6px 0 0; padding-left: 22px; color: var(--text-dim); }
+.dup-banner ul li { margin: 3px 0; word-break: break-word; }
+.dup-banner code {
+  background: var(--bg-3); padding: 2px 7px; border-radius: 5px;
+  font-size: 0.92em; color: var(--text);
+}
+.dup-banner.exact {
+  border-color: rgba(248,113,113,0.40);
+  background: linear-gradient(135deg, rgba(248,113,113,0.10), rgba(248,113,113,0.04));
+}
+.dup-banner.exact h4 { color: var(--bad); }
+.dup-banner.near {
+  border-color: rgba(56,189,248,0.40);
+  background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(56,189,248,0.04));
+}
+.dup-banner.near h4 { color: var(--info); }
+.banner-stack { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+
+/* ═══ PDF page cards ════════════════════════════════════════════════ */
+.pdf-page {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin: 24px 0;
+  overflow: hidden;
+  scroll-margin-top: 90px;
+}
+.pdf-page .page-head {
+  background: var(--bg-3);
+  padding: 9px 20px;
+  font-size: 11px; font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 1.4px;
+  border-bottom: 1px solid var(--border);
+}
+.pdf-page .page-body { padding: 18px 24px 22px; }
+.pdf-page pre {
+  margin: 0; background: transparent; border: 0; padding: 0;
+  white-space: pre-wrap; word-wrap: break-word;
+  color: var(--text); font-size: 13px; line-height: 1.6;
+}
+
+.empty-note {
+  background: var(--bg-2);
+  border: 1px dashed var(--border-2);
+  border-radius: 10px;
+  padding: 18px 22px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* ═══ Cross-references + related ════════════════════════════════════ */
+.cross-refs {
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.cross-refs h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.cross-ref-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.cross-ref-list a {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: all .15s;
+}
+.cross-ref-list a:hover {
+  color: var(--text);
+  border-color: var(--doc-accent, var(--accent));
+  background: var(--bg-3);
+  text-decoration: none;
+}
+.cross-ref-list a .arrow { color: var(--doc-accent, var(--accent)); margin-right: 6px; }
+
+.related {
+  margin-top: 48px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.related h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 18px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.related-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+.related-card {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+}
+.related-card:hover {
+  border-color: var(--doc-accent, var(--accent));
+  transform: translateY(-1px);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+}
+.related-card .title {
+  font-weight: 600; font-size: 13.5px; line-height: 1.35;
+  color: var(--text);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.related-card .meta {
+  font-size: 11px; color: var(--text-mut); margin-top: 6px;
+  display: flex; gap: 8px; align-items: center;
+}
+.related-card .meta .badge {
+  padding: 1px 6px; border-radius: 3px;
+  background: var(--bg-3); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* ═══ Master index page ═════════════════════════════════════════════ */
+
+.index-hero {
+  text-align: center;
+  padding: 80px 24px 56px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.index-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 30% 0%, rgba(106,166,255,0.13), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 70% 30%, rgba(184,106,255,0.10), transparent 70%);
+  pointer-events: none;
+}
+.index-hero > * { position: relative; z-index: 1; }
+.index-hero .eyebrow {
+  color: var(--accent); font-size: 12px;
+  text-transform: uppercase; letter-spacing: 1.8px; font-weight: 600;
+}
+.index-hero h1 {
+  font-size: 56px; margin: 16px 0 12px;
+  font-weight: 750; letter-spacing: -0.025em;
+  background: linear-gradient(135deg, #6aa6ff 0%, #b86aff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.index-hero .tagline {
+  color: var(--text-dim); font-size: 18px;
+  max-width: 720px; margin: 14px auto 0; line-height: 1.6;
+}
+.search-row {
+  display: flex; gap: 12px;
+  max-width: 720px; margin: 36px auto 0;
+}
+.search-row input {
+  flex: 1;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 15px;
+  padding: 14px 22px;
+  border-radius: 14px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color .15s, box-shadow .15s;
+}
+.search-row input::placeholder { color: var(--text-mut); }
+.search-row input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(106,166,255,0.13);
+}
+
+.summary-stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  max-width: 1080px; margin: 36px auto 56px; padding: 0 24px;
+}
+.stat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  text-align: center;
+  transition: border-color .15s;
+}
+.stat-card:hover { border-color: var(--border-2); }
+.stat-card .num {
+  font-size: 32px; font-weight: 700; color: var(--accent);
+  font-feature-settings: "tnum"; line-height: 1.1;
+}
+.stat-card .lbl {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--text-mut); margin-top: 6px;
+}
+
+.split-view {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  max-width: 1320px; margin: 0 auto; padding: 0 24px 60px;
+}
+@media (max-width: 980px) {
+  .split-view { grid-template-columns: 1fr; }
+}
+
+.hub-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 32px 36px;
+  position: relative;
+  overflow: hidden;
+  transition: all .2s;
+}
+.hub-card.core::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 0% 0%, rgba(106,166,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card.applications::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 100% 0%, rgba(184,106,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card > * { position: relative; z-index: 1; }
+.hub-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.hub-card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 700;
+}
+.hub-card.core .label { color: var(--accent); }
+.hub-card.applications .label { color: var(--accent-2); }
+.hub-card h2 {
+  font-size: 32px; line-height: 1.15;
+  margin: 8px 0 12px;
+  font-weight: 700; letter-spacing: -0.02em;
+  color: var(--text);
+}
+.hub-card .desc {
+  font-size: 15px; line-height: 1.6; color: var(--text-dim);
+  margin: 0 0 24px;
+}
+.hub-card .stats {
+  display: flex; gap: 18px; margin-bottom: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-card .stats .num { color: var(--text); font-weight: 600; }
+.hub-card .cta {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 10px;
+  font-size: 13.5px; font-weight: 600;
+  text-decoration: none;
+}
+.hub-card.core .cta {
+  background: rgba(106,166,255,0.12);
+  color: var(--accent);
+  border: 1px solid rgba(106,166,255,0.30);
+}
+.hub-card.applications .cta {
+  background: rgba(184,106,255,0.12);
+  color: var(--accent-2);
+  border: 1px solid rgba(184,106,255,0.30);
+}
+.hub-card .cta:hover { text-decoration: none; transform: translateX(2px); }
+.hub-card .quick {
+  margin-top: 24px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.hub-card .quick h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut); font-weight: 600;
+}
+.hub-card .quick ul { list-style: none; margin: 0; padding: 0; }
+.hub-card .quick li { padding: 4px 0; font-size: 13px; }
+.hub-card .quick li a { color: var(--text-dim); text-decoration: none; }
+.hub-card .quick li a:hover { color: var(--text); }
+
+/* ═══ Hub page (CORE / APPLICATIONS landing) ════════════════════════ */
+
+.hub-hero {
+  padding: 64px 32px 36px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1240px; margin: 0 auto;
+}
+.hub-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 600;
+}
+.hub-hero h1 {
+  font-size: 48px; margin: 12px 0 14px;
+  font-weight: 750; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.hub-hero p {
+  color: var(--text-dim); font-size: 17px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.hub-hero .stats {
+  display: flex; gap: 22px; margin-top: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-hero .stats .num { color: var(--text); font-weight: 600; }
+
+.cat-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 18px;
+  max-width: 1280px; margin: 28px auto; padding: 0 32px 80px;
+}
+.cat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 24px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.cat-card:hover {
+  border-color: var(--border-3);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+}
+.cat-card .head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 12px;
+}
+.cat-card .head .icon {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 18px;
+  color: var(--accent);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.cat-card.app .head .icon { color: var(--accent-2); }
+.cat-card .title {
+  font-size: 18px; font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  flex: 1;
+}
+.cat-card .head .count {
+  font-size: 12px; color: var(--text-mut);
+  flex-shrink: 0;
+}
+.cat-card .tagline {
+  font-size: 13px; color: var(--accent);
+  font-weight: 500;
+  margin: 0;
+}
+.cat-card.app .tagline { color: var(--accent-2); }
+.cat-card .desc {
+  font-size: 13.5px; color: var(--text-dim);
+  line-height: 1.55;
+  margin: 4px 0 0;
+}
+
+/* ═══ Category landing (per family/domain) ══════════════════════════ */
+
+.cat-hero {
+  padding: 56px 32px 32px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1180px; margin: 0 auto;
+}
+.cat-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px; font-weight: 600;
+}
+.cat-hero h1 {
+  font-size: 42px; margin: 10px 0 14px;
+  font-weight: 700; letter-spacing: -0.02em;
+}
+.cat-hero p {
+  color: var(--text-dim); font-size: 16px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.cat-hero .stats {
+  display: flex; gap: 20px; margin-top: 22px;
+  font-size: 13px; color: var(--text-mut);
+}
+.cat-hero .stats .num { color: var(--text); font-weight: 600; }
+.cat-hero .search-row {
+  max-width: 520px; margin: 24px 0 0;
+}
+.cat-hero .search-row input { padding: 12px 18px; font-size: 14px; }
+
+.doc-cards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 14px;
+  max-width: 1180px; margin: 36px auto 96px;
+  padding: 0 32px;
+}
+.doc-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 22px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .18s;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.doc-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.doc-card.app:hover { border-color: var(--accent-2); }
+.doc-card .head {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+}
+.doc-card .title {
+  font-size: 16px; font-weight: 650; line-height: 1.3;
+  color: var(--text); flex: 1;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  letter-spacing: -0.01em;
+}
+.doc-card .badges { display: flex; gap: 4px; flex-shrink: 0; }
+.doc-card .badge {
+  font-size: 9px; padding: 2px 7px; border-radius: 3px;
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px;
+  background: var(--bg-3); color: var(--text-mut);
+}
+.doc-card .badge.dup { background: rgba(248,113,113,0.18); color: var(--bad); }
+.doc-card .badge.fmt-md { background: rgba(106,166,255,0.18); color: #6aa6ff; }
+.doc-card .badge.fmt-pdf { background: rgba(248,113,113,0.18); color: #f87171; }
+.doc-card .badge.fmt-docx { background: rgba(56,189,248,0.18); color: #38bdf8; }
+.doc-card .badge.fmt-html { background: rgba(251,191,36,0.18); color: #fbbf24; }
+.doc-card .one-liner {
+  font-size: 13.5px; color: var(--text-dim); line-height: 1.55;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  flex: 1;
+}
+.doc-card .meta {
+  display: flex; gap: 14px; font-size: 11px; color: var(--text-mut);
+  border-top: 1px solid var(--border); padding-top: 12px;
+  margin-top: auto;
+}
+.doc-card .meta .num { color: var(--text-dim); font-weight: 600; font-feature-settings: "tnum"; }
+
+/* ═══ Mobile ════════════════════════════════════════════════════════ */
+@media (max-width: 980px) {
+  .layout { grid-template-columns: 1fr; }
+  .toc-sidebar { display: none; }
+  .content { padding: 28px 24px 80px; }
+  .doc-hero h1 { font-size: 30px; }
+  .doc-hero .one-liner { font-size: 16px; }
+  .topbar { padding: 10px 18px; }
+  .index-hero h1 { font-size: 38px; }
+  .index-hero { padding: 56px 20px 36px; }
+  .hub-hero h1 { font-size: 34px; }
+  .hub-hero { padding: 40px 20px 24px; }
+  .cat-hero h1 { font-size: 32px; }
+  .cat-hero { padding: 36px 20px 24px; }
+  .doc-cards, .cat-grid { padding: 0 20px 60px; }
+  .split-view { padding: 0 20px 40px; }
+}
+</style>
+</head>
+<body data-doc-type="applied-implementation">
+<nav class="topbar">
+<div class="crumbs"><a href="../../00-Index.html">Learning</a><span class="sep">›</span><a href="../_Hub.html">APPLICATIONS</a><span class="sep">›</span><a href="_Category.html">Factory Floor System</a><span class="sep">›</span><span class="current">Sistema de Produção de Chão de Fábrica - O Guia &#x27;Para Totós&#x27;</span></div>
+<div class="actions"><a class="action" href="factory-floor-system-pt-infographic.docx" download>↓ Download</a><a class="action" href="../../00-Index.html">All docs</a></div>
+</nav>
+<div class="layout">
+<aside class="toc-sidebar"><h3>On this page</h3><ol><li class="lvl-2"><a href="#sistema-de-produ-o-de-ch-o-de-f-brica-o-guia-para-tot-s">🏭 Sistema de Produção de Chão de Fábrica - O Guia &quot;Para Totós&quot;</a></li><li class="lvl-2"><a href="#o-que-este-sistema">📖 O Que É Este Sistema?</a></li><li class="lvl-2"><a href="#a-vis-o-geral">🎯 A Visão Geral</a></li><li class="lvl-3"><a href="#que-problemas-resolve">Que Problemas Resolve?</a></li><li class="lvl-2"><a href="#as-tr-s-partes-principais-explicadas">👥 As Três Partes Principais Explicadas</a></li><li class="lvl-3"><a href="#1-a-p-gina-do-ch-o-de-f-brica-factory-new-razor-o-centro-de-controlo">1. A Página do Chão de Fábrica (Factory_New.razor) - &quot;O Centro de Controlo&quot;</a></li><li class="lvl-3"><a href="#2-o-modal-de-consumo-de-materiais-materialconsumptionmodal-razor-o-controlador-de-receitas">2. O Modal de Consumo de Materiais (MaterialConsumptionModal.razor) - &quot;O Controlador de Receitas&quot;</a></li><li class="lvl-3"><a href="#3-o-servi-o-factoryfloorservice-cs-o-c-rebro">3. O Serviço (FactoryFloorService.cs) - &quot;O Cérebro&quot;</a></li><li class="lvl-2"><a href="#um-dia-na-vida-como-tudo-funciona-junto">🎬 Um Dia na Vida - Como Tudo Funciona Junto</a></li><li class="lvl-3"><a href="#o-turno-da-manh-come-a-8-00">O Turno da Manhã Começa (8:00)</a></li><li class="lvl-3"><a href="#in-cio-da-produ-o-8-15">Início da Produção (8:15)</a></li><li class="lvl-4"><a href="#o-jo-o-clica-iniciar-na-ordem-1234">O João clica &quot;Iniciar&quot; na Ordem #1234</a></li><li class="lvl-4"><a href="#a-ordem-move-se-da-coluna-por-iniciar-para-iniciadas">A ordem move-se da coluna &quot;Por Iniciar&quot; para &quot;Iniciadas&quot;</a></li><li class="lvl-3"><a href="#pausa-para-almo-o-12-00">Pausa para Almoço (12:00)</a></li><li class="lvl-4"><a href="#o-jo-o-fez-60-garrafas-precisa-de-uma-pausa">O João fez 60 garrafas, precisa de uma pausa</a></li><li class="lvl-4"><a href="#clica-no-bot-o-pausar">Clica no botão &quot;Pausar&quot;</a></li><li class="lvl-4"><a href="#pin-necess-rio-novamente">PIN necessário novamente</a></li><li class="lvl-3"><a href="#depois-do-almo-o-13-00">Depois do Almoço (13:00)</a></li><li class="lvl-4"><a href="#o-jo-o-volta-clica-iniciar-novamente">O João volta, clica &quot;Iniciar&quot; novamente</a></li><li class="lvl-4"><a href="#continua-a-fazer-as-40-garrafas-restantes">Continua a fazer as 40 garrafas restantes</a></li><li class="lvl-4"><a href="#s-14-30-termina-a-ordem">Às 14:30, termina a ordem</a></li><li class="lvl-4"><a href="#clica-parar">Clica &quot;Parar&quot;</a></li><li class="lvl-3"><a href="#fim-do-dia">Fim do Dia</a></li><li class="lvl-2"><a href="#porque-que-isto-brilhante">💡 Porque É Que Isto É Brilhante</a></li><li class="lvl-3"><a href="#para-os-trabalhadores">Para os Trabalhadores:</a></li><li class="lvl-3"><a href="#para-os-gestores">Para os Gestores:</a></li><li class="lvl-3"><a href="#para-a-empresa">Para a Empresa:</a></li><li class="lvl-2"><a href="#cen-rios-comuns-e-solu-es">🚨 Cenários Comuns e Soluções</a></li><li class="lvl-3"><a href="#ups-introduzi-quantidade-errada">&quot;Ups, introduzi quantidade errada!&quot;</a></li><li class="lvl-3"><a href="#a-m-quina-avariou-durante-a-produ-o">&quot;A máquina avariou durante a produção!&quot;</a></li><li class="lvl-3"><a href="#fic-mos-sem-material">&quot;Ficámos sem material!&quot;</a></li><li class="lvl-3"><a href="#esqueci-me-do-meu-pin">&quot;Esqueci-me do meu PIN!&quot;</a></li><li class="lvl-2"><a href="#a-magia-por-tr-s-dos-bastidores">🎯 A Magia Por Trás dos Bastidores</a></li><li class="lvl-2"><a href="#pense-nisto-como">📚 Pense Nisto Como...</a></li><li class="lvl-2"><a href="#resumo-final">✅ Resumo Final</a></li></ol></aside>
+<main class="content">
+
+<header class="doc-hero">
+  <div class="eyebrow"><span class="dot"></span>Implementation · Factory Floor System</div>
+  <h1>Sistema de Produção de Chão de Fábrica - O Guia &#x27;Para Totós&#x27;</h1>
+  <p class="one-liner">A non-technical, analogy-driven Portuguese walkthrough of the FactoryFloor production tracking system explaining what workers see, what managers get, and how materials flow through the three main components.</p>
+  <div class="meta-row">
+    <span class="meta-pill fmt-docx">DOCX</span>
+    <span class="meta-pill complexity-beginner">Beginner</span>
+    <span class="meta-pill"><span class="num">1,448</span> words</span>
+    <span class="meta-pill"><span class="num">7</span> min read</span>
+    <span class="meta-pill source">Source: <code>Education/FactoryFloor/PT/SistemaProduçãoChãoFábricaInfoGráfico.docx</code></span>
+  </div>
+</header>
+
+<div class="curation"><p class="intro-hook">Every month, the factory accountant and the warehouse manager sit in a meeting trying to reconcile why the stock count is off by 12%. The operators blame the system, the managers blame the operators, and nobody can reconstruct what actually happened on the floor three weeks ago. This is a story about replacing that monthly blame session with a tablet that knows everything the moment it happens.</p>
+<div class="exec-summary"><h3>Executive summary</h3><p>This document is a beginner-friendly Portuguese &#x27;dummies guide&#x27; to the FactoryFloor production system. It frames the system around three parts: Factory_New.razor (the shop-floor dashboard where operators pick machines and start/pause/stop work orders), MaterialConsumptionModal.razor (the post-shift form that records produced units, waste, and actual material usage with smart suggestions based on history), and FactoryFloorService.cs (the backend that updates stock, pushes data to accounting, and calculates expected consumption). A full &#x27;day in the life&#x27; scenario follows operator João through PIN-based check-ins, a lunch pause that triggers material confirmation, and the manager Maria seeing live production stats at end of day. Wraps with common scenarios (wrong quantity, machine breakdown, out of stock, forgotten PIN) and the emergent benefits for workers, managers, and the company.</p></div>
+<div class="metaphor-callout"><div class="icon">💡</div><div class="body"><span class="label">Metaphor</span>The entire system is a restaurant kitchen. Factory_New.razor is the order screen hanging over the pass (&#x27;Table 12 wants risotto, Table 7 is waiting&#x27;), MaterialConsumptionModal is the chef&#x27;s prep sheet where they mark off what ingredients they actually pulled from the walk-in, and FactoryFloorService is the sous chef in the background quietly updating the pantry inventory, alerting the manager that the arborio rice is running low, and handing the receipt to the accountant - all while the chef is already starting the next ticket.</div></div>
+<div class="tutorial-structure"><div class="tutorial-section"><h3><span class="num">1</span>Why it exists</h3><p>Before this system existed, factory workers wrote production numbers on paper that got lost or mistyped, managers had no visibility into what was happening on the floor, material consumption was mostly guesswork, and stock counts drifted from reality constantly. Month-end was a painful reconciliation exercise and waste went unnoticed. The FactoryFloor system replaces paper with tablets on the shop floor, gives managers live production dashboards, tracks exact material usage, and auto-syncs stock and accounting so the business always knows where it stands.</p></div><div class="tutorial-section"><h3><span class="num">2</span>What it does</h3><p>Operators arrive at their shift, open the system on a shop-floor tablet, enter their PIN, pick their machine, and see today&#x27;s work orders in two columns: &#x27;To Start&#x27; and &#x27;In Progress&#x27;. They click Start on an order (re-entering PIN for security), work, and click Pause or Stop which triggers the Material Consumption Modal - a form that shows what was ordered, quantity produced, waste, materials planned vs actually used, current stock levels (red when low), and historical averages (&#x27;last time we made 100 we used 15kg&#x27;). Confirming automatically decrements stock, adds the finished goods, logs waste with timestamps, and pushes the transaction to the Primavera accounting system. Managers get a live dashboard of completed vs pending units and can detect anomalous material use in near-real-time.</p></div><div class="tutorial-section"><h3><span class="num">3</span>How it works</h3><p>Factory_New.razor is the primary UI (the kitchen order screen metaphor): it queries the active work orders for a selected machine and renders Start/Pause/Stop buttons. When production transitions (Start/Pause/Stop), the page asks for PIN verification and calls FactoryFloorService to update order state and log the event with timestamp, machine, and operator. On Pause/Stop, MaterialConsumptionModal.razor opens - it loads planned materials from the BOM, fetches historical averages, calculates expected consumption based on actual units produced (if BOM says 100 units need 100kg but only 25 were made, it suggests 25kg), and lets the operator adjust before confirming. On confirm, the service updates stock levels, adds produced units to inventory, records waste, writes everything to an audit log, and pushes the transaction to Primavera. The smart helper behavior - learning from history, warning about low stock before starting, blocking negative quantities, and requiring supervisor override for exceptions - is what turns it from &#x27;just a form&#x27; into an operator assistant.</p></div></div>
+<div class="context-row"><div class="context-card prereqs"><h4>You should know first</h4><ul><li>basic understanding of what a factory is</li></ul></div><div class="context-card concepts"><h4>Key concepts covered</h4><ul><li>Factory_New.razor shop-floor page</li><li>MaterialConsumptionModal confirmation flow</li><li>FactoryFloorService orchestration</li><li>PIN-based worker authentication</li><li>Primavera accounting integration</li><li>historical consumption averages</li><li>real-time dashboard</li></ul></div><div class="context-card builds"><h4>Opens the door to</h4><ul><li>stock-service integration</li><li>Blazor component architecture</li><li>Primavera ERP integration</li><li>production KPI dashboards</li></ul></div></div></div>
+<article>
+<h1 id="sistema-de-produ-o-de-ch-o-de-f-brica-o-guia-para-tot-s">🏭 Sistema de Produção de Chão de Fábrica - O Guia &quot;Para Totós&quot;</h1>
+<h2 id="o-que-este-sistema">📖 O Que É Este Sistema?</h2>
+<p>Imagine que gere uma fábrica que produz produtos. Este sistema é como um assistente inteligente que ajuda os trabalhadores no chão de fábrica a controlar o que estão a produzir, quanto material estão a usar, e garante que tudo fica registado corretamente.</p>
+<p>Pense nisto como uma aplicação de receitas para uma fábrica - diz-lhe que ingredientes precisa, controla o que realmente usa, e garante que nada é desperdiçado!</p>
+<h2 id="a-vis-o-geral">🎯 A Visão Geral</h2>
+<h3 id="que-problemas-resolve">Que Problemas Resolve?</h3>
+<p>Sem este sistema:</p>
+<p>📝 Os trabalhadores escrevem a produção em papel (perde-se!)</p>
+<p>🤷 Ninguém sabe quanto material foi realmente usado</p>
+<p>📊 Os gestores não conseguem ver dados de produção em tempo real</p>
+<p>💸 Os materiais são desperdiçados sem ninguém reparar</p>
+<p>🔄 As contagens de stock estão sempre erradas</p>
+<p>Com este sistema:</p>
+<p>✅ Tudo é digital e instantâneo</p>
+<p>📱 Os trabalhadores usam tablets/computadores no chão de fábrica</p>
+<p>📈 Os gestores veem estatísticas de produção ao vivo</p>
+<p>🎯 O uso de material é controlado com precisão</p>
+<p>📦 Os níveis de stock atualizam automaticamente</p>
+<h2 id="as-tr-s-partes-principais-explicadas">👥 As Três Partes Principais Explicadas</h2>
+<h3 id="1-a-p-gina-do-ch-o-de-f-brica-factory-new-razor-o-centro-de-controlo">1. A Página do Chão de Fábrica (Factory_New.razor) - &quot;O Centro de Controlo&quot;</h3>
+<p>Como é: Pense nisto como o painel principal que um trabalhador da fábrica vê quando começa o seu turno.</p>
+<p>Analogia do mundo real: É como o ecrã de pedidos numa cozinha de restaurante - mostra o que precisa de ser feito, o que está a ser feito agora, e o que está concluído.</p>
+<p>O que os trabalhadores veem:</p>
+<p>Caixa de Estatísticas de Hoje 📊</p>
+<p>Quantas unidades concluídas hoje (como um placar!)</p>
+<p>Quantas unidades ainda precisam de ser feitas</p>
+<p>Seletor de Máquina 🎮</p>
+<p>Como escolher qual forno está a usar numa padaria</p>
+<p>Clique em &quot;GERAL&quot; para ver todas as ordens</p>
+<p>Clique numa máquina específica para ver só as suas ordens</p>
+<p>Duas Colunas de Ordens de Trabalho 📋</p>
+<p>Lado esquerdo: &quot;Por Iniciar&quot; - Ordens à espera de começar (como uma lista de tarefas)</p>
+<p>Lado direito: &quot;Iniciadas&quot; - Ordens atualmente em produção</p>
+<p>Como os trabalhadores usam:</p>
+<p>Chegam ao trabalho, abrem a página</p>
+<p>Selecionam a sua máquina</p>
+<p>Veem o que precisa de ser feito</p>
+<p>Clicam &quot;Iniciar&quot; para começar a trabalhar</p>
+<p>Clicam &quot;Pausar&quot; para pausas</p>
+<p>Clicam &quot;Parar&quot; quando terminam</p>
+<h3 id="2-o-modal-de-consumo-de-materiais-materialconsumptionmodal-razor-o-controlador-de-receitas">2. O Modal de Consumo de Materiais (MaterialConsumptionModal.razor) - &quot;O Controlador de Receitas&quot;</h3>
+<p>Como é: Este é o formulário que aparece quando um trabalhador termina de fazer algo.</p>
+<p>Analogia do mundo real: Como a folha de preparação de um chef onde registam:</p>
+<p>Quantos pratos fizeram ✅</p>
+<p>Que ingredientes usaram 🥕</p>
+<p>Se algo foi desperdiçado 🗑️</p>
+<p>O que mostra:</p>
+<p>Informação de Produção 📦</p>
+<p>Que produto foi feito</p>
+<p>Quantos foram encomendados</p>
+<p>Quantos ainda são necessários</p>
+<p>Campos de Quantidade 🔢</p>
+<p>Unidades Produzidas: &quot;Fiz 50 peças&quot;</p>
+<p>Desperdício: &quot;3 peças tinham defeito&quot;</p>
+<p>Tabela de Materiais 📋</p>
+<p>Mostra todos os materiais necessários (como uma lista de compras)</p>
+<p>Quantidades planeadas vs. reais</p>
+<p>Níveis de stock atuais (destacado a vermelho se estiver baixo!)</p>
+<p>Médias históricas (&quot;Normalmente usamos cerca disto...&quot;)</p>
+<p>Funcionalidades inteligentes:</p>
+<p>🎯 Calcula automaticamente as necessidades de material baseado na quantidade produzida</p>
+<p>📊 Mostra se está a usar mais/menos que o planeado</p>
+<p>🔴 Avisa se o stock está muito baixo</p>
+<p>📈 Aprende com o histórico (&quot;Da última vez que fizemos 100, usámos 15kg&quot;)</p>
+<h3 id="3-o-servi-o-factoryfloorservice-cs-o-c-rebro">3. O Serviço (FactoryFloorService.cs) - &quot;O Cérebro&quot;</h3>
+<p>Como é: Este é o ajudante invisível que faz todos os cálculos e registo.</p>
+<p>Analogia do mundo real: Como ter um gestor de escritório super-eficiente que:</p>
+<p>Toma notas de tudo 📝</p>
+<p>Atualiza o inventário instantaneamente 📦</p>
+<p>Calcula custos automaticamente 💰</p>
+<p>Envia relatórios para a contabilidade 📊</p>
+<p>O que faz nos bastidores:</p>
+<p>Quando a produção começa:</p>
+<p>Marca a ordem como &quot;em progresso&quot;</p>
+<p>Regista quem começou e quando</p>
+<p>Como picar o ponto para um trabalho específico</p>
+<p>Quando a produção pausa/para:</p>
+<p>Atualiza o estado da ordem</p>
+<p>Ativa o formulário de consumo de material</p>
+<p>Como fazer uma pausa para café mas registá-la</p>
+<p>Quando os materiais são registados:</p>
+<p>Atualiza níveis de stock (remove materiais usados)</p>
+<p>Adiciona produtos acabados ao inventário</p>
+<p>Regista qualquer desperdício</p>
+<p>Envia dados para o sistema de contabilidade (Primavera)</p>
+<p>Como um caixa a processar uma venda, mas para produção</p>
+<p>Cálculos inteligentes:</p>
+<p>Se fazer 50 unidades precisa de 100kg de material...</p>
+<p>E só faz 25 unidades...</p>
+<p>Sugere que provavelmente usou 50kg</p>
+<p>Mas deixa ajustar se necessário!</p>
+<h2 id="um-dia-na-vida-como-tudo-funciona-junto">🎬 Um Dia na Vida - Como Tudo Funciona Junto</h2>
+<h3 id="o-turno-da-manh-come-a-8-00">O Turno da Manhã Começa (8:00)</h3>
+<p>O João, Operador de Máquina, chega:</p>
+<p>Abre o sistema no tablet da fábrica</p>
+<p>Introduz o seu PIN (como picar o ponto)</p>
+<p>Seleciona a sua máquina (Máquina #3 - a azul)</p>
+<p>Vê as ordens de hoje:</p>
+<p>Ordem #1234: Fazer 100 garrafas de plástico</p>
+<p>Ordem #1235: Fazer 50 tampas de garrafa</p>
+<h3 id="in-cio-da-produ-o-8-15">Início da Produção (8:15)</h3>
+<h4 id="o-jo-o-clica-iniciar-na-ordem-1234">O João clica &quot;Iniciar&quot; na Ordem #1234</h4>
+<p>O sistema pede o seu PIN (verificação de segurança!)</p>
+<p>O sistema regista:</p>
+<p>O João iniciou a Ordem #1234</p>
+<p>Às 8:15</p>
+<p>Na Máquina #3</p>
+<h4 id="a-ordem-move-se-da-coluna-por-iniciar-para-iniciadas">A ordem move-se da coluna &quot;Por Iniciar&quot; para &quot;Iniciadas&quot;</h4>
+<h3 id="pausa-para-almo-o-12-00">Pausa para Almoço (12:00)</h3>
+<h4 id="o-jo-o-fez-60-garrafas-precisa-de-uma-pausa">O João fez 60 garrafas, precisa de uma pausa</h4>
+<h4 id="clica-no-bot-o-pausar">Clica no botão &quot;Pausar&quot;</h4>
+<h4 id="pin-necess-rio-novamente">PIN necessário novamente</h4>
+<p>O formulário de Consumo de Material aparece:</p>
+<p>Introduz: &quot;60 garrafas produzidas&quot;</p>
+<p>O sistema mostra: &quot;Provavelmente usou 6kg de plástico&quot;</p>
+<p>O João confirma ou ajusta</p>
+<p>Clica &quot;Confirmar Produção&quot;</p>
+<p>O sistema automaticamente:</p>
+<p>Remove 6kg de plástico do stock do armazém</p>
+<p>Adiciona 60 garrafas aos produtos acabados</p>
+<p>Atualiza a Ordem #1234: &quot;40 garrafas restantes&quot;</p>
+<p>Regista tudo com timestamps</p>
+<h3 id="depois-do-almo-o-13-00">Depois do Almoço (13:00)</h3>
+<h4 id="o-jo-o-volta-clica-iniciar-novamente">O João volta, clica &quot;Iniciar&quot; novamente</h4>
+<h4 id="continua-a-fazer-as-40-garrafas-restantes">Continua a fazer as 40 garrafas restantes</h4>
+<h4 id="s-14-30-termina-a-ordem">Às 14:30, termina a ordem</h4>
+<h4 id="clica-parar">Clica &quot;Parar&quot;</h4>
+<p>O formulário de material aparece novamente:</p>
+<p>Introduz: &quot;40 garrafas produzidas&quot;</p>
+<p>Introduz: &quot;2 garrafas desperdiçadas&quot; (problemas de qualidade)</p>
+<p>O sistema marca a ordem como COMPLETA ✅</p>
+<h3 id="fim-do-dia">Fim do Dia</h3>
+<p>A Gestora Maria verifica o painel:</p>
+<p>Vê &quot;100 garrafas concluídas hoje&quot;</p>
+<p>Vê &quot;50 tampas ainda pendentes&quot;</p>
+<p>Revê o uso de material (algum consumo anormal?)</p>
+<p>Todos os dados já enviados para a contabilidade!</p>
+<h2 id="porque-que-isto-brilhante">💡 Porque É Que Isto É Brilhante</h2>
+<h3 id="para-os-trabalhadores">Para os Trabalhadores:</h3>
+<p>Sem papelada - tudo é digital</p>
+<p>Não podem esquecer passos - o sistema guia-os</p>
+<p>Feedback instantâneo - sabem se estão a fazer bem</p>
+<p>Menos culpa - o sistema controla tudo de forma justa</p>
+<h3 id="para-os-gestores">Para os Gestores:</h3>
+<p>Visibilidade em tempo real - veem a produção ao vivo</p>
+<p>Custos precisos - sabem exatamente o que foi usado</p>
+<p>Detetar problemas cedo - uso anormal de material = sinal vermelho</p>
+<p>Melhor planeamento - dados históricos ajudam a prever necessidades futuras</p>
+<h3 id="para-a-empresa">Para a Empresa:</h3>
+<p>Menos desperdício - controlar e reduzir perda de material</p>
+<p>Melhor inventário - níveis de stock sempre precisos</p>
+<p>Faturação mais rápida - integração automática com contabilidade</p>
+<p>Controlo de qualidade - saber que lotes tiveram problemas</p>
+<h2 id="cen-rios-comuns-e-solu-es">🚨 Cenários Comuns e Soluções</h2>
+<h3 id="ups-introduzi-quantidade-errada">&quot;Ups, introduzi quantidade errada!&quot;</h3>
+<p>Antes de confirmar: Basta mudar o número</p>
+<p>Depois de confirmar: O supervisor pode criar ajuste</p>
+<h3 id="a-m-quina-avariou-durante-a-produ-o">&quot;A máquina avariou durante a produção!&quot;</h3>
+<p>Carregar &quot;Pausar&quot; → Registar o que foi feito até agora</p>
+<p>A manutenção arranja a máquina</p>
+<p>Carregar &quot;Iniciar&quot; novamente para continuar</p>
+<h3 id="fic-mos-sem-material">&quot;Ficámos sem material!&quot;</h3>
+<p>O sistema mostra aviso vermelho antes de começar</p>
+<p>Não pode prosseguir sem autorização do supervisor</p>
+<p>Previne início de ordens impossíveis</p>
+<h3 id="esqueci-me-do-meu-pin">&quot;Esqueci-me do meu PIN!&quot;</h3>
+<p>O supervisor tem acesso mestre</p>
+<p>Pode repor o PIN</p>
+<p>Todas as ações continuam registadas</p>
+<h2 id="a-magia-por-tr-s-dos-bastidores">🎯 A Magia Por Trás dos Bastidores</h2>
+<p>O sistema é inteligente porque:</p>
+<p>Aprende com o histórico 📊</p>
+<p>&quot;Das últimas 10 vezes que fizemos isto, usámos média de 5.2kg&quot;</p>
+<p>Sugere esta quantidade automaticamente</p>
+<p>Previne erros 🛡️</p>
+<p>Não pode usar mais material do que existe</p>
+<p>Não pode produzir quantidades negativas</p>
+<p>Requer PIN para ações importantes</p>
+<p>Liga tudo 🔗</p>
+<p>Produção → Stock → Contabilidade</p>
+<p>Tudo automático, sem entrada dupla</p>
+<p>Uma ação atualiza tudo</p>
+<p>Fornece insights 💡</p>
+<p>&quot;A Máquina #3 usa 10% mais material que as outras&quot;</p>
+<p>&quot;As produções de terça têm sempre mais desperdício&quot;</p>
+<p>Ajuda a identificar áreas de melhoria</p>
+<h2 id="pense-nisto-como">📚 Pense Nisto Como...</h2>
+<p>Todo o sistema é como uma cozinha inteligente:</p>
+<p>Página Factory_New = Ecrã de pedidos da cozinha</p>
+<p>Modal de Material = Ficha de receita + folha de preparação</p>
+<p>Serviço = Sous chef a fazer todos os cálculos</p>
+<p>Ou como um videojogo:</p>
+<p>Página Factory_New = Lobby do jogo/seleção de missão</p>
+<p>Modal de Material = Relatório pós-missão</p>
+<p>Serviço = Motor do jogo a calcular pontuações</p>
+<h2 id="resumo-final">✅ Resumo Final</h2>
+<p>Este sistema transforma a produção caótica da fábrica num processo organizado, rastreado e otimizado. Os trabalhadores sabem o que fazer, os gestores sabem o que está a acontecer, e os contabilistas sabem quanto custou - tudo em tempo real, sem papelada!</p>
+<p>É como fazer upgrade de:</p>
+<p>📝 Listas em papel → 📱 Rastreamento digital</p>
+<p>🤷 Adivinhar → 📊 Saber</p>
+<p>🐌 Relatórios fim-de-mês → ⚡ Dados em tempo real</p>
+<p>😰 Caos → 😌 Controlo</p>
+<p>É isto o Sistema de Chão de Fábrica - tornando a produção simples, rastreável e inteligente!</p>
+</article>
+<div class="takeaways"><h3>Key takeaways</h3><ul><li>Three components: Factory_New (shop floor UI), MaterialConsumptionModal (post-shift form), FactoryFloorService (backend brain)</li><li>PIN verification gates every state transition (Start, Pause, Stop) as a lightweight audit trail</li><li>The system suggests material consumption from history but always lets operators override</li><li>Stock, production, and accounting (Primavera) stay in sync automatically - single source of truth</li><li>Low-stock warnings block order starts before work begins, not after waste has occurred</li><li>Managers get real-time visibility instead of month-end Excel archaeology</li></ul></div>
+<aside class="cross-refs"><h2>Cross-references</h2><div class="cross-ref-list"><a href="../../APPLICATIONS/factory-floor/factory-floor-system.html"><span class="arrow">→</span>Factory Floor Production System — Technical Documentation</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>stock-service</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>primavera-integration</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>blazor-modal-patterns</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>pin-authentication</a></div></aside>
+<aside class="related"><h2>More in this category</h2><div class="related-grid"><a class="related-card" href="../../APPLICATIONS/factory-floor/ag-grid-custom-select2-editor-filter.html"><div class="title">AG Grid Custom Editors and Filters with Select2 - Method-by-Method Walkthrough</div><div class="meta"><span class="badge">PDF</span><span>3,825 words</span></div></a><a class="related-card" href="../../APPLICATIONS/factory-floor/factory-floor-system-plain-english.html"><div class="title">Factory Floor Production System — Plain-English Infographic</div><div class="meta"><span class="badge">DOCX</span><span>1,260 words</span></div></a><a class="related-card" href="../../APPLICATIONS/factory-floor/factory-floor-system.html"><div class="title">Factory Floor Production System — Technical Documentation</div><div class="meta"><span class="badge">PDF</span><span>1,495 words</span></div></a><a class="related-card" href="../../APPLICATIONS/factory-floor/factory-floor-system__2.html"><div class="title">Factory Floor Production System — Technical Documentation</div><div class="meta"><span class="badge">DOCX</span><span>1,429 words</span></div></a><a class="related-card" href="../../APPLICATIONS/factory-floor/factory-floor-overview.html"><div class="title">Factory Floor Production System: Plain-English Overview</div><div class="meta"><span class="badge">PDF</span><span>1,384 words</span></div></a><a class="related-card" href="../../APPLICATIONS/factory-floor/select2-jquery-ag-grid-walkthrough.html"><div class="title">Select2 + jQuery Document Ready - Method Breakdown and AG Grid Custom Editor/Filter</div><div class="meta"><span class="badge">DOCX</span><span>3,014 words</span></div></a></div></aside>
+</main>
+</div>
+<script>
+// ─── Active TOC item on scroll ────────────────────────────────────
+(function() {
+  const tocLinks = document.querySelectorAll('.toc-sidebar a[href^="#"]');
+  if (!tocLinks.length) return;
+  const headings = Array.from(document.querySelectorAll(
+    'article h1[id], article h2[id], article h3[id], article h4[id], .pdf-page[id]'
+  ));
+  if (!headings.length) return;
+  function setActive(id) {
+    tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+  }
+  let lastVisible = headings[0].id;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) lastVisible = e.target.id; });
+    setActive(lastVisible);
+  }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+  headings.forEach(h => observer.observe(h));
+  setActive(headings[0].id);
+})();
+
+// ─── Copy code buttons ────────────────────────────────────────────
+(function() {
+  document.querySelectorAll('article pre').forEach(pre => {
+    if (pre.closest('.diagram-box')) return;
+    if (pre.closest('.pdf-page')) return;
+    if (pre.parentElement && pre.parentElement.classList.contains('code-block')) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'code-block';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.type = 'button';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', () => {
+      const code = pre.querySelector('code') || pre;
+      const text = code.innerText;
+      const done = () => {
+        btn.textContent = 'Copied';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(() => {});
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+    });
+    wrap.appendChild(btn);
+  });
+})();
+
+// ─── Live filter (master + hub + category pages) ─────────────────
+(function() {
+  const search = document.getElementById('search-input');
+  if (!search) return;
+  const items = document.querySelectorAll('[data-search]');
+  function apply() {
+    const q = search.value.toLowerCase().trim();
+    items.forEach(el => {
+      const match = !q || el.dataset.search.includes(q);
+      el.style.display = match ? '' : 'none';
+    });
+    document.querySelectorAll('[data-search-parent]').forEach(parent => {
+      const visible = Array.from(parent.querySelectorAll('[data-search]'))
+        .some(el => el.style.display !== 'none');
+      parent.style.display = visible ? '' : 'none';
+    });
+  }
+  search.addEventListener('input', apply);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Build a Reactive Login Page — From Zero</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;1,9..144,400&family=JetBrains+Mono:wght@400;600&family=DM+Sans:opsz,wght@9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #0E0F11;
+  --surface: #16181C;
+  --border:  #252830;
+  --muted:   #3C4050;
+  --text:    #E8E6E0;
+  --subtle:  #888;
+  --accent:  #7C5CF6;
+  --gold:    #F5A623;
+  --green:   #38c172;
+  --red:     #e05252;
+  --code-bg: #111318;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  line-height: 1.75;
+  font-size: 15.5px;
+}
+.toc-nav {
+  position: fixed; left: 0; top: 0; bottom: 0; width: 230px;
+  background: var(--surface); border-right: 1px solid var(--border);
+  padding: 28px 0; overflow-y: auto; z-index: 100;
+}
+.toc-nav .logo {
+  padding: 0 18px 20px; font-family: 'Fraunces', serif;
+  font-size: 13px; color: var(--accent); letter-spacing: 0.06em;
+  text-transform: uppercase; border-bottom: 1px solid var(--border); margin-bottom: 12px;
+}
+.toc-nav a {
+  display: block; padding: 6px 18px; font-size: 13px; color: var(--subtle);
+  text-decoration: none; border-left: 2px solid transparent; transition: all 0.15s;
+}
+.toc-nav a:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.toc-nav a.active { color: var(--accent); border-left-color: var(--accent); }
+.toc-section { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 14px 18px 3px; }
+#progress { position: fixed; top: 0; left: 230px; right: 0; height: 2px; background: var(--border); z-index: 200; }
+#progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.1s; }
+.main { margin-left: 230px; }
+.container { max-width: 800px; margin: 0 auto; padding: 0 28px; }
+.hero { padding: 72px 0 56px; border-bottom: 1px solid var(--border); position: relative; overflow: hidden; }
+.hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 80% at 70% 50%, rgba(124,92,246,0.07) 0%, transparent 70%); pointer-events: none; }
+.hero-tag { display: inline-block; background: rgba(124,92,246,0.15); color: var(--accent); border: 1px solid rgba(124,92,246,0.3); border-radius: 20px; padding: 4px 14px; font-size: 12px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 18px; }
+.hero h1 { font-family: 'Fraunces', serif; font-weight: 700; font-size: clamp(30px, 4.5vw, 48px); line-height: 1.1; color: #fff; margin-bottom: 16px; }
+.hero h1 em { font-style: italic; color: var(--accent); }
+.hero p { font-size: 16px; color: var(--subtle); max-width: 540px; }
+.hero-badges { display: flex; gap: 16px; margin-top: 24px; flex-wrap: wrap; }
+.badge { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 13px; color: var(--subtle); }
+.badge b { color: var(--text); }
+.section { padding: 52px 0; border-bottom: 1px solid var(--border); }
+.section:last-child { border-bottom: none; padding-bottom: 80px; }
+.chapter-tag { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.chapter-num { width: 22px; height: 22px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: white; }
+h2 { font-family: 'Fraunces', serif; font-size: 27px; font-weight: 700; color: #fff; margin-bottom: 14px; line-height: 1.25; }
+h3 { font-size: 17px; font-weight: 600; color: var(--text); margin: 28px 0 10px; }
+p { color: #B8B4AE; margin-bottom: 14px; }
+.callout { border-radius: 10px; padding: 16px 20px; margin: 20px 0; border-left: 3px solid; font-size: 14.5px; line-height: 1.65; }
+.callout-concept { background: rgba(124,92,246,0.09); border-color: var(--accent); color: #C8C0F8; }
+.callout-tip     { background: rgba(56,193,114,0.08); border-color: var(--green); color: #A8E6C0; }
+.callout-warn    { background: rgba(245,166,35,0.08); border-color: var(--gold); color: #F5D898; }
+.callout-analogy { background: rgba(248,113,113,0.08); border-color: #f87171; color: #FCA5A5; }
+.callout b { display: block; margin-bottom: 5px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+p code, li code, td code { background: rgba(124,92,246,0.13); border: 1px solid rgba(124,92,246,0.22); border-radius: 4px; padding: 1px 7px; color: #C4B5FD; font-family: 'JetBrains Mono', monospace; font-size: 0.86em; }
+.code-wrap { position: relative; margin: 18px 0; }
+.code-label { position: absolute; top: 10px; right: 52px; font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; letter-spacing: 0.04em; }
+.copy-btn { position: absolute; top: 8px; right: 8px; background: var(--muted); border: none; color: var(--text); border-radius: 5px; padding: 4px 10px; font-size: 11px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.15s; }
+.copy-btn:hover { background: var(--accent); }
+.copy-btn.copied { background: var(--green); }
+pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 10px; padding: 22px 20px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.7; tab-size: 2; }
+.kw  { color: #C084FC; font-style: italic; }
+.st  { color: #86EFAC; }
+.cm  { color: #4B5670; }
+.fn  { color: #60A5FA; }
+.nb  { color: #F59E0B; }
+.tg  { color: #F87171; }
+.at  { color: #FCD34D; }
+.val { color: #86EFAC; }
+.annotated { margin: 18px 0; }
+.ann-code { background: var(--code-bg); border: 1px solid var(--border); border-bottom: none; border-radius: 10px 10px 0 0; padding: 18px 20px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.7; overflow-x: auto; white-space: pre; }
+.ann-table { width: 100%; border-collapse: collapse; }
+.ann-table td { padding: 10px 14px; font-size: 13.5px; vertical-align: top; border-top: 1px solid var(--border); }
+.ann-table tr:last-child td { border-bottom: 1px solid var(--border); }
+.ann-table td:first-child { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #C4B5FD; white-space: nowrap; background: rgba(124,92,246,0.07); width: 1%; border-right: 1px solid var(--border); }
+.ann-table td:last-child { color: #B8B4AE; }
+.ann-table tr:last-child td:first-child { border-radius: 0 0 0 10px; }
+.ann-table tr:last-child td:last-child  { border-radius: 0 0 10px 0; }
+.shape-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.shape-table th { text-align: left; padding: 10px 14px; background: var(--surface); color: var(--subtle); font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600; }
+.shape-table td { padding: 10px 14px; border-top: 1px solid var(--border); color: #B8B4AE; vertical-align: top; }
+.shape-table td:first-child { font-family: 'JetBrains Mono', monospace; color: #C4B5FD; font-size: 12px; }
+.shape-table td:nth-child(2) { color: var(--gold); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.playground { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin: 20px 0; }
+.pg-header { background: var(--surface); padding: 10px 16px; font-size: 12px; color: var(--muted); font-family: 'JetBrains Mono', monospace; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+.pg-dot { width: 8px; height: 8px; border-radius: 50%; }
+.pg-body { display: flex; }
+.pg-editor { flex: 1; background: var(--code-bg); border: none; border-right: 1px solid var(--border); color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 12.5px; padding: 16px; resize: none; outline: none; line-height: 1.65; min-height: 160px; }
+.pg-preview { width: 200px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #f7f3ef; padding: 10px; }
+.pg-run { width: 100%; padding: 10px; border: none; background: var(--accent); color: white; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+.pg-run:hover { background: #6b4de6; }
+.sel-viz { background: var(--code-bg); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin: 18px 0; }
+.sel-row { display: flex; align-items: center; gap: 4px; margin: 6px 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; flex-wrap: wrap; }
+.sel-part { padding: 4px 10px; border-radius: 6px; cursor: default; transition: all 0.2s; }
+.sel-part:hover { filter: brightness(1.3); transform: translateY(-1px); }
+.sel-id  { background: rgba(248,113,113,0.2); color: #f87171; border: 1px solid rgba(248,113,113,0.3); }
+.sel-cls { background: rgba(124,92,246,0.2);  color: #C4B5FD; border: 1px solid rgba(124,92,246,0.3); }
+.sel-sp  { color: var(--muted); padding: 4px; font-size: 18px; }
+.sel-prop{ background: rgba(56,193,114,0.15); color: #86EFAC; border: 1px solid rgba(56,193,114,0.25); }
+.sel-explain { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; align-items: start; }
+.se-pill { padding: 2px 10px; border-radius: 20px; font-family: 'JetBrains Mono', monospace; font-size: 11px; align-self: center; }
+.se-txt { font-size: 13.5px; color: #B8B4AE; }
+.sm-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.sm-btn { padding: 7px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--subtle); font-size: 13px; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.2s; }
+.sm-btn:hover { border-color: var(--accent); color: var(--accent); }
+.sm-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+.sm-display { height: 70px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: all 0.35s; border: 2px solid transparent; }
+.sm-display.s-idle  { background: rgba(60,64,80,0.5);   color: var(--subtle); border-color: var(--muted); }
+.sm-display.s-email { background: rgba(124,92,246,0.15); color: #C4B5FD; border-color: var(--accent); }
+.sm-display.s-ok    { background: rgba(56,193,114,0.15); color: #86EFAC; border-color: var(--green); }
+.sm-display.s-error { background: rgba(224,82,82,0.15);  color: #f87171; border-color: var(--red); }
+#vec-demo { background: #0d0e10; height: 200px; cursor: crosshair; }
+#vec-canvas { display: block; width: 100%; height: 100%; }
+.checklist { list-style: none; }
+.checklist li { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14.5px; color: #B8B4AE; }
+.checklist li:last-child { border-bottom: none; }
+.ci { width: 20px; height: 20px; flex-shrink: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; margin-top: 2px; }
+.ci-done { background: rgba(56,193,114,0.2); color: var(--green); }
+.ci-next { background: rgba(245,166,35,0.2); color: var(--gold); }
+@media (max-width: 760px) { .toc-nav { display: none; } .main { margin-left: 0; } #progress { left: 0; } .pg-body { flex-direction: column; } .pg-preview { width: 100%; height: 150px; } }
+</style>
+</head>
+<body>
+<div style="background:rgba(7,9,15,0.94);border-bottom:1px solid #1f2940;padding:12px 24px;font:13px/1.4 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;position:fixed;top:0;left:0;right:0;z-index:99999;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);display:flex;align-items:center;gap:10px;color:#94a3bf;box-sizing:border-box;min-height:48px;"><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;">Learning</a><span style="color:#5f6b86;">›</span><a href="../_Hub.html" style="color:#94a3bf;text-decoration:none;">CORE</a><span style="color:#5f6b86;">›</span><a href="_Category.html" style="color:#94a3bf;text-decoration:none;">Blazor &amp; Frontend</a><span style="color:#5f6b86;">›</span><span style="color:#e9eef8;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">Build a Reactive Login Page From Zero — SVG, CSS State Machine, JS</span><a href="reactive-login-svg-css-state-machine.html" download style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">↓ Download</a><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">All docs</a></div><div style="height:48px;"></div><div style="background:linear-gradient(135deg,#0a0e1a 0%,#11182a 100%);border:1px solid #1f2940;border-radius:14px;padding:24px 28px;margin:20px;font:15px/1.7 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;color:#e9eef8;box-shadow:0 12px 40px rgba(0,0,0,0.35);"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.6px;color:#6aa6ff;font-weight:600;margin-bottom:8px;">▸ Curated · Concept · Frontend</div><div style="font-size:24px;font-weight:700;color:#e9eef8;margin-bottom:10px;letter-spacing:-0.02em;line-height:1.2;">Build a Reactive Login Page From Zero — SVG, CSS State Machine, JS</div><div style="font-size:16px;color:#94a3bf;margin-bottom:18px;line-height:1.5;">A zero-knowledge-required walkthrough of building an animated login page with SVG characters whose expressions and arm positions are driven entirely by a single CSS class toggled from JavaScript.</div><div style="font-style:italic;border-left:3px solid #6aa6ff;padding:6px 0 6px 16px;margin:14px 0;color:#e9eef8;">Most login pages are a noun. This one is a verb: the characters look where your cursor goes, smile when your email is valid, cover their eyes when you type your password. Want to know the trick? It&#x27;s one CSS class. That&#x27;s it. Everything else is just selector specificity doing the work for you.</div><div style="background:rgba(106,166,255,0.06);border:1px solid rgba(106,166,255,0.20);border-radius:10px;padding:14px 18px;margin:14px 0;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#6aa6ff;margin-bottom:6px;font-weight:600;">Executive summary</div><div style="font-size:14px;color:#e9eef8;line-height:1.6;">This nine-chapter course teaches SVG coordinate systems, path commands, grouping, CSS descendant selectors, specificity, the state-machine pattern (one class on one root element drives all visibility and transforms), cubic-bezier spring curves, and vector math for clamping pupils inside eyeballs. The core lesson is architectural: JavaScript&#x27;s only job is to change #app.className — CSS does the actual reacting. The author explains every attribute, every operator, every math step before using it.</div></div><div style="background:rgba(184,106,255,0.06);border:1px solid rgba(184,106,255,0.25);border-radius:10px;padding:14px 18px;margin:14px 0;display:flex;gap:12px;"><div style="font-size:20px;flex-shrink:0;">💡</div><div style="flex:1;font-size:14px;color:#e9eef8;line-height:1.6;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#b86aff;margin-bottom:4px;font-weight:700;">Metaphor</div>The whole animated login is built like a traffic light controlled by a single switch. JavaScript just flips the switch (class name). CSS is the electrical wiring that decides which bulb glows. The SVG characters are the bulbs. If you ever feel tempted to reach past the switch and wiggle a bulb directly from JS, you&#x27;ve missed the point — and you&#x27;ll spend the next two hours debugging why the green light won&#x27;t turn off.</div></div><div style="margin-top:14px;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#5f6b86;margin-bottom:8px;font-weight:600;">Key concepts</div><div><span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">SVG viewBox coordinate system</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">path M/L/Q commands</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">&lt;g&gt; grouping</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">CSS descendant selectors</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">CSS specificity scoring</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">state machine via class toggling</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">cubic-bezier easing</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">transform-box: fill-box</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">vector clamping with Pythagoras</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">getBoundingClientRect pixel-to-SVG conversion</span></div></div><div style="margin-top:18px;padding-top:14px;border-top:1px solid #1f2940;font-size:11px;color:#5f6b86;">↑ Curated overlay added by render_curated.py · the original document follows below</div></div>
+<div id="progress"><div id="progress-bar"></div></div>
+
+<nav class="toc-nav">
+  <div class="logo">🐦 From Zero</div>
+  <div class="toc-section">Foundations</div>
+  <a href="#s0" class="active">What we're building</a>
+  <a href="#s1">SVG — the canvas</a>
+  <a href="#s2">SVG shapes</a>
+  <a href="#s3">Paths & curves</a>
+  <a href="#s4">Grouping with &lt;g&gt;</a>
+  <div class="toc-section">CSS Machine</div>
+  <a href="#s5">Selectors decoded</a>
+  <a href="#s6">The state machine</a>
+  <a href="#s7">Transform & transition</a>
+  <div class="toc-section">JavaScript</div>
+  <a href="#s8">Event wiring</a>
+  <a href="#s9">Cursor math</a>
+  <div class="toc-section">Done</div>
+  <a href="#s10">Build checklist</a>
+</nav>
+
+<main class="main">
+<div class="container">
+
+<section class="hero" id="s0">
+  <div class="hero-tag">From Zero — Intro Course</div>
+  <h1>Build a Reactive Login<br>with <em>Animated Characters</em></h1>
+  <p>Built from absolute zero. Every line of syntax explained before it's used. SVG coordinates, CSS selectors, state machines, vector math — nothing hand-waved.</p>
+  <div class="hero-badges">
+    <div class="badge">🧱 <b>Prerequisite:</b> basic HTML &amp; CSS</div>
+    <div class="badge">⏱ <b>Read time:</b> ~45 min</div>
+    <div class="badge">🎯 <b>Goal:</b> understand every line</div>
+  </div>
+</section>
+
+<!-- ══ CH1 SVG CANVAS ══ -->
+<section class="section" id="s1">
+  <div class="chapter-tag"><div class="chapter-num">1</div>Chapter 1</div>
+  <h2>SVG — a canvas you write in text</h2>
+  <p>SVG stands for <strong>Scalable Vector Graphics</strong>. It's an image format written in code — shapes described as coordinates, not pixels. Unlike a PNG, you can style and animate every part of it with CSS and JS.</p>
+  <div class="callout callout-analogy">
+    <b>🗺️ Analogy</b>
+    Think of SVG like graph paper. You define a grid size, then describe where shapes go using X and Y coordinates. X goes right. Y goes <em>down</em> (opposite to school maths — remember this!).
+  </div>
+  <h3>The opening tag — decoded</h3>
+  <div class="annotated">
+    <div class="ann-code">&lt;svg viewBox="0 0 280 370" xmlns="http://www.w3.org/2000/svg"&gt;</div>
+    <table class="ann-table">
+      <tr><td>&lt;svg</td><td>Opens an SVG element. Works like a &lt;div&gt; — a container — but the browser renders it as a drawing canvas.</td></tr>
+      <tr><td>viewBox="0 0 280 370"</td><td>Defines the internal coordinate grid. Format: <code>minX minY width height</code>. Our canvas starts at (0,0) and is 280 units wide × 370 units tall. These are <em>not pixels</em> — they're our own unit system. The SVG scales to fill whatever space CSS gives it.</td></tr>
+      <tr><td>xmlns="..."</td><td>Namespace declaration. Required when SVG lives inside HTML. Tells the browser how to parse it. Copy-paste it and never think about it again.</td></tr>
+    </table>
+  </div>
+  <div class="callout callout-concept">
+    <b>💡 viewBox vs CSS width/height</b>
+    <code>viewBox</code> is the internal coordinate system. CSS <code>width/height</code> controls the rendered size on screen. A viewBox of 280 units displayed at 560px means 1 SVG unit = 2 pixels. This is how SVGs stay sharp at any size.
+  </div>
+  <h3>How coordinates work</h3>
+  <p>Origin (0,0) is the <strong>top-left corner</strong>. X increases going right. Y increases going <em>down</em>.</p>
+  <div style="background: var(--code-bg); border: 1px solid var(--border); border-radius:12px; padding:24px; margin:16px 0; display:flex; justify-content:center;">
+    <svg viewBox="0 0 220 160" width="330" height="240" style="border:1px solid #252830; border-radius:8px; background:#111;">
+      <line x1="0" y1="40" x2="220" y2="40" stroke="#252830" stroke-width="0.5" stroke-dasharray="3,3"/>
+      <line x1="0" y1="80" x2="220" y2="80" stroke="#252830" stroke-width="0.5" stroke-dasharray="3,3"/>
+      <line x1="0" y1="120" x2="220" y2="120" stroke="#252830" stroke-width="0.5" stroke-dasharray="3,3"/>
+      <line x1="55" y1="0" x2="55" y2="160" stroke="#252830" stroke-width="0.5" stroke-dasharray="3,3"/>
+      <line x1="110" y1="0" x2="110" y2="160" stroke="#252830" stroke-width="0.5" stroke-dasharray="3,3"/>
+      <line x1="165" y1="0" x2="165" y2="160" stroke="#252830" stroke-width="0.5" stroke-dasharray="3,3"/>
+      <defs><marker id="arr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#F5A623"/></marker></defs>
+      <line x1="8" y1="8" x2="52" y2="8" stroke="#F5A623" stroke-width="1.5" marker-end="url(#arr)"/>
+      <line x1="8" y1="8" x2="8" y2="52" stroke="#F5A623" stroke-width="1.5" marker-end="url(#arr)"/>
+      <text x="56" y="12" fill="#F5A623" font-size="9" font-family="monospace">X →</text>
+      <text x="12" y="62" fill="#F5A623" font-size="9" font-family="monospace">Y ↓</text>
+      <circle cx="0" cy="0" r="4" fill="#7C5CF6"/>
+      <text x="4" y="16" fill="#7C5CF6" font-size="9" font-family="monospace">(0,0)</text>
+      <circle cx="110" cy="80" r="4" fill="#38c172"/>
+      <line x1="110" y1="0" x2="110" y2="80" stroke="#38c172" stroke-width="0.6" stroke-dasharray="2,2"/>
+      <line x1="0" y1="80" x2="110" y2="80" stroke="#38c172" stroke-width="0.6" stroke-dasharray="2,2"/>
+      <text x="114" y="76" fill="#38c172" font-size="9" font-family="monospace">(110,80)</text>
+      <circle cx="220" cy="160" r="4" fill="#f87171"/>
+      <text x="152" y="155" fill="#f87171" font-size="9" font-family="monospace">(220,160)</text>
+    </svg>
+  </div>
+</section>
+
+<!-- ══ CH2 SHAPES ══ -->
+<section class="section" id="s2">
+  <div class="chapter-tag"><div class="chapter-num">2</div>Chapter 2</div>
+  <h2>SVG shapes — the vocabulary</h2>
+  <table class="shape-table">
+    <thead><tr><th>Tag</th><th>Key attributes</th><th>What it draws</th></tr></thead>
+    <tbody>
+      <tr><td>&lt;rect&gt;</td><td>x, y, width, height, rx</td><td>Rectangle. <code>rx</code> rounds the corners — set to half the width for a pill shape.</td></tr>
+      <tr><td>&lt;circle&gt;</td><td>cx, cy, r</td><td>Circle. <code>cx/cy</code> = center X and Y. <code>r</code> = radius.</td></tr>
+      <tr><td>&lt;ellipse&gt;</td><td>cx, cy, rx, ry</td><td>Like circle but with separate horizontal and vertical radii. Good for egg shapes.</td></tr>
+      <tr><td>&lt;line&gt;</td><td>x1, y1, x2, y2</td><td>Straight line between two points. Needs <code>stroke</code> to be visible.</td></tr>
+      <tr><td>&lt;path&gt;</td><td>d</td><td>Draw anything — curves, arcs, complex shapes. The <code>d</code> attribute is a mini drawing language (next chapter).</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Reading a circle — every attribute explained</h3>
+  <div class="annotated">
+    <div class="ann-code">&lt;circle cx="88" cy="118" r="16" fill="white"/&gt;
+&lt;circle id="pupil-l" cx="91" cy="121" r="7" fill="#111"/&gt;</div>
+    <table class="ann-table">
+      <tr><td>cx="88"</td><td>Center X — the circle's center is 88 units from the left of the SVG canvas.</td></tr>
+      <tr><td>cy="118"</td><td>Center Y — 118 units from the top. (Remember Y goes down, so bigger = lower.)</td></tr>
+      <tr><td>r="16"</td><td>Radius — 16 units outward from center. Diameter = 32 units wide.</td></tr>
+      <tr><td>fill="white"</td><td>Interior color. Accepts any CSS color: names, hex codes, rgb().</td></tr>
+      <tr><td>id="pupil-l"</td><td>Unique identifier. We'll use this later in JavaScript to move the pupil with the mouse. Without an ID you can't target it — add IDs now, not later.</td></tr>
+      <tr><td>/&gt;</td><td>Self-closing tag — this element has no children, so we close it immediately. Same as writing <code>&lt;circle ...&gt;&lt;/circle&gt;</code> but shorter.</td></tr>
+    </table>
+  </div>
+
+  <div class="callout callout-tip">
+    <b>✅ Why cx/cy instead of x/y?</b>
+    Rectangles use <code>x/y</code> for their top-left corner. Circles use <code>cx/cy</code> for their center — the "c" stands for center. If you want a circle at coordinate (100, 50), set <code>cx="100" cy="50"</code>. Makes positioning much more intuitive.
+  </div>
+
+  <h3>Reading a rectangle (the character body)</h3>
+  <div class="annotated">
+    <div class="ann-code">&lt;rect x="58" y="34" width="92" height="232" rx="46" fill="#7C5CF6"/&gt;</div>
+    <table class="ann-table">
+      <tr><td>x="58", y="34"</td><td>The top-left corner of the rectangle starts at coordinate (58, 34).</td></tr>
+      <tr><td>width="92"</td><td>92 units wide.</td></tr>
+      <tr><td>height="232"</td><td>232 units tall — much taller than wide, creating a portrait shape.</td></tr>
+      <tr><td>rx="46"</td><td>Corner radius. Setting this to exactly half the width (92÷2 = 46) makes the top and bottom fully rounded — creating a pill/capsule body shape.</td></tr>
+      <tr><td>fill="#7C5CF6"</td><td>Hex color — the purple character color. Any CSS color works here.</td></tr>
+    </table>
+  </div>
+
+  <h3>Try it — edit and run</h3>
+  <div class="playground" id="pg1">
+    <div class="pg-header"><div class="pg-dot" style="background:#f87171"></div><div class="pg-dot" style="background:#fbbf24"></div><div class="pg-dot" style="background:#34d399"></div>SVG Playground — Ctrl+Enter to run</div>
+    <div class="pg-body">
+      <textarea class="pg-editor" id="pg1-code" spellcheck="false">&lt;svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"&gt;
+  &lt;!-- Body --&gt;
+  &lt;rect x="60" y="20" width="80" height="140" rx="40" fill="#7C5CF6"/&gt;
+  &lt;!-- Left eyeball --&gt;
+  &lt;circle cx="82" cy="80" r="14" fill="white"/&gt;
+  &lt;!-- Left pupil (has id for JS later) --&gt;
+  &lt;circle id="pupil-l" cx="84" cy="83" r="6" fill="#111"/&gt;
+  &lt;!-- Right eyeball --&gt;
+  &lt;circle cx="118" cy="80" r="14" fill="white"/&gt;
+  &lt;!-- Right pupil --&gt;
+  &lt;circle id="pupil-r" cx="120" cy="83" r="6" fill="#111"/&gt;
+&lt;/svg&gt;</textarea>
+      <div class="pg-preview" id="pg1-preview"></div>
+    </div>
+    <button class="pg-run" onclick="runPg('pg1')">▶ Run</button>
+  </div>
+</section>
+
+<!-- ══ CH3 PATHS ══ -->
+<section class="section" id="s3">
+  <div class="chapter-tag"><div class="chapter-num">3</div>Chapter 3</div>
+  <h2>SVG paths — drawing curves for faces</h2>
+  <p>The <code>&lt;path&gt;</code> element draws anything that isn't a basic shape. Its <code>d</code> attribute contains a sequence of drawing commands.</p>
+  <h3>The three commands you need</h3>
+  <table class="shape-table">
+    <thead><tr><th>Command</th><th>Full name</th><th>Syntax</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td>M</td><td>Move To</td><td>M x y</td><td>Lift the pen and place it at (x, y). No line drawn.</td></tr>
+      <tr><td>L</td><td>Line To</td><td>L x y</td><td>Draw a straight line from current position to (x, y).</td></tr>
+      <tr><td>Q</td><td>Quadratic Bézier</td><td>Q cx cy x y</td><td>Draw a curve. It bends toward the control point (cx,cy) then ends at (x,y). The control point is invisible — it just acts as "gravity" on the curve.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Smile vs frown — it's just the control point</h3>
+  <div class="annotated">
+    <div class="ann-code">/* Smile: control point BELOW the endpoints → curve dips down */
+d="M 35 72   Q 50 84   65 72"
+
+/* Frown: control point ABOVE the endpoints → curve arcs up */
+d="M 35 76   Q 50 66   65 76"</div>
+    <table class="ann-table">
+      <tr><td>M 35 72</td><td>Start the path at (35, 72) — left corner of the mouth.</td></tr>
+      <tr><td>Q 50 84</td><td>Control point at (50, 84). Y=84 is lower than our endpoints Y=72 → the curve is pulled downward → smile shape.</td></tr>
+      <tr><td>65 72</td><td>End point at (65, 72) — right corner. Same Y as start → symmetrical mouth.</td></tr>
+      <tr><td>Frown Q 50 66</td><td>Control Y=66 is higher than endpoints Y=76 → curve arcs upward → frown. Same math, flipped direction.</td></tr>
+    </table>
+  </div>
+
+  <div class="callout callout-warn">
+    <b>⚠️ Always add fill="none" to path mouths</b>
+    A path like a mouth has no filled interior — it's just a line. Without <code>fill="none"</code>, SVG fills the "phantom" closed shape with black, creating a weird dark triangle. Always pair open paths with <code>fill="none"</code> + <code>stroke="color"</code> + <code>stroke-width</code>.
+  </div>
+
+  <div class="code-wrap">
+    <span class="code-label">SVG</span>
+    <button class="copy-btn" onclick="copyCode(this)">copy</button>
+<pre><span class="cm">&lt;!-- Smile --&gt;</span>
+<span class="tg">&lt;path</span> <span class="at">d</span>=<span class="val">"M 35 72 Q 50 84 65 72"</span>
+      <span class="at">stroke</span>=<span class="val">"white"</span>
+      <span class="at">stroke-width</span>=<span class="val">"2.5"</span>
+      <span class="at">stroke-linecap</span>=<span class="val">"round"</span>  <span class="cm">← rounds the line ends</span>
+      <span class="at">fill</span>=<span class="val">"none"</span><span class="tg">/&gt;</span>            <span class="cm">← crucial! prevents black triangle</span>
+
+<span class="cm">&lt;!-- Frown --&gt;</span>
+<span class="tg">&lt;path</span> <span class="at">d</span>=<span class="val">"M 35 76 Q 50 66 65 76"</span>
+      <span class="at">stroke</span>=<span class="val">"white"</span> <span class="at">stroke-width</span>=<span class="val">"2.5"</span>
+      <span class="at">stroke-linecap</span>=<span class="val">"round"</span> <span class="at">fill</span>=<span class="val">"none"</span><span class="tg">/&gt;</span></pre>
+  </div>
+
+  <h3>Try it — change the control point Y value</h3>
+  <div class="playground" id="pg2">
+    <div class="pg-header"><div class="pg-dot" style="background:#f87171"></div><div class="pg-dot" style="background:#fbbf24"></div><div class="pg-dot" style="background:#34d399"></div>Change the middle number in "Q 70 50" — try 25 for a frown, 75 for a big smile</div>
+    <div class="pg-body">
+      <textarea class="pg-editor" id="pg2-code" spellcheck="false">&lt;svg viewBox="0 0 140 60" xmlns="http://www.w3.org/2000/svg"&gt;
+  &lt;rect x="5" y="5" width="130" height="50" rx="8" fill="#7C5CF6"/&gt;
+  &lt;!-- Q control point: "M startX startY Q controlX controlY endX endY" --&gt;
+  &lt;path d="M 30 35 Q 70 50 110 35"
+        stroke="white" stroke-width="3"
+        stroke-linecap="round" fill="none"/&gt;
+&lt;/svg&gt;</textarea>
+      <div class="pg-preview" id="pg2-preview"></div>
+    </div>
+    <button class="pg-run" onclick="runPg('pg2')">▶ Run</button>
+  </div>
+</section>
+
+<!-- ══ CH4 GROUPS ══ -->
+<section class="section" id="s4">
+  <div class="chapter-tag"><div class="chapter-num">4</div>Chapter 4</div>
+  <h2>Grouping with &lt;g&gt; — the key to swappable expressions</h2>
+  <p>The <code>&lt;g&gt;</code> element is an invisible group. It lets you treat multiple shapes as one unit — apply a class, transform, or visibility to all of them at once.</p>
+  <div class="callout callout-analogy">
+    <b>🗂️ Analogy</b>
+    Think of <code>&lt;g&gt;</code> like a folder. Hiding a folder hides everything inside it. Each expression (smile, frown, squint) is one folder. We show one folder at a time based on the current state.
+  </div>
+
+  <div class="code-wrap">
+    <span class="code-label">SVG — expression groups</span>
+    <button class="copy-btn" onclick="copyCode(this)">copy</button>
+<pre><span class="cm">&lt;!-- Each expression is its own group --&gt;</span>
+
+<span class="tg">&lt;g</span> <span class="at">class</span>=<span class="val">"face-neutral"</span><span class="tg">&gt;</span>  <span class="cm">&lt;!-- visible by default --&gt;</span>
+  <span class="tg">&lt;circle</span> <span class="at">cx</span>=<span class="val">"82"</span> <span class="at">cy</span>=<span class="val">"80"</span> <span class="at">r</span>=<span class="val">"14"</span> <span class="at">fill</span>=<span class="val">"white"</span><span class="tg">/&gt;</span>
+  <span class="tg">&lt;circle</span> <span class="at">id</span>=<span class="val">"pupil-l"</span> <span class="at">cx</span>=<span class="val">"84"</span> <span class="at">cy</span>=<span class="val">"83"</span> <span class="at">r</span>=<span class="val">"6"</span> <span class="at">fill</span>=<span class="val">"#111"</span><span class="tg">/&gt;</span>
+  <span class="tg">&lt;path</span> <span class="at">d</span>=<span class="val">"M 72 110 Q 100 122 128 110"</span> <span class="at">stroke</span>=<span class="val">"white"</span> <span class="at">stroke-width</span>=<span class="val">"2.5"</span> <span class="at">fill</span>=<span class="val">"none"</span><span class="tg">/&gt;</span>
+<span class="tg">&lt;/g&gt;</span>
+
+<span class="tg">&lt;g</span> <span class="at">class</span>=<span class="val">"face-smile"</span><span class="tg">&gt;</span>   <span class="cm">&lt;!-- hidden until s-email-ok --&gt;</span>
+  <span class="tg">&lt;path</span> <span class="at">d</span>=<span class="val">"M 68 80 Q 82 70 96 80"</span> <span class="at">stroke</span>=<span class="val">"white"</span> <span class="at">stroke-width</span>=<span class="val">"3"</span> <span class="at">fill</span>=<span class="val">"none"</span><span class="tg">/&gt;</span>
+  <span class="tg">&lt;path</span> <span class="at">d</span>=<span class="val">"M 104 80 Q 118 70 132 80"</span> <span class="at">stroke</span>=<span class="val">"white"</span> <span class="at">stroke-width</span>=<span class="val">"3"</span> <span class="at">fill</span>=<span class="val">"none"</span><span class="tg">/&gt;</span>
+  <span class="tg">&lt;path</span> <span class="at">d</span>=<span class="val">"M 68 110 Q 100 130 132 110"</span> <span class="at">stroke</span>=<span class="val">"white"</span> <span class="at">stroke-width</span>=<span class="val">"3"</span> <span class="at">fill</span>=<span class="val">"none"</span><span class="tg">/&gt;</span>
+<span class="tg">&lt;/g&gt;</span>
+
+<span class="cm">&lt;!-- Arms come LAST = render on top of the face --&gt;</span>
+<span class="tg">&lt;g</span> <span class="at">class</span>=<span class="val">"arm-left"</span><span class="tg">&gt;</span>
+  <span class="tg">&lt;rect</span> <span class="at">x</span>=<span class="val">"50"</span> <span class="at">y</span>=<span class="val">"150"</span> <span class="at">width</span>=<span class="val">"24"</span> <span class="at">height</span>=<span class="val">"50"</span> <span class="at">rx</span>=<span class="val">"12"</span> <span class="at">fill</span>=<span class="val">"#6A4EE0"</span><span class="tg">/&gt;</span>
+<span class="tg">&lt;/g&gt;</span></pre>
+  </div>
+
+  <div class="callout callout-concept">
+    <b>💡 SVG render order — later = on top</b>
+    SVG renders elements in document order — elements written later appear on top. Arms must be written <em>after</em> the face groups so they render on top and cover the eyes correctly. If you put arms first, they'd render behind the eyes.
+  </div>
+</section>
+
+<!-- ══ CH5 SELECTORS ══ -->
+<section class="section" id="s5">
+  <div class="chapter-tag"><div class="chapter-num">5</div>Chapter 5</div>
+  <h2>CSS selectors — fully decoded</h2>
+  <p>The entire visual system runs on one CSS pattern. Let's dissect it completely before using it.</p>
+
+  <h3>Quick selector reference</h3>
+  <table class="shape-table">
+    <thead><tr><th>Selector</th><th>Targets</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td>#foo</td><td>Element with id="foo"</td><td><code>#app</code> → &lt;div id="app"&gt;</td></tr>
+      <tr><td>.bar</td><td>Any element with class="bar"</td><td><code>.face-smile</code> → anything with that class</td></tr>
+      <tr><td>a b (space)</td><td>Any <code>b</code> that lives <em>inside</em> <code>a</code> (descendant)</td><td><code>div p</code> → any &lt;p&gt; anywhere inside a &lt;div&gt;</td></tr>
+      <tr><td>a.b (no space)</td><td>Element that is <code>a</code> AND also has class <code>b</code></td><td><code>div.active</code> → a div with class="active"</td></tr>
+    </tbody>
+  </table>
+
+  <h3>The state machine selector — hover to understand</h3>
+  <div class="sel-viz">
+    <div class="sel-row">
+      <span class="sel-part sel-id" title="The element with id='app'">#app</span>
+      <span class="sel-part sel-cls" title="AND it must also have class 's-email-ok'">.s-email-ok</span>
+      <span class="sel-sp" title="Space = descendant combinator">&nbsp;</span>
+      <span class="sel-part sel-cls" title="Any .face-smile inside the above match">.face-smile</span>
+      <span class="sel-sp">&nbsp;</span>
+      <span class="sel-part sel-prop">{ display: block; }</span>
+    </div>
+    <div class="sel-explain">
+      <span class="se-pill sel-id">#app</span>
+      <span class="se-txt">Find the element with <code>id="app"</code> — our root container that wraps everything.</span>
+      <span class="se-pill sel-cls">.s-email-ok</span>
+      <span class="se-txt">But only when it <em>also has</em> the class <code>s-email-ok</code>. No space means "same element must match both." This is the state condition.</span>
+      <span class="se-pill" style="background:rgba(60,64,80,0.4); color:#888; border:1px solid #3C4050; font-family:'JetBrains Mono',monospace; font-size:11px; padding:2px 10px; border-radius:20px;">space</span>
+      <span class="se-txt">The space is the descendant combinator — "now look inside the previous match." Find anything matching the next selector anywhere inside it.</span>
+      <span class="se-pill sel-cls">.face-smile</span>
+      <span class="se-txt">Any element with class <code>face-smile</code> nested inside the previous match.</span>
+      <span class="se-pill sel-prop" style="background:rgba(56,193,114,0.15); color:#86EFAC; border:1px solid rgba(56,193,114,0.25); font-family:'JetBrains Mono',monospace; font-size:11px; padding:2px 10px; border-radius:20px;">display: block</span>
+      <span class="se-txt">Make it visible. This rule only fires when ALL conditions are simultaneously true.</span>
+    </div>
+  </div>
+
+  <div class="callout callout-concept">
+    <b>💡 Read it in plain English</b>
+    "Find the element with id 'app' that currently has the class 's-email-ok'. Inside it, find anything with class 'face-smile'. Make it visible."<br><br>
+    The moment JS changes <code>#app</code>'s class to something else, this selector stops matching → smile disappears. No JS required to hide it. CSS reacts automatically.
+  </div>
+
+  <h3>Why higher specificity wins</h3>
+  <p>CSS has a scoring system for when two rules conflict. The more specific rule always wins:</p>
+  <table class="shape-table">
+    <thead><tr><th>Selector part</th><th>Points</th><th>Our example</th></tr></thead>
+    <tbody>
+      <tr><td>ID (#foo)</td><td>+100</td><td><code>#app</code> = 100</td></tr>
+      <tr><td>Class (.foo)</td><td>+10</td><td><code>.s-email-ok</code> = 10, <code>.face-smile</code> = 10</td></tr>
+      <tr><td>Element (div, p)</td><td>+1</td><td>none used here</td></tr>
+    </tbody>
+  </table>
+  <p>So <code>#app.s-email-ok .face-smile</code> = 120 points, vs the default <code>.face-smile { display:none }</code> = 10 points. The state rule always wins. No <code>!important</code> needed — specificity handles it.</p>
+</section>
+
+<!-- ══ CH6 STATE MACHINE ══ -->
+<section class="section" id="s6">
+  <div class="chapter-tag"><div class="chapter-num">6</div>Chapter 6</div>
+  <h2>The CSS State Machine — assembled</h2>
+  <p>One class on one element controls everything. CSS watches and reacts. JS only ever changes that one class.</p>
+  <div class="callout callout-analogy">
+    <b>🚦 Analogy — traffic lights</b>
+    A traffic light doesn't blend between colors. It has a state (Red / Amber / Green) and the active state determines what's shown. Our characters work exactly the same way. The state is the class on <code>#app</code>. CSS is the wiring.
+  </div>
+
+  <div class="code-wrap">
+    <span class="code-label">CSS — full state machine</span>
+    <button class="copy-btn" onclick="copyCode(this)">copy</button>
+<pre><span class="cm">/* ── Step 1: hide all non-default faces ── */</span>
+.<span class="fn">face-smile</span>, .<span class="fn">face-frown</span>,
+.<span class="fn">face-squint</span>, .<span class="fn">face-peek</span>  { <span class="kw">display</span>: none;  }
+.<span class="fn">face-neutral</span>               { <span class="kw">display</span>: block; }
+
+<span class="cm">/* ── Step 2: each state reveals its face ── */</span>
+<span class="tg">#app</span>.<span class="nb">s-email-ok</span>  .<span class="fn">face-neutral</span> { <span class="kw">display</span>: none;  }
+<span class="tg">#app</span>.<span class="nb">s-email-ok</span>  .<span class="fn">face-smile</span>   { <span class="kw">display</span>: block; }
+
+<span class="tg">#app</span>.<span class="nb">s-email-bad</span> .<span class="fn">face-neutral</span> { <span class="kw">display</span>: none;  }
+<span class="tg">#app</span>.<span class="nb">s-email-bad</span> .<span class="fn">face-frown</span>   { <span class="kw">display</span>: block; }
+
+<span class="tg">#app</span>.<span class="nb">s-password</span>  .<span class="fn">face-neutral</span> { <span class="kw">display</span>: none;  }
+<span class="tg">#app</span>.<span class="nb">s-password</span>  .<span class="fn">face-squint</span>  { <span class="kw">display</span>: block; }
+
+<span class="tg">#app</span>.<span class="nb">s-peek</span>      .<span class="fn">face-neutral</span> { <span class="kw">display</span>: none;  }
+<span class="tg">#app</span>.<span class="nb">s-peek</span>      .<span class="fn">face-peek</span>    { <span class="kw">display</span>: block; }
+
+<span class="cm">/* ── Step 3: arm positions per state ── */</span>
+<span class="tg">#app</span>.<span class="nb">s-password</span> .<span class="fn">arm-left</span>,
+<span class="tg">#app</span>.<span class="nb">s-password</span> .<span class="fn">arm-right</span>  { <span class="kw">transform</span>: translateY(<span class="nb">-190px</span>); }
+
+<span class="tg">#app</span>.<span class="nb">s-peek</span>     .<span class="fn">arm-left</span>    { <span class="kw">transform</span>: translateY(<span class="nb">-190px</span>); }
+<span class="tg">#app</span>.<span class="nb">s-peek</span>     .<span class="fn">arm-right</span>   { <span class="kw">transform</span>: translateY(<span class="nb">-80px</span>);  }
+
+<span class="cm">/* ── Step 4: success and error animations ── */</span>
+<span class="tg">#app</span>.<span class="nb">s-success</span>  .<span class="fn">face-neutral</span> { <span class="kw">display</span>: none;  }
+<span class="tg">#app</span>.<span class="nb">s-success</span>  .<span class="fn">face-smile</span>   { <span class="kw">display</span>: block; }
+<span class="tg">#app</span>.<span class="nb">s-success</span>  .<span class="fn">c-body</span>       { <span class="kw">animation</span>: bounce <span class="nb">0.8s</span> ease both; }
+
+<span class="tg">#app</span>.<span class="nb">s-error</span>    .<span class="fn">face-neutral</span> { <span class="kw">display</span>: none;  }
+<span class="tg">#app</span>.<span class="nb">s-error</span>    .<span class="fn">face-frown</span>   { <span class="kw">display</span>: block; }
+<span class="tg">#app</span>.<span class="nb">s-error</span>    .<span class="fn">c-body</span>       { <span class="kw">animation</span>: shake <span class="nb">0.5s</span> ease both; }</pre>
+  </div>
+
+  <h3>Live demo — click each state</h3>
+  <div class="playground">
+    <div class="pg-header"><div class="pg-dot" style="background:#f87171"></div><div class="pg-dot" style="background:#fbbf24"></div><div class="pg-dot" style="background:#34d399"></div>CSS State Machine</div>
+    <div style="padding:20px; background:var(--code-bg);">
+      <div class="sm-buttons">
+        <button class="sm-btn active" onclick="smSwitch(this,'👀 Waiting...','s-idle')">s-idle</button>
+        <button class="sm-btn" onclick="smSwitch(this,'👀 Curious!','s-email')">s-email</button>
+        <button class="sm-btn" onclick="smSwitch(this,'😊 Valid email!','s-ok')">s-email-ok</button>
+        <button class="sm-btn" onclick="smSwitch(this,'😞 Hmm...','s-error')">s-email-bad</button>
+      </div>
+      <div class="sm-display s-idle" id="smDisplay">👀 Waiting...</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ CH7 TRANSFORM ══ -->
+<section class="section" id="s7">
+  <div class="chapter-tag"><div class="chapter-num">7</div>Chapter 7</div>
+  <h2>Transform &amp; transition — moving the arms</h2>
+
+  <h3>transform: translateY()</h3>
+  <div class="annotated">
+    <div class="ann-code">#app.s-password .arm-left {
+  transform: translateY(-190px);
+}</div>
+    <table class="ann-table">
+      <tr><td>transform</td><td>CSS property that moves, rotates, or scales an element without affecting layout. Other elements don't reflow around the moving element.</td></tr>
+      <tr><td>translateY(-190px)</td><td>Move along the Y axis by -190px. Negative = upward. The exact value needs tuning for your SVG — use DevTools to live-edit it until hands cover eyes.</td></tr>
+    </table>
+  </div>
+
+  <div class="callout callout-warn">
+    <b>⚠️ The SVG transform gotcha — important</b>
+    In regular HTML, <code>transform-origin: center</code> pivots from the element's own center. In SVG, the default origin is (0,0) — the top-left corner of the <em>entire SVG canvas</em>. Rotating an arm would spin it around the wrong point entirely.<br><br>
+    Fix: add <code>transform-box: fill-box</code> to any SVG element you want to transform. This makes it behave like an HTML element — pivoting from its own bounding box.
+  </div>
+
+  <div class="code-wrap">
+    <span class="code-label">CSS — the critical two lines</span>
+    <button class="copy-btn" onclick="copyCode(this)">copy</button>
+<pre><span class="fn">.arm-left</span>, <span class="fn">.arm-right</span> {
+  <span class="kw">transform-box</span>:    fill-box;       <span class="cm">/* 🔑 pivot from own bounding box */</span>
+  <span class="kw">transform-origin</span>: center top;    <span class="cm">/* pivot point = top = "shoulder" */</span>
+  <span class="kw">transform</span>:        translateY(<span class="nb">0</span>);  <span class="cm">/* default position: arms at rest */</span>
+  <span class="kw">transition</span>:       transform <span class="nb">0.5s</span> <span class="fn">cubic-bezier</span>(<span class="nb">0.34</span>, <span class="nb">1.56</span>, <span class="nb">0.64</span>, <span class="nb">1</span>);
+}
+<span class="cm">/*                                ↑ spring curve — explained below */</span></pre>
+  </div>
+
+  <h3>The spring curve — decoded</h3>
+  <div class="annotated">
+    <div class="ann-code">transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);</div>
+    <table class="ann-table">
+      <tr><td>transform</td><td>Which CSS property to animate. Only animates when this property changes value.</td></tr>
+      <tr><td>0.5s</td><td>Duration — the animation takes half a second.</td></tr>
+      <tr><td>cubic-bezier(...)</td><td>The easing curve — controls how speed changes over the animation. Defined by two control points: (x1,y1) and (x2,y2).</td></tr>
+      <tr><td>Y values &gt; 1</td><td>Y values outside the 0–1 range create overshoot — the arm flies slightly past its target then snaps back. That's the spring feeling. <code>ease</code> = boring. This curve = alive.</td></tr>
+    </table>
+  </div>
+  <p>Explore any curve visually at <strong>cubic-bezier.com</strong> — type values and watch the graph.</p>
+</section>
+
+<!-- ══ CH8 JS ══ -->
+<section class="section" id="s8">
+  <div class="chapter-tag"><div class="chapter-num">8</div>Chapter 8</div>
+  <h2>JavaScript — event wiring</h2>
+  <p>JS has one job: listen to user actions, call <code>setState()</code>. No direct style changes. No DOM manipulation. Just class switching.</p>
+
+  <div class="annotated">
+    <div class="ann-code">const app      = document.getElementById('app');
+const emailInp = document.getElementById('emailInp');
+const setState = s => { app.className = 's-' + s; };</div>
+    <table class="ann-table">
+      <tr><td>getElementById</td><td>Finds an element by its <code>id</code> attribute. Returns the live DOM element — you can read its value, add listeners, etc.</td></tr>
+      <tr><td>app.className</td><td>A string containing the element's current CSS classes. Setting it replaces all existing classes. So <code>app.className = 's-email-ok'</code> removes the old class and sets the new one in one assignment.</td></tr>
+      <tr><td>'s-' + s</td><td>String concatenation. If <code>s</code> is <code>'email-ok'</code>, this produces <code>'s-email-ok'</code>. The prefix avoids naming collisions with other CSS classes.</td></tr>
+    </table>
+  </div>
+
+  <h3>addEventListener — the event system</h3>
+  <div class="annotated">
+    <div class="ann-code">emailInp.addEventListener('focus', () => {
+  setState('email');
+});
+
+emailInp.addEventListener('input', () => {
+  const ok = validEmail(emailInp.value);
+  setState(ok ? 'email-ok' : 'email');
+});
+
+emailInp.addEventListener('blur', () => {
+  if (!emailInp.value)  setState('idle');
+  else if (emailOk)     setState('email-ok');
+  else                  setState('email-bad');
+});</div>
+    <table class="ann-table">
+      <tr><td>addEventListener(event, fn)</td><td>Attaches a callback function to fire whenever the named event occurs on this element. Multiple listeners can be attached — they don't replace each other.</td></tr>
+      <tr><td>'focus'</td><td>Fires when the input gains focus — user clicks into it or tabs to it.</td></tr>
+      <tr><td>'input'</td><td>Fires on every keystroke while typing. Gives you the updated value immediately — unlike 'change' which only fires when focus leaves.</td></tr>
+      <tr><td>'blur'</td><td>Fires when the input loses focus — user clicks elsewhere or presses Tab.</td></tr>
+      <tr><td>() =&gt; { }</td><td>Arrow function — a compact way to write an anonymous function. Runs each time the event fires.</td></tr>
+      <tr><td>ok ? 'email-ok' : 'email'</td><td>Ternary operator — shorthand for if/else. If <code>ok</code> is true → returns 'email-ok', else → returns 'email'.</td></tr>
+    </table>
+  </div>
+
+  <div class="callout callout-concept">
+    <b>💡 Why 'input' not 'keydown'?</b>
+    <code>keydown</code> fires before the browser updates the input value. So reading <code>emailInp.value</code> inside it gives you the text before the key was pressed — always one character behind. <code>input</code> fires after the value is updated. Always use <code>input</code> for live validation.
+  </div>
+</section>
+
+<!-- ══ CH9 CURSOR MATH ══ -->
+<section class="section" id="s9">
+  <div class="chapter-tag"><div class="chapter-num">9</div>Chapter 9</div>
+  <h2>Cursor tracking — the vector math</h2>
+
+  <h3>Problem 1 — two coordinate systems</h3>
+  <p>Mouse position comes in screen pixels. SVG pupils live in SVG units. They're different scales. We must convert.</p>
+  <div class="annotated">
+    <div class="ann-code">const svg    = document.querySelector('.char-panel svg');
+const rect   = svg.getBoundingClientRect();  // screen position
+const vb     = svg.viewBox.baseVal;          // SVG units
+
+const scaleX = vb.width  / rect.width;   // SVG units per pixel
+const scaleY = vb.height / rect.height;
+
+// Convert mouse from screen pixels → SVG units
+const mxSvg = (e.clientX - rect.left) * scaleX;
+const mySvg = (e.clientY - rect.top)  * scaleY;</div>
+    <table class="ann-table">
+      <tr><td>getBoundingClientRect()</td><td>Returns the element's on-screen box: <code>{ left, top, width, height }</code> in screen pixels. Live — updates if the window resizes.</td></tr>
+      <tr><td>svg.viewBox.baseVal</td><td>The SVG's internal coordinate system. <code>baseVal.width</code> and <code>baseVal.height</code> are the viewBox dimensions in SVG units.</td></tr>
+      <tr><td>scaleX = 280 / 330px</td><td>If the SVG renders at 330px wide but has a 280-unit viewBox, then 1 pixel = 0.85 SVG units. This ratio is our conversion factor.</td></tr>
+      <tr><td>e.clientX - rect.left</td><td>Converts "distance from browser left edge" to "distance from SVG left edge." Subtracting the SVG's offset gives mouse position relative to the SVG.</td></tr>
+      <tr><td>* scaleX</td><td>Applies the scale factor. Result is in SVG units — the same coordinate system as our pupil positions.</td></tr>
+    </table>
+  </div>
+
+  <h3>Problem 2 — keeping pupils inside the eyeball</h3>
+  <p>If the pupil followed the mouse directly, it'd fly outside the white eyeball. We clamp the movement to a max radius using vector math:</p>
+  <div class="callout callout-analogy">
+    <b>🐕 Analogy — dog on a leash</b>
+    The pupil is a dog. The eye center is a post. The radius is the leash length. The dog can roam freely within leash range, but can't go further. The math finds "where on the leash is the dog right now?"
+  </div>
+
+  <div class="annotated">
+    <div class="ann-code">const dx    = mxSvg - ox;               // how far right is the mouse from eye center?
+const dy    = mySvg - oy;               // how far down?
+const dist  = Math.sqrt(dx*dx + dy*dy); // straight-line distance (Pythagoras)
+
+const clamp = Math.min(dist, range) / dist;  // 0.0 → 1.0
+
+el.setAttribute('cx', ox + dx * clamp);
+el.setAttribute('cy', oy + dy * clamp);</div>
+    <table class="ann-table">
+      <tr><td>dx, dy</td><td>The vector from eye center to mouse — how far in each axis direction. A "vector" just means a direction with a magnitude.</td></tr>
+      <tr><td>Math.sqrt(dx*dx + dy*dy)</td><td>Pythagoras' theorem: a²+b²=c². Gives the actual straight-line distance from eye center to mouse. E.g. if dx=3 and dy=4, distance = √(9+16) = 5.</td></tr>
+      <tr><td>Math.min(dist, range) / dist</td><td>If mouse is close (dist &lt; range): result = 1.0 → pupil goes exactly to mouse position. If mouse is far (dist &gt; range): result = range/dist &lt; 1.0 → pupil is clamped to the edge of the circle. Elegant: one line handles both cases.</td></tr>
+      <tr><td>ox + dx * clamp</td><td>Start at eye center (ox, oy), move toward the mouse (dx, dy), but only by the clamped fraction. Result is the new pupil position.</td></tr>
+      <tr><td>setAttribute('cx', ...)</td><td>Directly updates the SVG circle's <code>cx</code> attribute live. This bypasses CSS — the change is immediate. It's one of the few cases where we write to the DOM directly instead of through state classes.</td></tr>
+    </table>
+  </div>
+
+  <h3>See it live — move your mouse here</h3>
+  <div class="playground">
+    <div class="pg-header"><div class="pg-dot" style="background:#f87171"></div><div class="pg-dot" style="background:#fbbf24"></div><div class="pg-dot" style="background:#34d399"></div>Vector clamp demo — purple ring = max radius (the "leash")</div>
+    <div id="vec-demo"><canvas id="vec-canvas"></canvas></div>
+  </div>
+
+  <h3>Gate tracking by state</h3>
+  <div class="code-wrap">
+    <span class="code-label">JS</span>
+    <button class="copy-btn" onclick="copyCode(this)">copy</button>
+<pre><span class="cm">// Only track when characters can "see"</span>
+<span class="kw">const</span> TRACKING = <span class="kw">new</span> <span class="fn">Set</span>([<span class="st">'s-idle'</span>, <span class="st">'s-email'</span>, <span class="st">'s-email-ok'</span>]);
+
+document.<span class="fn">addEventListener</span>(<span class="st">'mousemove'</span>, e => {
+  <span class="kw">if</span> (!TRACKING.<span class="fn">has</span>(app.className)) {
+    <span class="cm">// Reset pupils to center when eyes are covered</span>
+    pupils.<span class="fn">forEach</span>(p => {
+      p.el.<span class="fn">setAttribute</span>(<span class="st">'cx'</span>, p.ox);
+      p.el.<span class="fn">setAttribute</span>(<span class="st">'cy'</span>, p.oy);
+    });
+    <span class="kw">return</span>; <span class="cm">// early exit — skip the tracking math</span>
+  }
+  <span class="cm">// ... coordinate mapping + clamp math here</span>
+});</pre>
+  </div>
+  <div class="callout callout-concept">
+    <b>💡 Why a Set instead of an array?</b>
+    <code>Set.has()</code> is O(1) — instant lookup regardless of size. <code>Array.includes()</code> is O(n) — it scans from the start. For an event firing 60 times per second (mousemove), tiny optimizations like this matter. Use Sets for membership checks, arrays for ordered sequences.
+  </div>
+</section>
+
+<!-- ══ CH10 CHECKLIST ══ -->
+<section class="section" id="s10">
+  <div class="chapter-tag">🏁 Finish line</div>
+  <h2>Build checklist</h2>
+  <ul class="checklist">
+    <li><div class="ci ci-done">✓</div><div><strong>SVG canvas.</strong> Create <code>&lt;svg viewBox="0 0 W H"&gt;</code>. Draw a body with <code>&lt;rect rx="..."&gt;</code>. Verify it renders.</div></li>
+    <li><div class="ci ci-done">✓</div><div><strong>Eyes.</strong> Two white <code>&lt;circle&gt;</code> for eyeballs. Two dark pupils — give each an <code>id</code> now. Don't skip the IDs.</div></li>
+    <li><div class="ci ci-done">✓</div><div><strong>Expressions in groups.</strong> Wrap each face in a <code>&lt;g class="face-X"&gt;</code>. Arms as <code>&lt;g class="arm-X"&gt;</code>. Arms go last in the HTML so they render on top.</div></li>
+    <li><div class="ci ci-done">✓</div><div><strong>CSS defaults.</strong> Hide all non-neutral faces. Add <code>transform-box: fill-box</code> + <code>transform-origin</code> + <code>transition</code> to arms.</div></li>
+    <li><div class="ci ci-done">✓</div><div><strong>CSS state machine.</strong> One block per state. <code>#app.s-X .face-Y { display: block }</code>. Arm transforms per state.</div></li>
+    <li><div class="ci ci-done">✓</div><div><strong>Form HTML.</strong> Two inputs, checkbox, two buttons. Unique <code>id</code> on every input.</div></li>
+    <li><div class="ci ci-next">→</div><div><strong>JS events.</strong> Email: focus / input / blur → setState. Password: focus / blur → setState. Toggle: flip type + setState.</div></li>
+    <li><div class="ci ci-next">→</div><div><strong>Cursor tracking.</strong> mousemove → convert coordinates → clamp to radius → setAttribute on pupils. Gate with TRACKING Set.</div></li>
+    <li><div class="ci ci-next">→</div><div><strong>Tune values.</strong> Use DevTools live CSS editing to find the right translateY for arms. Tweak bezier curve until arms feel springy.</div></li>
+    <li><div class="ci ci-next">→</div><div><strong>Polish.</strong> bounce + shake keyframes for success/error. Body lean on email focus. Check render order if arms appear behind eyes.</div></li>
+  </ul>
+
+  <div class="callout callout-concept" style="margin-top:28px;">
+    <b>🎯 The one thing to take away</b>
+    The whole system is: <strong>one class on one element → CSS reacts → JS only switches that class.</strong> If you ever find yourself writing JS that sets <code>style.display</code> or <code>style.transform</code> directly on multiple elements, stop. That's a sign you're missing a CSS state. Keep JS dumb. Keep CSS declarative. That's the pattern that scales.
+  </div>
+</section>
+
+</div>
+</main>
+
+<script>
+window.addEventListener('scroll', () => {
+  const t = document.documentElement.scrollHeight - window.innerHeight;
+  document.getElementById('progress-bar').style.width = (window.scrollY / t * 100) + '%';
+});
+const sects = document.querySelectorAll('.section, .hero');
+sects.forEach(s => new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      document.querySelectorAll('.toc-nav a').forEach(l => l.classList.remove('active'));
+      const l = document.querySelector(`.toc-nav a[href="#${e.target.id}"]`);
+      if (l) l.classList.add('active');
+    }
+  });
+}, { threshold: 0.3 }).observe(s));
+
+function copyCode(btn) {
+  const text = btn.closest('.code-wrap').querySelector('pre').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copied!'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 1800);
+  });
+}
+
+function runPg(id) {
+  const code = document.getElementById(id + '-code').value;
+  document.getElementById(id + '-preview').innerHTML = code;
+}
+document.querySelectorAll('.pg-editor').forEach(ed => {
+  const pgId = ed.id.replace('-code', '');
+  runPg(pgId);
+  ed.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) runPg(pgId); });
+});
+
+function smSwitch(btn, msg, cls) {
+  document.querySelectorAll('.sm-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const d = document.getElementById('smDisplay');
+  d.className = 'sm-display ' + cls;
+  d.textContent = msg;
+}
+
+const canvas = document.getElementById('vec-canvas');
+const ctx = canvas.getContext('2d');
+const vd = document.getElementById('vec-demo');
+function resize() { canvas.width = vd.offsetWidth; canvas.height = vd.offsetHeight; }
+resize(); window.addEventListener('resize', () => { resize(); draw(mx, my); });
+const EYES = [{ fx: 0.35, fy: 0.5, R: 32, pr: 11, range: 16 }, { fx: 0.65, fy: 0.5, R: 32, pr: 11, range: 16 }];
+let mx = canvas.width / 2, my = canvas.height / 2;
+function draw(mouseX, mouseY) {
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0,0,w,h); ctx.fillStyle='#0d0e10'; ctx.fillRect(0,0,w,h);
+  EYES.forEach(({ fx, fy, R, pr, range }) => {
+    const cx = fx*w, cy = fy*h;
+    ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
+    const dx=mouseX-cx, dy=mouseY-cy, dist=Math.sqrt(dx*dx+dy*dy)||1;
+    const c=Math.min(dist,range)/dist;
+    const px=cx+dx*c, py=cy+dy*c;
+    ctx.beginPath(); ctx.arc(cx,cy,range,0,Math.PI*2); ctx.strokeStyle='rgba(124,92,246,0.35)'; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(px,py); ctx.strokeStyle='rgba(124,92,246,0.5)'; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.beginPath(); ctx.arc(px,py,pr,0,Math.PI*2); ctx.fillStyle='#111'; ctx.fill();
+    ctx.beginPath(); ctx.arc(cx,cy,3,0,Math.PI*2); ctx.fillStyle='rgba(124,92,246,0.7)'; ctx.fill();
+  });
+}
+draw(mx, my);
+vd.addEventListener('mousemove', e => { const r=vd.getBoundingClientRect(); mx=e.clientX-r.left; my=e.clientY-r.top; draw(mx,my); });
+vd.addEventListener('mouseleave', () => { mx=canvas.width/2; my=canvas.height/2; draw(mx,my); });
+</script>
+</body>
+</html>

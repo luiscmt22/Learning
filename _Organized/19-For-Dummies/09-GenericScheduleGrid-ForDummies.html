@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>09-GenericScheduleGrid-ForDummies</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 19-For-Dummies</div>
+  <h1>09-GenericScheduleGrid-ForDummies</h1>
+  <div class="meta">Source: <code>Education/ForDummies/09-GenericScheduleGrid-ForDummies.md</code> &middot; <a href="09-GenericScheduleGrid-ForDummies.md">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<h1 id="generic-schedule-grid-for-dummies">Generic Schedule Grid - For Dummies</h1>
+<h2 id="the-real-world-problem">The Real-World Problem</h2>
+<p>We had a beautiful schedule grid that showed <strong>Employees on Jobs</strong>:</p>
+<pre><code class="lang-text">         | Mon 16 | Tue 17 | Wed 18 | Thu 19 |
+---------+--------+--------+--------+--------+
+Employee1| 08-17  |        | 08-17  |        |
+Employee2|        | 08-17  | 08-17  | 08-17  |</code></pre>
+<p>But then we needed:</p>
+<ul>
+<li><strong>Equipment on Jobs</strong> (same view, but equipment instead of employees)</li>
+<li><strong>Jobs on Employee</strong> (inverted: see all jobs where Employee X is assigned)</li>
+<li><strong>Jobs on Equipment</strong> (inverted: see all jobs where Equipment Y is assigned)</li>
+</ul>
+<p><strong>The naive approach:</strong> Copy-paste the 2000+ line JobsScheduleView.razor four times.</p>
+<p><strong>The problem:</strong></p>
+<ul>
+<li>8000+ lines to maintain</li>
+<li>Bug fix? Fix it in 4 places</li>
+<li>Feature request? Add it in 4 places</li>
+<li>Nightmare!</li>
+</ul>
+<p><strong>The smart approach:</strong> One generic component that works for ALL four views.</p>
+<hr>
+<h2 id="what-we-built">What We Built</h2>
+<div class="diagram-box"><pre>┌─────────────────────────────────────────────────────────────────┐
+│              GenericScheduleGrid&lt;TSchedule&gt;                      │
+│                                                                  │
+│   &quot;I don&#x27;t care WHAT you&#x27;re scheduling.                         │
+│    Just tell me HOW to get the data.&quot;                           │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+           Uses DataProvider to load/save data
+                              │
+┌──────────────┬──────────────┬──────────────┬──────────────┐
+│ JobEmployee  │ JobEquipment │ EmployeeJob  │ EquipmentJob │
+│ DataProvider │ DataProvider │ DataProvider │ DataProvider │
+│              │              │              │              │
+│ Job→Employees│ Job→Equipment│ Emp→Jobs     │ Equip→Jobs   │
+└──────────────┴──────────────┴──────────────┴──────────────┘</pre></div>
+<hr>
+<h2 id="the-four-views">The Four Views</h2>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>View</th>
+<th>Where It&#x27;s Used</th>
+<th>Fixed Axis</th>
+<th>Rows</th>
+<th>Columns</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Job → Employees</strong></td>
+<td>Jobs.razor (Schedule tab)</td>
+<td>Job</td>
+<td>Employees</td>
+<td>Days</td>
+</tr>
+<tr>
+<td><strong>Job → Equipment</strong></td>
+<td>Jobs.razor (toggle)</td>
+<td>Job</td>
+<td>Equipment</td>
+<td>Days</td>
+</tr>
+<tr>
+<td><strong>Employee → Jobs</strong></td>
+<td>ColaboradoresDetalhe.razor</td>
+<td>Employee</td>
+<td>Jobs</td>
+<td>Days</td>
+</tr>
+<tr>
+<td><strong>Equipment → Jobs</strong></td>
+<td>EquipamentoDetalhe.razor</td>
+<td>Equipment</td>
+<td>Jobs</td>
+<td>Days</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="how-it-works">How It Works</h2>
+<h3 id="step-1-the-data-provider-contract">Step 1: The Data Provider Contract</h3>
+<p>Every data provider &quot;signs a contract&quot; promising to implement these methods:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">interface</span> <span class="type">IScheduleGridDataProvider</span>&lt;<span class="type">TSchedule</span>&gt;
+{
+    <span class="cmt">// &quot;Tell me who goes in the rows&quot;</span>
+    <span class="type">Task</span>&lt;<span class="type">List</span>&lt;<span class="type">IScheduleGridRow</span>&gt;&gt; <span class="type">GetRowsAsync</span>(<span class="kw">int</span> contextId, <span class="kw">string</span> companyDatabase);
+
+    <span class="cmt">// &quot;Tell me the schedules for the date range&quot;</span>
+    <span class="type">Task</span>&lt;<span class="type">List</span>&lt;<span class="type">TSchedule</span>&gt;&gt; <span class="type">GetSchedulesAsync</span>(<span class="kw">int</span> contextId, <span class="type">DateTime</span> start, <span class="type">DateTime</span> end, ...);
+
+    <span class="cmt">// &quot;Create a new schedule when user clicks a cell&quot;</span>
+    <span class="type">TSchedule</span> <span class="type">CreateNewSchedule</span>(<span class="kw">int</span> contextId, <span class="kw">int</span> rowId, <span class="kw">string</span> rowLabel, <span class="type">DateTime</span> date);
+
+    <span class="cmt">// &quot;Save this schedule&quot;</span>
+    <span class="type">Task</span>&lt;<span class="type">ServiceResult</span>&gt; <span class="type">CreateScheduleAsync</span>(<span class="type">TSchedule</span> schedule, ...);
+    <span class="type">Task</span>&lt;<span class="type">ServiceResult</span>&gt; <span class="type">UpdateScheduleAsync</span>(<span class="type">TSchedule</span> schedule, ...);
+    <span class="type">Task</span>&lt;<span class="type">ServiceResult</span>&gt; <span class="type">DeleteScheduleAsync</span>(<span class="kw">int</span> scheduleId, ...);
+}</code></pre>
+<h3 id="step-2-each-view-has-its-own-provider">Step 2: Each View Has Its Own Provider</h3>
+<p><strong>JobEmployeeScheduleDataProvider</strong> (Job → Employees):</p>
+<pre><code class="lang-csharp"><span class="cmt">// GetRowsAsync returns: Employees assigned to this Job</span>
+<span class="kw">var</span> employees = context.<span class="type">Set</span>&lt;<span class="type">JobEmployee</span>&gt;()
+    .<span class="type">Where</span>(je =&gt; je.<span class="type">JobId</span> == jobId &amp;&amp; je.<span class="type">IsActive</span>)
+    .<span class="type">Select</span>(je =&gt; je.<span class="type">Employee</span>)
+    .<span class="type">ToList</span>();
+
+<span class="cmt">// GetSchedulesAsync queries: JobSchedule table</span>
+<span class="kw">var</span> schedules = context.<span class="type">Set</span>&lt;<span class="type">JobSchedule</span>&gt;()
+    .<span class="type">Where</span>(s =&gt; s.<span class="type">JobId</span> == jobId &amp;&amp; s.<span class="type">ScheduleDate</span> &gt;= start &amp;&amp; s.<span class="type">ScheduleDate</span> &lt;= end)
+    .<span class="type">ToList</span>();</code></pre>
+<p><strong>EmployeeJobScheduleDataProvider</strong> (Employee → Jobs):</p>
+<pre><code class="lang-csharp"><span class="cmt">// GetRowsAsync returns: Jobs where this Employee is assigned</span>
+<span class="kw">var</span> jobs = context.<span class="type">Set</span>&lt;<span class="type">JobEmployee</span>&gt;()
+    .<span class="type">Where</span>(je =&gt; je.<span class="type">EmployeeId</span> == employeeId &amp;&amp; je.<span class="type">IsActive</span>)
+    .<span class="type">Select</span>(je =&gt; je.<span class="type">Job</span>)
+    .<span class="type">ToList</span>();
+
+<span class="cmt">// GetSchedulesAsync queries: Same JobSchedule table, different filter</span>
+<span class="kw">var</span> schedules = context.<span class="type">Set</span>&lt;<span class="type">JobSchedule</span>&gt;()
+    .<span class="type">Where</span>(s =&gt; s.<span class="type">EmployeeId</span> == employeeId &amp;&amp; s.<span class="type">ScheduleDate</span> &gt;= start &amp;&amp; ...)
+    .<span class="type">ToList</span>();</code></pre>
+<h3 id="step-3-the-generic-grid-uses-the-provider">Step 3: The Generic Grid Uses the Provider</h3>
+<pre><code class="lang-razor">&lt;<span class="type">GenericScheduleGrid</span> <span class="type">TSchedule</span>=<span class="str">&quot;JobSchedule&quot;</span>
+                    <span class="type">ContextId</span>=<span class="str">&quot;@JobId&quot;</span>
+                    <span class="type">DataProvider</span>=<span class="str">&quot;@_dataProvider&quot;</span>
+                    <span class="type">CompanyDatabase</span>=<span class="str">&quot;@CompanyDb&quot;</span>
+                    <span class="type">UserId</span>=<span class="str">&quot;@UserId&quot;</span> /&gt;</code></pre>
+<p>The grid doesn&#x27;t know or care about:</p>
+<ul>
+<li>What type of entity the rows represent</li>
+<li>Where the schedules are stored</li>
+<li>The specific database queries</li>
+</ul>
+<p>It just asks the provider: &quot;Give me rows&quot; and &quot;Give me schedules.&quot;</p>
+<hr>
+<h2 id="the-row-abstraction">The Row Abstraction</h2>
+<p>Every row (Employee, Equipment, or Job) looks the same to the grid:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">interface</span> <span class="type">IScheduleGridRow</span>
+{
+    <span class="kw">int</span> <span class="type">RowId</span> { <span class="kw">get</span>; }              <span class="cmt">// Employee 123, Equipment 456, Job 789</span>
+    <span class="kw">string</span> <span class="type">RowLabel</span> { <span class="kw">get</span>; }         <span class="cmt">// &quot;John Doe&quot;, &quot;Excavator-001&quot;, &quot;Project Alpha&quot;</span>
+    <span class="kw">string</span> <span class="type">RowIcon</span> { <span class="kw">get</span>; }          <span class="cmt">// &quot;person&quot;, &quot;build&quot;, &quot;work&quot;</span>
+    <span class="kw">string</span>? <span class="type">RowSecondaryLabel</span> { <span class="kw">get</span>; } <span class="cmt">// Optional subtitle</span>
+    <span class="kw">string</span> <span class="type">NavigationUrl</span> { <span class="kw">get</span>; }    <span class="cmt">// &quot;/employees/123&quot;, &quot;/equipments/456&quot;</span>
+}</code></pre>
+<p>The grid renders:</p>
+<pre><code class="lang-text">[icon] RowLabel        | Mon | Tue | Wed | Thu |
+       RowSecondaryLabel</code></pre>
+<hr>
+<h2 id="wrapper-components-the-easy-part">Wrapper Components (The Easy Part)</h2>
+<p>We create thin &quot;wrapper&quot; components that configure the generic grid:</p>
+<p><strong>JobEmployeeScheduleTab.razor:</strong></p>
+<pre><code class="lang-razor">@inject <span class="type">JobEmployeeScheduleDataProvider</span> <span class="type">DataProvider</span>
+
+&lt;<span class="type">GenericScheduleGrid</span> <span class="type">TSchedule</span>=<span class="str">&quot;JobSchedule&quot;</span>
+                    <span class="type">ContextId</span>=<span class="str">&quot;@JobId&quot;</span>
+                    <span class="type">DataProvider</span>=<span class="str">&quot;@DataProvider&quot;</span>
+                    <span class="type">RowHeaderLabel</span>=<span class="str">&quot;Colaborador&quot;</span> /&gt;
+
+@code {
+    [<span class="type">Parameter</span>] <span class="kw">public</span> <span class="kw">int</span> <span class="type">JobId</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="cmt">// ... other parameters</span>
+}</code></pre>
+<p><strong>EmployeeScheduleTab.razor:</strong></p>
+<pre><code class="lang-razor">@inject <span class="type">EmployeeJobScheduleDataProvider</span> <span class="type">DataProvider</span>
+
+&lt;<span class="type">GenericScheduleGrid</span> <span class="type">TSchedule</span>=<span class="str">&quot;JobSchedule&quot;</span>
+                    <span class="type">ContextId</span>=<span class="str">&quot;@EmployeeId&quot;</span>
+                    <span class="type">DataProvider</span>=<span class="str">&quot;@DataProvider&quot;</span>
+                    <span class="type">RowHeaderLabel</span>=<span class="str">&quot;Obra&quot;</span> /&gt;
+
+@code {
+    [<span class="type">Parameter</span>] <span class="kw">public</span> <span class="kw">int</span> <span class="type">EmployeeId</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="cmt">// ... other parameters</span>
+}</code></pre>
+<p><strong>The magic:</strong> Same grid component, different providers, different views!</p>
+<hr>
+<h2 id="where-to-find-each-piece">Where To Find Each Piece</h2>
+<h3 id="data-providers">Data Providers</h3>
+<div class="diagram-box"><pre>Services/Core/Scheduling/DataProviders/
+├── JobEmployeeScheduleDataProvider.cs    (Job → Employees)
+├── JobEquipmentScheduleDataProvider.cs   (Job → Equipment)
+├── EmployeeJobScheduleDataProvider.cs    (Employee → Jobs)
+└── EquipmentJobScheduleDataProvider.cs   (Equipment → Jobs)</pre></div>
+<h3 id="contracts">Contracts</h3>
+<div class="diagram-box"><pre>Services/Core/Scheduling/Contracts/
+├── IScheduleGridDataProvider.cs          (Data provider interface)
+├── IScheduleGridRow.cs                   (Row abstraction)
+└── IScheduleEntry.cs                     (Schedule entry interface)</pre></div>
+<h3 id="ui-components">UI Components</h3>
+<div class="diagram-box"><pre>Pages/Shared/Scheduling/
+├── GenericScheduleGrid.razor             (The main component)
+└── GenericScheduleEditDialog.razor       (Edit dialog)
+
+Pages/Jobs/Components/
+├── JobEmployeeScheduleTab.razor          (Wrapper for Jobs page)
+└── JobEquipmentScheduleTab.razor         (Wrapper for Jobs page)
+
+Pages/HR/EmployeeManagement/Components/
+└── EmployeeScheduleTab.razor             (Wrapper for Employee detail)
+
+Pages/Equipments/Components/
+└── EquipmentScheduleTab.razor            (Wrapper for Equipment detail)</pre></div>
+<h3 id="integration-points">Integration Points</h3>
+<pre><code class="lang-text">Pages/Jobs/Jobs.razor                     (Toggle between Employee/Equipment)
+Pages/HR/EmployeeManagement/ColaboradoresDetalhe.razor  (Horários tab)
+Pages/Equipments/EquipamentoDetalhe.razor              (Horários tab)</code></pre>
+<hr>
+<h2 id="adding-a-new-view-example-teams-employees">Adding a New View (Example: Teams → Employees)</h2>
+<p>Want to show which employees are in a team, with their schedules?</p>
+<p><strong>Step 1:</strong> Create the provider</p>
+<pre><code class="lang-csharp"><span class="cmt">// Services/Core/Scheduling/DataProviders/TeamEmployeeScheduleDataProvider.cs</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">TeamEmployeeScheduleDataProvider</span> : <span class="type">IScheduleGridDataProvider</span>&lt;<span class="type">TeamSchedule</span>&gt;
+{
+    <span class="kw">public</span> <span class="kw">string</span> <span class="type">EntityType</span> =&gt; <span class="str">&quot;Team&quot;</span>;
+
+    <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="type">List</span>&lt;<span class="type">IScheduleGridRow</span>&gt;&gt; <span class="type">GetRowsAsync</span>(<span class="kw">int</span> teamId, ...)
+    {
+        <span class="cmt">// Query TeamMembers to get employees in this team</span>
+    }
+
+    <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="type">List</span>&lt;<span class="type">TeamSchedule</span>&gt;&gt; <span class="type">GetSchedulesAsync</span>(<span class="kw">int</span> teamId, ...)
+    {
+        <span class="cmt">// Query team schedules</span>
+    }
+
+    <span class="cmt">// ... other methods</span>
+}</code></pre>
+<p><strong>Step 2:</strong> Register in Program.cs</p>
+<pre><code class="lang-csharp">builder.<span class="type">Services</span>.<span class="type">AddScoped</span>&lt;<span class="type">TeamEmployeeScheduleDataProvider</span>&gt;();</code></pre>
+<p><strong>Step 3:</strong> Create wrapper component</p>
+<pre><code class="lang-razor">@inject <span class="type">TeamEmployeeScheduleDataProvider</span> <span class="type">DataProvider</span>
+
+&lt;<span class="type">GenericScheduleGrid</span> <span class="type">TSchedule</span>=<span class="str">&quot;TeamSchedule&quot;</span>
+                    <span class="type">ContextId</span>=<span class="str">&quot;@TeamId&quot;</span>
+                    <span class="type">DataProvider</span>=<span class="str">&quot;@DataProvider&quot;</span>
+                    <span class="type">RowHeaderLabel</span>=<span class="str">&quot;Membro&quot;</span> /&gt;</code></pre>
+<p><strong>Step 4:</strong> Add to your page</p>
+<p>Done! No changes to GenericScheduleGrid.razor needed.</p>
+<hr>
+<h2 id="key-concepts">Key Concepts</h2>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Concept</th>
+<th>What It Means</th>
+<th>Example</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>ContextId</strong></td>
+<td>The &quot;fixed axis&quot; entity</td>
+<td>JobId, EmployeeId, EquipmentId</td>
+</tr>
+<tr>
+<td><strong>RowId</strong></td>
+<td>What appears in each row</td>
+<td>EmployeeId, JobId</td>
+</tr>
+<tr>
+<td><strong>DataProvider</strong></td>
+<td>Knows how to fetch/save data</td>
+<td>JobEmployeeScheduleDataProvider</td>
+</tr>
+<tr>
+<td><strong>TSchedule</strong></td>
+<td>The schedule entity type</td>
+<td>JobSchedule, JobEquipmentSchedule</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="why-this-design-rocks">Why This Design Rocks</h2>
+<h3 id="before-without-abstraction">Before (Without Abstraction)</h3>
+<ul>
+<li>4 separate schedule components</li>
+<li>8000+ lines of duplicated code</li>
+<li>Bug fix = edit 4 files</li>
+<li>New feature = implement 4 times</li>
+</ul>
+<h3 id="after-with-generic-grid">After (With Generic Grid)</h3>
+<ul>
+<li>1 schedule component + 4 thin providers</li>
+<li>~1500 lines total</li>
+<li>Bug fix = edit 1 file</li>
+<li>New feature = implement once</li>
+</ul>
+<h3 id="adding-new-entity-types">Adding New Entity Types</h3>
+<p>Before: Copy-paste entire component, rename everything, pray you didn&#x27;t miss anything</p>
+<p>After:</p>
+<ol>
+<li>Create new DataProvider (~200 lines)</li>
+<li>Create wrapper component (~30 lines)</li>
+<li>Register in DI</li>
+<li>Use it!</li>
+</ol>
+<hr>
+<h2 id="the-schedule-entry-interface">The Schedule Entry Interface</h2>
+<p>Both <code class="il">JobSchedule</code> and <code class="il">JobEquipmentSchedule</code> implement:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">interface</span> <span class="type">IScheduleEntry</span>
+{
+    <span class="kw">int</span> <span class="type">Id</span> { <span class="kw">get</span>; }
+    <span class="kw">int</span> <span class="type">JobId</span> { <span class="kw">get</span>; }
+    <span class="kw">int</span> <span class="type">EntityId</span> { <span class="kw">get</span>; }           <span class="cmt">// EmployeeId OR EquipmentId</span>
+    <span class="type">DateTime</span> <span class="type">ScheduleDate</span> { <span class="kw">get</span>; }
+    <span class="type">DateTime</span>? <span class="type">EndDate</span> { <span class="kw">get</span>; }
+    <span class="type">TimeSpan</span>? <span class="type">CheckInTime</span> { <span class="kw">get</span>; }
+    <span class="type">TimeSpan</span>? <span class="type">CheckOutTime</span> { <span class="kw">get</span>; }
+
+    <span class="cmt">// Computed properties</span>
+    <span class="kw">bool</span> <span class="type">IsCrossMidnightShift</span> { <span class="kw">get</span>; }
+    <span class="kw">decimal</span> <span class="type">CalculatedTotalHours</span> { <span class="kw">get</span>; }
+    <span class="kw">bool</span> <span class="type">OverlapsWith</span>(<span class="type">IScheduleEntry</span> other);
+}</code></pre>
+<p>This means the generic grid can:</p>
+<ul>
+<li>Display any schedule type in cells</li>
+<li>Calculate hours</li>
+<li>Detect overlaps</li>
+<li>Handle cross-midnight shifts</li>
+</ul>
+<p>All without knowing if it&#x27;s an employee or equipment schedule!</p>
+<hr>
+<h2 id="quick-reference">Quick Reference</h2>
+<p><strong>Want to show Employees on a Job?</strong> → Use <code class="il">JobEmployeeScheduleTab</code> with <code class="il">JobId</code></p>
+<p><strong>Want to show Equipment on a Job?</strong> → Use <code class="il">JobEquipmentScheduleTab</code> with <code class="il">JobId</code></p>
+<p><strong>Want to show Jobs for an Employee?</strong> → Use <code class="il">EmployeeScheduleTab</code> with <code class="il">EmployeeId</code></p>
+<p><strong>Want to show Jobs for Equipment?</strong> → Use <code class="il">EquipmentScheduleTab</code> with <code class="il">EquipmentId</code></p>
+<hr>
+<h2 id="remember">Remember</h2>
+<ol>
+<li><strong>The grid is generic</strong> - It works with any schedule type</li>
+<li><strong>Providers do the work</strong> - They know WHERE the data lives</li>
+<li><strong>Wrappers are thin</strong> - Just configuration, no logic</li>
+<li><strong>One codebase</strong> - Fix once, works everywhere</li>
+<li><strong>Extensible</strong> - New views = new provider, not new grid</li>
+</ol>
+</div>
+</body>
+</html>

@@ -1,0 +1,859 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>11-SignalR-Real-Time-Communication</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 09-Realtime-SignalR</div>
+  <h1>11-SignalR-Real-Time-Communication</h1>
+  <div class="meta">Source: <code>Education/11-SignalR-Real-Time-Communication.md</code> &middot; <a href="11-SignalR-Real-Time-Communication.md">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<h1 id="signalr-real-time-communication-in-blazor-server">SignalR Real-Time Communication in Blazor Server</h1>
+<blockquote><strong>Level</strong>: Intermediate to Advanced<br><strong>Topic</strong>: Real-time updates using SignalR Hubs and Groups</blockquote>
+<h2 id="what-is-signalr">What is SignalR?</h2>
+<p>SignalR is a library for adding <strong>real-time</strong> web functionality to applications. It enables server-side code to push content to connected clients instantly, rather than requiring clients to poll for updates.</p>
+<h3 id="key-concepts">Key Concepts</h3>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Concept</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Hub</strong></td>
+<td>Server-side class that handles connections and messages</td>
+</tr>
+<tr>
+<td><strong>Connection</strong></td>
+<td>A single client connected to the hub</td>
+</tr>
+<tr>
+<td><strong>Group</strong></td>
+<td>A named collection of connections that receive messages together</td>
+</tr>
+<tr>
+<td><strong>Client</strong></td>
+<td>The browser/component receiving messages</td>
+</tr>
+</tbody></table></div>
+<h3 id="how-signalr-works">How SignalR Works</h3>
+<div class="diagram-box"><pre>┌─────────────────────────────────────────────────────────────────────────┐
+│                            SERVER                                       │
+│                                                                         │
+│   ┌───────────────────────────────────────────────────────────────┐     │
+│   │                     SignalR Hub                               │     │
+│   │                                                               │     │
+│   │  Groups:                                                      │     │
+│   │  ┌─────────────────────┐  ┌─────────────────────┐             │     │
+│   │  │ CompanyAttendance_1 │  │ TeamAttendance_5_1  │             │     │
+│   │  │  - Connection A     │  │  - Connection C     │             │     │
+│   │  │  - Connection B     │  │                     │             │     │
+│   │  └─────────────────────┘  └─────────────────────┘             │     │
+│   └───────────────────────────────────────────────────────────────┘     │
+│                    │                    │                               │
+└────────────────────┼────────────────────┼───────────────────────────────┘
+                     │                    │
+        ┌────────────┴────────┐           │
+        │                     │           │
+        ▼                     ▼           ▼
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│   Client A   │    │   Client B   │    │   Client C   │
+│  (Admin UI)  │    │  (Admin UI)  │    │ (Manager UI) │
+└──────────────┘    └──────────────┘    └──────────────┘</pre></div>
+<h2 id="step-by-step-implementation">Step-by-Step Implementation</h2>
+<h3 id="step-1-create-the-hub">Step 1: Create the Hub</h3>
+<p>The Hub is the server-side endpoint that clients connect to.</p>
+<pre><code class="lang-csharp"><span class="cmt">// Services/MyFeature/Hubs/MyFeatureHub.cs</span>
+<span class="kw">using</span> <span class="type">Microsoft</span>.<span class="type">AspNetCore</span>.<span class="type">SignalR</span>;
+
+<span class="kw">namespace</span> <span class="type">MyApp</span>.<span class="type">Services</span>.<span class="type">MyFeature</span>.<span class="type">Hubs</span>
+{
+    <span class="kw">public</span> <span class="kw">class</span> <span class="type">MyFeatureHub</span> : <span class="type">Hub</span>
+    {
+        <span class="kw">private</span> <span class="kw">readonly</span> <span class="type">ILogger</span>&lt;<span class="type">MyFeatureHub</span>&gt; _logger;
+
+        <span class="kw">public</span> <span class="type">MyFeatureHub</span>(<span class="type">ILogger</span>&lt;<span class="type">MyFeatureHub</span>&gt; logger)
+        {
+            _logger = logger;
+        }
+
+        #region <span class="type">Connection</span> <span class="type">Lifecycle</span>
+
+        <span class="kw">public</span> <span class="kw">override</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">OnConnectedAsync</span>()
+        {
+            _logger.<span class="type">LogInformation</span>(<span class="str">&quot;Client connected: {ConnectionId}&quot;</span>, <span class="type">Context</span>.<span class="type">ConnectionId</span>);
+            <span class="kw">await</span> <span class="kw">base</span>.<span class="type">OnConnectedAsync</span>();
+        }
+
+        <span class="kw">public</span> <span class="kw">override</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">OnDisconnectedAsync</span>(<span class="type">Exception</span>? exception)
+        {
+            <span class="kw">if</span> (exception != <span class="kw">null</span>)
+            {
+                _logger.<span class="type">LogError</span>(exception, <span class="str">&quot;Client disconnected with error: {ConnectionId}&quot;</span>, <span class="type">Context</span>.<span class="type">ConnectionId</span>);
+            }
+            <span class="kw">else</span>
+            {
+                _logger.<span class="type">LogInformation</span>(<span class="str">&quot;Client disconnected: {ConnectionId}&quot;</span>, <span class="type">Context</span>.<span class="type">ConnectionId</span>);
+            }
+            <span class="kw">await</span> <span class="kw">base</span>.<span class="type">OnDisconnectedAsync</span>(exception);
+        }
+
+        #endregion
+
+        #region <span class="type">Group</span> <span class="type">Management</span>
+
+        <span class="cmt">/// &lt;summary&gt;</span>
+        <span class="cmt">/// Join a company-wide group (all users in a company receive updates)</span>
+        <span class="cmt">/// &lt;/summary&gt;</span>
+        <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">JoinCompanyGroup</span>(<span class="kw">int</span> companyId)
+        {
+            <span class="kw">var</span> groupName = $<span class="str">&quot;Company_{companyId}&quot;</span>;
+            <span class="kw">await</span> <span class="type">Groups</span>.<span class="type">AddToGroupAsync</span>(<span class="type">Context</span>.<span class="type">ConnectionId</span>, groupName);
+            _logger.<span class="type">LogInformation</span>(<span class="str">&quot;Connection {ConnectionId} joined group {GroupName}&quot;</span>,
+                <span class="type">Context</span>.<span class="type">ConnectionId</span>, groupName);
+
+            <span class="cmt">// Optionally confirm to the client</span>
+            <span class="kw">await</span> <span class="type">Clients</span>.<span class="type">Caller</span>.<span class="type">SendAsync</span>(<span class="str">&quot;JoinedGroup&quot;</span>, <span class="kw">new</span> { groupName });
+        }
+
+        <span class="cmt">/// &lt;summary&gt;</span>
+        <span class="cmt">/// Leave a company group</span>
+        <span class="cmt">/// &lt;/summary&gt;</span>
+        <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">LeaveCompanyGroup</span>(<span class="kw">int</span> companyId)
+        {
+            <span class="kw">var</span> groupName = $<span class="str">&quot;Company_{companyId}&quot;</span>;
+            <span class="kw">await</span> <span class="type">Groups</span>.<span class="type">RemoveFromGroupAsync</span>(<span class="type">Context</span>.<span class="type">ConnectionId</span>, groupName);
+            _logger.<span class="type">LogInformation</span>(<span class="str">&quot;Connection {ConnectionId} left group {GroupName}&quot;</span>,
+                <span class="type">Context</span>.<span class="type">ConnectionId</span>, groupName);
+        }
+
+        <span class="cmt">/// &lt;summary&gt;</span>
+        <span class="cmt">/// Join a team-specific group (only team members receive updates)</span>
+        <span class="cmt">/// &lt;/summary&gt;</span>
+        <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">JoinTeamGroup</span>(<span class="kw">int</span> managerId, <span class="kw">int</span> companyId)
+        {
+            <span class="kw">var</span> groupName = $<span class="str">&quot;Team_{managerId}_{companyId}&quot;</span>;
+            <span class="kw">await</span> <span class="type">Groups</span>.<span class="type">AddToGroupAsync</span>(<span class="type">Context</span>.<span class="type">ConnectionId</span>, groupName);
+            _logger.<span class="type">LogInformation</span>(<span class="str">&quot;Connection {ConnectionId} joined team group {GroupName}&quot;</span>,
+                <span class="type">Context</span>.<span class="type">ConnectionId</span>, groupName);
+        }
+
+        <span class="cmt">/// &lt;summary&gt;</span>
+        <span class="cmt">/// Leave a team group</span>
+        <span class="cmt">/// &lt;/summary&gt;</span>
+        <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">LeaveTeamGroup</span>(<span class="kw">int</span> managerId, <span class="kw">int</span> companyId)
+        {
+            <span class="kw">var</span> groupName = $<span class="str">&quot;Team_{managerId}_{companyId}&quot;</span>;
+            <span class="kw">await</span> <span class="type">Groups</span>.<span class="type">RemoveFromGroupAsync</span>(<span class="type">Context</span>.<span class="type">ConnectionId</span>, groupName);
+        }
+
+        #endregion
+    }
+}</code></pre>
+<h3 id="step-2-create-the-hub-service">Step 2: Create the Hub Service</h3>
+<p>The Hub Service is used by other services to send notifications. It uses <code class="il">IHubContext&lt;T&gt;</code> to send messages without needing a direct connection.</p>
+<pre><code class="lang-csharp"><span class="cmt">// Services/MyFeature/MyFeatureHubService.cs</span>
+<span class="kw">using</span> <span class="type">Microsoft</span>.<span class="type">AspNetCore</span>.<span class="type">SignalR</span>;
+<span class="kw">using</span> <span class="type">MyApp</span>.<span class="type">Services</span>.<span class="type">MyFeature</span>.<span class="type">Hubs</span>;
+
+<span class="kw">namespace</span> <span class="type">MyApp</span>.<span class="type">Services</span>.<span class="type">MyFeature</span>
+{
+    <span class="kw">public</span> <span class="kw">interface</span> <span class="type">IMyFeatureHubService</span>
+    {
+        <span class="type">Task</span> <span class="type">NotifyItemCreatedAsync</span>(<span class="kw">int</span> companyId, <span class="kw">int</span>? teamManagerId, <span class="type">ItemDto</span> item);
+        <span class="type">Task</span> <span class="type">NotifyItemUpdatedAsync</span>(<span class="kw">int</span> companyId, <span class="kw">int</span>? teamManagerId, <span class="type">ItemDto</span> item);
+        <span class="type">Task</span> <span class="type">NotifyItemDeletedAsync</span>(<span class="kw">int</span> companyId, <span class="kw">int</span>? teamManagerId, <span class="kw">int</span> itemId);
+    }
+
+    <span class="kw">public</span> <span class="kw">class</span> <span class="type">MyFeatureHubService</span> : <span class="type">IMyFeatureHubService</span>
+    {
+        <span class="kw">private</span> <span class="kw">readonly</span> <span class="type">IHubContext</span>&lt;<span class="type">MyFeatureHub</span>&gt; _hubContext;
+        <span class="kw">private</span> <span class="kw">readonly</span> <span class="type">ILogger</span>&lt;<span class="type">MyFeatureHubService</span>&gt; _logger;
+
+        <span class="kw">public</span> <span class="type">MyFeatureHubService</span>(
+            <span class="type">IHubContext</span>&lt;<span class="type">MyFeatureHub</span>&gt; hubContext,
+            <span class="type">ILogger</span>&lt;<span class="type">MyFeatureHubService</span>&gt; logger)
+        {
+            _hubContext = hubContext;
+            _logger = logger;
+        }
+
+        <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">NotifyItemCreatedAsync</span>(<span class="kw">int</span> companyId, <span class="kw">int</span>? teamManagerId, <span class="type">ItemDto</span> item)
+        {
+            <span class="kw">await</span> <span class="type">NotifyAsync</span>(companyId, teamManagerId, <span class="str">&quot;ItemCreated&quot;</span>, item);
+        }
+
+        <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">NotifyItemUpdatedAsync</span>(<span class="kw">int</span> companyId, <span class="kw">int</span>? teamManagerId, <span class="type">ItemDto</span> item)
+        {
+            <span class="kw">await</span> <span class="type">NotifyAsync</span>(companyId, teamManagerId, <span class="str">&quot;ItemUpdated&quot;</span>, item);
+        }
+
+        <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">NotifyItemDeletedAsync</span>(<span class="kw">int</span> companyId, <span class="kw">int</span>? teamManagerId, <span class="kw">int</span> itemId)
+        {
+            <span class="kw">await</span> <span class="type">NotifyAsync</span>(companyId, teamManagerId, <span class="str">&quot;ItemDeleted&quot;</span>, <span class="kw">new</span> { itemId });
+        }
+
+        <span class="kw">private</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">NotifyAsync</span>(<span class="kw">int</span> companyId, <span class="kw">int</span>? teamManagerId, <span class="kw">string</span> eventName, <span class="kw">object</span> data)
+        {
+            <span class="kw">try</span>
+            {
+                <span class="kw">var</span> payload = <span class="kw">new</span>
+                {
+                    eventType = eventName,
+                    data,
+                    timestamp = <span class="type">DateTime</span>.<span class="type">UtcNow</span>
+                };
+
+                <span class="cmt">// Always notify the company group (admins see everything)</span>
+                <span class="kw">var</span> companyGroup = $<span class="str">&quot;Company_{companyId}&quot;</span>;
+                <span class="kw">await</span> _hubContext.<span class="type">Clients</span>.<span class="type">Group</span>(companyGroup)
+                    .<span class="type">SendAsync</span>(<span class="str">&quot;ReceiveUpdate&quot;</span>, payload);
+
+                <span class="cmt">// Also notify the team group if a manager is specified</span>
+                <span class="kw">if</span> (teamManagerId.<span class="type">HasValue</span>)
+                {
+                    <span class="kw">var</span> teamGroup = $<span class="str">&quot;Team_{teamManagerId.Value}_{companyId}&quot;</span>;
+                    <span class="kw">await</span> _hubContext.<span class="type">Clients</span>.<span class="type">Group</span>(teamGroup)
+                        .<span class="type">SendAsync</span>(<span class="str">&quot;ReceiveUpdate&quot;</span>, payload);
+                }
+
+                _logger.<span class="type">LogDebug</span>(<span class="str">&quot;Sent {EventName} to Company_{CompanyId}&quot;</span> +
+                    (teamManagerId.<span class="type">HasValue</span> ? $<span class="str">&quot; and Team_{teamManagerId.Value}_{companyId}&quot;</span> : <span class="str">&quot;&quot;</span>),
+                    eventName, companyId);
+            }
+            <span class="kw">catch</span> (<span class="type">Exception</span> ex)
+            {
+                _logger.<span class="type">LogError</span>(ex, <span class="str">&quot;Error sending SignalR notification for {EventName}&quot;</span>, eventName);
+            }
+        }
+    }
+}</code></pre>
+<h3 id="step-3-register-services-in-program-cs">Step 3: Register Services in Program.cs</h3>
+<pre><code class="lang-csharp"><span class="cmt">// Program.cs</span>
+
+<span class="cmt">// Add SignalR</span>
+builder.<span class="type">Services</span>.<span class="type">AddSignalR</span>();
+
+<span class="cmt">// Register the hub service</span>
+builder.<span class="type">Services</span>.<span class="type">AddScoped</span>&lt;<span class="type">IMyFeatureHubService</span>, <span class="type">MyFeatureHubService</span>&gt;();
+
+<span class="cmt">// ... other services ...</span>
+
+<span class="kw">var</span> app = builder.<span class="type">Build</span>();
+
+<span class="cmt">// Map the hub endpoint</span>
+app.<span class="type">MapHub</span>&lt;<span class="type">MyFeatureHub</span>&gt;(<span class="str">&quot;/myFeatureHub&quot;</span>);
+
+app.<span class="type">Run</span>();</code></pre>
+<h3 id="step-4-connect-from-a-blazor-component">Step 4: Connect from a Blazor Component</h3>
+<pre><code class="lang-razor">@page <span class="str">&quot;/my-feature&quot;</span>
+<span class="kw">@using</span> <span class="type">Microsoft</span>.<span class="type">AspNetCore</span>.<span class="type">SignalR</span>.<span class="type">Client</span>
+@inject <span class="type">NavigationManager</span> <span class="type">Navigation</span>
+@inject <span class="type">ILogger</span>&lt;<span class="type">MyFeaturePage</span>&gt; <span class="type">Logger</span>
+@implements <span class="type">IAsyncDisposable</span>
+
+&lt;h3&gt;<span class="type">My</span> <span class="type">Feature</span>&lt;/h3&gt;
+
+<span class="kw">@if</span> (_isConnected)
+{
+    &lt;<span class="type">MudChip</span> <span class="type">Color</span>=<span class="str">&quot;Color.Success&quot;</span> <span class="type">Size</span>=<span class="str">&quot;Size.Small&quot;</span>&gt;<span class="type">Live</span> <span class="type">Updates</span> <span class="type">Active</span>&lt;/<span class="type">MudChip</span>&gt;
+}
+<span class="kw">else</span>
+{
+    &lt;<span class="type">MudChip</span> <span class="type">Color</span>=<span class="str">&quot;Color.Warning&quot;</span> <span class="type">Size</span>=<span class="str">&quot;Size.Small&quot;</span>&gt;<span class="type">Connecting</span>...&lt;/<span class="type">MudChip</span>&gt;
+}
+
+&lt;!-- <span class="type">Your</span> <span class="type">UI</span> here --&gt;
+
+@code {
+    <span class="kw">private</span> <span class="type">HubConnection</span>? _hubConnection;
+    <span class="kw">private</span> <span class="kw">bool</span> _signalRInitialized = <span class="kw">false</span>;
+    <span class="kw">private</span> <span class="kw">bool</span> _isConnected = <span class="kw">false</span>;
+
+    <span class="cmt">// Assuming these come from your session/auth</span>
+    [<span class="type">CascadingParameter</span>] <span class="kw">public</span> <span class="type">UserSession</span> <span class="type">UserSession</span> { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="kw">default</span>!;
+
+    <span class="kw">protected</span> <span class="kw">override</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">OnInitializedAsync</span>()
+    {
+        <span class="kw">await</span> <span class="type">LoadDataAsync</span>();
+    }
+
+    <span class="kw">protected</span> <span class="kw">override</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">OnAfterRenderAsync</span>(<span class="kw">bool</span> firstRender)
+    {
+        <span class="cmt">// Initialize SignalR only once, after first render</span>
+        <span class="kw">if</span> (firstRender &amp;&amp; !_signalRInitialized)
+        {
+            _signalRInitialized = <span class="kw">true</span>;
+            <span class="kw">await</span> <span class="type">InitializeSignalR</span>();
+        }
+    }
+
+    <span class="kw">private</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">InitializeSignalR</span>(<span class="kw">int</span> retryCount = <span class="num">0</span>)
+    {
+        <span class="kw">try</span>
+        {
+            <span class="cmt">// 1. Build the connection</span>
+            _hubConnection = <span class="kw">new</span> <span class="type">HubConnectionBuilder</span>()
+                .<span class="type">WithUrl</span>(<span class="type">Navigation</span>.<span class="type">ToAbsoluteUri</span>(<span class="str">&quot;/myFeatureHub&quot;</span>))
+                .<span class="type">WithAutomaticReconnect</span>(<span class="kw">new</span>[] {
+                    <span class="type">TimeSpan</span>.<span class="type">FromSeconds</span>(<span class="num">0</span>),   <span class="cmt">// Immediate first retry</span>
+                    <span class="type">TimeSpan</span>.<span class="type">FromSeconds</span>(<span class="num">2</span>),   <span class="cmt">// Then 2s</span>
+                    <span class="type">TimeSpan</span>.<span class="type">FromSeconds</span>(<span class="num">5</span>),   <span class="cmt">// Then 5s</span>
+                    <span class="type">TimeSpan</span>.<span class="type">FromSeconds</span>(<span class="num">30</span>)   <span class="cmt">// Then 30s</span>
+                })
+                .<span class="type">Build</span>();
+
+            <span class="cmt">// 2. Set up connection state handlers</span>
+            _hubConnection.<span class="type">Reconnecting</span> += error =&gt;
+            {
+                _isConnected = <span class="kw">false</span>;
+                <span class="type">Logger</span>.<span class="type">LogWarning</span>(<span class="str">&quot;SignalR reconnecting...&quot;</span>);
+                <span class="type">InvokeAsync</span>(<span class="type">StateHasChanged</span>);
+                <span class="kw">return</span> <span class="type">Task</span>.<span class="type">CompletedTask</span>;
+            };
+
+            _hubConnection.<span class="type">Reconnected</span> += <span class="kw">async</span> connectionId =&gt;
+            {
+                _isConnected = <span class="kw">true</span>;
+                <span class="type">Logger</span>.<span class="type">LogInformation</span>(<span class="str">&quot;SignalR reconnected: {ConnectionId}&quot;</span>, connectionId);
+
+                <span class="cmt">// IMPORTANT: Rejoin groups after reconnection!</span>
+                <span class="kw">await</span> <span class="type">JoinGroupsAsync</span>();
+                <span class="kw">await</span> <span class="type">InvokeAsync</span>(<span class="type">StateHasChanged</span>);
+            };
+
+            _hubConnection.<span class="type">Closed</span> += error =&gt;
+            {
+                _isConnected = <span class="kw">false</span>;
+                <span class="type">Logger</span>.<span class="type">LogError</span>(error, <span class="str">&quot;SignalR connection closed&quot;</span>);
+                <span class="type">InvokeAsync</span>(<span class="type">StateHasChanged</span>);
+                <span class="kw">return</span> <span class="type">Task</span>.<span class="type">CompletedTask</span>;
+            };
+
+            <span class="cmt">// 3. Register message handlers BEFORE starting connection</span>
+            _hubConnection.<span class="type">On</span>&lt;<span class="kw">object</span>&gt;(<span class="str">&quot;ReceiveUpdate&quot;</span>, <span class="kw">async</span> (payload) =&gt;
+            {
+                <span class="kw">await</span> <span class="type">HandleUpdateAsync</span>(payload);
+            });
+
+            <span class="cmt">// 4. Start the connection</span>
+            <span class="kw">await</span> _hubConnection.<span class="type">StartAsync</span>();
+            _isConnected = <span class="kw">true</span>;
+            <span class="type">Logger</span>.<span class="type">LogInformation</span>(<span class="str">&quot;SignalR connected successfully&quot;</span>);
+
+            <span class="cmt">// 5. Join the appropriate groups</span>
+            <span class="kw">await</span> <span class="type">JoinGroupsAsync</span>();
+        }
+        <span class="kw">catch</span> (<span class="type">Exception</span> ex)
+        {
+            <span class="type">Logger</span>.<span class="type">LogError</span>(ex, <span class="str">&quot;Error connecting to SignalR (attempt {RetryCount})&quot;</span>, retryCount + <span class="num">1</span>);
+
+            <span class="cmt">// Retry with exponential backoff</span>
+            <span class="kw">if</span> (retryCount &lt; <span class="num">3</span>)
+            {
+                <span class="kw">var</span> delay = <span class="num">1000</span> * (retryCount + <span class="num">1</span>); <span class="cmt">// 1s, 2s, 3s</span>
+                <span class="kw">await</span> <span class="type">Task</span>.<span class="type">Delay</span>(delay);
+                <span class="kw">await</span> <span class="type">InitializeSignalR</span>(retryCount + <span class="num">1</span>);
+            }
+        }
+    }
+
+    <span class="kw">private</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">JoinGroupsAsync</span>()
+    {
+        <span class="kw">if</span> (_hubConnection?.<span class="type">State</span> != <span class="type">HubConnectionState</span>.<span class="type">Connected</span>) <span class="kw">return</span>;
+
+        <span class="kw">try</span>
+        {
+            <span class="cmt">// Join company group for admin-level updates</span>
+            <span class="kw">await</span> _hubConnection.<span class="type">InvokeAsync</span>(<span class="str">&quot;JoinCompanyGroup&quot;</span>, <span class="type">UserSession</span>.<span class="type">Empresa</span>.<span class="type">Id</span>);
+
+            <span class="cmt">// OR join team group for team-level updates</span>
+            <span class="cmt">// await _hubConnection.InvokeAsync(&quot;JoinTeamGroup&quot;, UserSession.User.Id, UserSession.Empresa.Id);</span>
+        }
+        <span class="kw">catch</span> (<span class="type">Exception</span> ex)
+        {
+            <span class="type">Logger</span>.<span class="type">LogError</span>(ex, <span class="str">&quot;Error joining SignalR groups&quot;</span>);
+        }
+    }
+
+    <span class="kw">private</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">HandleUpdateAsync</span>(<span class="kw">object</span> payload)
+    {
+        <span class="type">Logger</span>.<span class="type">LogInformation</span>(<span class="str">&quot;Received update: {Payload}&quot;</span>, payload);
+
+        <span class="kw">try</span>
+        {
+            <span class="cmt">// Reload your data</span>
+            <span class="kw">await</span> <span class="type">LoadDataAsync</span>();
+
+            <span class="cmt">// Update the UI (must use InvokeAsync from SignalR callback)</span>
+            <span class="kw">await</span> <span class="type">InvokeAsync</span>(<span class="type">StateHasChanged</span>);
+        }
+        <span class="kw">catch</span> (<span class="type">Exception</span> ex)
+        {
+            <span class="type">Logger</span>.<span class="type">LogError</span>(ex, <span class="str">&quot;Error handling SignalR update&quot;</span>);
+        }
+    }
+
+    <span class="kw">private</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">LoadDataAsync</span>()
+    {
+        <span class="cmt">// Your data loading logic</span>
+    }
+
+    <span class="kw">public</span> <span class="kw">async</span> <span class="type">ValueTask</span> <span class="type">DisposeAsync</span>()
+    {
+        <span class="kw">if</span> (_hubConnection <span class="kw">is</span> <span class="kw">not</span> <span class="kw">null</span>)
+        {
+            <span class="kw">try</span>
+            {
+                <span class="cmt">// Leave groups before disposing</span>
+                <span class="kw">if</span> (_hubConnection.<span class="type">State</span> == <span class="type">HubConnectionState</span>.<span class="type">Connected</span>)
+                {
+                    <span class="kw">await</span> _hubConnection.<span class="type">InvokeAsync</span>(<span class="str">&quot;LeaveCompanyGroup&quot;</span>, <span class="type">UserSession</span>.<span class="type">Empresa</span>.<span class="type">Id</span>);
+                }
+
+                <span class="kw">await</span> _hubConnection.<span class="type">DisposeAsync</span>();
+            }
+            <span class="kw">catch</span> (<span class="type">Exception</span> ex)
+            {
+                <span class="type">Logger</span>.<span class="type">LogError</span>(ex, <span class="str">&quot;Error disposing SignalR connection&quot;</span>);
+            }
+        }
+    }
+}</code></pre>
+<h2 id="understanding-groups">Understanding Groups</h2>
+<p>Groups are the key to targeting notifications to the right users.</p>
+<h3 id="group-naming-strategy">Group Naming Strategy</h3>
+<div class="diagram-box"><pre>┌─────────────────────────────────────────────────────────────────────────┐
+│                         GROUP NAMING PATTERNS                           │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  Company-Wide (Admins see all):                                         │
+│  ┌─────────────────────────────────────────┐                            │
+│  │  &quot;Company_{companyId}&quot;                  │                            │
+│  │  Example: &quot;Company_1&quot;                   │                            │
+│  │  Receives: All events for the company   │                            │
+│  └─────────────────────────────────────────┘                            │
+│                                                                         │
+│  Team-Specific (Managers see their team):                               │
+│  ┌─────────────────────────────────────────┐                            │
+│  │  &quot;Team_{managerId}_{companyId}&quot;         │                            │
+│  │  Example: &quot;Team_5_1&quot;                    │                            │
+│  │  Receives: Events for manager #5&#x27;s team │                            │
+│  └─────────────────────────────────────────┘                            │
+│                                                                         │
+│  User-Specific (Private notifications):                                 │
+│  ┌─────────────────────────────────────────┐                            │
+│  │  &quot;User_{userId}&quot;                        │                            │
+│  │  Example: &quot;User_42&quot;                     │                            │
+│  │  Receives: Events only for user #42     │                            │
+│  └─────────────────────────────────────────┘                            │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘</pre></div>
+<h3 id="when-to-notify-which-group">When to Notify Which Group</h3>
+<pre><code class="lang-csharp"><span class="cmt">// In your service that triggers the event:</span>
+<span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">CreateItemAsync</span>(<span class="type">CreateItemRequest</span> request)
+{
+    <span class="cmt">// ... create the item ...</span>
+
+    <span class="cmt">// Determine who should be notified</span>
+    <span class="kw">int</span> companyId = <span class="type">GetCompanyId</span>();
+    <span class="kw">int</span>? teamManagerId = <span class="type">GetManagerIdForEmployee</span>(request.<span class="type">EmployeeId</span>);
+
+    <span class="cmt">// Both groups are notified:</span>
+    <span class="cmt">// - Company group (admins see it)</span>
+    <span class="cmt">// - Team group (manager sees it) - only if managerId is not null</span>
+    <span class="kw">await</span> _hubService.<span class="type">NotifyItemCreatedAsync</span>(companyId, teamManagerId, item);
+}</code></pre>
+<h3 id="common-pitfall-mismatched-group-names">Common Pitfall: Mismatched Group Names</h3>
+<pre><code class="lang-text">THE BUG: Manager Dashboard not receiving updates
+
+Dashboard joins:    &quot;Team_{UserSession.User.Id}_{empresaId}&quot;
+                    &quot;Team_5_1&quot; (Manager&#x27;s User ID is 5)
+
+Notification sent to: &quot;Team_{employee.ReportToUser}_{empresaId}&quot;
+                      &quot;Team_null_1&quot; (Employee has no ReportToUser set!)
+
+RESULT: Notification goes to a group nobody has joined!</code></pre>
+<p><strong>Solution</strong>: Ensure the employee&#x27;s data has the correct manager reference, OR use a different group strategy.</p>
+<h2 id="message-flow-diagram">Message Flow Diagram</h2>
+<div class="diagram-box"><pre>┌─────────────────────────────────────────────────────────────────────────┐
+│                          COMPLETE MESSAGE FLOW                          │
+└─────────────────────────────────────────────────────────────────────────┘
+
+1. USER ACTION (e.g., Employee checks in)
+   │
+   ▼
+2. SERVICE LAYER (AttendanceOperationService)
+   │
+   │  // After saving to database...
+   │  var (empresaId, managerId) = await GetNotificationContext(employeeId);
+   │  await _hubService.NotifyCheckInAsync(empresaId, managerId, attendance);
+   │
+   ▼
+3. HUB SERVICE (AttendanceHubService)
+   │
+   │  // Send to company group
+   │  await _hubContext.Clients.Group($&quot;Company_{empresaId}&quot;)
+   │      .SendAsync(&quot;ReceiveUpdate&quot;, payload);
+   │
+   │  // Send to team group (if manager exists)
+   │  if (managerId.HasValue)
+   │      await _hubContext.Clients.Group($&quot;Team_{managerId}_{empresaId}&quot;)
+   │          .SendAsync(&quot;ReceiveUpdate&quot;, payload);
+   │
+   ▼
+4. SIGNALR HUB (Routes to connections in groups)
+   │
+   ├────────────────────────────────────────────┐
+   │                                            │
+   ▼                                            ▼
+5a. ADMIN DASHBOARD                         5b. MANAGER DASHBOARD
+    (Member of &quot;Company_1&quot;)                     (Member of &quot;Team_5_1&quot;)
+    │                                           │
+    │  _hubConnection.On(&quot;ReceiveUpdate&quot;,       │  _hubConnection.On(&quot;ReceiveUpdate&quot;,
+    │      HandleUpdateAsync);                  │      HandleUpdateAsync);
+    │                                           │
+    ▼                                           ▼
+6a. RELOAD DATA &amp; UPDATE UI                 6b. RELOAD DATA &amp; UPDATE UI
+    await LoadDashboardDataAsync();             await LoadTeamDataAsync();
+    await InvokeAsync(StateHasChanged);         await InvokeAsync(StateHasChanged);</pre></div>
+<h2 id="best-practices">Best Practices</h2>
+<h3 id="1-always-handle-reconnection">1. Always Handle Reconnection</h3>
+<pre><code class="lang-csharp">_hubConnection.<span class="type">Reconnected</span> += <span class="kw">async</span> connectionId =&gt;
+{
+    <span class="cmt">// CRITICAL: Rejoin groups after reconnection!</span>
+    <span class="cmt">// SignalR does NOT remember your groups after disconnect</span>
+    <span class="kw">await</span> <span class="type">JoinGroupsAsync</span>();
+};</code></pre>
+<h3 id="2-use-invokeasync-for-ui-updates">2. Use InvokeAsync for UI Updates</h3>
+<pre><code class="lang-csharp"><span class="cmt">// WRONG - May cause threading issues</span>
+_hubConnection.<span class="type">On</span>&lt;<span class="kw">object</span>&gt;(<span class="str">&quot;ReceiveUpdate&quot;</span>, (data) =&gt;
+{
+    _items = <span class="type">LoadItems</span>();
+    <span class="type">StateHasChanged</span>(); <span class="cmt">// DANGER: Not on UI thread!</span>
+});
+
+<span class="cmt">// CORRECT - Use InvokeAsync</span>
+_hubConnection.<span class="type">On</span>&lt;<span class="kw">object</span>&gt;(<span class="str">&quot;ReceiveUpdate&quot;</span>, <span class="kw">async</span> (data) =&gt;
+{
+    <span class="kw">await</span> <span class="type">LoadItemsAsync</span>();
+    <span class="kw">await</span> <span class="type">InvokeAsync</span>(<span class="type">StateHasChanged</span>); <span class="cmt">// Safe: Marshals to UI thread</span>
+});</code></pre>
+<h3 id="3-always-dispose-connections">3. Always Dispose Connections</h3>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">async</span> <span class="type">ValueTask</span> <span class="type">DisposeAsync</span>()
+{
+    <span class="kw">if</span> (_hubConnection <span class="kw">is</span> <span class="kw">not</span> <span class="kw">null</span>)
+    {
+        <span class="cmt">// Leave groups first (optional but polite)</span>
+        <span class="kw">if</span> (_hubConnection.<span class="type">State</span> == <span class="type">HubConnectionState</span>.<span class="type">Connected</span>)
+        {
+            <span class="kw">await</span> _hubConnection.<span class="type">InvokeAsync</span>(<span class="str">&quot;LeaveCompanyGroup&quot;</span>, _companyId);
+        }
+
+        <span class="kw">await</span> _hubConnection.<span class="type">DisposeAsync</span>();
+    }
+}</code></pre>
+<h3 id="4-register-handlers-before-starting">4. Register Handlers Before Starting</h3>
+<pre><code class="lang-csharp"><span class="cmt">// WRONG - May miss early messages</span>
+<span class="kw">await</span> _hubConnection.<span class="type">StartAsync</span>();
+_hubConnection.<span class="type">On</span>(<span class="str">&quot;ReceiveUpdate&quot;</span>, <span class="type">HandleUpdate</span>); <span class="cmt">// Too late!</span>
+
+<span class="cmt">// CORRECT - Register first</span>
+_hubConnection.<span class="type">On</span>(<span class="str">&quot;ReceiveUpdate&quot;</span>, <span class="type">HandleUpdate</span>);
+<span class="kw">await</span> _hubConnection.<span class="type">StartAsync</span>(); <span class="cmt">// Now ready to receive</span></code></pre>
+<h3 id="5-initialize-in-onafterrenderasync">5. Initialize in OnAfterRenderAsync</h3>
+<pre><code class="lang-csharp"><span class="cmt">// WRONG - NavigationManager not ready in OnInitializedAsync</span>
+<span class="kw">protected</span> <span class="kw">override</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">OnInitializedAsync</span>()
+{
+    <span class="kw">await</span> <span class="type">InitializeSignalR</span>(); <span class="cmt">// May fail!</span>
+}
+
+<span class="cmt">// CORRECT - Wait for first render</span>
+<span class="kw">protected</span> <span class="kw">override</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">OnAfterRenderAsync</span>(<span class="kw">bool</span> firstRender)
+{
+    <span class="kw">if</span> (firstRender &amp;&amp; !_signalRInitialized)
+    {
+        _signalRInitialized = <span class="kw">true</span>;
+        <span class="kw">await</span> <span class="type">InitializeSignalR</span>();
+    }
+}</code></pre>
+<h2 id="attendance-hub-real-implementation">Attendance Hub - Real Implementation</h2>
+<p>This project uses SignalR for live attendance updates. Here are the <strong>actual</strong> names used:</p>
+<h3 id="actual-group-names">Actual Group Names</h3>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Group Type</th>
+<th>Pattern</th>
+<th>Example</th>
+</tr></thead><tbody>
+<tr>
+<td>Company-wide</td>
+<td><code class="il">CompanyAttendance_{empresaId}</code></td>
+<td><code class="il">CompanyAttendance_1</code></td>
+</tr>
+<tr>
+<td>Team-specific</td>
+<td><code class="il">TeamAttendance_{managerId}_{empresaId}</code></td>
+<td><code class="il">TeamAttendance_5_1</code></td>
+</tr>
+</tbody></table></div>
+<h3 id="actual-hub-methods">Actual Hub Methods</h3>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Method</th>
+<th>Purpose</th>
+</tr></thead><tbody>
+<tr>
+<td><code class="il">JoinCompanyAttendance(int empresaId)</code></td>
+<td>Join company group</td>
+</tr>
+<tr>
+<td><code class="il">LeaveCompanyAttendance(int empresaId)</code></td>
+<td>Leave company group</td>
+</tr>
+<tr>
+<td><code class="il">JoinTeamAttendance(int managerId, int empresaId)</code></td>
+<td>Join team group</td>
+</tr>
+<tr>
+<td><code class="il">LeaveTeamAttendance(int managerId, int empresaId)</code></td>
+<td>Leave team group</td>
+</tr>
+</tbody></table></div>
+<h3 id="actual-event-names">Actual Event Names</h3>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Event</th>
+<th>Sent By</th>
+<th>Purpose</th>
+</tr></thead><tbody>
+<tr>
+<td><code class="il">ReceiveAttendanceUpdate</code></td>
+<td>AttendanceHubService</td>
+<td>All attendance events (check-in, check-out, break, validation)</td>
+</tr>
+<tr>
+<td><code class="il">JoinedCompanyAttendance</code></td>
+<td>Hub</td>
+<td>Confirmation of joining company group</td>
+</tr>
+<tr>
+<td><code class="il">JoinedTeamAttendance</code></td>
+<td>Hub</td>
+<td>Confirmation of joining team group</td>
+</tr>
+</tbody></table></div>
+<h3 id="attendancehubservice-event-payload">AttendanceHubService Event Payload</h3>
+<p>When <code class="il">ReceiveAttendanceUpdate</code> is sent, the payload includes:</p>
+<pre><code class="lang-csharp">{
+    eventType,          <span class="cmt">// &quot;CheckIn&quot;, &quot;CheckOut&quot;, &quot;BreakStart&quot;, &quot;BreakEnd&quot;, &quot;Validation&quot;</span>
+    attendanceId,
+    employeeId,
+    employeeName,
+    checkInTime,
+    checkOutTime,
+    breakStartTime,
+    breakEndTime,
+    isValidated,
+    isValidLocation,
+    jobId,
+    jobName,
+    totalHours,
+    timestamp
+}</code></pre>
+<h3 id="working-example-attendanceinsightshub-razor">Working Example: AttendanceInsightsHub.razor</h3>
+<pre><code class="lang-csharp"><span class="cmt">// 1. Build connection to the correct endpoint</span>
+_hub = <span class="kw">new</span> <span class="type">HubConnectionBuilder</span>()
+    .<span class="type">WithUrl</span>(<span class="type">Navigation</span>.<span class="type">ToAbsoluteUri</span>(<span class="str">&quot;/attendanceHub&quot;</span>))  <span class="cmt">// Must match Program.cs</span>
+    .<span class="type">WithAutomaticReconnect</span>()
+    .<span class="type">Build</span>();
+
+<span class="cmt">// 2. Listen for the CORRECT event name</span>
+_hub.<span class="type">On</span>&lt;<span class="kw">object</span>&gt;(<span class="str">&quot;ReceiveAttendanceUpdate&quot;</span>, <span class="kw">async</span> (_) =&gt;
+{
+    <span class="cmt">// Refresh the child component that displays data</span>
+    <span class="kw">if</span> (_liveStatsViewRef != <span class="kw">null</span>)
+    {
+        <span class="kw">await</span> <span class="type">InvokeAsync</span>(<span class="kw">async</span> () =&gt;
+        {
+            <span class="kw">await</span> _liveStatsViewRef.<span class="type">RefreshAsync</span>();
+        });
+    }
+});
+
+<span class="cmt">// 3. Start connection</span>
+<span class="kw">await</span> _hub.<span class="type">StartAsync</span>();
+
+<span class="cmt">// 4. Join the company group with correct method name</span>
+<span class="kw">await</span> _hub.<span class="type">InvokeAsync</span>(<span class="str">&quot;JoinCompanyAttendance&quot;</span>, <span class="type">UserSession</span>.<span class="type">Empresa</span>.<span class="type">Id</span>);</code></pre>
+<h3 id="refreshing-child-components">Refreshing Child Components</h3>
+<p>When the parent receives a SignalR event, it must tell the child to reload data:</p>
+<pre><code class="lang-csharp"><span class="cmt">// Parent component</span>
+<span class="kw">private</span> <span class="type">ChildView</span>? _childRef;
+
+<span class="cmt">// In SignalR handler - DON&#x27;T just call StateHasChanged!</span>
+_hub.<span class="type">On</span>&lt;<span class="kw">object</span>&gt;(<span class="str">&quot;ReceiveAttendanceUpdate&quot;</span>, <span class="kw">async</span> (_) =&gt;
+{
+    <span class="kw">await</span> <span class="type">InvokeAsync</span>(<span class="kw">async</span> () =&gt;
+    {
+        <span class="kw">await</span> _childRef.<span class="type">RefreshAsync</span>();  <span class="cmt">// Tell child to reload</span>
+    });
+});
+
+<span class="cmt">// Child component - expose a refresh method</span>
+<span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">RefreshAsync</span>()
+{
+    <span class="kw">await</span> <span class="type">LoadDataAsync</span>();  <span class="cmt">// Actually reload data</span>
+    <span class="type">StateHasChanged</span>();      <span class="cmt">// Then update UI</span>
+}</code></pre>
+<p><strong>Why?</strong> Parent&#x27;s <code class="il">StateHasChanged()</code> doesn&#x27;t make children re-execute their <code class="il">OnInitializedAsync()</code>.</p>
+<hr>
+<h2 id="debugging-signalr-issues">Debugging SignalR Issues</h2>
+<h3 id="enable-detailed-logging">Enable Detailed Logging</h3>
+<pre><code class="lang-csharp"><span class="cmt">// In Program.cs</span>
+builder.<span class="type">Logging</span>.<span class="type">AddFilter</span>(<span class="str">&quot;Microsoft.AspNetCore.SignalR&quot;</span>, <span class="type">LogLevel</span>.<span class="type">Debug</span>);
+builder.<span class="type">Logging</span>.<span class="type">AddFilter</span>(<span class="str">&quot;Microsoft.AspNetCore.Http.Connections&quot;</span>, <span class="type">LogLevel</span>.<span class="type">Debug</span>);</code></pre>
+<h3 id="common-issues-and-solutions">Common Issues and Solutions</h3>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Issue</th>
+<th>Cause</th>
+<th>Solution</th>
+</tr></thead><tbody>
+<tr>
+<td>Not receiving messages</td>
+<td>Wrong event name</td>
+<td>Check <code class="il">SendAsync(&quot;EventName&quot;)</code> matches <code class="il">.On(&quot;EventName&quot;)</code> exactly</td>
+</tr>
+<tr>
+<td>Not receiving messages</td>
+<td>Not in the right group</td>
+<td>Check group name matches exactly</td>
+</tr>
+<tr>
+<td>Child component not updating</td>
+<td>Only calling parent StateHasChanged</td>
+<td>Call child&#x27;s RefreshAsync() to reload data</td>
+</tr>
+<tr>
+<td>Messages stop after reconnect</td>
+<td>Groups lost on reconnect</td>
+<td>Rejoin groups in <code class="il">Reconnected</code> handler</td>
+</tr>
+<tr>
+<td>&quot;Connection not found&quot; error</td>
+<td>Hub disposed too early</td>
+<td>Implement proper <code class="il">IAsyncDisposable</code></td>
+</tr>
+<tr>
+<td>UI not updating</td>
+<td>Not using <code class="il">InvokeAsync</code></td>
+<td>Wrap <code class="il">StateHasChanged</code> in <code class="il">InvokeAsync</code></td>
+</tr>
+<tr>
+<td>Connection fails</td>
+<td>Wrong hub URL</td>
+<td>Check <code class="il">MapHub</code> matches <code class="il">WithUrl</code></td>
+</tr>
+</tbody></table></div>
+<h3 id="critical-bug-wrong-event-name">Critical Bug: Wrong Event Name</h3>
+<p>This is the <strong>#1 cause</strong> of &quot;SignalR not working&quot;:</p>
+<pre><code class="lang-csharp"><span class="cmt">// ❌ WRONG - listening for event that doesn&#x27;t exist</span>
+_hub.<span class="type">On</span>&lt;<span class="kw">object</span>&gt;(<span class="str">&quot;AttendanceUpdated&quot;</span>, <span class="kw">async</span> (data) =&gt; { ... });
+
+<span class="cmt">// ✅ CORRECT - matches what AttendanceHubService.SendAsync sends</span>
+_hub.<span class="type">On</span>&lt;<span class="kw">object</span>&gt;(<span class="str">&quot;ReceiveAttendanceUpdate&quot;</span>, <span class="kw">async</span> (data) =&gt; { ... });</code></pre>
+<p><strong>How to find the correct name:</strong></p>
+<ol>
+<li>Look at <code class="il">AttendanceHubService.cs</code> (or your HubService)</li>
+<li>Find the <code class="il">SendAsync</code> calls</li>
+<li>The first parameter is the event name clients must listen for</li>
+</ol>
+<h2 id="related-files-in-this-project">Related Files in This Project</h2>
+<ul>
+<li><a href="../../Services/Attendance/Hubs/AttendanceHub.cs" target="_blank">AttendanceHub.cs</a> - Hub implementation</li>
+<li><a href="../../Services/Attendance/AttendanceHubService.cs" target="_blank">AttendanceHubService.cs</a> - Service for sending notifications</li>
+<li><a href="../../Pages/HR/Attendances/Dashboard/AdminDashboard.razor" target="_blank">AdminDashboard.razor</a> - Working SignalR consumer</li>
+<li><a href="../../Configuration/SignalRConfiguration.cs" target="_blank">SignalRConfiguration.cs</a> - Configuration setup</li>
+</ul>
+</div>
+</body>
+</html>

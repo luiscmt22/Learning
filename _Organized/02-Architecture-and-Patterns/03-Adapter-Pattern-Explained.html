@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>03-Adapter-Pattern-Explained</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 02-Architecture-and-Patterns</div>
+  <h1>03-Adapter-Pattern-Explained</h1>
+  <div class="meta">Source: <code>Education/03-Adapter-Pattern-Explained.md</code> &middot; <a href="03-Adapter-Pattern-Explained.md">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<h1 id="adapter-pattern-explained">Adapter Pattern Explained</h1>
+<blockquote><strong>Status</strong>: Future implementation - concepts documented for planning</blockquote>
+<h2 id="the-problem">The Problem</h2>
+<p>Currently, modules are coupled to HRModule-specific data models:</p>
+<pre><code class="lang-csharp"><span class="cmt">// Jobs module depends on HRModule&#x27;s CrmFuncionario</span>
+<span class="kw">public</span> <span class="kw">interface</span> <span class="type">IJobService</span>
+{
+    <span class="type">Task</span> <span class="type">AssignEmployeeToJobAsync</span>(<span class="kw">int</span> jobId, <span class="type">CrmFuncionario</span> employee);
+}</code></pre>
+<p>If we want to reuse the Jobs module in another application that doesn&#x27;t have <code class="il">CrmFuncionario</code>, it won&#x27;t work.</p>
+<h2 id="the-solution-adapter-pattern">The Solution: Adapter Pattern</h2>
+<p>Each module defines its <strong>own interfaces and DTOs</strong>. The host application provides adapters that translate between its models and the module&#x27;s DTOs.</p>
+<div class="diagram-box"><pre>┌─────────────────────────────────────────────────────────┐
+│                    JOBS MODULE                           │
+│  (Portable, doesn&#x27;t know about CrmFuncionario)           │
+│                                                          │
+│  interface IEmployeeAdapter                              │
+│  {                                                       │
+│      Task&lt;EmployeeInfo&gt; GetEmployeeAsync(int id);        │
+│  }                                                       │
+│                                                          │
+│  class EmployeeInfo  // Module&#x27;s own DTO                 │
+│  {                                                       │
+│      int Id;                                             │
+│      string Name;                                        │
+│      string Email;                                       │
+│  }                                                       │
+└─────────────────────────────────────────────────────────┘
+                          ▲
+                          │ implements
+                          │
+┌─────────────────────────────────────────────────────────┐
+│                    HRMODULE ADAPTER                      │
+│  (Translates CrmFuncionario -&gt; EmployeeInfo)             │
+│                                                          │
+│  class HRModuleEmployeeAdapter : IEmployeeAdapter        │
+│  {                                                       │
+│      async Task&lt;EmployeeInfo&gt; GetEmployeeAsync(int id)   │
+│      {                                                   │
+│          var func = await _service.GetByIdAsync(id);     │
+│          return new EmployeeInfo                         │
+│          {                                               │
+│              Id = func.Id,                               │
+│              Name = func.Nome,                           │
+│              Email = func.Email                          │
+│          };                                              │
+│      }                                                   │
+│  }                                                       │
+└─────────────────────────────────────────────────────────┘</pre></div>
+<h2 id="before-vs-after">Before vs After</h2>
+<h3 id="before-coupled">Before (Coupled)</h3>
+<pre><code class="lang-csharp"><span class="cmt">// Jobs module - DIRECTLY uses CrmFuncionario</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">JobService</span>
+{
+    <span class="kw">private</span> <span class="kw">readonly</span> <span class="type">IEmployeeService</span> _employeeService;
+
+    <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">AssignEmployeeAsync</span>(<span class="kw">int</span> jobId, <span class="kw">int</span> employeeId)
+    {
+        <span class="type">CrmFuncionario</span> employee = <span class="kw">await</span> _employeeService.<span class="type">GetByIdAsync</span>(employeeId);
+        <span class="cmt">// Uses CrmFuncionario properties directly</span>
+        _logger.<span class="type">Log</span>($<span class="str">&quot;Assigned {employee.Nome} to job {jobId}&quot;</span>);
+    }
+}</code></pre>
+<h3 id="after-decoupled">After (Decoupled)</h3>
+<pre><code class="lang-csharp"><span class="cmt">// Jobs module - Uses its own adapter interface</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">JobService</span>
+{
+    <span class="kw">private</span> <span class="kw">readonly</span> <span class="type">IEmployeeAdapter</span> _employeeAdapter;  <span class="cmt">// Module&#x27;s interface</span>
+
+    <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">AssignEmployeeAsync</span>(<span class="kw">int</span> jobId, <span class="kw">int</span> employeeId)
+    {
+        <span class="type">EmployeeInfo</span> employee = <span class="kw">await</span> _employeeAdapter.<span class="type">GetEmployeeAsync</span>(employeeId);
+        <span class="cmt">// Uses module&#x27;s own DTO</span>
+        _logger.<span class="type">Log</span>($<span class="str">&quot;Assigned {employee.Name} to job {jobId}&quot;</span>);
+    }
+}
+
+<span class="cmt">// In different app (not HRModule)</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">OtherAppEmployeeAdapter</span> : <span class="type">IEmployeeAdapter</span>
+{
+    <span class="kw">private</span> <span class="kw">readonly</span> <span class="type">IWorkerRepository</span> _workerRepo;
+
+    <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="type">EmployeeInfo</span>&gt; <span class="type">GetEmployeeAsync</span>(<span class="kw">int</span> id)
+    {
+        <span class="kw">var</span> worker = <span class="kw">await</span> _workerRepo.<span class="type">GetAsync</span>(id);
+        <span class="kw">return</span> <span class="kw">new</span> <span class="type">EmployeeInfo</span>
+        {
+            <span class="type">Id</span> = worker.<span class="type">WorkerId</span>,
+            <span class="type">Name</span> = worker.<span class="type">FullName</span>,  <span class="cmt">// Different property name!</span>
+            <span class="type">Email</span> = worker.<span class="type">ContactEmail</span>
+        };
+    }
+}</code></pre>
+<h2 id="benefits">Benefits</h2>
+<ol>
+<li><strong>Portability</strong>: Modules can be NuGet packages</li>
+<li><strong>Independence</strong>: Modules don&#x27;t know about host models</li>
+<li><strong>Testability</strong>: Mock adapters for unit tests</li>
+<li><strong>Flexibility</strong>: Different apps provide different adapters</li>
+</ol>
+<h2 id="module-structure-future">Module Structure (Future)</h2>
+<div class="diagram-box"><pre>Modules/
+├── Jobs/
+│   ├── Jobs.Module.csproj
+│   ├── Interfaces/
+│   │   └── IEmployeeAdapter.cs
+│   ├── DTOs/
+│   │   └── EmployeeInfo.cs
+│   └── Services/
+│       └── JobService.cs
+│
+└── HRModule.Adapters/
+    └── HRModuleEmployeeAdapter.cs</pre></div>
+<h2 id="when-to-use">When to Use</h2>
+<p>Use adapters when:</p>
+<ul>
+<li>Module needs to be reusable across applications</li>
+<li>Module should not depend on specific data models</li>
+<li>Testing requires isolation from real data models</li>
+</ul>
+<p>Don&#x27;t use adapters when:</p>
+<ul>
+<li>Module is tightly integrated with the application</li>
+<li>Performance is critical (adapters add overhead)</li>
+<li>Simple direct dependencies are clearer</li>
+</ul>
+<h2 id="implementation-plan">Implementation Plan</h2>
+<p>This pattern is <strong>deferred</strong> until:</p>
+<ol>
+<li>Core schema refactoring is complete and stable</li>
+<li>Module boundaries are clearly identified</li>
+<li>Adapter interfaces are designed (Interface Segregation)</li>
+<li>Gradual migration can be done without breaking functionality</li>
+</ol>
+</div>
+</body>
+</html>

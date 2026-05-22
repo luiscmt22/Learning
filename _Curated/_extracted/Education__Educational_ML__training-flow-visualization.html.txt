@@ -1,0 +1,279 @@
+Training Flow: From BetterGame to Neuron
+🧠 Training Flow: From BetterGame to Neuron
+1. The Big Picture
+2. Stochastic Training
+3. Batch Training
+4. Side-by-Side
+5. Inside the Neuron
+6. Stack Trace 🔍
+The Three Levels of Training
+Training flows through three levels, like a company hierarchy. Each level has ONE job and doesn't worry about the details of other levels.
+LEVEL 1
+BetterGame.TrainInitialNetwork()
+"The CEO" — Decides WHEN and HOW LONG to train
+void TrainInitialNetwork ()
+{
+for (int i = 0; error > expectedError; i++) // Keep going until good enough
+{
+foreach (var animal in animals) // For each training example
+{
+network. Train (animal.features, expected, lr); // Delegate to Level 2
+}
+}
+}
+What this level knows: All animals, the target error, when to stop
+What it DOESN'T know: How networks work internally, what weights are
+⬇️
+LEVEL 2
+NeuralNetwork.Train()
+"The Manager" — Coordinates ONE training example across all layers
+void Train (double[] inputs, double[] expected, double lr)
+{
+// 1. Forward pass — get predictions
+var hiddenOutputs = ComputeLayer (inputs, hiddenLayer);
+var finalOutputs = ComputeLayer (hiddenOutputs, outputLayer);
+// 2. Calculate output errors (with sigmoid derivative)
+var outputErrors = /* expected - actual, scaled */ ;
+// 3. Backpropagate to get hidden errors
+var hiddenErrors = /* sum of (outputError × weight) */ ;
+// 4. Tell each neuron to update (delegate to Level 3)
+foreach (neuron in outputLayer)
+neuron. Train (hiddenOutputs, error, lr);
+foreach (neuron in hiddenLayer)
+neuron. Train (inputs, error, lr);
+}
+What this level knows: Layer structure, how errors flow backward, each neuron's error
+What it DOESN'T know: The actual weight values inside neurons
+⬇️
+LEVEL 3
+Neuron.Train()
+"The Worker" — Adjusts MY weights based on MY error
+void Train (double[] inputs, double lr, double error)
+{
+for (int i = 0; i // Adjust each weight
+}
+Bias += lr * error; // Adjust bias too
+}
+What this level knows: My weights, the inputs I received, my error
+What it DOESN'T know: Other neurons exist, what animal this is, the "big picture"
+🎯 The Key Insight: Each level only talks to the level directly below it.
+BetterGame never touches a Neuron directly. Neurons don't know BetterGame exists.
+This separation makes the code manageable!
+Stochastic Training (Current Method)
+Stochastic means "one at a time" — we update weights after EVERY single example.
+Reset
+Next Step
+1
+BetterGame: Start training on Penguin
+Pass penguin's features to the network
+inputs = [0, 2, 0, 2, 2, 0]
+2
+Network: Forward pass
+Calculate predictions for all outputs
+outputs = [0.7, 0.2, 0.1, 0.3, 0.1, 0.2, 0.1, 0.1]
+3
+Network: Calculate errors
+expected - actual, scaled by sigmoid derivative
+outputErrors = [ +0.06 , -0.03 , -0.02 , ...]
+4
+Network: Backpropagate to hidden layer
+Calculate hidden neuron errors from output errors × weights
+hiddenErrors = [+0.02, -0.01, +0.03, -0.02, +0.01, -0.01]
+5
+Network → Each Neuron: Train!
+Each neuron adjusts its weights IMMEDIATELY
+neuron.Train(inputs, learningRate=0.1, error=0.06)
+6
+✓ Weights updated for Penguin!
+Network is now slightly better at recognizing penguins
+7
+BetterGame: Now train on Dog
+REPEAT steps 2-6 with dog's features...
+inputs = [0, 0, 2, 0, 2, 0]
+!
+⚠️ Problem: Weights adjusted AGAIN
+Dog's adjustments might UNDO some of what we learned from Penguin!
+This causes the "zigzagging" error you noticed.
+The Zigzag Problem: Each animal pulls the weights in its own direction.
+Training is like a tug-of-war where we keep switching who's pulling!
+Batch Training (New Method)
+Batch training accumulates all the "votes" first, then makes ONE averaged adjustment.
+Reset
+Next Step
+1
+Process Penguin (but DON'T update yet!)
+Forward pass → Calculate errors → Store gradients
+neuron.AccumulateGradients(inputs, error=+0.06)
+2
+Inside Neuron: Accumulate (don't apply!)
+_weightGradients[i] += error × inputs[i]
+📦 Gradient Storage
+_weightGradients:
+[ +0.12 , +0.0, +0.0, +0.12, +0.12, +0.0]
+_biasGradient:
++0.06
+_accumulatedCount:
+1
+3
+Process Dog (still DON'T update!)
+Forward pass → Calculate errors → ADD to gradients
+neuron.AccumulateGradients(inputs, error=-0.04)
+4
+Inside Neuron: Accumulate more
+Dog's votes are ADDED to Penguin's votes
+📦 Gradient Storage (after Dog)
+_weightGradients:
+[+0.12, +0.0, -0.08 , +0.12, +0.04, +0.0]
+_biasGradient:
++0.02 (0.06 + -0.04)
+_accumulatedCount:
+2
+5
+Process all other animals...
+Eagle, Shark, Cat, Whale, Bat, Salmon — all accumulate
+_accumulatedCount = 8
+✓
+NOW Apply Averaged Gradients!
+neuron.ApplyGradients(learningRate)
+Weights[i] += learningRate × (_weightGradients[i] / _accumulatedCount)
+↑ ↑
+smooth step average of ALL votes
+🎯
+One Balanced Update!
+Weights move in a direction that helps ALL animals, not just the last one.
+No more zigzagging! ✨
+The Key Difference:
+Stochastic: Update → Update → Update → Update (zigzag!)
+Batch: Accumulate → Accumulate → Accumulate → Average & Update ONCE (smooth!)
+Side-by-Side: Weight #3 Over Time
+Watch how the same weight evolves differently with each method:
+Penguin wants: +0.10
+Dog wants: -0.08
+Eagle wants: +0.05
+⚡ Stochastic (One-at-a-Time)
+Initial:
+0.50
+—
+Reset
+Train Next Animal
+Click "Train Next Animal" to see the weight change...
+📦 Batch (Accumulated)
+Initial:
+0.50
+—
+📦 Accumulated Gradient
+Sum:
+0.00
+Count:
+0
+Average:
+—
+Accumulate Next
+Apply Average
+Accumulate all animals, then apply once...
+📊 Result:
+Inside the Neuron: Method by Method
+Let's zoom in on exactly what happens inside a single neuron.
+METHOD 1
+Train() — Immediate Update
+public void Train (double[] inputs, double learningRate, double error)
+{
+// For each weight...
+for (int i = 0; i // Immediately change the weight!
+Weights[i] += learningRate * error * inputs[i];
+// ↑ how fast ↑ how wrong ↑ how relevant
+}
+Bias += learningRate * error;
+}
+Example:
+Weight[2] = 0.50
+→
+0.50 + (0.1 × 0.06 × 2) = 0.512
+→
+Weight[2] = 0.512 ✓
+METHOD 2
+AccumulateGradients() — Store for Later
+public void AccumulateGradients (double[] inputs, double error)
+{
+// For each weight...
+for (int i = 0; i // DON'T change the weight! Store the gradient instead.
+_weightGradients[i] += error * inputs[i];
+// ↑ Note: no learningRate here!
+}
+_biasGradient += error;
+_accumulatedCount++; // Remember we saw one more example
+}
+Example:
+_weightGradients[2] = 0.0
+→
+0.0 + (0.06 × 2) = 0.12
+→
+Stored! (not applied)
+Why no learningRate?
+We're just collecting "votes" right now. The learningRate is applied later when we actually update, so we can adjust how big a step to take.
+METHOD 3
+ApplyGradients() — Average & Update
+public void ApplyGradients (double learningRate)
+{
+if (_accumulatedCount == 0) return ; // Nothing to apply
+for (int i = 0; i // NOW we update, using the AVERAGE gradient
+Weights[i] += learningRate * (_weightGradients[i] / _accumulatedCount);
+// ↑ sum of votes ↑ number of voters
+_weightGradients[i] = 0; // Reset for next batch
+}
+Bias += learningRate * (_biasGradient / _accumulatedCount);
+_biasGradient = 0;
+_accumulatedCount = 0;
+}
+After 3 animals:
+_weightGradients[2] = 0.21
+→
+Average = 0.21 / 3 = 0.07
+Apply:
+Weight[2] = 0.50
+→
+0.50 + (0.1 × 0.07) = 0.507
+→
+Weight[2] = 0.507 ✓
+🎯 Summary:
+Method
+When to Use
+What it Does
+Train()
+Stochastic (one-at-a-time)
+Calculate & apply immediately
+AccumulateGradients()
+Batch training, step 1
+Store the vote, don't apply
+ApplyGradients()
+Batch training, step 2
+Average votes & apply once
+🔍 Live Stack Trace: Training One Animal
+Step through the code like a debugger. Watch the call stack grow and shrink as methods call each other.
+Reset
+Step Into (F11)
+Run to End
+📚 Call Stack
+Click "Step Into" to begin...
+📊 Variables
+animal
+—
+inputs[]
+—
+hiddenOutputs[]
+—
+finalOutputs[]
+—
+outputErrors[]
+—
+hiddenErrors[]
+—
+Weight[0] (sample)
+0.500
+learningRate
+0.1
+💬 What's Happening
+Ready to trace through training on Penguin .
+Each step shows exactly which method calls which, with real values.
+📜 Full Trace Log
+// Trace log will appear here as you step through...

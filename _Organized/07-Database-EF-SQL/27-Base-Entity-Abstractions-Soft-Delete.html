@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Base Entity Abstractions & Soft Delete — The Nesting Dolls of Domain Models</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --surface: #16213e;
+            --surface2: #0f3460;
+            --accent: #e94560;
+            --accent2: #533483;
+            --text: #eee;
+            --text-muted: #aab;
+            --success: #4ecca3;
+            --warning: #f0a500;
+            --code-bg: #0d1117;
+            --border: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+
+        h2 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin: 2.5rem 0 1rem 0;
+            padding-bottom: 0.3rem;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        h3 {
+            color: var(--success);
+            font-size: 1.2rem;
+            margin: 1.8rem 0 0.8rem 0;
+        }
+
+        h4 {
+            color: var(--warning);
+            font-size: 1.05rem;
+            margin: 1.2rem 0 0.5rem 0;
+        }
+
+        p { margin-bottom: 1rem; }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.2rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        code {
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9rem;
+        }
+
+        p code, li code {
+            background: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .keyword { color: #569cd6; }
+        .type { color: #4ec9b0; }
+        .string { color: #ce9178; }
+        .comment { color: #6a9955; }
+        .method { color: #dcdcaa; }
+        .number { color: #b5cea8; }
+        .param { color: #9cdcfe; }
+
+        .callout {
+            border-radius: 8px;
+            padding: 1.2rem 1.5rem;
+            margin: 1.5rem 0;
+            border-left: 4px solid;
+        }
+
+        .callout-metaphor {
+            background: rgba(83, 52, 131, 0.2);
+            border-color: var(--accent2);
+        }
+        .callout-metaphor::before {
+            content: "Metaphor";
+            display: block;
+            font-weight: bold;
+            color: var(--accent2);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-english {
+            background: rgba(78, 204, 163, 0.1);
+            border-color: var(--success);
+        }
+        .callout-english::before {
+            content: "Read It Like English";
+            display: block;
+            font-weight: bold;
+            color: var(--success);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-warning {
+            background: rgba(240, 165, 0, 0.1);
+            border-color: var(--warning);
+        }
+        .callout-warning::before {
+            content: "Common Confusion";
+            display: block;
+            font-weight: bold;
+            color: var(--warning);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-rule {
+            background: rgba(233, 69, 96, 0.1);
+            border-color: var(--accent);
+        }
+        .callout-rule::before {
+            content: "Golden Rule";
+            display: block;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        ul, ol {
+            margin: 0.5rem 0 1rem 1.5rem;
+        }
+
+        li { margin-bottom: 0.3rem; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 0.6rem 1rem;
+            text-align: left;
+        }
+
+        th {
+            background: var(--surface2);
+            color: var(--success);
+        }
+
+        td { background: var(--surface); }
+
+        .diagram {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'Cascadia Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            white-space: pre;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Base Entity Abstractions & Soft Delete</h1>
+    <p class="subtitle">Tutorial #27 — The Nesting Dolls of Domain Models</p>
+
+    <!-- ============================================================ -->
+    <h2>1. Why Base Classes?</h2>
+    <!-- ============================================================ -->
+
+    <p>
+        Imagine a project with <strong>45+ entity models</strong>. Every single one needs an
+        <code>Id</code> property. Most need audit fields (<code>CreatedAt</code>,
+        <code>CreatedByUserId</code>, <code>ModifiedAt</code>, <code>ModifiedByUserId</code>).
+        Many need soft-delete fields (<code>IsDeleted</code>, <code>DeletedAt</code>,
+        <code>DeletedByUserId</code>).
+    </p>
+
+    <p>Without base classes, you would copy-paste the same 8 properties into every entity class:</p>
+
+    <ul>
+        <li>45 entities &times; 8 properties = <strong>360 lines</strong> of duplicated boilerplate</li>
+        <li>Need to add a new audit field? Change it in <strong>45 places</strong></li>
+        <li>Typo in one entity? Silent inconsistency across the domain</li>
+    </ul>
+
+    <p>With base classes, you define each property <strong>once</strong>. Every entity inherits it automatically. Change the base &mdash; every child updates.</p>
+
+    <div class="callout callout-metaphor">
+        The inheritance chain is like Russian nesting dolls. The smallest doll (<code>BaseEntity</code>)
+        just has an ID. The middle doll (<code>BaseAuditableEntity</code>) adds "who created/modified
+        this." The biggest doll (<code>BaseSoftDeletableEntity</code>) adds "can this be hidden
+        without destroying it?"
+    </div>
+
+    <!-- ============================================================ -->
+    <h2>2. The Inheritance Hierarchy</h2>
+    <!-- ============================================================ -->
+
+    <p>Here is the full inheritance tree, from simplest to most feature-rich:</p>
+
+    <div class="diagram"><span class="type">BaseEntity</span> (<span class="keyword">abstract</span>)
+    <span class="param">Id</span> : <span class="type">int</span> [<span class="keyword">Key</span>]
+    |
+    |
+<span class="type">BaseAuditableEntity</span> (<span class="keyword">abstract</span>) : <span class="type">BaseEntity</span> + <span class="type">IAuditable</span>
+    <span class="param">CreatedAt</span>         : <span class="type">DateTime</span> = <span class="type">DateTime</span>.<span class="method">UtcNow</span>
+    <span class="param">CreatedByUserId</span>   : <span class="type">int?</span>
+    <span class="param">ModifiedAt</span>        : <span class="type">DateTime?</span>
+    <span class="param">ModifiedByUserId</span>  : <span class="type">int?</span>
+    |
+    |
+<span class="type">BaseSoftDeletableEntity</span> (<span class="keyword">abstract</span>) : <span class="type">BaseAuditableEntity</span> + <span class="type">ISoftDeletable</span>
+    <span class="param">IsDeleted</span>         : <span class="type">bool</span>
+    <span class="param">DeletedAt</span>         : <span class="type">DateTime?</span>
+    <span class="param">DeletedByUserId</span>   : <span class="type">int?</span></div>
+
+    <p>
+        Each level <strong>adds</strong> capability without repeating what came before.
+        <code>BaseSoftDeletableEntity</code> has all 8 properties &mdash; the ID from
+        <code>BaseEntity</code>, the 4 audit fields from <code>BaseAuditableEntity</code>,
+        and its own 3 soft-delete fields.
+    </p>
+
+    <!-- ============================================================ -->
+    <h2>3. The Interfaces &mdash; IAuditable and ISoftDeletable</h2>
+    <!-- ============================================================ -->
+
+    <p>
+        Before looking at the base classes themselves, we define two <strong>interfaces</strong>.
+        Interfaces allow checking <em>any</em> entity for audit or soft-delete capability
+        without knowing its concrete type.
+    </p>
+
+    <h3>IAuditable</h3>
+
+<pre><code><span class="keyword">public</span> <span class="keyword">interface</span> <span class="type">IAuditable</span>
+{
+    <span class="type">DateTime</span> <span class="param">CreatedAt</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="type">int?</span> <span class="param">CreatedByUserId</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="type">DateTime?</span> <span class="param">ModifiedAt</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="type">int?</span> <span class="param">ModifiedByUserId</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+}</code></pre>
+
+    <h3>ISoftDeletable</h3>
+
+<pre><code><span class="keyword">public</span> <span class="keyword">interface</span> <span class="type">ISoftDeletable</span>
+{
+    <span class="type">bool</span> <span class="param">IsDeleted</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="type">DateTime?</span> <span class="param">DeletedAt</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="type">int?</span> <span class="param">DeletedByUserId</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+}</code></pre>
+
+    <h3>Why Interfaces AND Base Classes?</h3>
+
+    <p>
+        The base classes give you <strong>implementation reuse</strong> (inherit properties once,
+        done). The interfaces give you <strong>polymorphic behavior</strong> &mdash; you can write
+        code that works on <em>any</em> auditable entity without caring what it actually is:
+    </p>
+
+<pre><code><span class="comment">// In an EF Core interceptor or generic service method:</span>
+<span class="keyword">if</span> (<span class="param">entity</span> <span class="keyword">is</span> <span class="type">IAuditable</span> <span class="param">auditable</span>)
+{
+    <span class="param">auditable</span>.<span class="param">ModifiedAt</span> = <span class="type">DateTime</span>.<span class="method">UtcNow</span>;
+    <span class="param">auditable</span>.<span class="param">ModifiedByUserId</span> = <span class="param">currentUserId</span>;
+}
+
+<span class="keyword">if</span> (<span class="param">entity</span> <span class="keyword">is</span> <span class="type">ISoftDeletable</span> <span class="param">softDeletable</span>)
+{
+    <span class="param">softDeletable</span>.<span class="param">IsDeleted</span> = <span class="keyword">true</span>;
+    <span class="param">softDeletable</span>.<span class="param">DeletedAt</span> = <span class="type">DateTime</span>.<span class="method">UtcNow</span>;
+    <span class="param">softDeletable</span>.<span class="param">DeletedByUserId</span> = <span class="param">currentUserId</span>;
+}</code></pre>
+
+    <p>
+        This pattern-match approach means a <strong>single interceptor</strong> can automatically
+        stamp audit fields on every save for every entity in the system &mdash; without knowing
+        about any specific entity class.
+    </p>
+
+    <!-- ============================================================ -->
+    <h2>4. The Base Classes &mdash; Full Code</h2>
+    <!-- ============================================================ -->
+
+    <h3>BaseEntity</h3>
+
+    <p>The simplest base. Every entity in the system has an integer primary key.</p>
+
+<pre><code><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="type">BaseEntity</span>
+{
+    [<span class="type">Key</span>]
+    <span class="keyword">public</span> <span class="type">int</span> <span class="param">Id</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+}</code></pre>
+
+    <p>
+        <code>abstract</code> means you cannot do <code>new BaseEntity()</code>. It only exists
+        to be inherited. The <code>[Key]</code> attribute tells EF Core this is the primary key.
+    </p>
+
+    <h3>BaseAuditableEntity</h3>
+
+    <p>Adds the four audit-tracking fields. Inherits <code>Id</code> from <code>BaseEntity</code>.</p>
+
+<pre><code><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="type">BaseAuditableEntity</span> : <span class="type">BaseEntity</span>, <span class="type">IAuditable</span>
+{
+    <span class="keyword">public</span> <span class="type">DateTime</span> <span class="param">CreatedAt</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; } = <span class="type">DateTime</span>.<span class="method">UtcNow</span>;
+    <span class="keyword">public</span> <span class="type">int?</span> <span class="param">CreatedByUserId</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public</span> <span class="type">DateTime?</span> <span class="param">ModifiedAt</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public</span> <span class="type">int?</span> <span class="param">ModifiedByUserId</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+}</code></pre>
+
+    <p>Key details:</p>
+    <ul>
+        <li><code>CreatedAt</code> defaults to <code>DateTime.UtcNow</code> &mdash; automatically stamped when the object is instantiated</li>
+        <li>All user ID fields are <code>int?</code> (nullable) &mdash; some records are created by system processes, not users</li>
+        <li>Implements <code>IAuditable</code>, so interceptors can find it via pattern matching</li>
+    </ul>
+
+    <h3>BaseSoftDeletableEntity</h3>
+
+    <p>The most feature-rich base. Gets ID + audit fields from its parents, adds soft-delete on top.</p>
+
+<pre><code><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="type">BaseSoftDeletableEntity</span> : <span class="type">BaseAuditableEntity</span>, <span class="type">ISoftDeletable</span>
+{
+    <span class="keyword">public</span> <span class="type">bool</span> <span class="param">IsDeleted</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public</span> <span class="type">DateTime?</span> <span class="param">DeletedAt</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public</span> <span class="type">int?</span> <span class="param">DeletedByUserId</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+}</code></pre>
+
+    <p>
+        A <code>BaseSoftDeletableEntity</code> has <strong>8 properties total</strong> &mdash;
+        <code>Id</code> + 4 audit fields + 3 soft-delete fields &mdash; but the class only
+        declares the 3 that are new. Everything else comes from inheritance.
+    </p>
+
+    <!-- ============================================================ -->
+    <h2>5. Choosing the Right Base</h2>
+    <!-- ============================================================ -->
+
+    <p>Not every entity needs every feature. Here is the decision guide:</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Base Class</th>
+                <th>Use When</th>
+                <th>Example Entities</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>BaseEntity</code></td>
+                <td>Just need an ID (lookup tables, simple references)</td>
+                <td>Country, District, Holiday</td>
+            </tr>
+            <tr>
+                <td><code>BaseAuditableEntity</code></td>
+                <td>Need audit trail but records are never deleted</td>
+                <td>Article, Configuration, AuditLog</td>
+            </tr>
+            <tr>
+                <td><code>BaseSoftDeletableEntity</code></td>
+                <td>Full audit + soft-delete capability</td>
+                <td>Lead, Opportunity, Ticket, Document</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p>The rule of thumb: <strong>start with the simplest base that covers your needs</strong>. You can always move up the hierarchy later (since each level is a superset of the one below).</p>
+
+    <!-- ============================================================ -->
+    <h2>6. Soft Delete &mdash; How It Works</h2>
+    <!-- ============================================================ -->
+
+    <p>
+        Soft delete means "mark a record as deleted instead of physically removing it from the
+        database." The row stays in the table, but a <code>WHERE IsDeleted = 0</code> filter
+        hides it from all normal queries.
+    </p>
+
+    <p>This requires three pieces working together:</p>
+
+    <h3>a) Entity Configuration with HasQueryFilter</h3>
+
+    <p>
+        The global query filter is the magic that makes soft delete transparent.
+        It is configured once per entity type using EF Core's fluent API:
+    </p>
+
+<pre><code><span class="keyword">public</span> <span class="keyword">class</span> <span class="type">LeadConfiguration</span> : <span class="type">IEntityTypeConfiguration</span>&lt;<span class="type">Lead</span>&gt;
+{
+    <span class="keyword">public</span> <span class="keyword">void</span> <span class="method">Configure</span>(<span class="type">EntityTypeBuilder</span>&lt;<span class="type">Lead</span>&gt; <span class="param">builder</span>)
+    {
+        <span class="param">builder</span>.<span class="method">HasQueryFilter</span>(<span class="param">l</span> =&gt; !<span class="param">l</span>.<span class="param">IsDeleted</span>);
+    }
+}</code></pre>
+
+    <div class="callout callout-english">
+        <code>builder.HasQueryFilter(l => !l.IsDeleted)</code> reads as:
+        "Every time someone queries leads, automatically add <code>WHERE IsDeleted = false</code>.
+        They'll never see deleted records unless they explicitly ask."
+    </div>
+
+    <h3>b) Soft-Delete in a Service Method</h3>
+
+    <p>
+        Instead of calling <code>context.Remove(entity)</code>, the service sets the
+        soft-delete fields:
+    </p>
+
+<pre><code><span class="keyword">public</span> <span class="keyword">async</span> <span class="type">Task</span>&lt;<span class="type">ServiceResult</span>&gt; <span class="method">DeleteAsync</span>(<span class="type">int</span> <span class="param">id</span>, <span class="type">int</span> <span class="param">userId</span>, <span class="type">string</span> <span class="param">companyDatabase</span>)
+{
+    <span class="keyword">await using</span> <span class="keyword">var</span> <span class="param">context</span> = <span class="param">_contextFactory</span>.<span class="method">CreateCompanyContext</span>(<span class="param">companyDatabase</span>);
+
+    <span class="keyword">var</span> <span class="param">existing</span> = <span class="keyword">await</span> <span class="param">context</span>.<span class="type">Leads</span>.<span class="method">FindAsync</span>(<span class="param">id</span>);
+    <span class="keyword">if</span> (<span class="param">existing</span> == <span class="keyword">null</span>)
+        <span class="keyword">return</span> <span class="type">ServiceResult</span>.<span class="method">Failure</span>(<span class="string">"Lead not found."</span>);
+
+    <span class="comment">// Soft delete: mark, don't remove</span>
+    <span class="param">existing</span>.<span class="param">IsDeleted</span> = <span class="keyword">true</span>;
+    <span class="param">existing</span>.<span class="param">DeletedAt</span> = <span class="type">DateTime</span>.<span class="method">UtcNow</span>;
+    <span class="param">existing</span>.<span class="param">DeletedByUserId</span> = <span class="param">userId</span>;
+
+    <span class="keyword">await</span> <span class="param">context</span>.<span class="method">SaveChangesAsync</span>();
+    <span class="keyword">return</span> <span class="type">ServiceResult</span>.<span class="method">SuccessResult</span>();
+}</code></pre>
+
+    <p>
+        The record is still in the database. But because of the global query filter,
+        the next time anyone queries <code>context.Leads</code>, this record is invisible.
+    </p>
+
+    <h3>c) Querying &mdash; Automatic Filter</h3>
+
+<pre><code><span class="comment">// This automatically adds WHERE IsDeleted = 0 (thanks to HasQueryFilter)</span>
+<span class="keyword">var</span> <span class="param">leads</span> = <span class="keyword">await</span> <span class="param">context</span>.<span class="type">Leads</span>.<span class="method">ToListAsync</span>();
+
+<span class="comment">// To include deleted records (admin recovery, reports):</span>
+<span class="keyword">var</span> <span class="param">allLeads</span> = <span class="keyword">await</span> <span class="param">context</span>.<span class="type">Leads</span>
+    .<span class="method">IgnoreQueryFilters</span>()
+    .<span class="method">ToListAsync</span>();</code></pre>
+
+    <div class="callout callout-warning">
+        <code>HasQueryFilter</code> applies globally to <strong>ALL</strong> queries on that
+        entity &mdash; including navigations and <code>.Include()</code> calls. If you load
+        an <code>Order</code> and <code>.Include(o => o.Lead)</code>, the filter still applies
+        to the Lead. Use <code>.IgnoreQueryFilters()</code> only when you intentionally need
+        deleted records (admin views, recovery tools).
+    </div>
+
+    <div class="callout callout-rule">
+        Never hard-delete business data. Use <code>BaseSoftDeletableEntity</code> +
+        <code>HasQueryFilter</code>. The data is "gone" from the user's perspective but
+        recoverable if needed. Hard deletes are acceptable only for truly ephemeral data
+        (session tokens, temporary caches).
+    </div>
+
+    <!-- ============================================================ -->
+    <h2>7. Multi-Context Configuration</h2>
+    <!-- ============================================================ -->
+
+    <p>
+        In a multi-tenant system, a single assembly may contain entity configurations for
+        <strong>two different databases</strong>. The central database
+        (<code>BaseControleContext</code>) holds users, companies, and geography tables. The
+        tenant database (<code>DynamicCompanyContext</code>) holds employees, jobs, CRM data, etc.
+    </p>
+
+    <p>
+        The problem: <code>ApplyConfigurationsFromAssembly</code> finds <em>all</em>
+        configurations in the assembly. We need to prevent geography configs from being applied
+        to tenant databases.
+    </p>
+
+    <h3>The Blocklist Pattern</h3>
+
+<pre><code><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">readonly</span> <span class="type">HashSet</span>&lt;<span class="type">Type</span>&gt; <span class="param">_centralOnlyConfigurations</span> = <span class="keyword">new</span>()
+{
+    <span class="keyword">typeof</span>(<span class="type">CountryConfiguration</span>),
+    <span class="keyword">typeof</span>(<span class="type">DistrictConfiguration</span>),
+    <span class="keyword">typeof</span>(<span class="type">CountyConfiguration</span>),
+};
+
+<span class="param">modelBuilder</span>.<span class="method">ApplyConfigurationsFromAssembly</span>(
+    <span class="keyword">typeof</span>(<span class="type">BaseContext</span>).<span class="param">Assembly</span>,
+    <span class="param">type</span> =&gt; !<span class="param">_centralOnlyConfigurations</span>.<span class="method">Contains</span>(<span class="param">type</span>));</code></pre>
+
+    <p>
+        The <code>HashSet&lt;Type&gt;</code> acts as a blocklist. The predicate
+        <code>type => !_centralOnlyConfigurations.Contains(type)</code> tells EF:
+        "Apply every configuration you find <em>except</em> the ones in this set."
+    </p>
+
+    <h3>modelBuilder.Ignore&lt;T&gt;()</h3>
+
+    <p>
+        Even if a configuration is excluded, EF might still discover an entity type through
+        navigation properties. <code>Ignore&lt;T&gt;()</code> explicitly tells EF: "This entity
+        does not belong to this context. Do not create a table for it."
+    </p>
+
+<pre><code><span class="comment">// In the tenant context: these entities live in the central database only</span>
+<span class="param">modelBuilder</span>.<span class="method">Ignore</span>&lt;<span class="type">Country</span>&gt;();
+<span class="param">modelBuilder</span>.<span class="method">Ignore</span>&lt;<span class="type">User</span>&gt;();
+<span class="param">modelBuilder</span>.<span class="method">Ignore</span>&lt;<span class="type">Company</span>&gt;();</code></pre>
+
+    <p>
+        Without these <code>Ignore</code> calls, EF would see a navigation property like
+        <code>Employee.Country</code>, follow it, and try to create a <code>Countries</code>
+        table in the tenant database &mdash; which would be wrong.
+    </p>
+
+    <!-- ============================================================ -->
+    <h2>8. Global Cascade Delete Prevention</h2>
+    <!-- ============================================================ -->
+
+    <p>
+        By default, EF Core configures <strong>cascade delete</strong> on required foreign keys.
+        That means deleting a parent record automatically deletes all children. In a complex
+        multi-tenant system, this is dangerous:
+    </p>
+
+    <ul>
+        <li>Cascade chains can trigger unexpected mass deletions</li>
+        <li>SQL Server disallows multiple cascade paths to the same table</li>
+        <li>Soft-delete entities should never be hard-deleted by cascade</li>
+    </ul>
+
+    <p>The solution: disable cascade delete globally and handle it explicitly in services.</p>
+
+<pre><code><span class="keyword">foreach</span> (<span class="keyword">var</span> <span class="param">relationship</span> <span class="keyword">in</span> <span class="param">modelBuilder</span>.<span class="param">Model</span>.<span class="method">GetEntityTypes</span>()
+    .<span class="method">SelectMany</span>(<span class="param">e</span> =&gt; <span class="param">e</span>.<span class="method">GetForeignKeys</span>()))
+{
+    <span class="param">relationship</span>.<span class="param">DeleteBehavior</span> = <span class="type">DeleteBehavior</span>.<span class="param">NoAction</span>;
+}</code></pre>
+
+    <p>
+        This iterates over <em>every</em> foreign key relationship in the model and sets the
+        delete behavior to <code>NoAction</code>. Now, if you try to delete a parent that has
+        children, SQL Server will throw an error instead of silently cascading. Your service
+        layer must handle the deletion order explicitly.
+    </p>
+
+    <p>
+        This pairs perfectly with soft delete: since you never actually <code>DELETE</code>
+        rows, cascade behavior becomes irrelevant. But the safety net catches accidental
+        hard deletes during development.
+    </p>
+
+    <!-- ============================================================ -->
+    <h2>9. ApplyConfigurationsFromAssembly</h2>
+    <!-- ============================================================ -->
+
+    <p>
+        Instead of manually registering every entity configuration, EF Core can
+        <strong>auto-discover</strong> them from the assembly:
+    </p>
+
+<pre><code><span class="param">modelBuilder</span>.<span class="method">ApplyConfigurationsFromAssembly</span>(
+    <span class="keyword">typeof</span>(<span class="type">BaseContext</span>).<span class="param">Assembly</span>,
+    <span class="param">type</span> =&gt; !<span class="param">_centralOnlyConfigurations</span>.<span class="method">Contains</span>(<span class="param">type</span>));</code></pre>
+
+    <p>How this works step by step:</p>
+
+    <ol>
+        <li><strong>Scans</strong> the assembly for all classes that implement <code>IEntityTypeConfiguration&lt;T&gt;</code></li>
+        <li><strong>Filters</strong> using the predicate &mdash; excludes central-only configs from tenant contexts</li>
+        <li><strong>Instantiates</strong> each configuration class and calls its <code>Configure()</code> method</li>
+        <li><strong>Applies</strong> the result to the <code>ModelBuilder</code></li>
+    </ol>
+
+    <p>The beauty of this pattern:</p>
+
+    <ul>
+        <li><strong>Zero registration</strong> &mdash; create a new configuration class, it is automatically picked up</li>
+        <li><strong>Convention-based</strong> &mdash; no need to remember to add it to a list somewhere</li>
+        <li><strong>Filterable</strong> &mdash; the predicate gives fine-grained control over which configs apply to which context</li>
+    </ul>
+
+    <p>
+        When you add a new entity with its own <code>IEntityTypeConfiguration&lt;T&gt;</code>,
+        the next time the context builds its model, the new configuration is discovered and applied
+        automatically. Nothing else to wire up.
+    </p>
+
+    <!-- ============================================================ -->
+    <h2>10. Creating a New Entity &mdash; Step by Step</h2>
+    <!-- ============================================================ -->
+
+    <p>Here is the complete workflow for adding a new entity to the system:</p>
+
+    <h3>Step 1: Choose the Right Base Class</h3>
+
+    <p>Ask yourself:</p>
+    <ul>
+        <li>Is this a simple lookup/reference? &rarr; <code>BaseEntity</code></li>
+        <li>Do I need to track who created/modified it? &rarr; <code>BaseAuditableEntity</code></li>
+        <li>Should users be able to "delete" it without losing data? &rarr; <code>BaseSoftDeletableEntity</code></li>
+    </ul>
+
+    <h3>Step 2: Create the Entity Class</h3>
+
+<pre><code><span class="keyword">public</span> <span class="keyword">class</span> <span class="type">SupportTicket</span> : <span class="type">BaseSoftDeletableEntity</span>
+{
+    <span class="keyword">public</span> <span class="type">string</span> <span class="param">Code</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public</span> <span class="type">string</span> <span class="param">Title</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public</span> <span class="type">int</span> <span class="param">Priority</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public</span> <span class="type">int</span> <span class="param">StatusId</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+
+    <span class="comment">// Navigation properties</span>
+    <span class="keyword">public</span> <span class="keyword">virtual</span> <span class="type">TicketStatus</span> <span class="param">Status</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+}</code></pre>
+
+    <p>
+        This class has <strong>12 properties</strong> in total: <code>Id</code> (from
+        <code>BaseEntity</code>), 4 audit fields (from <code>BaseAuditableEntity</code>),
+        3 soft-delete fields (from <code>BaseSoftDeletableEntity</code>), and the 4 domain-specific
+        properties declared here. But the class only explicitly declares the 4 that are unique to it.
+    </p>
+
+    <h3>Step 3: Add Entity-Specific Properties</h3>
+
+    <p>
+        Only declare what is unique to this entity. <code>Id</code>, <code>CreatedAt</code>,
+        <code>IsDeleted</code>, etc. are all inherited. Do not redeclare them.
+    </p>
+
+    <h3>Step 4 (Optional): Create a Configuration Class</h3>
+
+<pre><code><span class="keyword">public</span> <span class="keyword">class</span> <span class="type">SupportTicketConfiguration</span> : <span class="type">IEntityTypeConfiguration</span>&lt;<span class="type">SupportTicket</span>&gt;
+{
+    <span class="keyword">public</span> <span class="keyword">void</span> <span class="method">Configure</span>(<span class="type">EntityTypeBuilder</span>&lt;<span class="type">SupportTicket</span>&gt; <span class="param">builder</span>)
+    {
+        <span class="comment">// Soft-delete query filter</span>
+        <span class="param">builder</span>.<span class="method">HasQueryFilter</span>(<span class="param">t</span> =&gt; !<span class="param">t</span>.<span class="param">IsDeleted</span>);
+
+        <span class="comment">// Indexes for common queries</span>
+        <span class="param">builder</span>.<span class="method">HasIndex</span>(<span class="param">t</span> =&gt; <span class="param">t</span>.<span class="param">Code</span>).<span class="method">IsUnique</span>();
+        <span class="param">builder</span>.<span class="method">HasIndex</span>(<span class="param">t</span> =&gt; <span class="param">t</span>.<span class="param">StatusId</span>);
+
+        <span class="comment">// Property constraints</span>
+        <span class="param">builder</span>.<span class="method">Property</span>(<span class="param">t</span> =&gt; <span class="param">t</span>.<span class="param">Code</span>).<span class="method">HasMaxLength</span>(<span class="number">20</span>).<span class="method">IsRequired</span>();
+        <span class="param">builder</span>.<span class="method">Property</span>(<span class="param">t</span> =&gt; <span class="param">t</span>.<span class="param">Title</span>).<span class="method">HasMaxLength</span>(<span class="number">200</span>).<span class="method">IsRequired</span>();
+    }
+}</code></pre>
+
+    <p>
+        This configuration is auto-discovered by <code>ApplyConfigurationsFromAssembly</code>.
+        No manual registration needed.
+    </p>
+
+    <h3>Step 5: Add a DbSet to the Context</h3>
+
+<pre><code><span class="comment">// In your DbContext class:</span>
+<span class="keyword">public</span> <span class="type">DbSet</span>&lt;<span class="type">SupportTicket</span>&gt; <span class="param">SupportTickets</span> { <span class="keyword">get</span>; <span class="keyword">set</span>; }</code></pre>
+
+    <p>
+        That is it. Five steps. The entity gets an ID, full audit tracking, soft-delete capability,
+        a global query filter, indexes, and a database table &mdash; with minimal boilerplate.
+    </p>
+
+    <!-- ============================================================ -->
+    <h2>Putting It All Together</h2>
+    <!-- ============================================================ -->
+
+    <p>Here is the complete picture of how all these pieces interact at runtime:</p>
+
+    <div class="diagram">
+<span class="comment">1. Entity inherits from BaseSoftDeletableEntity</span>
+   SupportTicket gets: Id, CreatedAt, CreatedByUserId,
+   ModifiedAt, ModifiedByUserId, IsDeleted, DeletedAt, DeletedByUserId
+
+<span class="comment">2. Configuration applies HasQueryFilter</span>
+   Every query on SupportTickets adds: WHERE IsDeleted = 0
+
+<span class="comment">3. Service creates a record</span>
+   CreatedAt = UtcNow (auto from property default)
+   CreatedByUserId = current user (set by interceptor or service)
+
+<span class="comment">4. Service updates a record</span>
+   ModifiedAt = UtcNow (set by interceptor via IAuditable check)
+   ModifiedByUserId = current user
+
+<span class="comment">5. Service "deletes" a record</span>
+   IsDeleted = true, DeletedAt = UtcNow, DeletedByUserId = current user
+   Record stays in DB but disappears from all queries
+
+<span class="comment">6. Admin needs to see deleted records</span>
+   context.SupportTickets.IgnoreQueryFilters().Where(t => t.IsDeleted)
+    </div>
+
+    <p>
+        The base classes, interfaces, query filters, and interceptors form a cohesive system.
+        Each entity that inherits from the right base automatically participates in audit
+        tracking and soft-delete &mdash; no additional code required per entity.
+    </p>
+
+    <div class="callout callout-metaphor">
+        Think of it as a building's utility infrastructure. Once you wire electricity to every
+        floor (base classes), each apartment (entity) just plugs into the wall socket (inherits).
+        The electricity (audit + soft-delete) flows without each apartment needing its own
+        generator.
+    </div>
+
+</body>
+</html>

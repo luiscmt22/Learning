@@ -1,0 +1,438 @@
+[
+  {
+    "src_rel": "Education/Educational_ML/neural-network-journeyV2.html",
+    "title": "Neural Networks from Scratch: The 20 Questions Journey",
+    "doc_type": "core-concept",
+    "topic_family": "ml",
+    "domain": null,
+    "topic_slug": "neural-networks-from-scratch",
+    "complexity": "beginner",
+    "one_line_summary": "A narrative, metaphor-driven walkthrough of how a neural network actually works, built around a 20 Questions animal-guessing game and reaching all the way from feature vectors to backpropagation.",
+    "executive_summary": "This guide teaches the fundamentals of neural networks by building one from scratch for a 20 Questions animal game. It covers feature vectors, single neurons (multiply, add, squash), the sigmoid activation, multi-class output layers, hidden layers and why XOR requires them, the credit assignment problem, and the full backpropagation algorithm. It deliberately avoids ML libraries so the reader understands what weights, biases, and gradients actually ARE, not just how to call a framework method.",
+    "key_concepts": [
+      "feature vectors",
+      "artificial neuron",
+      "sigmoid activation",
+      "multi-class classification",
+      "hidden layers",
+      "backpropagation",
+      "sigmoid derivative"
+    ],
+    "prerequisites": [
+      "basic arithmetic",
+      "intuition for functions and graphs"
+    ],
+    "builds_toward": [
+      "batch-training-and-overfitting",
+      "network-persistence",
+      "information-theory-and-entropy",
+      "ml-net-and-pytorch"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": null,
+    "suggested_metaphor": "A neural network is a pub trivia team where every teammate only knows one narrow topic. Each teammate (neuron) shouts an answer with a confidence level, the captain picks the loudest, and after every wrong answer they argue backwards through the table about whose bad hint contributed most to the mistake — then they quietly adjust how much they'll trust each other next round. Do that a million times and the table starts winning.",
+    "suggested_intro_hook": "You can describe a penguin as [0, 2, 0, 2] — doesn't fly, lives in water, not a mammal, is a bird. That four-number fingerprint is the entire starting point of modern AI. Everything from ChatGPT to self-driving cars is just a much, much bigger version of this same trick.",
+    "what_it_teaches": "How to represent data as numeric feature vectors, how a single artificial neuron computes a weighted sum and squashes it through sigmoid, why one neuron per class gives you multi-class classification, why single-layer networks fail on XOR, how hidden layers learn abstract features like 'aquatic mammal', and how backpropagation distributes blame backwards through weights using the sigmoid derivative.",
+    "key_takeaways": [
+      "The quality of your features sets the ceiling of your AI's intelligence — garbage in, garbage out",
+      "A neuron is just three operations: multiply by weights, add them up, squash through sigmoid",
+      "Hidden layers invent intermediate features no human explicitly designed",
+      "Backpropagation uses the same weights forward for signals and backward for blame",
+      "Saturated neurons (output near 0 or 1) barely learn because their sigmoid derivative is tiny",
+      "Building from scratch gives you intuition no library tutorial can"
+    ],
+    "cross_references": [
+      "sigmoid-derivative-deep-dive",
+      "ml-net-classification",
+      "ef-core-fundamentals",
+      "blazor-server-fundamentals"
+    ],
+    "quality_notes": "Exceptionally well-structured educational content with interactive elements, consistent metaphors (mailroom, soccer team, gas pedal), and a clear module progression. Modules 7-11 are previews rather than fully taught. Ends with a heartfelt 'you understand how neural networks really work' payoff.",
+    "reading_difficulty_minutes": 35,
+    "is_part_of_series": false,
+    "series_name": null
+  },
+  {
+    "src_rel": "Education/28-Password-Security-BCrypt.html",
+    "title": "Password Security & BCrypt in GivingCare",
+    "doc_type": "applied-implementation",
+    "topic_family": null,
+    "domain": "identity-project",
+    "topic_slug": "givingcare-password-security",
+    "complexity": "intermediate",
+    "one_line_summary": "A complete walkthrough of how the GivingCare identity system protects user passwords using BCrypt, lockout tracking, strength validation, and a forced-change flow.",
+    "executive_summary": "This tutorial documents GivingCare's PasswordService and AuthenticationService in detail: why BCrypt with work factor 12 is used instead of MD5/SHA-256, how the 60-character hash string embeds its own salt, how the login flow combines lockout checks, audit logging and identical error messages to prevent username enumeration, and how password reset generates cryptographically secure temporary passwords with ChangePassword=true to force a rotation. It also covers the real-time strength checklist UI in AlterarPassword.razor and the [Obsolete] legacy MD5 column.",
+    "key_concepts": [
+      "BCrypt work factor",
+      "embedded salt",
+      "account lockout tracking",
+      "password strength validation",
+      "username enumeration prevention",
+      "forced password change",
+      "RandomNumberGenerator vs Random"
+    ],
+    "prerequisites": [
+      "ASP.NET Core services and DI",
+      "hash function basics",
+      "Blazor component basics"
+    ],
+    "builds_toward": [
+      "authentication-middleware",
+      "role-based-authorization",
+      "audit-logging-system"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": {
+      "why_it_exists": "Storing passwords in plaintext or weak MD5 hashes is a cataclysmic security failure — every breach of a major tech company reminds us of that. GivingCare needed a password system that would survive a database leak AND deter online brute force attempts AND guide users toward strong passwords AND give admins a clean recovery path when users forget. BCrypt alone solves one of those problems; this service layer solves all of them together.",
+      "what_it_does": "PasswordService centralises four responsibilities: hashing via BCrypt with work factor 12 (a ~260ms operation that makes a billion-password attack take ~8 years), verification by re-hashing the input with the embedded salt, real-time strength validation requiring at least 3 of 4 character classes, and cryptographically secure password generation using RandomNumberGenerator. AuthenticationService then wires BCrypt.Verify into a login pipeline that checks for lockout, looks up the user, verifies the hash, checks IsActive, clears failed attempts, creates a session, writes an audit log entry, and redirects to a forced-change page if ChangePassword is true.",
+      "how_it_works": "On login, the system first consults a static in-memory dictionary of failed attempts keyed by username — 5 failures inside the window sets LockedUntil to Now + 15 min. A password check calls BCrypt.Net.BCrypt.Verify, which extracts the salt from the stored 60-char hash, re-hashes with the same work factor, and constant-time compares. Both 'user not found' and 'wrong password' return the same message to prevent enumeration. Password reset generates a 12-character password (all four character classes) via RandomNumberGenerator.GetInt32, hashes it, sets ChangePassword=true, emails the plaintext to the user, and logs PASSWORD_RESET_REQUESTED. The Blazor change-password page uses computed properties like HasUpperCase => NewPassword.Any(char.IsUpper) to give live red/green feedback per keystroke, and when IsForced is true the Cancel button shows a warning instead of navigating away. The legacy AgPassword column is kept for DB compatibility but decorated with [Obsolete], [JsonIgnore] and [StringLength(50)] so nobody can use it accidentally."
+    },
+    "suggested_metaphor": "BCrypt is like a bank vault with an adjustable time-lock. MD5 is a cardboard box — a teenager can crack billions per second. BCrypt at work factor 12 says 'yes, you can try to open me, but each guess takes a quarter of a second.' For a real user logging in, that's invisible. For an attacker trying a billion passwords, that's 8 years of uninterrupted compute. You haven't made the lock pickproof — you've made picking it economically absurd.",
+    "suggested_intro_hook": "Here's the test: if your database is leaked tonight, how long until your users' passwords show up on haveibeenpwned? If the answer is 'seconds', you stored them in MD5. If the answer is 'centuries', you probably used BCrypt with a sensible work factor. This tutorial shows exactly which levers to pull to land on the second answer.",
+    "key_takeaways": [
+      "Speed is the enemy for password hashing — BCrypt's deliberate slowness is the feature",
+      "The salt is embedded in the 60-char BCrypt string — no separate DB column needed",
+      "Use identical error messages for 'user not found' and 'wrong password' to prevent username enumeration",
+      "A static Dictionary keyed by username implements lockout with zero infrastructure",
+      "RandomNumberGenerator is for security; System.Random is for games and is predictable",
+      "Real-time strength UI is good security UX — users create better passwords when the rules are visible",
+      "Keep legacy password columns but mark them [Obsolete] so the compiler warns on use"
+    ],
+    "cross_references": [
+      "authentication-middleware",
+      "audit-logging-system",
+      "blazor-forms-validation",
+      "role-based-authorization"
+    ],
+    "quality_notes": "Excellent applied tutorial. Every code snippet is paired with a 'why this matters' explanation, and the ASCII flowchart of the login pipeline is clear. Very well structured — could be held up as a template for how to document a security subsystem.",
+    "reading_difficulty_minutes": 20,
+    "is_part_of_series": true,
+    "series_name": "GivingCare Tutorials"
+  },
+  {
+    "src_rel": "Education/18-Migration-And-Seeding-Mechanism.html",
+    "title": "Migration & Seeding Mechanism — CLI Commands, TenantMigrator, and DemoDataSeeder",
+    "doc_type": "applied-implementation",
+    "topic_family": null,
+    "domain": "migration-system",
+    "topic_slug": "givingcare-migration-and-seeding",
+    "complexity": "intermediate",
+    "one_line_summary": "How the GivingCare app uses command-line arguments on its own executable to provision auth and tenant databases, layered with HasData migration seeds and a programmatic DemoDataSeeder for realistic demo data.",
+    "executive_summary": "This tutorial explains how GivingCare embeds its database-provisioning logic directly into the web app executable using dotnet run -- --migrate-all flags, so the same .exe can be a web server or a migration tool. It covers the TenantMigrator static class that wraps EF Core's MigrateAsync for the AuthDatabase and each tenant DB, the difference between Layer 1 seeds (HasData inside IEntityTypeConfiguration) and Layer 2 seeds (DemoDataSeeder which generates 25 employees, 1000 attendance records, CRM pipeline data etc.), and the idempotency patterns that make both layers safe to run repeatedly.",
+    "key_concepts": [
+      "dotnet run -- argument separator",
+      "TenantMigrator pattern",
+      "EF Core MigrateAsync idempotency",
+      "HasData migration seeds",
+      "IEntityTypeConfiguration auto-discovery",
+      "DemoDataSeeder partial class",
+      "EnsureDeletedAsync re-seed"
+    ],
+    "prerequisites": [
+      "EF Core migrations basics",
+      "ASP.NET Core Program.cs",
+      "multi-tenant database concepts"
+    ],
+    "builds_toward": [
+      "multi-tenant-architecture",
+      "ci-cd-pipeline-database-provisioning"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": {
+      "why_it_exists": "GivingCare is multi-tenant: one AuthDatabase plus N company databases, each of which needs schema + lookup data (currencies, document types, equipment statuses). Maintaining a separate console project just for migrations would mean two binaries, two sets of configuration, and two places to keep in sync. Worse, CI/CD pipelines would need to know about two artifacts. Embedding the migration commands directly in the web app executable means one binary does everything — dotnet run starts the server, dotnet run -- --migrate-all provisions databases and exits. And because a demo environment needs realistic data to show off the product, a second layer (DemoDataSeeder) generates 25 fake employees and a thousand attendance records without contaminating real tenant databases.",
+      "what_it_does": "Program.cs contains a decision gate just before app.Run() that checks args for --migrate-all, --migrate-auth, --migrate-tenants, --seed-demo, or --reseed-demo. Each match calls the corresponding static method on TenantMigrator or DemoDataSeeder and then returns — never starting Kestrel. TenantMigrator wraps context.Database.MigrateAsync() for BaseControleContext (auth DB) and DynamicCompanyContext (tenant DBs, constructed from a companyKey that looks up connection strings in Client:Database:Companies). DemoDataSeeder is a partial class split across two files: the orchestrator calls TenantMigrator first, then seeds auth data (Company row, UserCompany link, feature flags), then walks through the company database seeding departments, locations, employees, contracts, leave balances, attendance records, CRM entities, articles, documents, and more.",
+      "how_it_works": "The -- in dotnet run -- --migrate-all is a POSIX convention: dotnet CLI stops parsing flags at the double-dash and passes everything after it into args[]. EF Core's MigrateAsync creates the database if needed, creates __EFMigrationsHistory, and applies pending migrations in chronological order — running it twice is harmless. Layer 1 seeds use HasData() inside IEntityTypeConfiguration<T> classes, which BaseContext.OnModelCreating auto-discovers via ApplyConfigurationsFromAssembly with a blocklist for auth-only configs. EF captures those HasData definitions as InsertData calls in the generated migration file, with explicit Ids required so EF can track changes across migrations. Three files must stay in sync: the migration .cs, its .Designer.cs, and the ModelSnapshot.cs. Layer 2 (DemoDataSeeder) always calls TenantMigrator first to guarantee Layer 1 data exists, uses a static Random seeded with 42 for reproducibility, checks for existing rows before inserting (idempotent), and on --reseed-demo calls EnsureDeletedAsync() for a clean slate. For databases where HasData was added after the migration was already applied, a separate SeedEntityLookups.sql with NOT EXISTS guards and IDENTITY_INSERT ON handles the backfill."
+    },
+    "suggested_metaphor": "The executable is a Swiss Army knife. Fold out the regular blade (dotnet run) and it's a web server. Fold out the bottle opener (dotnet run -- --migrate-all) and it provisions every database. Fold out the toothpick (dotnet run -- --reseed-demo) and it wipes the demo tenant clean and repopulates it with 25 fake employees and 1000 fake clock-ins. Same tool, different blade, no second program to install.",
+    "suggested_intro_hook": "Why does your production deployment script need two separate executables — one to migrate the database and one to serve the app? Spoiler: it doesn't. The same .exe can do both jobs, and a single POSIX convention (the -- separator) is what makes it elegant instead of hacky.",
+    "key_takeaways": [
+      "Embedding migration commands in the same executable eliminates a whole separate project from your build",
+      "The -- separator in dotnet run is POSIX for 'stop parsing options and pass the rest through'",
+      "EF Core's MigrateAsync is idempotent — safe to call on every deployment",
+      "Two seed layers serve different purposes: HasData for universal lookup data, DemoDataSeeder for realistic demo content",
+      "HasData requires explicit primary keys so EF can track changes across migrations",
+      "Three files must stay in sync for HasData: migration .cs, .Designer.cs, and ModelSnapshot.cs",
+      "Always check for existing rows before inserting if you want your seeder to be idempotent"
+    ],
+    "cross_references": [
+      "ef-core-fundamentals",
+      "multi-tenant-architecture",
+      "dependency-injection",
+      "configuration-and-appsettings"
+    ],
+    "quality_notes": "Very clear and well-organized. The decision flow diagram and the file map at the end are particularly useful. The building superintendent metaphor is nicely pitched. Could benefit from a note on transaction handling during seeding, but otherwise production-quality documentation.",
+    "reading_difficulty_minutes": 18,
+    "is_part_of_series": true,
+    "series_name": "GivingCare Tutorials"
+  },
+  {
+    "src_rel": "Education/Stock/ENG/StockServiceSystemFormalDocumentation.pdf",
+    "title": "Stock Service System — Technical Documentation",
+    "doc_type": "applied-implementation",
+    "topic_family": null,
+    "domain": "stock-service",
+    "topic_slug": "stock-service-system",
+    "complexity": "intermediate",
+    "one_line_summary": "A formal technical spec for a high-performance Stock Service that layers the Decorator Pattern (CachedStockService over StockService) with SQL Server functions, graduated cache expiration, and task pre-loading for perceived-instant UI response.",
+    "executive_summary": "The Stock Service provides point-in-time inventory queries backed by a SQL Server table-valued function (fn_ArtigoStockByDate) and a multi-tier caching strategy. It uses the Decorator Pattern to wrap a CachedStockService around the core StockService, applies graduated expiration (1 hour for historical data >7 days old, 5 minutes for recent), and uses fire-and-forget task pre-loading from the Blazor page's OnInitializedAsync so that when a user clicks the stock tab the data is already loaded. It includes connection pooling via IDbContextFactory, LINQ queries with multiple joins for movement history, structured logging, and health checks reporting cache hit rate and memory pressure.",
+    "key_concepts": [
+      "Decorator Pattern",
+      "IMemoryCache",
+      "graduated cache expiration",
+      "SQL Server table-valued function",
+      "IDbContextFactory connection pooling",
+      "task pre-loading",
+      "point-in-time stock query"
+    ],
+    "prerequisites": [
+      "EF Core basics",
+      "dependency injection",
+      "Blazor component lifecycle",
+      "caching concepts"
+    ],
+    "builds_toward": [
+      "distributed-caching-redis",
+      "cqrs-query-optimization",
+      "signalr-cache-invalidation"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": {
+      "why_it_exists": "In a typical inventory app, asking 'what is the stock level of article 123 on January 15th?' triggers an expensive aggregation — sum all entries minus all exits up to that date across a document-detail join chain. Doing this on every page load (and every date filter change) melts the database. The Stock Service exists to turn a 2-second query into a 1-ms memory fetch most of the time, while still being able to answer historical queries with point-in-time accuracy. Caching alone would risk stale data; pre-loading alone would still hit the DB on every tab switch. The combination gets users sub-millisecond responses and accepts only the first visit per article per day as the cache-miss cost.",
+      "what_it_does": "The IStockService interface exposes GetArticleStockByDateAsync, GetStockMovementsAsync, GetStockTotalsAsync, and CheckFluxoAsync. StockService (the core implementation) bypasses EF Core for the critical path and calls SELECT * FROM dbo.fn_ArtigoStockByDate(@ArtigoId, @Date) directly via SqlCommand for speed. CachedStockService wraps it and applies graduated expiration: if the date is older than 7 days the data is immutable so cache for 1 hour; otherwise cache for 5 minutes. The Blazor page ArtigoDetalhe.razor starts _stockSummaryTask = StockService.GetCurrentStockAsync(artigo.Id) in OnInitializedAsync — fire and forget. When the user clicks the Stock tab, await _stockSummaryTask usually returns instantly because the task has already completed in the background.",
+      "how_it_works": "A request flows UI -> CachedStockService -> IMemoryCache check with key stock_{artigoId}_{yyyyMMdd}. Cache hit returns in ~1ms. Cache miss descends to StockService which opens a DbConnection from the context factory, builds a SqlCommand with strongly-typed SqlParameter values (preventing injection), executes fn_ArtigoStockByDate, reads the result into an ArtigoStock DTO (ArtigoId, Entrada, Saida, Stock), and returns. CachedStockService then stores the result with the computed expiration before returning to the UI. For movement history, GetStockMovementsAsync uses a LINQ query with joins across CrmDocumentoDetalhes, CrmDocumentos, CrmTipoDocumentos, CrmSerieDocumentos, filters by Movstocks==true and optional date range, orders by document date descending, and returns a list. Filtered movement queries are NOT cached because the keyspace would explode. IMemoryCache is configured with SizeLimit=1000 and CompactionPercentage=0.25 to protect against unbounded memory growth. A StockServiceHealthCheck reports cache hit rate by dividing TotalHits / TotalMisses. Registration in Program.cs uses the factory overload to compose the decorator: register StockService concrete, then register IStockService with a factory that news up CachedStockService(innerService, cache, logger)."
+    },
+    "suggested_metaphor": "The stock service is like a busy hotel concierge. When a guest asks 'what's available in room 304 tonight?', the concierge first checks the notepad on their desk (in-memory cache). If the answer is scribbled there and less than five minutes old, they rattle it off in a heartbeat. If not, they call housekeeping (the SQL function), get the answer, write it down for next time, and then tell the guest. Oh, and while the guest is still walking up to the desk, the concierge has already made the call anyway (pre-loading) — so 'how long's the wait?' is 'none' almost every time.",
+    "suggested_intro_hook": "Here's a riddle: your stock query takes 2 seconds on the server. Your UI feels instant. How? The answer isn't a faster database — it's that the UI asked the database two seconds before the user clicked the button.",
+    "key_takeaways": [
+      "Decorator Pattern lets you bolt caching onto a service without touching its code",
+      "Graduated cache expiration: 1 hour for historical, 5 minutes for recent — data stability drives cache duration",
+      "Bypass EF Core for hot-path queries by calling SQL functions directly with SqlParameter",
+      "Fire-and-forget pre-loading in OnInitializedAsync makes 'the data is already there' the common case",
+      "Don't cache filtered queries — the cache key space explodes",
+      "Always use IDbContextFactory in services; it handles pooling for you",
+      "Health checks should report cache hit rate, not just 'service is up'"
+    ],
+    "cross_references": [
+      "decorator-pattern",
+      "ef-core-fundamentals",
+      "imemorycache-in-depth",
+      "blazor-component-lifecycle"
+    ],
+    "quality_notes": "Good formal technical spec — clear interfaces, sequence diagrams, and a decision matrix for cache durations. The performance numbers (99.95% improvement) are marketing-flavored but the architecture is sound. Future Enhancements section correctly identifies Redis as the next step for multi-server deployments.",
+    "reading_difficulty_minutes": 22,
+    "is_part_of_series": false,
+    "series_name": null
+  },
+  {
+    "src_rel": "Education/FactoryFloor/ENG/FactoryFloorProductionSystem.pdf",
+    "title": "Factory Floor Production System — Technical Documentation",
+    "doc_type": "applied-implementation",
+    "topic_family": null,
+    "domain": "factory-floor",
+    "topic_slug": "factory-floor-system",
+    "complexity": "intermediate",
+    "one_line_summary": "A real-time manufacturing execution system (MES) built in Blazor Server + EF Core that tracks production orders, material consumption with variance analysis, stock movements, and Primavera ERP integration.",
+    "executive_summary": "The Factory Floor Production System is a Blazor Server MES for tracking production orders on a factory floor. It uses a Repository + Service layer pattern where Factory_New.razor is the control dashboard and MaterialConsumptionModal.razor is the recipe-tracking popup. FactoryFloorService orchestrates Start/Pause/End production actions, calculates proportional material consumption based on planned quantity versus actual quantity produced, generates ENTSTOCK/SAIDASTOCK/DESP stock movements inside a database transaction, and pushes the result to Primavera ERP. Worker actions require PIN-based authentication, all changes are audit-logged, and material loading uses a 1.5-second debounce to avoid re-querying on every keystroke.",
+    "key_concepts": [
+      "Blazor Server MES",
+      "production order state machine",
+      "proportional material consumption",
+      "variance analysis",
+      "transaction with BeginTransactionAsync",
+      "PIN-based authentication",
+      "debounced material loading",
+      "Primavera ERP integration"
+    ],
+    "prerequisites": [
+      "Blazor Server component lifecycle",
+      "EF Core with transactions",
+      "dependency injection",
+      "MudBlazor components"
+    ],
+    "builds_toward": [
+      "event-driven-stock-updates",
+      "signalr-live-dashboard",
+      "erp-integration-patterns"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": {
+      "why_it_exists": "Manufacturing floors historically ran on paper: workers scribbled production numbers on clipboards, stock counts drifted, managers learned about problems days later. This system replaces all that with a tablet-friendly Blazor interface that tracks each production order in real time from Start to Pause to End, automatically calculates what materials should have been consumed for the actual quantity produced, flags variances, and pushes everything to the Primavera ERP in one atomic operation. The goal is zero double entry — one worker confirmation updates production orders, stock levels, waste records, and accounting simultaneously.",
+      "what_it_does": "Factory_New.razor shows today's stats, a machine selector, and two columns of orders (To Start / Started). URL parameter /factory_new/{maquinaid} bookmarks a specific machine view. When a worker clicks Start/Pause/Stop, a PIN dialog validates them against the hashed CrmUtilizador.Pin, then ExecuteProductionAction calls FactoryFloorService's StartProductionAsync / PauseProductionAsync / EndProductionAsync. Pause and Stop trigger MaterialConsumptionModal which asks for QuantityProduced and Waste, then loads materials — after a 1.5s debounce — via GetMaterialsForProductionAsync which computes perUnitQuantity = totalPlannedForOrder / orderQuantity and suggests proportionalQty = perUnitQuantity * quantityProduced, enriched with a HistoricalAverage when prior QuantidadeMedia exists. The worker confirms, and RegisterProductionAsync runs inside a database transaction that updates order.QuantidadeFeita, decrements order.QuantidadeFalta, bumps gastoFase.QuantidadeConsumida, calls GenerateStockMovementsAsync, and commits — or rolls back on any failure.",
+      "how_it_works": "The service layer uses IDbContextFactory<BioBragaContext> so every operation gets a fresh context (except when passing an existingContext to chain operations inside a transaction). The OrdemProducao composite model bundles CrmOrdemProducao, CrmDocumento, CrmDocumentoDetalhe, CrmArtigo, and a List<ComponenteProd> so the UI has everything it needs in one object. MaterialConsumptionDto exposes computed properties Variance and VariancePercentage so the UI can colour-code over-consumption without server logic. Stock movements generate three document types: ENTSTOCK (finished goods entering stock), SAIDASTOCK (raw materials leaving stock), and DESP (waste). After commit, _primaveraRepo.SendMovimentacaoStock(doc, lines) pushes the movement to the external ERP. If Primavera fails, the local transaction still commits — integration failures are logged but don't block production. Cascading parameters propagate CurrentWorker across the component tree. Local filtering (FilterOrdersByMachine) happens client-side so machine selection doesn't roundtrip to the server."
+    },
+    "suggested_metaphor": "This system is like a self-checkout kiosk for manufacturing. The worker scans their badge (PIN), picks their job (order), hits Start, makes stuff, and at Pause or Stop the system asks 'how many did you make, how many did you waste?' Then it does everything a human accountant used to do in their head: subtracts the raw materials from the warehouse, adds the finished goods to inventory, records the waste, and mails the receipt to the ERP. The worker just punched two buttons; the accounting department got five perfectly matched entries.",
+    "suggested_intro_hook": "Imagine your factory runs on paper and clipboards. Someone writes '60 bottles made' on a clipboard at lunch. By the time that reaches accounting on Friday, three hands have copied it, one typo has slipped in, and nobody knows how much plastic was actually used. Now imagine a worker taps Pause on a tablet, confirms '60 bottles, 6kg plastic, 0 waste', and sixty seconds later stock, production, and ERP are all simultaneously correct. That's the difference this system is built to make.",
+    "key_takeaways": [
+      "A composite DTO (OrdemProducao) that bundles related entities avoids lazy loading surprises",
+      "Use BeginTransactionAsync + try/catch/rollback whenever a single user action mutates multiple tables",
+      "Debounce expensive lookups (1.5s delay + CancellationTokenSource) to survive fast typing",
+      "Proportional material consumption scales by actual quantity but still suggests historical averages",
+      "ExistingContext parameter lets you chain service calls inside an outer transaction",
+      "Hash PINs with Utils.Hash and validate IsActive on every authentication check",
+      "ERP integration should not block the local transaction — log failures and retry"
+    ],
+    "cross_references": [
+      "repository-pattern",
+      "ef-core-transactions",
+      "blazor-component-lifecycle",
+      "debouncing-input",
+      "erp-integration-patterns"
+    ],
+    "quality_notes": "Solid formal documentation with clear component, service, and data model sections. Less narrative than the GivingCare tutorials but comprehensive. The transaction flow and material calculation snippets are the most load-bearing parts. Could benefit from a sequence diagram of the full production flow.",
+    "reading_difficulty_minutes": 20,
+    "is_part_of_series": false,
+    "series_name": null
+  },
+  {
+    "src_rel": "Education/FactoryFloor/ENG/FactoryFloorProductionSystemInfoGraphic.docx",
+    "title": "Factory Floor Production System — Plain-English Infographic",
+    "doc_type": "applied-implementation",
+    "topic_family": null,
+    "domain": "factory-floor",
+    "topic_slug": "factory-floor-system-plain-english",
+    "complexity": "beginner",
+    "one_line_summary": "A non-technical, metaphor-heavy explainer of the Factory Floor Production System that walks through the same architecture as the formal doc but via a day-in-the-life narrative about a worker named Joao making plastic bottles.",
+    "executive_summary": "This companion document to the formal Factory Floor technical spec explains the same system in plain English for non-developers. It uses kitchen and restaurant metaphors (the control center is like a kitchen order screen, the material modal is like a chef's prep sheet, the service is like a sous chef) and walks through a full morning shift: Joao clocks in with his PIN, starts Order #1234 to make 100 plastic bottles, pauses for lunch at 60 bottles (triggering the material form), records usage, resumes after lunch, finishes the order, and manager Maria sees everything live on the dashboard. It covers the same three components (Factory_New.razor, MaterialConsumptionModal.razor, FactoryFloorService.cs) but frames their responsibilities in terms workers and managers can understand.",
+    "key_concepts": [
+      "production order dashboard",
+      "material consumption modal",
+      "PIN clock-in workflow",
+      "historical consumption learning",
+      "real-time stock updates",
+      "ERP sync",
+      "variance warnings"
+    ],
+    "prerequisites": [],
+    "builds_toward": [
+      "factory-floor-system"
+    ],
+    "has_code_examples": false,
+    "has_diagrams_or_visuals": false,
+    "tutorial_structure": {
+      "why_it_exists": "Developers wrote the formal tech doc for themselves. But the people who actually USE this system — machine operators, line supervisors, factory managers, accountants — don't read C# code or sequence diagrams. They need to know 'what do I press, what happens, and why should I trust it?' This infographic exists so non-developer stakeholders can understand the value of the system, buy into adopting it, and train new workers. It also serves as onboarding material for junior developers who need the big-picture story before reading the formal spec.",
+      "what_it_does": "Re-tells the Factory Floor Production System as a day-in-the-life narrative. The Factory_New page becomes 'the control center' with a machine selector, today's scoreboard, and a to-do list split into To Start and Started columns. The MaterialConsumptionModal becomes 'the recipe tracker' that auto-calculates material needs based on quantity produced, shows planned versus actual, highlights low stock in red, and displays historical averages. The FactoryFloorService becomes 'the brain' that updates stock, adds finished goods to inventory, records waste, and sends data to Primavera.",
+      "how_it_works": "The narrative follows Joao at his morning shift: he arrives at 8:00, opens the tablet, enters his PIN, selects Machine #3, sees Order #1234 (100 plastic bottles) and Order #1235 (50 caps). At 8:15 he hits Start — PIN confirmation — order moves to Started. At 12:00 he pauses for lunch having made 60 bottles; the material form appears suggesting 6kg plastic used, he confirms, and the system automatically removes 6kg from warehouse stock, adds 60 bottles to finished goods, updates Order #1234 to '40 bottles remaining', and logs everything. After lunch at 1:00pm he resumes, finishes at 2:30pm with 2 defective bottles recorded as waste, and the order closes. Manager Maria checks the dashboard at end of day, sees '100 bottles completed', spots any unusual consumption, and accounting receives all data automatically. The doc also covers common scenarios (wrong quantity entered, machine broke, ran out of material, forgot PIN) and closes with a 'bottom line' comparing paper chaos to real-time control."
+    },
+    "suggested_metaphor": "If the formal tech doc is a car's repair manual, this is the brochure the salesperson hands you. Same vehicle, same engine, but instead of torque specs and wiring diagrams you get 'here's how Joao drives it to work on Monday and comes home smiling on Friday.'",
+    "suggested_intro_hook": "You can describe a factory MES in two ways. One uses words like 'transaction rollback' and 'eager loading' and loses everyone in the room except the senior devs. The other one says 'Joao clocks in, makes 60 bottles, hits pause, and accounting magically knows by the time he finishes his sandwich.' Both are correct. Only one gets the budget approved.",
+    "key_takeaways": [
+      "Non-technical stakeholders need narrative, not architecture diagrams",
+      "Day-in-the-life framing makes abstract software tangible",
+      "Worker benefits (no paperwork, fair tracking) and manager benefits (live visibility) should be separated",
+      "Common-scenario FAQs pre-empt the objections new users raise",
+      "Metaphors (kitchen, video game, accountant) give non-devs mental models they already own"
+    ],
+    "cross_references": [
+      "factory-floor-system"
+    ],
+    "quality_notes": "Good plain-English companion piece. Heavy on emoji and parallel structure, which is fine for its audience. A developer would still want to read the formal spec for implementation detail — this doc's job is onboarding, not reference. Short on technical depth by design.",
+    "reading_difficulty_minutes": 10,
+    "is_part_of_series": false,
+    "series_name": null
+  },
+  {
+    "src_rel": "Education/12-CSharp-Flags-Enum.md",
+    "title": "C# Flags Enum Guide",
+    "doc_type": "core-concept",
+    "topic_family": "language",
+    "domain": null,
+    "topic_slug": "csharp-flags-enum",
+    "complexity": "beginner",
+    "one_line_summary": "A quick-reference guide to the [Flags] attribute in C#, covering bitwise operations, the powers-of-2 rule, HasFlag checks, and common mistakes.",
+    "executive_summary": "This guide teaches how to use the [Flags] attribute on a C# enum to represent multiple simultaneous values as bitwise-OR combinations. It shows the four core operations (add with |=, check with HasFlag, remove with &=~, clear with =None), explains why each enum value must be a power of 2 so it occupies a unique bit, and demonstrates a real-world use case from the HRModule project where EmployeeWarning flags combine GeoLockNoLocation, JobBoundNoSchedule, and other states. It also flags three common mistakes: non-power-of-2 values causing collisions, forgetting the None=0 member, and using == instead of HasFlag for combined values.",
+    "key_concepts": [
+      "[Flags] attribute",
+      "bitwise OR / AND / NOT",
+      "HasFlag method",
+      "powers of 2",
+      "None = 0 convention",
+      "pre-defined combinations"
+    ],
+    "prerequisites": [
+      "basic C# enums",
+      "binary number basics"
+    ],
+    "builds_toward": [
+      "permission-systems",
+      "state-machines-with-enums"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": null,
+    "suggested_metaphor": "A [Flags] enum is like a control panel of toggle switches. Each switch controls one independent thing — cabin lights, landing gear, autopilot. You can flip any combination on or off simultaneously, and the 'state of the cockpit' is just the pattern of ups and downs. Ordinary enums are more like a radio dial: you can only be on one station at a time. Flags let you be on eight at once, and the powers-of-2 rule is how you guarantee each switch lives in its own slot on the panel instead of sharing one with its neighbour.",
+    "suggested_intro_hook": "An employee can be simultaneously missing a schedule, failing GeoLock, and lacking a configuration. A regular enum can only say one of those at a time. A [Flags] enum says all three — stored in a single integer — and lets you check any subset with a one-liner. The trick is that every value has to be a power of 2, and once you know why, everything about bitwise flags clicks.",
+    "what_it_teaches": "How to declare a [Flags] enum with powers-of-2 values, how to add/remove/check flags with bitwise operators, why HasFlag is more readable than the & != 0 pattern, how to pre-define common combinations inside the enum itself, and three common mistakes to avoid.",
+    "key_takeaways": [
+      "Every [Flags] value MUST be a power of 2 (1, 2, 4, 8, 16...) so each occupies a unique bit",
+      "Always include None = 0 so you can represent 'no flags set'",
+      "Use HasFlag(X) to check, not == X — the latter only matches exact state",
+      "Add with |=, remove with &= ~, clear with = None",
+      "Pre-define common combinations (AllUrgent = A | B) inside the enum for readability",
+      "Ideal for permissions, warnings, states, or characteristics that can stack"
+    ],
+    "cross_references": [
+      "csharp-enums",
+      "bitwise-operators",
+      "permission-systems"
+    ],
+    "quality_notes": "Short, clear, and practical. Good balance of theory (bit positions table) and applied example (LiveInsightsService). Quick-reference table at the end is handy. Could mention that HasFlag has been JIT-optimized since .NET 5 so the old 'HasFlag is slow' advice no longer applies.",
+    "reading_difficulty_minutes": 8,
+    "is_part_of_series": false,
+    "series_name": null
+  },
+  {
+    "src_rel": "Education/Educational_ML/sigmoid-derivative.html",
+    "title": "Sigmoid Derivative Visualized",
+    "doc_type": "core-concept",
+    "topic_family": "ml",
+    "domain": null,
+    "topic_slug": "sigmoid-derivative-deep-dive",
+    "complexity": "beginner",
+    "one_line_summary": "A short interactive explainer of why multiplying the raw error by output * (1 - output) is the secret sauce that makes neural networks learn efficiently and generalize well.",
+    "executive_summary": "This mini-page focuses on one crucial concept from neural network training: the sigmoid derivative. It explains that the sigmoid function squashes any input into 0-1, but the real magic is the derivative = output * (1 - output) — a number between 0 and 0.25 that tells backpropagation 'how sensitive this neuron currently is'. When output is 0.5 the derivative is 0.25 (peak learning); when output is 0.9 or 0.1 the derivative is 0.09 (the neuron is near saturation and barely moves). It shows an example of predicting 'Dog' at 0.9 when the truth is 0.0: with the derivative the scaled error is -0.081 instead of -0.9, which prevents wasted updates and helps the network learn smoother decision boundaries.",
+    "key_concepts": [
+      "sigmoid function",
+      "derivative as sensitivity",
+      "saturation zones",
+      "vanishing gradient",
+      "scaled error",
+      "smoother decision boundaries"
+    ],
+    "prerequisites": [
+      "basic calculus intuition (slope of a curve)",
+      "what a neuron does (multiply, add, squash)"
+    ],
+    "builds_toward": [
+      "backpropagation-algorithm",
+      "activation-functions-relu-tanh",
+      "vanishing-gradient-problem"
+    ],
+    "has_code_examples": false,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": null,
+    "suggested_metaphor": "The sigmoid derivative is like trying to steer a car that's already glued to the kerb. If you're in the middle of the lane (output 0.5), even a small nudge on the wheel changes where the car goes — that's maximum learning. If you've already slammed against the left kerb (output 0.05) or the right kerb (output 0.95), turning the wheel harder won't help — the car is physically stuck. The derivative multiplier is the network saying 'I know you want me to move, but I literally can't right now — don't bother spending energy here.'",
+    "suggested_intro_hook": "Why do neural networks sometimes refuse to learn even when the error is huge? The answer isn't a bad algorithm — it's that the neurons you most want to change are the ones least able to change. And a single multiplication, output * (1 - output), is what prevents your training run from wasting its time on them.",
+    "what_it_teaches": "Why backpropagation multiplies error by the sigmoid derivative, how that derivative peaks at 0.25 when output is 0.5 and collapses to near zero at the saturated extremes, how saturation causes the vanishing gradient problem, and why proportional (sensitive) updates produce smoother decision boundaries and better generalization.",
+    "key_takeaways": [
+      "The sigmoid derivative is output * (1 - output) — a number from 0 to 0.25",
+      "Maximum learning happens when the output is exactly 0.5 (maximum uncertainty)",
+      "Saturated neurons (near 0 or near 1) have tiny derivatives and barely learn — this is the vanishing gradient problem",
+      "Including the derivative prevents wasted updates on neurons that can't move much anyway",
+      "Proportional updates lead to smoother decision boundaries and better handling of ambiguous inputs"
+    ],
+    "cross_references": [
+      "neural-networks-from-scratch",
+      "backpropagation-algorithm",
+      "activation-functions-relu-tanh"
+    ],
+    "quality_notes": "Short and focused — does one thing well. The interactive slider (not functional in plain text) is the star feature visually. This doc is clearly a companion to the larger neural-networks-from-scratch HTML; treat them as linked rather than duplicated content.",
+    "reading_difficulty_minutes": 5,
+    "is_part_of_series": false,
+    "series_name": null
+  }
+]

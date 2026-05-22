@@ -1,0 +1,110 @@
+@page "/"
+@implements IDisposable
+
+@inject ContentService ContentService
+@inject ProgressService ProgressService
+@inject SearchService SearchService
+@inject NavigationService NavigationService
+@inject IJSRuntime JS
+
+<div class="welcome">
+    <h1>Learning Webbook</h1>
+    <p>A curated developer journey &mdash; from web fundamentals to multi-database notification pipelines. 100% self-contained.</p>
+    <div class="stats">
+        <div><div class="stat-num">@_totalPhases</div><div class="stat-lbl">Phases</div></div>
+        <div><div class="stat-num">@_totalTopics</div><div class="stat-lbl">Topics</div></div>
+        <div><div class="stat-num">6</div><div class="stat-lbl">Interactive Demos</div></div>
+        <div><div class="stat-num">30+</div><div class="stat-lbl">SVG Diagrams</div></div>
+    </div>
+</div>
+
+@if (_phases is not null)
+{
+    @foreach (var phase in _phases)
+    {
+        var filteredTopics = GetFilteredTopics(phase);
+        if (!filteredTopics.Any() && !string.IsNullOrWhiteSpace(_searchQuery))
+            continue;
+
+        <div class="phase-card" id="phase-@phase.Number">
+            <h2>Phase @phase.Number: &ldquo;@phase.Name&rdquo;</h2>
+            <div class="phase-sub">@phase.Subtitle</div>
+            <div class="phase-desc">@phase.Description</div>
+        </div>
+
+        @foreach (var topic in filteredTopics)
+        {
+            <TopicSection @key="topic.Id"
+                          @ref="_topicRefs[topic.Id]"
+                          Topic="@topic"
+                          OnNavigateToTopic="NavigateToTopic" />
+        }
+    }
+}
+
+@code {
+    private List<Phase>? _phases;
+    private int _totalTopics;
+    private int _totalPhases;
+    private string _searchQuery = "";
+    private Dictionary<string, TopicSection> _topicRefs = new();
+
+    [CascadingParameter(Name = "SearchQuery")]
+    public string? ParentSearchQuery { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var data = await ContentService.GetDataAsync();
+        _phases = data.Phases;
+        _totalTopics = data.TotalTopics;
+        _totalPhases = data.TotalPhases;
+
+        // Pre-populate the refs dictionary
+        foreach (var phase in _phases)
+        {
+            foreach (var topic in phase.Topics)
+            {
+                _topicRefs[topic.Id] = null!;
+            }
+        }
+
+        NavigationService.OnTopicRequested += OnTopicRequested;
+    }
+
+    protected override void OnParametersSet()
+    {
+        _searchQuery = ParentSearchQuery ?? "";
+    }
+
+    private IEnumerable<Topic> GetFilteredTopics(Phase phase)
+    {
+        if (string.IsNullOrWhiteSpace(_searchQuery))
+            return phase.Topics;
+
+        return SearchService.Search(phase.Topics, _searchQuery);
+    }
+
+    private async Task NavigateToTopic(string topicId)
+    {
+        if (_topicRefs.TryGetValue(topicId, out var section) && section is not null)
+        {
+            section.Expand();
+            await Task.Delay(50); // Let Blazor render the expanded content
+            await JS.InvokeVoidAsync("scrollInterop.scrollToElement", topicId);
+        }
+    }
+
+    private async void OnTopicRequested(string topicId)
+    {
+        await InvokeAsync(async () =>
+        {
+            await NavigateToTopic(topicId);
+            StateHasChanged();
+        });
+    }
+
+    public void Dispose()
+    {
+        NavigationService.OnTopicRequested -= OnTopicRequested;
+    }
+}

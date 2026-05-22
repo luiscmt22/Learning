@@ -1,0 +1,420 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - generic [ref=e4]: Learning › _Organized › 12-JavaScript
+    - heading "Document 1" [level=1] [ref=e5]
+    - generic [ref=e6]:
+      - text: "Source:"
+      - code [ref=e7]: JScript/Document 1.docx
+      - text: ·
+      - link "download original" [ref=e8] [cursor=pointer]:
+        - /url: Document 1.docx
+      - text: ·
+      - link "← back to index" [ref=e9] [cursor=pointer]:
+        - /url: ../00-Index.html
+  - generic [ref=e10]:
+    - strong [ref=e11]: Same-stem variants
+    - text: "(likely same content, different format):"
+    - code [ref=e12]: JScript/Document 1.pdf
+  - 'heading "Method Breakdown: initializeSelect2()" [level=2] [ref=e13]'
+  - heading "1. Function Declaration" [level=3] [ref=e14]
+  - paragraph [ref=e15]: javascript
+  - paragraph [ref=e16]: "function initializeSelect2() {"
+  - paragraph [ref=e17]: "What it is: A regular JavaScript function declaration"
+  - paragraph [ref=e18]: "Purpose: Creates a reusable function to initialize Select2 on elements"
+  - paragraph [ref=e19]: "Scope: Can be called from anywhere in the code after it's defined"
+  - heading "2. Debug Logging" [level=3] [ref=e20]
+  - paragraph [ref=e21]: javascript
+  - paragraph [ref=e22]: console.log('Inicializando Select2');
+  - paragraph [ref=e23]: "What it does: Prints \"Inicializando Select2\" (Initializing Select2) to browser console"
+  - paragraph [ref=e24]: "Purpose: Helps developers track when this function runs"
+  - paragraph [ref=e25]: "When you'll see it: Open browser DevTools → Console tab when this function executes"
+  - heading "3. Safety Check - Library Availability" [level=3] [ref=e26]
+  - paragraph [ref=e27]: javascript
+  - paragraph [ref=e28]: "if ($.fn.select2 === undefined) {"
+  - paragraph [ref=e29]: "Breaking this down:"
+  - paragraph [ref=e30]: $ = jQuery object (alias for jQuery)
+  - paragraph [ref=e31]: $.fn = jQuery's prototype (where all jQuery methods live)
+  - paragraph [ref=e32]: $.fn.select2 = The Select2 plugin method added to jQuery
+  - paragraph [ref=e33]: === undefined = Strict equality check to see if Select2 plugin exists
+  - paragraph [ref=e34]: "Translation: \"If the Select2 plugin is not loaded/available...\""
+  - heading "4. Error Handling" [level=3] [ref=e35]
+  - paragraph [ref=e36]: javascript
+  - paragraph [ref=e37]: console.error('Select2 não está disponível');
+  - paragraph [ref=e38]: "What it does: Prints red error message \"Select2 não está disponível\" (Select2 is not available)"
+  - paragraph [ref=e39]: "When it runs: Only if Select2 library isn't loaded"
+  - paragraph [ref=e40]: "Purpose: Prevents JavaScript errors and alerts developer to missing dependency"
+  - heading "5. Main Initialization Block" [level=3] [ref=e41]
+  - paragraph [ref=e42]: javascript
+  - paragraph [ref=e43]: "} else { $('.select2').select2({ // configuration options }); }"
+  - paragraph [ref=e44]: "Breaking this down:"
+  - paragraph [ref=e45]: else = "If Select2 IS available, then do this..."
+  - paragraph [ref=e46]: $('.select2') = jQuery selector that finds ALL elements with CSS class "select2"
+  - paragraph [ref=e47]: ".select2({...}) = Calls the Select2 initialization method with configuration options"
+  - heading "6. Configuration Options" [level=3] [ref=e48]
+  - heading "Placeholder Text" [level=4] [ref=e49]
+  - paragraph [ref=e50]: javascript
+  - paragraph [ref=e51]: "placeholder: \"Selecione uma opção\","
+  - paragraph [ref=e52]: "What it does: Sets the text shown when no option is selected"
+  - paragraph [ref=e53]: "Translation: \"Select an option\""
+  - heading "Clear Button" [level=4] [ref=e54]
+  - paragraph [ref=e55]: javascript
+  - paragraph [ref=e56]: "allowClear: true,"
+  - paragraph [ref=e57]: "What it does: Adds an \"X\" button to clear the selection"
+  - paragraph [ref=e58]: "Effect: Users can click \"X\" to deselect and return to placeholder state"
+  - heading "Width Setting" [level=4] [ref=e59]
+  - paragraph [ref=e60]: javascript
+  - paragraph [ref=e61]: "width: '100%',"
+  - paragraph [ref=e62]: "What it does: Makes Select2 take up 100% of its container's width"
+  - paragraph [ref=e63]: "Alternative options: '200px', 'auto', 'resolve', etc."
+  - heading "Language Configuration" [level=4] [ref=e64]
+  - paragraph [ref=e65]: javascript
+  - paragraph [ref=e66]: "language: { noResults: function () { return \"Nenhum resultado encontrado\"; } }"
+  - paragraph [ref=e67]: "Breaking this down:"
+  - paragraph [ref=e68]: "language: {...} = Localization settings object"
+  - paragraph [ref=e69]: "noResults: function() {...} = Callback function for \"no results\" message"
+  - paragraph [ref=e70]: "Purpose: When user searches and no matches found, shows \"Nenhum resultado encontrado\" (No results found)"
+  - paragraph [ref=e71]: "Note: This is a function that returns a string (allows for dynamic messages)"
+  - heading "How This Method Works in Practice:" [level=2] [ref=e72]
+  - paragraph [ref=e73]: Function gets called → initializeSelect2()
+  - paragraph [ref=e74]: Logs start message → Console shows "Inicializando Select2"
+  - paragraph [ref=e75]: Checks if Select2 exists → Prevents errors if library not loaded
+  - paragraph [ref=e76]: If Select2 missing → Shows error, stops execution
+  - paragraph [ref=e77]: If Select2 available → Continues to initialization
+  - paragraph [ref=e78]: Finds all elements → Looks for <select class="select2"> elements
+  - paragraph [ref=e79]: Initializes each one → Converts them to fancy Select2 dropdowns
+  - paragraph [ref=e80]: Applies configuration → Sets placeholder, clear button, width, language
+  - heading "Key Things to Understand:" [level=2] [ref=e81]
+  - paragraph [ref=e82]: "Global Selector: $('.select2') affects ALL elements with class \"select2\" on the page"
+  - paragraph [ref=e83]: "Batch Initialization: This initializes multiple Select2 instances at once"
+  - paragraph [ref=e84]: "Safety First: Checks library availability before using it"
+  - paragraph [ref=e85]: "Portuguese Localization: Custom messages in Portuguese"
+  - paragraph [ref=e86]: "Defensive Programming: Won't crash if Select2 isn't loaded"
+  - paragraph [ref=e87]: This is a utility function designed to be called when the page loads or when new Select2 elements are added to the DOM.
+  - 'heading "Method Breakdown: jQuery Document Ready" [level=2] [ref=e88]'
+  - heading "1. jQuery Object Access" [level=3] [ref=e89]
+  - paragraph [ref=e90]: javascript
+  - paragraph [ref=e91]: "jQuery(document).ready(function ($) {"
+  - paragraph [ref=e92]: "Breaking this down:"
+  - paragraph [ref=e93]: jQuery = The full jQuery library object (not the $ shorthand)
+  - paragraph [ref=e94]: (document) = Passes the HTML document object to jQuery
+  - paragraph [ref=e95]: .ready() = jQuery method that waits for DOM to be fully loaded
+  - paragraph [ref=e96]: "function ($) { = Anonymous callback function that receives jQuery as parameter $"
+  - paragraph [ref=e97]: Why use jQuery instead of $?
+  - paragraph [ref=e98]: "Conflict Prevention: Other libraries might use $ symbol"
+  - paragraph [ref=e99]: "Explicit: Makes it clear we're using jQuery"
+  - paragraph [ref=e100]: "Best Practice: Ensures jQuery is available even if $ is overridden"
+  - 'heading "2. The Parameter: function ($)" [level=3] [ref=e101]'
+  - paragraph [ref=e102]: javascript
+  - paragraph [ref=e103]: "function ($) {"
+  - paragraph [ref=e104]: "What this does:"
+  - paragraph [ref=e105]: "Parameter Mapping: Maps the full jQuery object to the shorthand $"
+  - paragraph [ref=e106]: "Local Scope: Inside this function, $ definitely refers to jQuery"
+  - paragraph [ref=e107]: "Safety: Even if $ is used by another library globally, inside this function it's jQuery"
+  - paragraph [ref=e108]: "Alternative: You could write function (jq) and use jq instead of $"
+  - heading "3. Function Body" [level=3] [ref=e109]
+  - paragraph [ref=e110]: javascript
+  - paragraph [ref=e111]: initializeSelect2();
+  - paragraph [ref=e112]: "Simple Call: Executes the initializeSelect2() function we analyzed earlier"
+  - paragraph [ref=e113]: "Context: Runs after DOM is ready but before images/external resources load"
+  - heading "4. Closing Brackets" [level=3] [ref=e114]
+  - paragraph [ref=e115]: javascript
+  - paragraph [ref=e116]: "});"
+  - paragraph [ref=e117]: "First } closes the anonymous function"
+  - paragraph [ref=e118]: ) closes the .ready() method call
+  - paragraph [ref=e119]: ; ends the statement
+  - heading "What This Pattern Accomplishes:" [level=2] [ref=e120]
+  - heading "DOM Ready vs Window Load" [level=3] [ref=e121]
+  - paragraph [ref=e122]: javascript
+  - paragraph [ref=e123]: "// DOM Ready (what this code uses) jQuery(document).ready(function ($) { // Runs when HTML structure is loaded // Images, stylesheets may still be loading });"
+  - paragraph [ref=e124]: "// vs Window Load jQuery(window).load(function ($) { // Runs when EVERYTHING is loaded (images, etc.) // Takes longer to execute });"
+  - heading "Execution Timeline:" [level=3] [ref=e125]
+  - paragraph [ref=e126]: Browser starts loading page
+  - paragraph [ref=e127]: HTML structure loads ← DOM Ready fires here
+  - paragraph [ref=e128]: CSS, images, external resources load
+  - paragraph [ref=e129]: Window load event fires
+  - heading "Alternative Ways to Write This:" [level=2] [ref=e130]
+  - heading "1. Using $ Shorthand (if safe)" [level=3] [ref=e131]
+  - paragraph [ref=e132]: javascript
+  - paragraph [ref=e133]: "$(document).ready(function() { initializeSelect2(); });"
+  - heading "2. Shorter Syntax" [level=3] [ref=e134]
+  - paragraph [ref=e135]: javascript
+  - paragraph [ref=e136]: "jQuery(function($) { initializeSelect2(); });"
+  - heading "3. Modern Alternative (ES6+)" [level=3] [ref=e137]
+  - paragraph [ref=e138]: javascript
+  - paragraph [ref=e139]: "document.addEventListener('DOMContentLoaded', function() { initializeSelect2(); });"
+  - heading "4. Arrow Function (ES6+)" [level=3] [ref=e140]
+  - paragraph [ref=e141]: javascript
+  - paragraph [ref=e142]: "jQuery(document).ready(() => { initializeSelect2(); });"
+  - heading "Why This Pattern Exists:" [level=2] [ref=e143]
+  - heading "Problem Without Document Ready:" [level=3] [ref=e144]
+  - paragraph [ref=e145]: javascript
+  - paragraph [ref=e146]: // BAD - This might run before HTML elements exist initializeSelect2(); // Could fail if <select> elements not loaded yet
+  - heading "Solution With Document Ready:" [level=3] [ref=e147]
+  - paragraph [ref=e148]: javascript
+  - paragraph [ref=e149]: "// GOOD - This waits for HTML elements to exist jQuery(document).ready(function ($) { initializeSelect2(); // Will work because DOM is ready });"
+  - heading "In Your Context:" [level=2] [ref=e150]
+  - paragraph [ref=e151]: "This code ensures that:"
+  - paragraph [ref=e152]: "DOM Elements Exist: All <select class=\"select2\"> elements are loaded"
+  - paragraph [ref=e153]: "jQuery is Available: The $ parameter guarantees jQuery access"
+  - paragraph [ref=e154]: "Select2 Can Initialize: Elements exist for Select2 to enhance"
+  - paragraph [ref=e155]: "No Race Conditions: Won't try to initialize before elements are ready"
+  - heading "Common Use Cases:" [level=2] [ref=e156]
+  - paragraph [ref=e157]: javascript
+  - paragraph [ref=e158]: "jQuery(document).ready(function ($) { // Initialize plugins initializeSelect2();"
+  - paragraph [ref=e159]: "// Bind events $('.button').click(function() { ... });"
+  - paragraph [ref=e160]: // Set up components $('.datepicker').datepicker();
+  - paragraph [ref=e161]: "// Any DOM manipulation that needs elements to exist });"
+  - paragraph [ref=e162]: "Bottom Line: This is jQuery's way of saying \"Wait until the page structure is ready, then run my initialization code safely.\""
+  - heading "Method-by-Method Analysis of Your CustomSelectEditor" [level=2] [ref=e163]
+  - heading "1. CustomSelectEditor() - Constructor" [level=3] [ref=e164]
+  - paragraph [ref=e165]: javascript
+  - paragraph [ref=e166]: "function CustomSelectEditor() {}"
+  - paragraph [ref=e167]: "Purpose: Empty constructor function"
+  - paragraph [ref=e168]: "Issues: No initialization logic here (which is fine, AG Grid calls init() separately)"
+  - heading "2. init(params) - Initialization Method" [level=3] [ref=e169]
+  - paragraph [ref=e170]: javascript
+  - paragraph [ref=e171]: "CustomSelectEditor.prototype.init = function(params) { this.params = params; this.isDestroyed = false; // ... rest of method }"
+  - paragraph [ref=e172]: "What it does step by step:"
+  - paragraph [ref=e173]: "Store parameters: this.params = params - Stores AG Grid's parameters"
+  - paragraph [ref=e174]: "Create wrapper div:"
+  - paragraph [ref=e175]: javascript
+  - paragraph [ref=e176]: this.eWrapper = document.createElement('div'); this.eWrapper.style.width = '200px'; this.eWrapper.style.height = '100%';
+  - paragraph [ref=e177]: Creates a container div with fixed 200px width
+  - paragraph [ref=e178]: "Create select element:"
+  - paragraph [ref=e179]: javascript
+  - paragraph [ref=e180]: this.eInput = document.createElement('select'); this.eInput.style.width = '100%'; this.eInput.style.height = '100%';
+  - paragraph [ref=e181]: Creates the actual <select> element
+  - paragraph [ref=e182]: "Determine data source:"
+  - paragraph [ref=e183]: javascript
+  - paragraph [ref=e184]: "let idToNameMap; if (params.column.colDef.field === 'motoristaId') { idToNameMap = params.context.profissionaisDict; } // ... etc"
+  - paragraph [ref=e185]: Chooses which dictionary to use based on the column field name
+  - paragraph [ref=e186]: "Add empty option:"
+  - paragraph [ref=e187]: javascript
+  - paragraph [ref=e188]: const emptyOption = document.createElement('option'); emptyOption.value = ''; emptyOption.text = 'Selecione...'; this.eInput.appendChild(emptyOption);
+  - paragraph [ref=e189]: Adds a placeholder option
+  - paragraph [ref=e190]: "Populate options:"
+  - paragraph [ref=e191]: javascript
+  - paragraph [ref=e192]: "if (params.values && params.values.length > 0) { params.values.forEach(value => { const option = document.createElement('option'); option.value = value; option.text = idToNameMap[value] || value; this.eInput.appendChild(option); }); }"
+  - paragraph [ref=e193]: Loops through available values and creates option elements
+  - paragraph [ref=e194]: "Set current value:"
+  - paragraph [ref=e195]: javascript
+  - paragraph [ref=e196]: "if (params.value) { this.eInput.value = params.value; }"
+  - paragraph [ref=e197]: Pre-selects the current cell value
+  - paragraph [ref=e198]: "Add select to wrapper: this.eWrapper.appendChild(this.eInput);"
+  - paragraph [ref=e199]: "Initialize Select2 (inside setTimeout):"
+  - paragraph [ref=e200]: javascript
+  - paragraph [ref=e201]: "setTimeout(() => { $(this.eInput).select2({ dropdownParent: document.body, // 🚨 PROBLEM #1 width: '100%', placeholder: 'Selecione...', allowClear: true });"
+  - paragraph [ref=e202]: "ISSUE: dropdownParent: document.body causes focus problems"
+  - paragraph [ref=e203]: "Event handling:"
+  - paragraph [ref=e204]: javascript
+  - paragraph [ref=e205]: "const select2Container = $(this.eInput).next('.select2-container'); select2Container.on('click mousedown touchend', (e) => { e.stopPropagation(); // 🚨 PROBLEM #2 - Too broad });"
+  - paragraph [ref=e206]: "ISSUE: Stopping all events on container"
+  - paragraph [ref=e207]: "Focus handling:"
+  - paragraph [ref=e208]: javascript
+  - paragraph [ref=e209]: "$(this.eInput).on('select2:open', () => { setTimeout(() => { $('.select2-search__field').focus(); // 🚨 PROBLEM #3 }, 0); });"
+  - paragraph [ref=e210]: "MAJOR ISSUE: Uses global selector $('.select2-search__field') which targets ALL Select2 search fields on the page, causing focus to jump to other Select2 instances"
+  - heading "3. getGui() - Returns DOM Element" [level=3] [ref=e211]
+  - paragraph [ref=e212]: javascript
+  - paragraph [ref=e213]: "CustomSelectEditor.prototype.getGui = function() { return this.eWrapper; };"
+  - paragraph [ref=e214]: "Purpose: Returns the wrapper element for AG Grid to display"
+  - paragraph [ref=e215]: "Status: ✅ Correct"
+  - heading "4. afterGuiAttached() - Post-Attachment Logic" [level=3] [ref=e216]
+  - paragraph [ref=e217]: javascript
+  - paragraph [ref=e218]: "CustomSelectEditor.prototype.afterGuiAttached = function() { setTimeout(() => { $(this.eInput).select2('open'); // 🚨 PROBLEM #4 }, 50); this.eInput.focus(); };"
+  - paragraph [ref=e219]: "ISSUES:"
+  - paragraph [ref=e220]: Tries to open Select2 that may not be initialized yet
+  - paragraph [ref=e221]: Focuses on raw input instead of Select2
+  - heading "5. getValue() - Returns Selected Value" [level=3] [ref=e222]
+  - paragraph [ref=e223]: javascript
+  - paragraph [ref=e224]: "CustomSelectEditor.prototype.getValue = function() { return $(this.eInput).val(); };"
+  - paragraph [ref=e225]: "Purpose: Returns the currently selected value"
+  - paragraph [ref=e226]: "Status: ✅ Generally correct, but no error handling"
+  - heading "6. destroy() - Cleanup" [level=3] [ref=e227]
+  - paragraph [ref=e228]: javascript
+  - paragraph [ref=e229]: "CustomSelectEditor.prototype.destroy = function() { if ($(this.eInput).data('select2')) { $(this.eInput).select2('destroy'); } };"
+  - paragraph [ref=e230]: "Status: ✅ Basic cleanup, but incomplete (no event cleanup)"
+  - heading "7. isPopup() - Popup Indicator" [level=3] [ref=e231]
+  - paragraph [ref=e232]: javascript
+  - paragraph [ref=e233]: "CustomSelectEditor.prototype.isPopup = function() { return true; };"
+  - paragraph [ref=e234]: "Purpose: Tells AG Grid this editor should be treated as a popup"
+  - paragraph [ref=e235]: "Status: ✅ Correct"
+  - heading "8. onKeyDown() - Keyboard Handling" [level=3] [ref=e236]
+  - paragraph [ref=e237]: javascript
+  - paragraph [ref=e238]: "CustomSelectEditor.prototype.onKeyDown = function(event) { const key = event.key; if (key === 'Enter' || key === 'Tab') { this.params.stopEditing(); return true; } if (key === 'Escape') { return true; } return false; };"
+  - heading "Method-by-Method Analysis of Your CustomTextFilter" [level=2] [ref=e239]
+  - heading "1. Constructor" [level=3] [ref=e240]
+  - paragraph [ref=e241]: javascript
+  - paragraph [ref=e242]: "function CustomTextFilter() {}"
+  - paragraph [ref=e243]: "Purpose: Empty constructor for AG Grid custom filter"
+  - paragraph [ref=e244]: "Note: AG Grid will call init() to actually set up the filter"
+  - heading "2. init(params) - The Main Setup Method" [level=3] [ref=e245]
+  - heading "2A. Initial Setup" [level=4] [ref=e246]
+  - paragraph [ref=e247]: javascript
+  - paragraph [ref=e248]: "CustomTextFilter.prototype.init = function(params) { this.params = params; this.filterText = null; this.filterType = 'contains'; // Default filter type this.gridApi = params.api; // Store the grid API for scrolling to bottom"
+  - paragraph [ref=e249]: "What it does:"
+  - paragraph [ref=e250]: "Store parameters: Saves AG Grid's parameters for later use"
+  - paragraph [ref=e251]: "Initialize filter state: filterText = null (no filter active initially)"
+  - paragraph [ref=e252]: "Set default filter type: 'contains' (like \"text contains 'abc'\")"
+  - paragraph [ref=e253]: "Store grid API: For operations like scrolling after clearing filter"
+  - heading "2B. Main Container Creation" [level=4] [ref=e254]
+  - paragraph [ref=e255]: javascript
+  - paragraph [ref=e256]: // Create the main container with AG Grid's filter styling this.eGui = document.createElement('div'); this.eGui.className = 'ag-filter-wrapper ag-focus-managed'; this.eGui.style.padding = '0'; this.eGui.style.backgroundColor = 'white'; this.eGui.style.borderRadius = '3px'; this.eGui.style.boxShadow = '0 1px 4px rgba(0, 0, 0, 0.2)';
+  - paragraph [ref=e257]: "What it creates:"
+  - paragraph [ref=e258]: "Main wrapper div: The container for the entire filter UI"
+  - paragraph [ref=e259]: "AG Grid styling: Uses AG Grid's CSS classes for consistent look"
+  - paragraph [ref=e260]: "Visual styling: White background, rounded corners, subtle shadow"
+  - paragraph [ref=e261]: "this.eGui: This becomes the main element AG Grid will display"
+  - heading "2C. Filter Header Section (Dropdown)" [level=4] [ref=e262]
+  - paragraph [ref=e263]: javascript
+  - paragraph [ref=e264]: // Create filter header with dropdown in AG Grid style const filterHeader = document.createElement('div'); filterHeader.className = 'ag-filter-header'; filterHeader.style.padding = '6px 8px 4px 8px'; filterHeader.style.borderBottom = 'none';
+  - paragraph [ref=e265]: "Purpose: Creates the top section that will contain the filter type dropdown"
+  - heading "2D. Filter Type Dropdown" [level=4] [ref=e266]
+  - paragraph [ref=e267]: javascript
+  - paragraph [ref=e268]: // Create filter type dropdown styled like AG Grid's this.eFilterType = document.createElement('select'); this.eFilterType.className = 'ag-filter-select'; // ... styling code ...
+  - paragraph [ref=e269]: "// Add focus styling (blue shadow) on click this.eFilterType.addEventListener('focus', function() { this.style.boxShadow = '0 0 0 2px rgba(24, 144, 255, 0.2)'; this.style.borderColor = '#40a9ff'; }); this.eFilterType.addEventListener('blur', function() { this.style.boxShadow = 'none'; this.style.borderColor = '#babfc7'; });"
+  - paragraph [ref=e270]: "What it does:"
+  - paragraph [ref=e271]: "Creates dropdown: For selecting filter type (contains, equals, etc.)"
+  - paragraph [ref=e272]: "Styling: Matches AG Grid's visual style"
+  - paragraph [ref=e273]: "Focus effects: Blue glow when user clicks on it"
+  - paragraph [ref=e274]: "Blur effects: Removes glow when user clicks away"
+  - heading "2E. Dropdown Options" [level=4] [ref=e275]
+  - paragraph [ref=e276]: javascript
+  - paragraph [ref=e277]: "// Add filter type options const filterOptions = [ { value: 'contains', text: 'Contém' }, { value: 'notContains', text: 'Não contém' }, { value: 'equals', text: 'Igual a' }, { value: 'notEqual', text: 'Diferente de' }, { value: 'startsWith', text: 'Começa com' }, { value: 'endsWith', text: 'Termina com' } ];"
+  - paragraph [ref=e278]: "filterOptions.forEach(option => { const optElement = document.createElement('option'); optElement.value = option.value; optElement.text = option.text; this.eFilterType.appendChild(optElement); });"
+  - paragraph [ref=e279]: "What it creates:"
+  - paragraph [ref=e280]: "Filter options array: Defines all available filter types"
+  - paragraph [ref=e281]: "Portuguese labels: User-friendly text in Portuguese"
+  - paragraph [ref=e282]: "Option elements: Adds each option to the dropdown"
+  - paragraph [ref=e283]: "Value vs Text: value is for code, text is what user sees"
+  - heading "2F. Search Input Section" [level=4] [ref=e284]
+  - paragraph [ref=e285]: javascript
+  - paragraph [ref=e286]: // Create filter input section with search icon const filterInputSection = document.createElement('div'); filterInputSection.className = 'ag-filter-body'; // ... styling ...
+  - paragraph [ref=e287]: // Add search icon container const searchIconContainer = document.createElement('div'); // ... positioning code ...
+  - paragraph [ref=e288]:
+    - text: // Add a clean SVG magnifying glass icon searchIconContainer.innerHTML =
+    - code [ref=e289]: <svg>...</svg>
+    - text: ;
+  - paragraph [ref=e290]: "What it creates:"
+  - paragraph [ref=e291]: "Input section: Container for the text input area"
+  - paragraph [ref=e292]: "Search icon: SVG magnifying glass icon positioned absolutely"
+  - paragraph [ref=e293]: "Icon positioning: Places icon on the left side of input field"
+  - heading "2G. Text Input Field" [level=4] [ref=e294]
+  - paragraph [ref=e295]: javascript
+  - paragraph [ref=e296]: // Create filter input with padding for the icon this.eFilterInput = document.createElement('input'); this.eFilterInput.className = 'ag-filter-filter ag-focus-managed'; this.eFilterInput.type = 'text'; this.eFilterInput.style.width = '100%'; this.eFilterInput.style.padding = '6px 10px 6px 30px'; // Extra padding on left for icon // ... more styling ... this.eFilterInput.placeholder = 'A Filtrar...';
+  - paragraph [ref=e297]: "Key details:"
+  - paragraph [ref=e298]: "Text input: Where user types their filter text"
+  - paragraph [ref=e299]: "Left padding: 6px 10px 6px 30px - extra 30px on left for the search icon"
+  - paragraph [ref=e300]: "Placeholder: \"A Filtrar...\" (Portuguese for \"Filtering...\")"
+  - paragraph [ref=e301]: "this.eFilterInput: Stored for later access"
+  - heading "2H. Clear Button Section" [level=4] [ref=e302]
+  - paragraph [ref=e303]: javascript
+  - paragraph [ref=e304]: // Create clear button section with AG Grid styling const filterFooter = document.createElement('div'); // ... styling ...
+  - paragraph [ref=e305]: // Create clear button this.eClearButton = document.createElement('button'); this.eClearButton.innerHTML = 'Limpar Filtro'; // ... styling and hover effects ...
+  - paragraph [ref=e306]: "What it creates:"
+  - paragraph [ref=e307]: "Footer section: Bottom area of the filter"
+  - paragraph [ref=e308]: "Clear button: Button to remove the current filter"
+  - paragraph [ref=e309]: "Hover effects: Changes background color on mouse over"
+  - paragraph [ref=e310]: "Portuguese text: \"Limpar Filtro\" (Clear Filter)"
+  - heading "2I. Event Listeners" [level=4] [ref=e311]
+  - paragraph [ref=e312]: javascript
+  - paragraph [ref=e313]: // Add event listeners this.eFilterType.addEventListener('change', this.onFilterTypeChanged.bind(this)); this.eFilterInput.addEventListener('input', this.onFilterChanged.bind(this)); this.eClearButton.addEventListener('click', this.onClearFilter.bind(this));
+  - paragraph [ref=e314]: "What it does:"
+  - paragraph [ref=e315]: "Dropdown change: When user selects different filter type"
+  - paragraph [ref=e316]: "Input typing: When user types in the text field (real-time filtering)"
+  - paragraph [ref=e317]: "Clear button: When user clicks \"Clear Filter\""
+  - paragraph [ref=e318]: ".bind(this): Ensures this refers to the filter instance inside the event handlers"
+  - heading "2J. State Restoration" [level=4] [ref=e319]
+  - paragraph [ref=e320]: javascript
+  - paragraph [ref=e321]: "// Initialize with saved state if available const existingModel = params.filterModel; if (existingModel) { this.filterType = existingModel.type || 'contains'; this.filterText = existingModel.filter || ''; this.eFilterType.value = this.filterType; this.eFilterInput.value = this.filterText; }"
+  - paragraph [ref=e322]: "Purpose: If the filter was previously applied, restore its settings when reopened"
+  - heading "3. afterGuiAttached() - Post-Display Setup" [level=3] [ref=e323]
+  - paragraph [ref=e324]: javascript
+  - paragraph [ref=e325]: "CustomTextFilter.prototype.afterGuiAttached = function() { // Auto-focus the filter textbox when the filter is attached setTimeout(() => { this.eFilterInput.focus(); this.eFilterInput.select(); // Select any existing text }, 0); };"
+  - paragraph [ref=e326]: "What it does:"
+  - paragraph [ref=e327]: "Auto-focus: Automatically puts cursor in the text input"
+  - paragraph [ref=e328]: "Text selection: If there's existing text, selects it all"
+  - paragraph [ref=e329]: "setTimeout: Ensures DOM is ready before focusing"
+  - heading "4. getGui() - Returns Filter UI" [level=3] [ref=e330]
+  - paragraph [ref=e331]: javascript
+  - paragraph [ref=e332]: "CustomTextFilter.prototype.getGui = function() { return this.eGui; };"
+  - paragraph [ref=e333]: "Purpose: AG Grid calls this to get the filter's HTML element to display"
+  - heading "5. isFilterActive() - Filter State Check" [level=3] [ref=e334]
+  - paragraph [ref=e335]: javascript
+  - paragraph [ref=e336]: "CustomTextFilter.prototype.isFilterActive = function() { return this.filterText !== null && this.filterText !== ''; };"
+  - paragraph [ref=e337]: "What it checks: Whether there's currently an active filter (user has typed something)"
+  - heading "6. doesFilterPass(params) - The Core Filtering Logic (Updated)" [level=2] [ref=e338]
+  - paragraph [ref=e339]: Javascript
+  - paragraph [ref=e340]: "CustomTextFilter.prototype.doesFilterPass = function(params) { // Get cell value const cellValue = this.params.valueGetter(params); const filterText = this.filterText;"
+  - paragraph [ref=e341]: "// Early exit for null/undefined if (cellValue === null || cellValue === undefined) { return false; }"
+  - paragraph [ref=e342]: // Get column field to determine data type const columnField = this.params.column.colDef.field;
+  - paragraph [ref=e343]: "// Choose the right Dictionary for array columns let dictionary; if (columnField === 'servicosIds') { dictionary = this.params.context.servicesDict; } else if (columnField === 'viaturasIds') { dictionary = this.params.context.viaturasDict; }"
+  - paragraph [ref=e344]: "// Convert to searchable string (handles both arrays and single values) let cellValueStr; if (Array.isArray(cellValue)) { // Handle array columns (servicosIds, viaturasIds) const readableValues = cellValue.map(id => { const dictValue = dictionary[id]; return dictValue?.Nome || dictValue || id; // Handle both object and string values }); cellValueStr = readableValues.join(' ').toLowerCase(); } else { // Handle single value columns (motoristaId, data, etc.) cellValueStr = cellValue.toString().toLowerCase(); }"
+  - paragraph [ref=e345]: // Prepare filter text for comparison const filterTextLower = filterText.toLowerCase();
+  - paragraph [ref=e346]: "// Apply filter based on filter type switch (this.filterType) { case 'equals': return cellValueStr === filterTextLower; case 'notEqual': return cellValueStr !== filterTextLower; case 'contains': return cellValueStr.indexOf(filterTextLower) >= 0; case 'notContains': return cellValueStr.indexOf(filterTextLower) === -1; case 'startsWith': return cellValueStr.indexOf(filterTextLower) === 0; case 'endsWith': return cellValueStr.indexOf(filterTextLower, cellValueStr.length - filterTextLower.length) !== -1; default: return false; } };"
+  - paragraph [ref=e347]: "What it does:"
+  - paragraph [ref=e348]: "Gets cell value: Extracts the value from the current row/cell"
+  - paragraph [ref=e349]: "Null check: Returns false for empty values"
+  - paragraph [ref=e350]: "Column detection: Identifies which column is being filtered to choose correct dictionary"
+  - paragraph [ref=e351]: "Dictionary selection: Uses servicesDict for servicosIds, viaturasDict for viaturasIds"
+  - paragraph [ref=e352]: "Array handling: For array columns, converts IDs to readable values using dictionary lookup"
+  - paragraph [ref=e353]: "Object values: Extracts .Nome property (for services)"
+  - paragraph [ref=e354]: "String values: Uses the string directly (for viaturas)"
+  - paragraph [ref=e355]: "Fallback: Uses original ID if dictionary lookup fails"
+  - paragraph [ref=e356]: "Array joining: Combines multiple values into single searchable string with spaces"
+  - paragraph [ref=e357]: "Single value handling: Converts non-array values directly to lowercase string"
+  - paragraph [ref=e358]: "Case conversion: Converts both cell and filter text to lowercase for case-insensitive comparison"
+  - paragraph [ref=e359]: "Filter logic: Uses switch statement to apply different filter types:"
+  - paragraph [ref=e360]: "equals: Exact match"
+  - paragraph [ref=e361]: "contains: Cell value contains the filter text (works across multiple array values)"
+  - paragraph [ref=e362]: "startsWith: Cell value begins with filter text"
+  - paragraph [ref=e363]: "endsWith: Cell value ends with filter text"
+  - paragraph [ref=e364]: "notContains/notEqual: Opposite logic"
+  - paragraph [ref=e365]: "Key Enhancement: Now supports filtering by human-readable values instead of raw IDs for array columns, while maintaining backward compatibility with single-value columns."
+  - heading "7. getModel() - Save Filter State" [level=3] [ref=e366]
+  - paragraph [ref=e367]: javascript
+  - paragraph [ref=e368]: "CustomTextFilter.prototype.getModel = function() { if (!this.isFilterActive()) { return null; }"
+  - paragraph [ref=e369]: "return { type: this.filterType, filter: this.filterText }; };"
+  - paragraph [ref=e370]: "Purpose: Returns current filter settings so AG Grid can save/restore them"
+  - heading "8. setModel(model) - Restore Filter State" [level=3] [ref=e371]
+  - paragraph [ref=e372]: javascript
+  - paragraph [ref=e373]: "CustomTextFilter.prototype.setModel = function(model) { if (model) { this.filterType = model.type; this.filterText = model.filter; this.eFilterType.value = this.filterType; this.eFilterInput.value = this.filterText; } else { this.filterType = 'contains'; this.filterText = null; this.eFilterType.value = this.filterType; this.eFilterInput.value = ''; } };"
+  - paragraph [ref=e374]: "What it does: Restores filter to a previously saved state (or clears it)"
+  - heading "9. Event Handlers" [level=3] [ref=e375]
+  - heading "9A. onFilterTypeChanged()" [level=4] [ref=e376]
+  - paragraph [ref=e377]: javascript
+  - paragraph [ref=e378]: "CustomTextFilter.prototype.onFilterTypeChanged = function() { this.filterType = this.eFilterType.value; this.params.filterChangedCallback(); };"
+  - paragraph [ref=e379]: "When called: User changes dropdown selection What it does: Updates filter type and triggers grid refresh"
+  - heading "9B. onFilterChanged()" [level=4] [ref=e380]
+  - paragraph [ref=e381]: javascript
+  - paragraph [ref=e382]: "CustomTextFilter.prototype.onFilterChanged = function() { const inputValue = this.eFilterInput.value; if (!inputValue || inputValue === '') { this.onClearFilter(); return; }"
+  - paragraph [ref=e383]: "this.filterText = inputValue; this.params.filterChangedCallback(); };"
+  - paragraph [ref=e384]: "When called: User types in text input What it does: Updates filter text and triggers grid refresh (or clears if empty)"
+  - heading "9C. onClearFilter()" [level=4] [ref=e385]
+  - paragraph [ref=e386]: javascript
+  - paragraph [ref=e387]: "CustomTextFilter.prototype.onClearFilter = function() { this.filterText = null; this.eFilterInput.value = ''; this.params.filterChangedCallback();"
+  - paragraph [ref=e388]: "// Scroll to the bottom row when filter is cleared setTimeout(() => { const gridApi = this.params.api; const rowCount = gridApi.getDisplayedRowCount(); if (rowCount > 0) { const lastRowIndex = rowCount - 1; gridApi.ensureIndexVisible(lastRowIndex, 'bottom'); } }, 100); };"
+  - paragraph [ref=e389]: "What it does:"
+  - paragraph [ref=e390]: Clears the filter
+  - paragraph [ref=e391]: Empties the input field
+  - paragraph [ref=e392]: Refreshes grid
+  - paragraph [ref=e393]: "Bonus feature: Scrolls to bottom of grid after clearing"
+  - heading "10. getModelAsString() - Display Current Filter" [level=3] [ref=e394]
+  - paragraph [ref=e395]: javascript
+  - paragraph [ref=e396]: "CustomTextFilter.prototype.getModelAsString = function() { if (!this.isFilterActive()) { return ''; }"
+  - paragraph [ref=e397]: const filterType = this.filterType; let filterTypeDisplay = '';
+  - paragraph [ref=e398]: "switch (filterType) { case 'equals': filterTypeDisplay = 'igual a'; break; case 'notEqual': filterTypeDisplay = 'diferente de'; break; case 'contains': filterTypeDisplay = 'contém'; break; case 'notContains': filterTypeDisplay = 'não contém'; break; case 'startsWith': filterTypeDisplay = 'começa com'; break; case 'endsWith': filterTypeDisplay = 'termina com'; break; }"
+  - paragraph [ref=e399]:
+    - text: return
+    - code [ref=e400]: "${filterTypeDisplay} \"${this.filterText}\""
+    - text: "; };"
+  - paragraph [ref=e401]: "Purpose: Creates human-readable description of current filter (e.g., \"contém 'João'\")"
+  - heading "Overall Architecture:" [level=2] [ref=e402]
+  - paragraph [ref=e403]: "This is a comprehensive custom filter that:"
+  - paragraph [ref=e404]: "Looks like AG Grid: Uses AG Grid's styling classes"
+  - paragraph [ref=e405]: "Multiple filter types: Contains, equals, starts with, etc."
+  - paragraph [ref=e406]: "Portuguese localized: All text in Portuguese"
+  - paragraph [ref=e407]: "Auto-focus: Puts cursor in input when opened"
+  - paragraph [ref=e408]: "Visual feedback: Hover effects, focus styling"
+  - paragraph [ref=e409]: "State management: Can save/restore filter settings"
+  - paragraph [ref=e410]: "Smart clearing: Scrolls to bottom when filter is cleared"
+  - paragraph [ref=e411]: It's essentially a complete replacement for AG Grid's default text filter with enhanced Portuguese localization and custom styling!

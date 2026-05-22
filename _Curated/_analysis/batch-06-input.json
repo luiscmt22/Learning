@@ -1,0 +1,74 @@
+[
+  {
+    "src_rel": "Education/19-Feature-Flags-Hierarchy-Dependencies.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\19-Feature-Flags-Hierarchy-Dependencies.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__19-Feature-Flags-Hierarchy-Dependencies.html.txt",
+    "word_count": 4597,
+    "category_legacy": "15-Feature-Management"
+  },
+  {
+    "src_rel": "Education/29-Validator-Pipeline-Chain-Of-Responsibility.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\29-Validator-Pipeline-Chain-Of-Responsibility.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__29-Validator-Pipeline-Chain-Of-Responsibility.html.txt",
+    "word_count": 3414,
+    "category_legacy": "02-Architecture-and-Patterns"
+  },
+  {
+    "src_rel": "Microsoft_Fullstack/The Complete Guide to Unit Testing.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Microsoft_Fullstack\\The Complete Guide to Unit Testing.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Microsoft_Fullstack__The Complete Guide to Unit Testing.docx.txt",
+    "word_count": 2687,
+    "category_legacy": "13-Testing"
+  },
+  {
+    "src_rel": "Education/Educational_ML/neural-network-journeyV0.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Educational_ML\\neural-network-journeyV0.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Educational_ML__neural-network-journeyV0.html.txt",
+    "word_count": 1722,
+    "category_legacy": "18-Machine-Learning"
+  },
+  {
+    "src_rel": "Education/FactoryFloor/PT/SistemaProduçãoChãoFábricaInfoGráfico.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\FactoryFloor\\PT\\SistemaProduçãoChãoFábricaInfoGráfico.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__FactoryFloor__PT__SistemaProduçãoChãoFábricaInfoGráfico.docx.txt",
+    "word_count": 1448,
+    "category_legacy": "16-Domain-Examples-FactoryFloor"
+  },
+  {
+    "src_rel": "Actions&Events.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Actions&Events.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Actions&Events.docx.txt",
+    "word_count": 1206,
+    "category_legacy": "03-Blazor"
+  },
+  {
+    "src_rel": "Education/05-Polite-Code-Style.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\05-Polite-Code-Style.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__05-Polite-Code-Style.md.txt",
+    "word_count": 591,
+    "category_legacy": "14-Code-Quality"
+  },
+  {
+    "src_rel": "JScript/Exemplo2Buttons.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\JScript\\Exemplo2Buttons.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\JScript__Exemplo2Buttons.html.txt",
+    "word_count": 48,
+    "category_legacy": "12-JavaScript"
+  }
+]

@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ConcurrentDictionary & Thread-Safe Caching — The Multi-Lane Highway of Shared State</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --surface: #16213e;
+            --surface2: #0f3460;
+            --accent: #e94560;
+            --accent2: #533483;
+            --text: #eee;
+            --text-muted: #aab;
+            --success: #4ecca3;
+            --warning: #f0a500;
+            --code-bg: #0d1117;
+            --border: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+
+        h2 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin: 2.5rem 0 1rem 0;
+            padding-bottom: 0.3rem;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        h3 {
+            color: var(--success);
+            font-size: 1.2rem;
+            margin: 1.8rem 0 0.8rem 0;
+        }
+
+        h4 {
+            color: var(--warning);
+            font-size: 1.05rem;
+            margin: 1.2rem 0 0.5rem 0;
+        }
+
+        p { margin-bottom: 1rem; }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.2rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        code {
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9rem;
+        }
+
+        p code, li code {
+            background: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .keyword { color: #569cd6; }
+        .type { color: #4ec9b0; }
+        .string { color: #ce9178; }
+        .comment { color: #6a9955; }
+        .method { color: #dcdcaa; }
+        .number { color: #b5cea8; }
+        .param { color: #9cdcfe; }
+
+        .callout {
+            border-radius: 8px;
+            padding: 1.2rem 1.5rem;
+            margin: 1.5rem 0;
+            border-left: 4px solid;
+        }
+
+        .callout-metaphor {
+            background: rgba(83, 52, 131, 0.2);
+            border-color: var(--accent2);
+        }
+        .callout-metaphor::before {
+            content: "Metaphor";
+            display: block;
+            font-weight: bold;
+            color: var(--accent2);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-english {
+            background: rgba(78, 204, 163, 0.1);
+            border-color: var(--success);
+        }
+        .callout-english::before {
+            content: "Read It Like English";
+            display: block;
+            font-weight: bold;
+            color: var(--success);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-warning {
+            background: rgba(240, 165, 0, 0.1);
+            border-color: var(--warning);
+        }
+        .callout-warning::before {
+            content: "Common Confusion";
+            display: block;
+            font-weight: bold;
+            color: var(--warning);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-rule {
+            background: rgba(233, 69, 96, 0.1);
+            border-color: var(--accent);
+        }
+        .callout-rule::before {
+            content: "Golden Rule";
+            display: block;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        ul, ol {
+            margin: 0.5rem 0 1rem 1.5rem;
+        }
+
+        li { margin-bottom: 0.3rem; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 0.6rem 1rem;
+            text-align: left;
+        }
+
+        th {
+            background: var(--surface2);
+            color: var(--success);
+        }
+
+        td { background: var(--surface); }
+
+        .diagram {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'Cascadia Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            white-space: pre;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+<div style="background:rgba(7,9,15,0.94);border-bottom:1px solid #1f2940;padding:12px 24px;font:13px/1.4 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;position:fixed;top:0;left:0;right:0;z-index:99999;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);display:flex;align-items:center;gap:10px;color:#94a3bf;box-sizing:border-box;min-height:48px;"><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;">Learning</a><span style="color:#5f6b86;">›</span><a href="../_Hub.html" style="color:#94a3bf;text-decoration:none;">CORE</a><span style="color:#5f6b86;">›</span><a href="_Category.html" style="color:#94a3bf;text-decoration:none;">Concurrency &amp; Performance</a><span style="color:#5f6b86;">›</span><span style="color:#e9eef8;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">ConcurrentDictionary and Thread-Safe Caching</span><a href="concurrent-dictionary-caching.html" download style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">↓ Download</a><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">All docs</a></div><div style="height:48px;"></div><div style="background:linear-gradient(135deg,#0a0e1a 0%,#11182a 100%);border:1px solid #1f2940;border-radius:14px;padding:24px 28px;margin:20px;font:15px/1.7 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;color:#e9eef8;box-shadow:0 12px 40px rgba(0,0,0,0.35);"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.6px;color:#6aa6ff;font-weight:600;margin-bottom:8px;">▸ Curated · Concept · Concurrency</div><div style="font-size:24px;font-weight:700;color:#e9eef8;margin-bottom:10px;letter-spacing:-0.02em;line-height:1.2;">ConcurrentDictionary and Thread-Safe Caching</div><div style="font-size:16px;color:#94a3bf;margin-bottom:18px;line-height:1.5;">ConcurrentDictionary uses lock striping to let many threads read and write the same cache simultaneously, replacing fragile Dictionary+lock patterns with a one-line GetOrAdd call.</div><div style="font-style:italic;border-left:3px solid #6aa6ff;padding:6px 0 6px 16px;margin:14px 0;color:#e9eef8;">Your Blazor Server app crashes at 3am with a NullReferenceException deep inside Dictionary.FindEntry. The stack trace is useless. You add logs. It happens again. The actual cause? Two threads adding to a static cache at the exact same nanosecond, corrupting the internal bucket chain. This is a bug you cannot fix with more logging - you can only fix it by using the right data structure.</div><div style="background:rgba(106,166,255,0.06);border:1px solid rgba(106,166,255,0.20);border-radius:10px;padding:14px 18px;margin:14px 0;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#6aa6ff;margin-bottom:6px;font-weight:600;">Executive summary</div><div style="font-size:14px;color:#e9eef8;line-height:1.6;">This tutorial explains why a plain Dictionary is lethal under concurrent access (internal bucket corruption, infinite FindEntry loops) and how ConcurrentDictionary solves it via per-segment lock striping. It walks through four real patterns from the codebase (compiled expression cache, MethodInfo cache, ChatHub online users with snapshot-on-lock, facial recognition callback router) and explicitly calls out two broken patterns - a Dictionary+manual double-checked lock and lock() guarding async initialization - showing why SemaphoreSlim(1,1) is the correct tool when await is involved.</div></div><div style="background:rgba(184,106,255,0.06);border:1px solid rgba(184,106,255,0.25);border-radius:10px;padding:14px 18px;margin:14px 0;display:flex;gap:12px;"><div style="font-size:20px;flex-shrink:0;">💡</div><div style="flex:1;font-size:14px;color:#e9eef8;line-height:1.6;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#b86aff;margin-bottom:4px;font-weight:700;">Metaphor</div>A regular Dictionary is a single-lane bridge - one car crosses at a time and two cars from opposite ends crash. A ConcurrentDictionary is a 16-lane highway where each lane has its own traffic light (on a 4-core machine, that&#x27;s ProcessorCount * 4 stripes). Two cars going to different lanes don&#x27;t even notice each other. And GetOrAdd is the drive-through: if your order is already in the system it hands you the bag; if not, the kitchen cooks it once and files the recipe - next customer asking for the same thing just grabs the bag.</div></div><div style="margin-top:14px;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#5f6b86;margin-bottom:8px;font-weight:600;">Key concepts</div><div><span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">ConcurrentDictionary</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">GetOrAdd</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">lock striping</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">double-checked locking</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">SemaphoreSlim</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">snapshot pattern</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">compiled expression trees</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">Blazor Server circuits</span></div></div><div style="margin-top:18px;padding-top:14px;border-top:1px solid #1f2940;font-size:11px;color:#5f6b86;">↑ Curated overlay added by render_curated.py · the original document follows below</div></div>
+
+<h1>ConcurrentDictionary &amp; Thread-Safe Caching</h1>
+<p class="subtitle">Tutorial #22 — The Multi-Lane Highway of Shared State</p>
+
+<!-- ============================================================ -->
+<h2>1. The Problem: Why Regular Dictionary Fails Under Concurrency</h2>
+
+<p>
+    Blazor Server runs on a single server process. Every connected user gets their own circuit (like a session),
+    but they all share the same server memory. When you mark a field as <code>static</code>, every circuit
+    sees the same object. That means multiple threads can read and write the same <code>Dictionary&lt;TKey, TValue&gt;</code>
+    at the exact same time.
+</p>
+
+<p>
+    <code>Dictionary&lt;TKey, TValue&gt;</code> was never designed for this. It uses an internal array of buckets.
+    When two threads both decide to add an entry at the same moment, they can corrupt the internal bucket chain,
+    causing infinite loops during lookups, lost entries, or outright <code>NullReferenceException</code> crashes.
+</p>
+
+<h3>The Classic Race Condition</h3>
+
+<p>Consider this deceptively simple caching pattern:</p>
+
+<pre><code><span class="comment">// DANGEROUS: Dictionary is NOT thread-safe</span>
+<span class="keyword">private static readonly</span> <span class="type">Dictionary</span>&lt;<span class="type">string</span>, <span class="type">PropertyInfo</span>&gt; _cache = <span class="keyword">new</span>();
+
+<span class="keyword">public static</span> <span class="type">PropertyInfo</span>? <span class="method">GetProperty</span>(<span class="type">string</span> <span class="param">name</span>)
+{
+    <span class="keyword">if</span> (_cache.<span class="method">TryGetValue</span>(<span class="param">name</span>, <span class="keyword">out var</span> <span class="param">cached</span>))
+        <span class="keyword">return</span> <span class="param">cached</span>;
+
+    <span class="comment">// Thread A reaches here...</span>
+    <span class="comment">// Thread B also reaches here (same key, same miss)...</span>
+    <span class="keyword">var</span> <span class="param">prop</span> = <span class="keyword">typeof</span>(<span class="type">Article</span>).<span class="method">GetProperty</span>(<span class="param">name</span>);
+    _cache[<span class="param">name</span>] = <span class="param">prop</span>;  <span class="comment">// Both threads write — BOOM</span>
+    <span class="keyword">return</span> <span class="param">prop</span>;
+}</code></pre>
+
+<p>
+    Two threads both check <code>TryGetValue</code>, both see the key is missing, and both write simultaneously.
+    At best, one overwrites the other (wasted work). At worst, the internal hash table is corrupted and the entire
+    application hangs in an infinite loop inside <code>Dictionary.FindEntry()</code>.
+</p>
+
+<div class="callout callout-metaphor">
+    A regular <code>Dictionary</code> is like a single-lane bridge — only one car can cross at a time.
+    If two cars enter from opposite ends simultaneously, they crash. <code>ConcurrentDictionary</code> is a
+    multi-lane highway — many cars flow simultaneously because each lane has its own traffic light.
+</div>
+
+
+<!-- ============================================================ -->
+<h2>2. ConcurrentDictionary — The Thread-Safe Alternative</h2>
+
+<p>
+    <code>ConcurrentDictionary&lt;TKey, TValue&gt;</code> lives in <code>System.Collections.Concurrent</code>
+    and was purpose-built for multi-threaded access. Instead of one giant lock around the entire dictionary,
+    it uses <strong>lock striping</strong> — the internal array is divided into segments, and each segment
+    has its own lock. Multiple threads can read and write simultaneously as long as they hit different stripes.
+</p>
+
+<h3>Key Atomic Operations</h3>
+
+<table>
+    <tr>
+        <th>Method</th>
+        <th>What It Does</th>
+        <th>Atomicity</th>
+    </tr>
+    <tr>
+        <td><code>GetOrAdd(key, factory)</code></td>
+        <td>Return existing value, or create + store + return new one</td>
+        <td>The lookup-or-add is atomic (but the factory may run more than once)</td>
+    </tr>
+    <tr>
+        <td><code>TryGetValue(key, out value)</code></td>
+        <td>Try to read a value without throwing</td>
+        <td>Fully atomic read</td>
+    </tr>
+    <tr>
+        <td><code>TryRemove(key, out value)</code></td>
+        <td>Remove if exists, return what was removed</td>
+        <td>Fully atomic remove</td>
+    </tr>
+    <tr>
+        <td><code>AddOrUpdate(key, add, update)</code></td>
+        <td>Add if missing, update if existing</td>
+        <td>Atomic lookup; factories may run multiple times</td>
+    </tr>
+    <tr>
+        <td><code>ContainsKey(key)</code></td>
+        <td>Check existence</td>
+        <td>Point-in-time snapshot</td>
+    </tr>
+</table>
+
+<p>
+    No explicit <code>lock()</code> is needed for these operations. The dictionary handles all synchronization internally.
+</p>
+
+<div class="callout callout-english">
+    <code>GetOrAdd(key, factory)</code> reads as: "Give me the cached value for this key. If it doesn't exist yet,
+    create it with this factory function, store it, and give me that instead."
+</div>
+
+
+<!-- ============================================================ -->
+<h2>3. Real Example #1: ReflectionCache (Compiled Expression Caching)</h2>
+
+<p>
+    File: <code>Services/Artigo/ReflectionCache.cs</code>
+</p>
+
+<p>
+    This is the cleanest example in the codebase. It caches compiled expression trees for property access,
+    turning slow reflection into near-native-speed getters and setters.
+</p>
+
+<pre><code><span class="keyword">using</span> System.Collections.Concurrent;
+<span class="keyword">using</span> System.Linq.Expressions;
+<span class="keyword">using</span> System.Reflection;
+
+<span class="keyword">namespace</span> GivingCare.Services.Artigo;
+
+<span class="keyword">public static class</span> <span class="type">ReflectionCache</span>
+{
+    <span class="keyword">private static readonly</span> <span class="type">ConcurrentDictionary</span>&lt;(<span class="type">Type</span>, <span class="type">string</span>), <span class="type">Func</span>&lt;<span class="type">object</span>, <span class="type">object</span>?&gt;&gt; Getters = <span class="keyword">new</span>();
+    <span class="keyword">private static readonly</span> <span class="type">ConcurrentDictionary</span>&lt;(<span class="type">Type</span>, <span class="type">string</span>), <span class="type">Action</span>&lt;<span class="type">object</span>, <span class="type">object</span>?&gt;&gt; Setters = <span class="keyword">new</span>();
+
+    <span class="keyword">public static</span> <span class="type">T</span>? <span class="method">GetValue</span>&lt;<span class="type">T</span>&gt;(<span class="type">object</span> <span class="param">entity</span>, <span class="type">string</span> <span class="param">propertyName</span>)
+    {
+        <span class="keyword">if</span> (<span class="param">entity</span> == <span class="keyword">null</span>) <span class="keyword">return default</span>;
+
+        <span class="keyword">var</span> <span class="param">key</span> = (<span class="param">entity</span>.<span class="method">GetType</span>(), <span class="param">propertyName</span>);
+        <span class="keyword">var</span> <span class="param">getter</span> = Getters.<span class="method">GetOrAdd</span>(<span class="param">key</span>, <span class="method">CreateGetter</span>);
+
+        <span class="keyword">if</span> (<span class="param">getter</span> == <span class="keyword">null</span>) <span class="keyword">return default</span>;
+
+        <span class="keyword">var</span> <span class="param">value</span> = <span class="param">getter</span>(<span class="param">entity</span>);
+        <span class="keyword">if</span> (<span class="param">value</span> == <span class="keyword">null</span>) <span class="keyword">return default</span>;
+
+        <span class="keyword">return</span> (<span class="type">T</span>)<span class="param">value</span>;
+    }
+
+    <span class="keyword">public static void</span> <span class="method">SetValue</span>(<span class="type">object</span> <span class="param">entity</span>, <span class="type">string</span> <span class="param">propertyName</span>, <span class="type">object</span>? <span class="param">value</span>)
+    {
+        <span class="keyword">if</span> (<span class="param">entity</span> == <span class="keyword">null</span>) <span class="keyword">return</span>;
+
+        <span class="keyword">var</span> <span class="param">key</span> = (<span class="param">entity</span>.<span class="method">GetType</span>(), <span class="param">propertyName</span>);
+        <span class="keyword">var</span> <span class="param">setter</span> = Setters.<span class="method">GetOrAdd</span>(<span class="param">key</span>, <span class="method">CreateSetter</span>);
+
+        <span class="param">setter</span>?.<span class="method">Invoke</span>(<span class="param">entity</span>, <span class="param">value</span>);
+    }
+
+    <span class="keyword">private static</span> <span class="type">Func</span>&lt;<span class="type">object</span>, <span class="type">object</span>?&gt;? <span class="method">CreateGetter</span>((<span class="type">Type</span> type, <span class="type">string</span> propertyName) <span class="param">key</span>)
+    {
+        <span class="keyword">var</span> <span class="param">property</span> = <span class="param">key</span>.type.<span class="method">GetProperty</span>(<span class="param">key</span>.propertyName,
+            <span class="type">BindingFlags</span>.Public | <span class="type">BindingFlags</span>.Instance);
+        <span class="keyword">if</span> (<span class="param">property</span> == <span class="keyword">null</span> || !<span class="param">property</span>.CanRead) <span class="keyword">return null</span>;
+
+        <span class="keyword">var</span> <span class="param">param</span> = <span class="type">Expression</span>.<span class="method">Parameter</span>(<span class="keyword">typeof</span>(<span class="type">object</span>), <span class="string">"obj"</span>);
+        <span class="keyword">var</span> <span class="param">castToEntity</span> = <span class="type">Expression</span>.<span class="method">Convert</span>(<span class="param">param</span>, <span class="param">key</span>.type);
+        <span class="keyword">var</span> <span class="param">propertyAccess</span> = <span class="type">Expression</span>.<span class="method">Property</span>(<span class="param">castToEntity</span>, <span class="param">property</span>);
+        <span class="keyword">var</span> <span class="param">castToObject</span> = <span class="type">Expression</span>.<span class="method">Convert</span>(<span class="param">propertyAccess</span>, <span class="keyword">typeof</span>(<span class="type">object</span>));
+
+        <span class="keyword">return</span> <span class="type">Expression</span>.<span class="method">Lambda</span>&lt;<span class="type">Func</span>&lt;<span class="type">object</span>, <span class="type">object</span>?&gt;&gt;(<span class="param">castToObject</span>, <span class="param">param</span>).<span class="method">Compile</span>();
+    }
+
+    <span class="keyword">private static</span> <span class="type">Action</span>&lt;<span class="type">object</span>, <span class="type">object</span>?&gt;? <span class="method">CreateSetter</span>((<span class="type">Type</span> type, <span class="type">string</span> propertyName) <span class="param">key</span>)
+    {
+        <span class="keyword">var</span> <span class="param">property</span> = <span class="param">key</span>.type.<span class="method">GetProperty</span>(<span class="param">key</span>.propertyName,
+            <span class="type">BindingFlags</span>.Public | <span class="type">BindingFlags</span>.Instance);
+        <span class="keyword">if</span> (<span class="param">property</span> == <span class="keyword">null</span> || !<span class="param">property</span>.CanWrite) <span class="keyword">return null</span>;
+
+        <span class="keyword">var</span> <span class="param">objParam</span> = <span class="type">Expression</span>.<span class="method">Parameter</span>(<span class="keyword">typeof</span>(<span class="type">object</span>), <span class="string">"obj"</span>);
+        <span class="keyword">var</span> <span class="param">valueParam</span> = <span class="type">Expression</span>.<span class="method">Parameter</span>(<span class="keyword">typeof</span>(<span class="type">object</span>), <span class="string">"value"</span>);
+        <span class="keyword">var</span> <span class="param">castToEntity</span> = <span class="type">Expression</span>.<span class="method">Convert</span>(<span class="param">objParam</span>, <span class="param">key</span>.type);
+        <span class="keyword">var</span> <span class="param">propertyAccess</span> = <span class="type">Expression</span>.<span class="method">Property</span>(<span class="param">castToEntity</span>, <span class="param">property</span>);
+        <span class="keyword">var</span> <span class="param">castValue</span> = <span class="type">Expression</span>.<span class="method">Convert</span>(<span class="param">valueParam</span>, <span class="param">property</span>.PropertyType);
+        <span class="keyword">var</span> <span class="param">assign</span> = <span class="type">Expression</span>.<span class="method">Assign</span>(<span class="param">propertyAccess</span>, <span class="param">castValue</span>);
+
+        <span class="keyword">return</span> <span class="type">Expression</span>.<span class="method">Lambda</span>&lt;<span class="type">Action</span>&lt;<span class="type">object</span>, <span class="type">object</span>?&gt;&gt;(<span class="param">assign</span>, <span class="param">objParam</span>, <span class="param">valueParam</span>).<span class="method">Compile</span>();
+    }
+}</code></pre>
+
+<h3>Why Compiled Expressions?</h3>
+
+<p>
+    When you call <code>PropertyInfo.GetValue(entity)</code>, the runtime goes through reflection on every single call —
+    looking up metadata, checking permissions, boxing value types. This is roughly <strong>100x slower</strong> than
+    a direct property access.
+</p>
+
+<p>
+    The <code>Expression.Lambda(...).Compile()</code> call builds an actual IL method at runtime that directly
+    accesses the property — almost as fast as writing <code>entity.Name</code> by hand. The compilation itself
+    is expensive (microseconds to milliseconds), but it only happens <strong>once per (Type, PropertyName) pair</strong>.
+    After that, every subsequent call uses the pre-compiled delegate.
+</p>
+
+<h3>Anatomy of the Design</h3>
+
+<ul>
+    <li><strong>Tuple key <code>(Type, string)</code></strong> — The same property name on different types produces different entries. <code>(typeof(Article), "Code")</code> and <code>(typeof(Employee), "Code")</code> are distinct keys because the compiled expression must cast to the correct type.</li>
+    <li><strong><code>static readonly</code></strong> — The cache lives forever, shared by all requests on all circuits. This is intentional: compiled expressions are immutable and reusable across any thread.</li>
+    <li><strong><code>GetOrAdd(key, CreateGetter)</code></strong> — Atomic lookup-or-create. If two threads both ask for the same key at the same time, the factory (<code>CreateGetter</code>) might execute twice, but only one result is stored. The "extra" compilation is harmless — a tiny amount of wasted work, no corruption.</li>
+</ul>
+
+
+<!-- ============================================================ -->
+<h2>4. Real Example #2: CategoryService (MethodInfo Caching)</h2>
+
+<p>
+    File: <code>Services/Artigo/CategoryService.cs</code>
+</p>
+
+<p>
+    The <code>CategoryService</code> works with any entity type generically. It needs to call
+    <code>context.Set&lt;T&gt;()</code> where <code>T</code> is determined at runtime. Since
+    <code>MakeGenericMethod()</code> involves reflection, the result is cached.
+</p>
+
+<pre><code><span class="keyword">private static readonly</span> <span class="type">ConcurrentDictionary</span>&lt;<span class="type">Type</span>, <span class="type">MethodInfo</span>&gt; _setMethodCache = <span class="keyword">new</span>();
+
+<span class="keyword">private static readonly</span> <span class="type">MethodInfo</span> _dbContextSetMethod =
+    <span class="keyword">typeof</span>(<span class="type">DbContext</span>).<span class="method">GetMethod</span>(<span class="keyword">nameof</span>(<span class="type">DbContext</span>.Set), <span class="type">Type</span>.EmptyTypes)!;
+
+<span class="keyword">private static async</span> <span class="type">Task</span>&lt;<span class="type">List</span>&lt;<span class="type">object</span>&gt;&gt; <span class="method">QueryEntitiesAsync</span>(<span class="type">DbContext</span> <span class="param">context</span>, <span class="type">Type</span> <span class="param">entityType</span>)
+{
+    <span class="keyword">var</span> <span class="param">setMethod</span> = _setMethodCache.<span class="method">GetOrAdd</span>(<span class="param">entityType</span>,
+        <span class="param">type</span> => _dbContextSetMethod.<span class="method">MakeGenericMethod</span>(<span class="param">type</span>));
+
+    <span class="keyword">var</span> <span class="param">dbSet</span> = (<span class="type">IQueryable</span>)<span class="param">setMethod</span>.<span class="method">Invoke</span>(<span class="param">context</span>, <span class="keyword">null</span>)!;
+    <span class="keyword">return await</span> <span class="param">dbSet</span>.<span class="method">Cast</span>&lt;<span class="type">object</span>&gt;().<span class="method">AsNoTracking</span>().<span class="method">ToListAsync</span>();
+}</code></pre>
+
+<h3>What's Happening Here</h3>
+
+<ol>
+    <li><code>_dbContextSetMethod</code> grabs the open generic <code>DbContext.Set&lt;&gt;()</code> method once at class load time. This is the "template" method without a concrete type argument.</li>
+    <li><code>MakeGenericMethod(type)</code> closes the generic — it creates the specific <code>Set&lt;CrmFamilia&gt;()</code> or <code>Set&lt;CrmSubfamilia&gt;()</code> variant. This involves allocating a new <code>MethodInfo</code> object and is not free.</li>
+    <li><code>GetOrAdd</code> ensures <code>MakeGenericMethod</code> is called at most once per entity type (possibly a few extra times under contention, but only one result survives in the cache).</li>
+</ol>
+
+<p>
+    Without the cache, every single query to any category would rebuild the <code>MethodInfo</code> from scratch.
+    With 20+ category types being queried across many users, that adds up fast.
+</p>
+
+
+<!-- ============================================================ -->
+<h2>5. Real Example #3: ChatHub (ConcurrentDictionary + lock on Value)</h2>
+
+<p>
+    File: <code>Services/Chat/Hubs/ChatHub.cs</code>
+</p>
+
+<p>
+    This is the most instructive example because it shows that <code>ConcurrentDictionary</code> alone is
+    sometimes not enough. When the <strong>value</strong> inside the dictionary is a mutable collection,
+    you need an additional layer of protection.
+</p>
+
+<pre><code><span class="keyword">private static readonly</span> <span class="type">ConcurrentDictionary</span>&lt;<span class="type">int</span>, <span class="type">HashSet</span>&lt;<span class="type">string</span>&gt;&gt; _onlineUsers = <span class="keyword">new</span>();</code></pre>
+
+<h3>On Connect: GetOrAdd + lock</h3>
+
+<pre><code><span class="keyword">public override async</span> <span class="type">Task</span> <span class="method">OnConnectedAsync</span>()
+{
+    <span class="keyword">var</span> <span class="param">userId</span> = <span class="method">GetUserId</span>();
+    <span class="keyword">if</span> (<span class="param">userId</span>.HasValue)
+    {
+        <span class="keyword">var</span> <span class="param">connections</span> = _onlineUsers.<span class="method">GetOrAdd</span>(<span class="param">userId</span>.Value, _ => <span class="keyword">new</span> <span class="type">HashSet</span>&lt;<span class="type">string</span>&gt;());
+        <span class="keyword">lock</span> (<span class="param">connections</span>)
+        {
+            <span class="param">connections</span>.<span class="method">Add</span>(<span class="type">Context</span>.ConnectionId);
+        }
+
+        <span class="comment">// Notify others this user is online (only on first device)</span>
+        <span class="keyword">if</span> (<span class="param">connections</span>.Count == <span class="number">1</span>)
+        {
+            <span class="keyword">await</span> Clients.Others.<span class="method">SendAsync</span>(<span class="string">"UserOnline"</span>, <span class="param">userId</span>.Value);
+        }
+    }
+
+    <span class="keyword">await base</span>.<span class="method">OnConnectedAsync</span>();
+}</code></pre>
+
+<h3>On Disconnect: TryGetValue + lock + TryRemove</h3>
+
+<pre><code><span class="keyword">public override async</span> <span class="type">Task</span> <span class="method">OnDisconnectedAsync</span>(<span class="type">Exception</span>? <span class="param">exception</span>)
+{
+    <span class="keyword">var</span> <span class="param">userId</span> = <span class="method">GetUserId</span>();
+    <span class="keyword">if</span> (<span class="param">userId</span>.HasValue && _onlineUsers.<span class="method">TryGetValue</span>(<span class="param">userId</span>.Value, <span class="keyword">out var</span> <span class="param">connections</span>))
+    {
+        <span class="type">bool</span> <span class="param">lastConnection</span>;
+        <span class="keyword">lock</span> (<span class="param">connections</span>)
+        {
+            <span class="param">connections</span>.<span class="method">Remove</span>(<span class="type">Context</span>.ConnectionId);
+            <span class="param">lastConnection</span> = <span class="param">connections</span>.Count == <span class="number">0</span>;
+        }
+
+        <span class="keyword">if</span> (<span class="param">lastConnection</span>)
+        {
+            _onlineUsers.<span class="method">TryRemove</span>(<span class="param">userId</span>.Value, <span class="keyword">out</span> _);
+            <span class="keyword">await</span> Clients.Others.<span class="method">SendAsync</span>(<span class="string">"UserOffline"</span>, <span class="param">userId</span>.Value);
+        }
+    }
+
+    <span class="keyword">await base</span>.<span class="method">OnDisconnectedAsync</span>(<span class="param">exception</span>);
+}</code></pre>
+
+<h3>On Broadcast: The Snapshot Pattern</h3>
+
+<pre><code><span class="keyword">public async</span> <span class="type">Task</span> <span class="method">SendMessage</span>(<span class="type">SendMessageDto</span> <span class="param">dto</span>)
+{
+    <span class="comment">// ...</span>
+    <span class="keyword">if</span> (_onlineUsers.<span class="method">TryGetValue</span>(<span class="param">dto</span>.ToUserId, <span class="keyword">out var</span> <span class="param">recipientConnections</span>))
+    {
+        <span class="type">HashSet</span>&lt;<span class="type">string</span>&gt; <span class="param">snapshot</span>;
+        <span class="keyword">lock</span> (<span class="param">recipientConnections</span>)
+        {
+            <span class="param">snapshot</span> = <span class="keyword">new</span> <span class="type">HashSet</span>&lt;<span class="type">string</span>&gt;(<span class="param">recipientConnections</span>);
+        }
+        <span class="keyword">await</span> Clients.<span class="method">Clients</span>(<span class="param">snapshot</span>.<span class="method">ToList</span>()).<span class="method">SendAsync</span>(<span class="string">"ReceiveMessage"</span>, <span class="param">message</span>);
+    }
+}</code></pre>
+
+<h3>Why the Two Layers?</h3>
+
+<div class="callout callout-warning">
+    <code>ConcurrentDictionary</code> makes the <strong>dictionary</strong> thread-safe, not the <strong>values</strong>
+    inside it. If your value is a mutable collection (like <code>HashSet&lt;string&gt;</code>), you still need to
+    <code>lock</code> when modifying it. The dictionary protects the key-to-value mapping; the lock protects
+    the value itself.
+</div>
+
+<p>The <strong>snapshot pattern</strong> is crucial here:</p>
+
+<ol>
+    <li>Acquire the lock on the <code>HashSet</code>.</li>
+    <li>Copy its contents into a new <code>HashSet</code> (the snapshot).</li>
+    <li>Release the lock immediately.</li>
+    <li>Use the snapshot for the (potentially slow) async I/O operation (<code>SendAsync</code>).</li>
+</ol>
+
+<p>
+    This ensures you never hold a lock while awaiting a network call. If you did, every other
+    connect/disconnect for that user would block until the message was delivered — potentially seconds.
+</p>
+
+
+<!-- ============================================================ -->
+<h2>6. Real Example #4: FacialRecognitionHelper (9 Callback Dictionaries)</h2>
+
+<p>
+    File: <code>Services/FacialRecognition/FacialRecognitionHelper.cs</code>
+</p>
+
+<p>
+    This static helper routes JavaScript facial recognition callbacks to the correct Blazor component instance.
+    It uses <strong>9 separate <code>ConcurrentDictionary</code> instances</strong>, one per event type:
+</p>
+
+<pre><code><span class="keyword">public static class</span> <span class="type">FacialRecognitionHelper</span>
+{
+    <span class="comment">// Attendance-related callbacks</span>
+    <span class="keyword">private static readonly</span> <span class="type">ConcurrentDictionary</span>&lt;<span class="type">string</span>, <span class="type">Action</span>&lt;<span class="type">string</span>&gt;&gt; _identifyCallbacks = <span class="keyword">new</span>();
+    <span class="keyword">private static readonly</span> <span class="type">ConcurrentDictionary</span>&lt;<span class="type">string</span>, <span class="type">Action</span>&lt;<span class="type">int</span>, <span class="type">int</span>&gt;&gt; _progressCallbacks = <span class="keyword">new</span>();
+    <span class="keyword">private static readonly</span> <span class="type">ConcurrentDictionary</span>&lt;<span class="type">string</span>, <span class="type">Action</span>&lt;<span class="type">string</span>&gt;&gt; _errorCallbacks = <span class="keyword">new</span>();
+    <span class="keyword">private static readonly</span> <span class="type">ConcurrentDictionary</span>&lt;<span class="type">string</span>, <span class="type">Action</span>&lt;<span class="type">string</span>&gt;&gt; _checkInCallbacks = <span class="keyword">new</span>();
+    <span class="keyword">private static readonly</span> <span class="type">ConcurrentDictionary</span>&lt;<span class="type">string</span>, <span class="type">Action</span>&lt;<span class="type">string</span>&gt;&gt; _checkOutCallbacks = <span class="keyword">new</span>();
+    <span class="keyword">private static readonly</span> <span class="type">ConcurrentDictionary</span>&lt;<span class="type">string</span>, <span class="type">Action</span>&lt;<span class="type">string</span>&gt;&gt; _breakStartCallbacks = <span class="keyword">new</span>();
+    <span class="keyword">private static readonly</span> <span class="type">ConcurrentDictionary</span>&lt;<span class="type">string</span>, <span class="type">Action</span>&lt;<span class="type">string</span>&gt;&gt; _breakEndCallbacks = <span class="keyword">new</span>();
+
+    <span class="comment">// Enrollment-related callbacks</span>
+    <span class="keyword">private static readonly</span> <span class="type">ConcurrentDictionary</span>&lt;<span class="type">string</span>, <span class="type">Action</span>&lt;<span class="type">string</span>&gt;&gt; _faceEnrolledCallbacks = <span class="keyword">new</span>();
+    <span class="keyword">private static readonly</span> <span class="type">ConcurrentDictionary</span>&lt;<span class="type">string</span>, <span class="type">Action</span>&lt;<span class="type">bool</span>&gt;&gt; _faceDetectedCallbacks = <span class="keyword">new</span>();
+    <span class="comment">// ...</span>
+}</code></pre>
+
+<h3>The Lifecycle: Register, Route, Cleanup</h3>
+
+<h4>Registration (Component OnInitialized)</h4>
+
+<pre><code><span class="keyword">public static void</span> <span class="method">RegisterInstance</span>(
+    <span class="type">string</span> <span class="param">instanceId</span>,
+    <span class="type">Action</span>&lt;<span class="type">string</span>&gt;? <span class="param">onIdentify</span> = <span class="keyword">null</span>,
+    <span class="type">Action</span>&lt;<span class="type">int</span>, <span class="type">int</span>&gt;? <span class="param">onProgress</span> = <span class="keyword">null</span>,
+    <span class="type">Action</span>&lt;<span class="type">string</span>&gt;? <span class="param">onError</span> = <span class="keyword">null</span>,
+    <span class="comment">/* ... more callbacks ... */</span>)
+{
+    <span class="keyword">if</span> (<span class="param">onIdentify</span> != <span class="keyword">null</span>) _identifyCallbacks[<span class="param">instanceId</span>] = <span class="param">onIdentify</span>;
+    <span class="keyword">if</span> (<span class="param">onProgress</span> != <span class="keyword">null</span>) _progressCallbacks[<span class="param">instanceId</span>] = <span class="param">onProgress</span>;
+    <span class="keyword">if</span> (<span class="param">onError</span> != <span class="keyword">null</span>) _errorCallbacks[<span class="param">instanceId</span>] = <span class="param">onError</span>;
+    <span class="comment">// ... etc</span>
+}</code></pre>
+
+<h4>Invocation (JavaScript calls into .NET)</h4>
+
+<pre><code>[<span class="type">JSInvokable</span>]
+<span class="keyword">public static void</span> <span class="method">NotifyFacialIdentifyCompleteForInstance</span>(<span class="type">string</span> <span class="param">instanceId</span>, <span class="type">string</span> <span class="param">descriptorJson</span>)
+{
+    <span class="keyword">if</span> (_identifyCallbacks.<span class="method">TryGetValue</span>(<span class="param">instanceId</span>, <span class="keyword">out var</span> <span class="param">callback</span>))
+    {
+        <span class="param">callback</span>.<span class="method">Invoke</span>(<span class="param">descriptorJson</span>);
+    }
+}</code></pre>
+
+<h4>Cleanup (Component Dispose)</h4>
+
+<pre><code><span class="keyword">public static void</span> <span class="method">UnregisterInstance</span>(<span class="type">string</span> <span class="param">instanceId</span>)
+{
+    _identifyCallbacks.<span class="method">TryRemove</span>(<span class="param">instanceId</span>, <span class="keyword">out</span> _);
+    _progressCallbacks.<span class="method">TryRemove</span>(<span class="param">instanceId</span>, <span class="keyword">out</span> _);
+    _errorCallbacks.<span class="method">TryRemove</span>(<span class="param">instanceId</span>, <span class="keyword">out</span> _);
+    _checkInCallbacks.<span class="method">TryRemove</span>(<span class="param">instanceId</span>, <span class="keyword">out</span> _);
+    _checkOutCallbacks.<span class="method">TryRemove</span>(<span class="param">instanceId</span>, <span class="keyword">out</span> _);
+    _breakStartCallbacks.<span class="method">TryRemove</span>(<span class="param">instanceId</span>, <span class="keyword">out</span> _);
+    _breakEndCallbacks.<span class="method">TryRemove</span>(<span class="param">instanceId</span>, <span class="keyword">out</span> _);
+    _faceEnrolledCallbacks.<span class="method">TryRemove</span>(<span class="param">instanceId</span>, <span class="keyword">out</span> _);
+    _faceDetectedCallbacks.<span class="method">TryRemove</span>(<span class="param">instanceId</span>, <span class="keyword">out</span> _);
+}</code></pre>
+
+<h3>Why This Design Works</h3>
+
+<ul>
+    <li><strong>Instance isolation</strong> — The key is a <code>Guid</code> string generated per component instance. Multiple facial kiosks can run simultaneously without cross-talk.</li>
+    <li><strong>No lock needed on values</strong> — Unlike the ChatHub example, the values here are immutable <code>Action</code> delegates. Once registered, they are only read or replaced wholesale — never mutated in place.</li>
+    <li><strong><code>TryRemove</code> on Dispose</strong> — This prevents memory leaks. Without cleanup, the static dictionaries would hold references to disposed component instances forever, preventing garbage collection.</li>
+    <li><strong>9 dictionaries vs 1 dictionary of 9-field objects</strong> — Keeping them separate means each <code>[JSInvokable]</code> method only touches one dictionary. Less contention, simpler code, and each callback type has its own clear delegate signature.</li>
+</ul>
+
+
+<!-- ============================================================ -->
+<h2>7. The Anti-Pattern: Dictionary + Manual Lock</h2>
+
+<p>
+    File: <code>Services/Artigo/ArticlePersistenceService.cs</code>
+</p>
+
+<p>
+    This file uses a plain <code>Dictionary</code> with a manual lock — the double-checked locking pattern.
+    It works, but it is fragile and unnecessarily complex.
+</p>
+
+<pre><code><span class="keyword">private static readonly</span> <span class="type">Dictionary</span>&lt;<span class="type">string</span>, <span class="type">PropertyInfo</span>&gt; _propertyCache = <span class="keyword">new</span>();
+<span class="keyword">private static readonly</span> <span class="type">object</span> _cacheLock = <span class="keyword">new</span>();
+
+<span class="keyword">private static</span> <span class="type">PropertyInfo</span>? <span class="method">GetCachedProperty</span>(<span class="type">string</span> <span class="param">propertyName</span>)
+{
+    <span class="comment">// First check: read without lock (fast path)</span>
+    <span class="keyword">if</span> (_propertyCache.<span class="method">TryGetValue</span>(<span class="param">propertyName</span>, <span class="keyword">out var</span> <span class="param">cached</span>))
+    {
+        <span class="keyword">return</span> <span class="param">cached</span>;
+    }
+
+    <span class="comment">// Slow path: acquire lock, check again, then add</span>
+    <span class="keyword">lock</span> (_cacheLock)
+    {
+        <span class="keyword">if</span> (_propertyCache.<span class="method">TryGetValue</span>(<span class="param">propertyName</span>, <span class="keyword">out</span> <span class="param">cached</span>))
+        {
+            <span class="keyword">return</span> <span class="param">cached</span>;
+        }
+
+        <span class="keyword">var</span> <span class="param">propertyInfo</span> = <span class="keyword">typeof</span>(<span class="type">Article</span>).<span class="method">GetProperty</span>(<span class="param">propertyName</span>);
+        <span class="keyword">if</span> (<span class="param">propertyInfo</span> != <span class="keyword">null</span>)
+        {
+            _propertyCache[<span class="param">propertyName</span>] = <span class="param">propertyInfo</span>;
+        }
+        <span class="keyword">return</span> <span class="param">propertyInfo</span>;
+    }
+}</code></pre>
+
+<h3>What's Wrong With This?</h3>
+
+<ul>
+    <li><strong>Coarse-grained locking</strong> — The entire dictionary is locked for every write. If thread A is adding <code>"Code"</code>, thread B cannot even read <code>"Description"</code>. With <code>ConcurrentDictionary</code>, unrelated keys would be on different stripes and wouldn't block each other at all.</li>
+    <li><strong>The first <code>TryGetValue</code> outside the lock is reading a non-thread-safe collection without protection.</strong> This technically violates the <code>Dictionary</code> contract. It usually works because <code>TryGetValue</code> is a read-only operation and modern CPUs have cache coherence, but it is not guaranteed to be safe if another thread is simultaneously resizing the internal table.</li>
+    <li><strong>Easy to forget the double-check</strong> — If a developer adds a new caching method and forgets the second <code>TryGetValue</code> inside the lock, you get duplicate work or race conditions.</li>
+    <li><strong>Reader-writer contention</strong> — All readers and writers compete for the same single lock object. Even two simultaneous reads would block if a write is in progress.</li>
+</ul>
+
+<h3>The Fix: One Line</h3>
+
+<p>Replace the entire pattern with:</p>
+
+<pre><code><span class="keyword">private static readonly</span> <span class="type">ConcurrentDictionary</span>&lt;<span class="type">string</span>, <span class="type">PropertyInfo</span>&gt; _propertyCache = <span class="keyword">new</span>();
+
+<span class="keyword">private static</span> <span class="type">PropertyInfo</span>? <span class="method">GetCachedProperty</span>(<span class="type">string</span> <span class="param">propertyName</span>)
+{
+    <span class="keyword">return</span> _propertyCache.<span class="method">GetOrAdd</span>(<span class="param">propertyName</span>,
+        <span class="param">name</span> => <span class="keyword">typeof</span>(<span class="type">Article</span>).<span class="method">GetProperty</span>(<span class="param">name</span>));
+}
+</code></pre>
+
+<p>
+    Three lines instead of fifteen. No lock object, no double-check pattern, no risk of forgetting a step.
+    <code>GetOrAdd</code> handles everything atomically.
+</p>
+
+
+<!-- ============================================================ -->
+<h2>8. SemaphoreSlim — The Missing Pattern</h2>
+
+<p>
+    <code>ConcurrentDictionary</code> is perfect for caching, but what about async initialization guards?
+    Consider the <code>GlobalChatService</code> and <code>GlobalNotificationService</code> in the project.
+    Both have this pattern:
+</p>
+
+<pre><code><span class="keyword">private readonly</span> <span class="type">object</span> _lockObject = <span class="keyword">new</span>();
+
+<span class="keyword">public async</span> <span class="type">Task</span> <span class="method">InitializeAsync</span>(<span class="type">int</span> <span class="param">userId</span>)
+{
+    <span class="keyword">if</span> (_isDisposed) <span class="keyword">return</span>;
+
+    <span class="keyword">lock</span> (_lockObject)                              <span class="comment">// Sync lock...</span>
+    {
+        <span class="keyword">if</span> (_isInitialized && _currentUserId == <span class="param">userId</span>) <span class="keyword">return</span>;
+        _currentUserId = <span class="param">userId</span>;
+    }                                                <span class="comment">// ...released here</span>
+
+    <span class="comment">// But the async work happens OUTSIDE the lock!</span>
+    <span class="keyword">await</span> <span class="method">DisconnectAsync</span>();                         <span class="comment">// Async I/O</span>
+    <span class="keyword">await</span> <span class="method">CreateHubConnection</span>();                      <span class="comment">// Async I/O</span>
+    <span class="keyword">await</span> <span class="method">ConnectAsync</span>();                             <span class="comment">// Async I/O</span>
+
+    _isInitialized = <span class="keyword">true</span>;                           <span class="comment">// Set AFTER lock released!</span>
+}</code></pre>
+
+<h3>The Problem</h3>
+
+<p>
+    The <code>lock()</code> only protects the boolean check. The actual async initialization runs unprotected.
+    If two threads call <code>InitializeAsync</code> at the same time, both pass the lock check (because
+    <code>_isInitialized</code> is still false), and both proceed to create hub connections simultaneously.
+    You get double connections, event handler duplication, and subtle state corruption.
+</p>
+
+<p>
+    You cannot put <code>await</code> inside a <code>lock</code> — the C# compiler will give you error
+    <strong>CS1996</strong>: "Cannot await in the body of a lock statement." Even if you could, holding a
+    lock across an await is dangerous because the continuation might run on a different thread, and
+    <code>lock()</code> is thread-affine (only the thread that acquired it can release it).
+</p>
+
+<h3>The Solution: SemaphoreSlim(1, 1)</h3>
+
+<p>
+    <code>SemaphoreSlim</code> with initial count 1 and max count 1 acts as an <strong>async-compatible mutex</strong>.
+    It has a <code>WaitAsync()</code> method that can be awaited without blocking the thread.
+</p>
+
+<pre><code><span class="keyword">private readonly</span> <span class="type">SemaphoreSlim</span> _initLock = <span class="keyword">new</span>(<span class="number">1</span>, <span class="number">1</span>);
+
+<span class="keyword">public async</span> <span class="type">Task</span> <span class="method">InitializeAsync</span>(<span class="type">int</span> <span class="param">userId</span>)
+{
+    <span class="keyword">if</span> (_isDisposed) <span class="keyword">return</span>;
+
+    <span class="keyword">await</span> _initLock.<span class="method">WaitAsync</span>();
+    <span class="keyword">try</span>
+    {
+        <span class="keyword">if</span> (_isInitialized && _currentUserId == <span class="param">userId</span>) <span class="keyword">return</span>;
+        _currentUserId = <span class="param">userId</span>;
+
+        <span class="keyword">await</span> <span class="method">DisconnectAsync</span>();          <span class="comment">// Now protected!</span>
+        <span class="keyword">await</span> <span class="method">CreateHubConnection</span>();       <span class="comment">// Now protected!</span>
+        <span class="keyword">await</span> <span class="method">ConnectAsync</span>();              <span class="comment">// Now protected!</span>
+
+        _isInitialized = <span class="keyword">true</span>;            <span class="comment">// Set under protection</span>
+    }
+    <span class="keyword">finally</span>
+    {
+        _initLock.<span class="method">Release</span>();
+    }
+}</code></pre>
+
+<h3>Key Differences from lock()</h3>
+
+<table>
+    <tr>
+        <th>Feature</th>
+        <th>lock()</th>
+        <th>SemaphoreSlim(1,1)</th>
+    </tr>
+    <tr>
+        <td>Async support</td>
+        <td>No — cannot await inside</td>
+        <td>Yes — <code>WaitAsync()</code></td>
+    </tr>
+    <tr>
+        <td>Thread affinity</td>
+        <td>Must release on same thread</td>
+        <td>Any thread can release</td>
+    </tr>
+    <tr>
+        <td>Timeout support</td>
+        <td>Only via <code>Monitor.TryEnter</code></td>
+        <td>Built-in: <code>WaitAsync(timeout)</code></td>
+    </tr>
+    <tr>
+        <td>Cancellation</td>
+        <td>No</td>
+        <td>Built-in: <code>WaitAsync(CancellationToken)</code></td>
+    </tr>
+    <tr>
+        <td>Performance (uncontested)</td>
+        <td>Faster (no allocation)</td>
+        <td>Slightly slower</td>
+    </tr>
+    <tr>
+        <td>Can protect async code</td>
+        <td>No</td>
+        <td>Yes</td>
+    </tr>
+</table>
+
+
+<!-- ============================================================ -->
+<h2>9. Choosing the Right Tool</h2>
+
+<table>
+    <tr>
+        <th>Need</th>
+        <th>Use</th>
+        <th>Why</th>
+    </tr>
+    <tr>
+        <td>Thread-safe key-value cache (read-heavy)</td>
+        <td><code>ConcurrentDictionary</code> + <code>GetOrAdd</code></td>
+        <td>Atomic, fine-grained locks via lock striping</td>
+    </tr>
+    <tr>
+        <td>Thread-safe key-value with expiration</td>
+        <td><code>IMemoryCache</code></td>
+        <td>Built-in eviction policies (absolute, sliding, size)</td>
+    </tr>
+    <tr>
+        <td>Mutable value inside ConcurrentDictionary</td>
+        <td><code>ConcurrentDictionary</code> + <code>lock(value)</code></td>
+        <td>Dictionary is safe; value needs its own lock</td>
+    </tr>
+    <tr>
+        <td>Async mutual exclusion</td>
+        <td><code>SemaphoreSlim(1, 1)</code></td>
+        <td>Only primitive that works with <code>await</code></td>
+    </tr>
+    <tr>
+        <td>Simple sync mutual exclusion</td>
+        <td><code>lock()</code></td>
+        <td>Lightweight, no async, minimal overhead</td>
+    </tr>
+    <tr>
+        <td>Rate limiting / controlled parallelism</td>
+        <td><code>SemaphoreSlim(N, N)</code></td>
+        <td>Allows up to N concurrent accessors</td>
+    </tr>
+</table>
+
+
+<!-- ============================================================ -->
+<h2>10. Performance: Lock Striping vs Global Lock</h2>
+
+<p>
+    The fundamental difference between <code>Dictionary + lock</code> and <code>ConcurrentDictionary</code>
+    comes down to how much of the data structure gets blocked when one thread is writing.
+</p>
+
+<div class="diagram">
+Dictionary + global lock:
+
+Thread 1:  ----[LOCK]=========[Read Key A]=========[UNLOCK]----
+Thread 2:  ---------[BLOCKED..........................]--------[Read Key B]--
+Thread 3:  ---------[BLOCKED..........................]--------[BLOCKED......]--[Write Key C]--
+
+              All threads wait for the single lock, even for unrelated keys.
+
+
+ConcurrentDictionary (lock striping):
+
+Thread 1:  ----[Stripe 1]--[Read Key A]--[Done]
+Thread 2:  ----[Stripe 2]--[Read Key B]--[Done]         &lt;-- Parallel!
+Thread 3:  ----[Stripe 3]--[Write Key C]-[Done]         &lt;-- Parallel!
+Thread 4:  ----[Stripe 1]--[Write Key D]-[Done]         &lt;-- Waits only if same stripe as Thread 1
+
+              Threads on different stripes never block each other.
+</div>
+
+<p>
+    The dictionary internally hashes each key and assigns it to one of several "stripes" (segments).
+    Each stripe has its own lock. The default number of stripes is
+    <code>Environment.ProcessorCount * 4</code>, so on a 4-core machine you get 16 independent lock lanes.
+    The odds of two unrelated keys colliding on the same stripe are low, meaning most operations proceed
+    without any contention at all.
+</p>
+
+<div class="callout callout-rule">
+    If your <code>Dictionary</code> is <code>static</code> or shared across threads, it <strong>MUST</strong>
+    be a <code>ConcurrentDictionary</code>. No exceptions. The performance cost is negligible for single-threaded
+    use, but the safety guarantee is essential the moment a second thread touches it.
+</div>
+
+
+<!-- ============================================================ -->
+<h2>Summary: Patterns in Our Codebase</h2>
+
+<table>
+    <tr>
+        <th>File</th>
+        <th>Pattern</th>
+        <th>Rating</th>
+    </tr>
+    <tr>
+        <td><code>ReflectionCache.cs</code></td>
+        <td>ConcurrentDictionary + GetOrAdd with compiled expressions</td>
+        <td style="color: var(--success);">Excellent</td>
+    </tr>
+    <tr>
+        <td><code>CategoryService.cs</code></td>
+        <td>ConcurrentDictionary + GetOrAdd for MethodInfo caching</td>
+        <td style="color: var(--success);">Excellent</td>
+    </tr>
+    <tr>
+        <td><code>ChatHub.cs</code></td>
+        <td>ConcurrentDictionary + lock(value) with snapshot pattern</td>
+        <td style="color: var(--success);">Excellent</td>
+    </tr>
+    <tr>
+        <td><code>FacialRecognitionHelper.cs</code></td>
+        <td>9 ConcurrentDictionaries for instance-isolated callbacks</td>
+        <td style="color: var(--success);">Excellent</td>
+    </tr>
+    <tr>
+        <td><code>ArticlePersistenceService.cs</code></td>
+        <td>Dictionary + manual lock (double-checked locking)</td>
+        <td style="color: var(--warning);">Fragile — should be ConcurrentDictionary</td>
+    </tr>
+    <tr>
+        <td><code>GlobalChatService.cs</code></td>
+        <td>lock() guarding async initialization</td>
+        <td style="color: var(--accent);">Broken — needs SemaphoreSlim</td>
+    </tr>
+    <tr>
+        <td><code>GlobalNotificationService.cs</code></td>
+        <td>lock() guarding async initialization</td>
+        <td style="color: var(--accent);">Broken — needs SemaphoreSlim</td>
+    </tr>
+</table>
+
+<div class="callout callout-english">
+    <strong><code>GetOrAdd(key, factory)</code></strong> — "Give me the cached value for this key. If it
+    doesn't exist yet, create it with this factory function, store it, and give me that instead."
+    One line replaces the entire double-checked locking ceremony.
+</div>
+
+<div class="callout callout-metaphor">
+    Think of <code>ConcurrentDictionary</code> as a hotel with many front desks. Each desk handles
+    check-ins and check-outs independently. A guest arriving at desk 3 doesn't wait for desk 7 to
+    finish. But if two guests try to check into the same room at the same desk, the desk clerk handles
+    it — only one gets the room, and the other gets told it's already taken. That's <code>GetOrAdd</code>.
+</div>
+
+</body>
+</html>

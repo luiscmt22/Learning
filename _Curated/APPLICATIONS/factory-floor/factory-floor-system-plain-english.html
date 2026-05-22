@@ -1,0 +1,1268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Factory Floor Production System — Plain-English Infographic</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #07090f;
+  --bg-1: #0c111c;
+  --bg-2: #11182a;
+  --bg-3: #1a2238;
+  --bg-4: #232e4a;
+  --border: #1e2840;
+  --border-2: #2a3551;
+  --border-3: #3a4870;
+  --text: #e9eef8;
+  --text-dim: #94a3bf;
+  --text-mut: #5f6b86;
+  --accent: #6aa6ff;
+  --accent-strong: #3b82f6;
+  --accent-2: #b86aff;
+  --accent-3: #f472b6;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+  --info: #38bdf8;
+  --code-bg: #0a1020;
+  --code-border: #1a2340;
+  --shadow: 0 8px 32px rgba(0,0,0,0.55);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.35);
+  --shadow-glow: 0 0 0 1px rgba(106,166,255,0.18), 0 12px 40px rgba(106,166,255,0.10);
+}
+
+/* Doc-type theming */
+[data-doc-type="core-concept"] {
+  --doc-accent: #6aa6ff;
+  --doc-accent-rgb: 106,166,255;
+  --doc-eyebrow: "Concept";
+}
+[data-doc-type="applied-implementation"] {
+  --doc-accent: #b86aff;
+  --doc-accent-rgb: 184,106,255;
+  --doc-eyebrow: "Implementation";
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font: 16px/1.7 -apple-system, "Inter", \'Segoe UI\', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+::selection { background: rgba(106,166,255,0.30); }
+
+/* ═══ Top bar ═══════════════════════════════════════════════════════ */
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(7,9,15,0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 28px;
+  display: flex; align-items: center; gap: 16px;
+}
+.topbar .crumbs {
+  flex: 1; font-size: 13px; color: var(--text-dim);
+  display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden;
+}
+.topbar .crumbs span.sep { color: var(--text-mut); }
+.topbar .crumbs .current {
+  color: var(--text); font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.topbar .crumbs a { color: var(--text-dim); text-decoration: none; }
+.topbar .crumbs a:hover { color: var(--accent); }
+.topbar .actions { display: flex; gap: 6px; flex-shrink: 0; }
+.topbar .action {
+  font-size: 13px; padding: 6px 14px; border-radius: 8px;
+  color: var(--text-dim); text-decoration: none;
+  border: 1px solid transparent; transition: all .15s;
+}
+.topbar .action:hover {
+  color: var(--text); background: var(--bg-2); border-color: var(--border);
+  text-decoration: none;
+}
+
+/* ═══ Document layout ═══════════════════════════════════════════════ */
+.layout {
+  display: grid; grid-template-columns: 280px 1fr;
+  max-width: 1380px; margin: 0 auto; align-items: start;
+}
+.layout.no-toc { grid-template-columns: 1fr; max-width: 940px; }
+
+.toc-sidebar {
+  position: sticky; top: 70px;
+  align-self: start;
+  max-height: calc(100vh - 90px);
+  overflow-y: auto;
+  padding: 40px 8px 40px 28px;
+  border-right: 1px solid var(--border);
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+.toc-sidebar::-webkit-scrollbar { width: 6px; }
+.toc-sidebar::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
+.toc-sidebar h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px; padding-left: 14px; font-weight: 600;
+}
+.toc-sidebar ol { list-style: none; margin: 0; padding: 0; }
+.toc-sidebar li { margin: 0; }
+.toc-sidebar a {
+  display: block;
+  padding: 5px 14px;
+  border-left: 2px solid transparent;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 13px;
+  line-height: 1.5;
+  transition: all .15s;
+  word-break: break-word;
+}
+.toc-sidebar a:hover {
+  color: var(--text); border-left-color: var(--border-2); text-decoration: none;
+}
+.toc-sidebar a.active {
+  color: var(--doc-accent, var(--accent));
+  border-left-color: var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.07);
+}
+.toc-sidebar .lvl-3 a { padding-left: 28px; font-size: 12.5px; }
+.toc-sidebar .lvl-4 a, .toc-sidebar .lvl-5 a, .toc-sidebar .lvl-6 a {
+  padding-left: 42px; font-size: 12px;
+}
+
+.content { padding: 40px 64px 120px; min-width: 0; }
+
+/* ═══ Hero (per-doc) ════════════════════════════════════════════════ */
+.doc-hero {
+  position: relative;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 32px;
+  margin-bottom: 36px;
+}
+.doc-hero::before {
+  content: ''; position: absolute;
+  top: -40px; left: -64px; right: -64px; height: 220px;
+  background: radial-gradient(ellipse 60% 100% at 0% 0%, rgba(var(--doc-accent-rgb, 106,166,255),0.10), transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+.doc-hero > * { position: relative; z-index: 1; }
+.doc-hero .eyebrow {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  color: var(--doc-accent, var(--accent)); font-weight: 600;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.doc-hero .eyebrow .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--doc-accent, var(--accent));
+  box-shadow: 0 0 8px var(--doc-accent, var(--accent));
+}
+.doc-hero h1 {
+  font-size: 40px; line-height: 1.1;
+  margin: 12px 0 16px;
+  font-weight: 700; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.doc-hero .one-liner {
+  font-size: 18px; line-height: 1.55;
+  color: var(--text-dim);
+  margin: 0 0 20px;
+  max-width: 70ch;
+}
+.doc-hero .meta-row {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  font-size: 12.5px;
+}
+.meta-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--bg-2); border: 1px solid var(--border);
+  padding: 5px 12px; border-radius: 14px;
+  font-size: 12px; color: var(--text-dim);
+}
+.meta-pill .num { color: var(--text); font-weight: 600; font-feature-settings: "tnum"; }
+.meta-pill.fmt-md   { color: #6aa6ff; border-color: rgba(106,166,255,0.30); background: rgba(106,166,255,0.06); }
+.meta-pill.fmt-pdf  { color: #f87171; border-color: rgba(248,113,113,0.30); background: rgba(248,113,113,0.06); }
+.meta-pill.fmt-docx { color: #38bdf8; border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.fmt-html { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.fmt-htm  { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.complexity-beginner    { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.06); }
+.meta-pill.complexity-intermediate { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.complexity-advanced     { color: #fb923c; border-color: rgba(251,146,60,0.30); background: rgba(251,146,60,0.06); }
+.meta-pill.complexity-unknown      { color: var(--text-mut); }
+.meta-pill.source code { background: transparent; padding: 0; border: 0; font-size: 11px; color: var(--text-dim); }
+
+/* ═══ Curation panels ═══════════════════════════════════════════════ */
+
+.curation {
+  margin-bottom: 36px;
+}
+
+.intro-hook {
+  font-size: 18px;
+  line-height: 1.65;
+  color: var(--text);
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  padding: 8px 0 8px 20px;
+  margin: 0 0 28px;
+  font-style: italic;
+  font-weight: 350;
+}
+
+.exec-summary {
+  background: linear-gradient(135deg, rgba(var(--doc-accent-rgb, 106,166,255),0.07), rgba(var(--doc-accent-rgb, 106,166,255),0.02));
+  border: 1px solid rgba(var(--doc-accent-rgb, 106,166,255),0.20);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 0 0 24px;
+}
+.exec-summary h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent, var(--accent));
+  font-weight: 600;
+}
+.exec-summary p {
+  margin: 0; font-size: 15px; line-height: 1.65; color: var(--text);
+}
+
+.metaphor-callout {
+  display: flex; gap: 14px; align-items: flex-start;
+  background: rgba(184,106,255,0.06);
+  border: 1px solid rgba(184,106,255,0.25);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 0 0 24px;
+}
+.metaphor-callout .icon {
+  font-size: 22px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 4px rgba(184,106,255,0.4));
+}
+.metaphor-callout .body {
+  flex: 1; font-size: 14.5px; line-height: 1.6;
+  color: var(--text);
+}
+.metaphor-callout .body .label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--accent-2); font-weight: 700;
+  display: block; margin-bottom: 4px;
+}
+
+.tutorial-structure {
+  display: grid; grid-template-columns: 1fr; gap: 14px;
+  margin: 0 0 28px;
+}
+.tutorial-section {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--doc-accent);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+}
+.tutorial-section h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent);
+  font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.tutorial-section h3 .num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--doc-accent); color: var(--bg);
+  font-size: 10px; font-weight: 700;
+}
+.tutorial-section p {
+  margin: 0; font-size: 14.5px; line-height: 1.65; color: var(--text);
+}
+
+.context-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin: 0 0 28px;
+}
+.context-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.context-card h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut);
+  font-weight: 600;
+}
+.context-card ul {
+  margin: 0; padding: 0; list-style: none;
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.context-card li {
+  background: var(--bg-3);
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--text-dim);
+  border: 1px solid var(--border-2);
+}
+.context-card.prereqs li { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.05); }
+.context-card.builds li { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.05); }
+.context-card.concepts li { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.05); }
+
+.takeaways {
+  background: linear-gradient(135deg, rgba(74,222,128,0.05), rgba(74,222,128,0.01));
+  border: 1px solid rgba(74,222,128,0.20);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin: 36px 0 0;
+}
+.takeaways h3 {
+  margin: 0 0 10px;
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--ok); font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.takeaways h3::before {
+  content: '✓';
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(74,222,128,0.18);
+  font-size: 12px; font-weight: 700;
+}
+.takeaways ul { margin: 0; padding-left: 22px; }
+.takeaways li {
+  font-size: 14.5px; line-height: 1.6; color: var(--text);
+  margin: 6px 0;
+}
+
+/* ═══ Article body ══════════════════════════════════════════════════ */
+article { font-size: 16px; line-height: 1.78; color: var(--text); max-width: 78ch; }
+article > * + * { margin-top: 1.0em; }
+article p { margin: 0; }
+article h1, article h2, article h3, article h4 {
+  font-weight: 650; letter-spacing: -0.01em; color: var(--text);
+  scroll-margin-top: 90px; position: relative;
+}
+article h1 { font-size: 28px; margin-top: 56px; }
+article h2 {
+  font-size: 24px; margin-top: 56px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+article h3 { font-size: 19px; margin-top: 36px; }
+article h4 { font-size: 16.5px; margin-top: 24px; color: var(--text-dim); }
+article h2::before, article h3::before {
+  content: '#'; position: absolute; left: -28px;
+  color: var(--text-mut); font-weight: 400;
+  opacity: 0; transition: opacity .15s;
+}
+article h2:hover::before, article h3:hover::before { opacity: 1; }
+
+article ul, article ol { padding-left: 1.5em; margin: 0; }
+article li { margin: .35em 0; }
+article li > p { margin: 0; }
+
+article hr {
+  border: 0; height: 1px; background: var(--border); margin: 36px 0;
+}
+
+article blockquote {
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.05);
+  padding: 14px 18px;
+  margin: 22px 0;
+  border-radius: 0 8px 8px 0;
+  color: var(--text-dim);
+}
+article blockquote p { margin: 0; }
+
+article pre {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-size: 13.5px;
+  line-height: 1.65;
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+article pre::-webkit-scrollbar { height: 7px; }
+article pre::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+article code, article pre {
+  font-family: "JetBrains Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+  font-feature-settings: "calt" 1;
+}
+article code.il {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  padding: 1px 7px; border-radius: 5px;
+  font-size: 0.88em;
+  color: var(--accent);
+}
+.code-block { position: relative; }
+.code-block .copy-btn {
+  position: absolute; top: 8px; right: 8px;
+  background: var(--bg-3); border: 1px solid var(--border);
+  color: var(--text-dim); padding: 4px 11px; border-radius: 5px;
+  font-size: 11px; font-family: inherit; cursor: pointer;
+  opacity: 0; transition: all .15s;
+}
+.code-block:hover .copy-btn { opacity: 1; }
+.code-block .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+.code-block .copy-btn.copied { color: var(--ok); border-color: var(--ok); }
+
+article pre .kw   { color: #c084fc; font-weight: 500; }
+article pre .type { color: #67e8f9; }
+article pre .str  { color: #fcd34d; }
+article pre .num  { color: #fb923c; }
+article pre .cmt  { color: #6b7d99; font-style: italic; }
+
+article .tbl-wrap {
+  overflow-x: auto; margin: 22px 0;
+  border-radius: 10px; border: 1px solid var(--border);
+}
+article table { border-collapse: collapse; width: 100%; font-size: 14px; }
+article th {
+  background: var(--bg-3); padding: 11px 14px; text-align: left;
+  font-weight: 600; color: var(--text);
+  border-bottom: 1px solid var(--border-2);
+}
+article td {
+  padding: 11px 14px; border-top: 1px solid var(--border); vertical-align: top;
+}
+article tr:nth-child(even) td { background: rgba(255,255,255,0.013); }
+
+article .diagram-box {
+  background: linear-gradient(135deg, #1c2540 0%, #0e1424 100%);
+  border: 1px solid var(--border-2);
+  border-radius: 12px;
+  padding: 22px 26px;
+  margin: 24px 0;
+  box-shadow: var(--shadow);
+}
+article .diagram-box pre {
+  background: transparent; border: 0; padding: 0;
+  color: #e8edf5; font-size: 13px; line-height: 1.55;
+}
+
+article .img-ref {
+  display: inline-block;
+  background: var(--bg-2); color: var(--text-mut);
+  padding: 1px 8px; border-radius: 4px;
+  font-size: 11px; font-style: normal;
+  border: 1px dashed var(--border-2);
+}
+
+/* ═══ Duplicate banners ═════════════════════════════════════════════ */
+.dup-banner {
+  background: linear-gradient(135deg, rgba(251,191,36,0.10), rgba(251,191,36,0.04));
+  border: 1px solid rgba(251,191,36,0.35);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 18px;
+  font-size: 14px; line-height: 1.55;
+  display: flex; gap: 14px; align-items: flex-start;
+}
+.dup-banner + .dup-banner { margin-top: 0; }
+.dup-banner .icon { font-size: 22px; line-height: 1.2; flex-shrink: 0; }
+.dup-banner .body { flex: 1; min-width: 0; }
+.dup-banner h4 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--warn); text-transform: uppercase; letter-spacing: 1px; }
+.dup-banner p { margin: 0; color: var(--text-dim); }
+.dup-banner ul { margin: 6px 0 0; padding-left: 22px; color: var(--text-dim); }
+.dup-banner ul li { margin: 3px 0; word-break: break-word; }
+.dup-banner code {
+  background: var(--bg-3); padding: 2px 7px; border-radius: 5px;
+  font-size: 0.92em; color: var(--text);
+}
+.dup-banner.exact {
+  border-color: rgba(248,113,113,0.40);
+  background: linear-gradient(135deg, rgba(248,113,113,0.10), rgba(248,113,113,0.04));
+}
+.dup-banner.exact h4 { color: var(--bad); }
+.dup-banner.near {
+  border-color: rgba(56,189,248,0.40);
+  background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(56,189,248,0.04));
+}
+.dup-banner.near h4 { color: var(--info); }
+.banner-stack { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+
+/* ═══ PDF page cards ════════════════════════════════════════════════ */
+.pdf-page {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin: 24px 0;
+  overflow: hidden;
+  scroll-margin-top: 90px;
+}
+.pdf-page .page-head {
+  background: var(--bg-3);
+  padding: 9px 20px;
+  font-size: 11px; font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 1.4px;
+  border-bottom: 1px solid var(--border);
+}
+.pdf-page .page-body { padding: 18px 24px 22px; }
+.pdf-page pre {
+  margin: 0; background: transparent; border: 0; padding: 0;
+  white-space: pre-wrap; word-wrap: break-word;
+  color: var(--text); font-size: 13px; line-height: 1.6;
+}
+
+.empty-note {
+  background: var(--bg-2);
+  border: 1px dashed var(--border-2);
+  border-radius: 10px;
+  padding: 18px 22px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* ═══ Cross-references + related ════════════════════════════════════ */
+.cross-refs {
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.cross-refs h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.cross-ref-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.cross-ref-list a {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: all .15s;
+}
+.cross-ref-list a:hover {
+  color: var(--text);
+  border-color: var(--doc-accent, var(--accent));
+  background: var(--bg-3);
+  text-decoration: none;
+}
+.cross-ref-list a .arrow { color: var(--doc-accent, var(--accent)); margin-right: 6px; }
+
+.related {
+  margin-top: 48px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.related h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 18px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.related-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+.related-card {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+}
+.related-card:hover {
+  border-color: var(--doc-accent, var(--accent));
+  transform: translateY(-1px);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+}
+.related-card .title {
+  font-weight: 600; font-size: 13.5px; line-height: 1.35;
+  color: var(--text);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.related-card .meta {
+  font-size: 11px; color: var(--text-mut); margin-top: 6px;
+  display: flex; gap: 8px; align-items: center;
+}
+.related-card .meta .badge {
+  padding: 1px 6px; border-radius: 3px;
+  background: var(--bg-3); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* ═══ Master index page ═════════════════════════════════════════════ */
+
+.index-hero {
+  text-align: center;
+  padding: 80px 24px 56px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.index-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 30% 0%, rgba(106,166,255,0.13), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 70% 30%, rgba(184,106,255,0.10), transparent 70%);
+  pointer-events: none;
+}
+.index-hero > * { position: relative; z-index: 1; }
+.index-hero .eyebrow {
+  color: var(--accent); font-size: 12px;
+  text-transform: uppercase; letter-spacing: 1.8px; font-weight: 600;
+}
+.index-hero h1 {
+  font-size: 56px; margin: 16px 0 12px;
+  font-weight: 750; letter-spacing: -0.025em;
+  background: linear-gradient(135deg, #6aa6ff 0%, #b86aff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.index-hero .tagline {
+  color: var(--text-dim); font-size: 18px;
+  max-width: 720px; margin: 14px auto 0; line-height: 1.6;
+}
+.search-row {
+  display: flex; gap: 12px;
+  max-width: 720px; margin: 36px auto 0;
+}
+.search-row input {
+  flex: 1;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 15px;
+  padding: 14px 22px;
+  border-radius: 14px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color .15s, box-shadow .15s;
+}
+.search-row input::placeholder { color: var(--text-mut); }
+.search-row input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(106,166,255,0.13);
+}
+
+.summary-stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  max-width: 1080px; margin: 36px auto 56px; padding: 0 24px;
+}
+.stat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  text-align: center;
+  transition: border-color .15s;
+}
+.stat-card:hover { border-color: var(--border-2); }
+.stat-card .num {
+  font-size: 32px; font-weight: 700; color: var(--accent);
+  font-feature-settings: "tnum"; line-height: 1.1;
+}
+.stat-card .lbl {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--text-mut); margin-top: 6px;
+}
+
+.split-view {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  max-width: 1320px; margin: 0 auto; padding: 0 24px 60px;
+}
+@media (max-width: 980px) {
+  .split-view { grid-template-columns: 1fr; }
+}
+
+.hub-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 32px 36px;
+  position: relative;
+  overflow: hidden;
+  transition: all .2s;
+}
+.hub-card.core::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 0% 0%, rgba(106,166,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card.applications::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 100% 0%, rgba(184,106,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card > * { position: relative; z-index: 1; }
+.hub-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.hub-card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 700;
+}
+.hub-card.core .label { color: var(--accent); }
+.hub-card.applications .label { color: var(--accent-2); }
+.hub-card h2 {
+  font-size: 32px; line-height: 1.15;
+  margin: 8px 0 12px;
+  font-weight: 700; letter-spacing: -0.02em;
+  color: var(--text);
+}
+.hub-card .desc {
+  font-size: 15px; line-height: 1.6; color: var(--text-dim);
+  margin: 0 0 24px;
+}
+.hub-card .stats {
+  display: flex; gap: 18px; margin-bottom: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-card .stats .num { color: var(--text); font-weight: 600; }
+.hub-card .cta {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 10px;
+  font-size: 13.5px; font-weight: 600;
+  text-decoration: none;
+}
+.hub-card.core .cta {
+  background: rgba(106,166,255,0.12);
+  color: var(--accent);
+  border: 1px solid rgba(106,166,255,0.30);
+}
+.hub-card.applications .cta {
+  background: rgba(184,106,255,0.12);
+  color: var(--accent-2);
+  border: 1px solid rgba(184,106,255,0.30);
+}
+.hub-card .cta:hover { text-decoration: none; transform: translateX(2px); }
+.hub-card .quick {
+  margin-top: 24px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.hub-card .quick h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut); font-weight: 600;
+}
+.hub-card .quick ul { list-style: none; margin: 0; padding: 0; }
+.hub-card .quick li { padding: 4px 0; font-size: 13px; }
+.hub-card .quick li a { color: var(--text-dim); text-decoration: none; }
+.hub-card .quick li a:hover { color: var(--text); }
+
+/* ═══ Hub page (CORE / APPLICATIONS landing) ════════════════════════ */
+
+.hub-hero {
+  padding: 64px 32px 36px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1240px; margin: 0 auto;
+}
+.hub-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 600;
+}
+.hub-hero h1 {
+  font-size: 48px; margin: 12px 0 14px;
+  font-weight: 750; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.hub-hero p {
+  color: var(--text-dim); font-size: 17px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.hub-hero .stats {
+  display: flex; gap: 22px; margin-top: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-hero .stats .num { color: var(--text); font-weight: 600; }
+
+.cat-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 18px;
+  max-width: 1280px; margin: 28px auto; padding: 0 32px 80px;
+}
+.cat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 24px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.cat-card:hover {
+  border-color: var(--border-3);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+}
+.cat-card .head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 12px;
+}
+.cat-card .head .icon {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 18px;
+  color: var(--accent);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.cat-card.app .head .icon { color: var(--accent-2); }
+.cat-card .title {
+  font-size: 18px; font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  flex: 1;
+}
+.cat-card .head .count {
+  font-size: 12px; color: var(--text-mut);
+  flex-shrink: 0;
+}
+.cat-card .tagline {
+  font-size: 13px; color: var(--accent);
+  font-weight: 500;
+  margin: 0;
+}
+.cat-card.app .tagline { color: var(--accent-2); }
+.cat-card .desc {
+  font-size: 13.5px; color: var(--text-dim);
+  line-height: 1.55;
+  margin: 4px 0 0;
+}
+
+/* ═══ Category landing (per family/domain) ══════════════════════════ */
+
+.cat-hero {
+  padding: 56px 32px 32px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1180px; margin: 0 auto;
+}
+.cat-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px; font-weight: 600;
+}
+.cat-hero h1 {
+  font-size: 42px; margin: 10px 0 14px;
+  font-weight: 700; letter-spacing: -0.02em;
+}
+.cat-hero p {
+  color: var(--text-dim); font-size: 16px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.cat-hero .stats {
+  display: flex; gap: 20px; margin-top: 22px;
+  font-size: 13px; color: var(--text-mut);
+}
+.cat-hero .stats .num { color: var(--text); font-weight: 600; }
+.cat-hero .search-row {
+  max-width: 520px; margin: 24px 0 0;
+}
+.cat-hero .search-row input { padding: 12px 18px; font-size: 14px; }
+
+.doc-cards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 14px;
+  max-width: 1180px; margin: 36px auto 96px;
+  padding: 0 32px;
+}
+.doc-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 22px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .18s;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.doc-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.doc-card.app:hover { border-color: var(--accent-2); }
+.doc-card .head {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+}
+.doc-card .title {
+  font-size: 16px; font-weight: 650; line-height: 1.3;
+  color: var(--text); flex: 1;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  letter-spacing: -0.01em;
+}
+.doc-card .badges { display: flex; gap: 4px; flex-shrink: 0; }
+.doc-card .badge {
+  font-size: 9px; padding: 2px 7px; border-radius: 3px;
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px;
+  background: var(--bg-3); color: var(--text-mut);
+}
+.doc-card .badge.dup { background: rgba(248,113,113,0.18); color: var(--bad); }
+.doc-card .badge.fmt-md { background: rgba(106,166,255,0.18); color: #6aa6ff; }
+.doc-card .badge.fmt-pdf { background: rgba(248,113,113,0.18); color: #f87171; }
+.doc-card .badge.fmt-docx { background: rgba(56,189,248,0.18); color: #38bdf8; }
+.doc-card .badge.fmt-html { background: rgba(251,191,36,0.18); color: #fbbf24; }
+.doc-card .one-liner {
+  font-size: 13.5px; color: var(--text-dim); line-height: 1.55;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  flex: 1;
+}
+.doc-card .meta {
+  display: flex; gap: 14px; font-size: 11px; color: var(--text-mut);
+  border-top: 1px solid var(--border); padding-top: 12px;
+  margin-top: auto;
+}
+.doc-card .meta .num { color: var(--text-dim); font-weight: 600; font-feature-settings: "tnum"; }
+
+/* ═══ Mobile ════════════════════════════════════════════════════════ */
+@media (max-width: 980px) {
+  .layout { grid-template-columns: 1fr; }
+  .toc-sidebar { display: none; }
+  .content { padding: 28px 24px 80px; }
+  .doc-hero h1 { font-size: 30px; }
+  .doc-hero .one-liner { font-size: 16px; }
+  .topbar { padding: 10px 18px; }
+  .index-hero h1 { font-size: 38px; }
+  .index-hero { padding: 56px 20px 36px; }
+  .hub-hero h1 { font-size: 34px; }
+  .hub-hero { padding: 40px 20px 24px; }
+  .cat-hero h1 { font-size: 32px; }
+  .cat-hero { padding: 36px 20px 24px; }
+  .doc-cards, .cat-grid { padding: 0 20px 60px; }
+  .split-view { padding: 0 20px 40px; }
+}
+</style>
+</head>
+<body data-doc-type="applied-implementation">
+<nav class="topbar">
+<div class="crumbs"><a href="../../00-Index.html">Learning</a><span class="sep">›</span><a href="../_Hub.html">APPLICATIONS</a><span class="sep">›</span><a href="_Category.html">Factory Floor System</a><span class="sep">›</span><span class="current">Factory Floor Production System — Plain-English Infographic</span></div>
+<div class="actions"><a class="action" href="factory-floor-system-plain-english.docx" download>↓ Download</a><a class="action" href="../../00-Index.html">All docs</a></div>
+</nav>
+<div class="layout">
+<aside class="toc-sidebar"><h3>On this page</h3><ol><li class="lvl-2"><a href="#factory-floor-production-system">🏭 Factory Floor Production System</a></li><li class="lvl-2"><a href="#what-is-this-system">📖 What Is This System?</a></li><li class="lvl-2"><a href="#the-big-picture">🎯 The Big Picture</a></li><li class="lvl-3"><a href="#what-problems-does-it-solve">What Problems Does It Solve?</a></li><li class="lvl-2"><a href="#the-three-main-parts-explained">👥 The Three Main Parts Explained</a></li><li class="lvl-3"><a href="#1-the-factory-floor-page-factory-new-razor-the-control-center">1. The Factory Floor Page (Factory_New.razor) - &quot;The Control Center&quot;</a></li><li class="lvl-3"><a href="#2-the-material-consumption-modal-materialconsumptionmodal-razor-the-recipe-tracker">2. The Material Consumption Modal (MaterialConsumptionModal.razor) - &quot;The Recipe Tracker&quot;</a></li><li class="lvl-3"><a href="#3-the-service-factoryfloorservice-cs-the-brain">3. The Service (FactoryFloorService.cs) - &quot;The Brain&quot;</a></li><li class="lvl-2"><a href="#a-day-in-the-life-how-it-all-works-together">🎬 A Day in the Life - How It All Works Together</a></li><li class="lvl-3"><a href="#morning-shift-starts-8-00-am">Morning Shift Starts (8:00 AM)</a></li><li class="lvl-3"><a href="#starting-production-8-15-am">Starting Production (8:15 AM)</a></li><li class="lvl-4"><a href="#jo-o-clicks-start-on-order-1234">João clicks &quot;Start&quot; on Order #1234</a></li><li class="lvl-4"><a href="#order-moves-from-to-start-to-started-column">Order moves from &quot;To Start&quot; to &quot;Started&quot; column</a></li><li class="lvl-3"><a href="#lunch-break-12-00-pm">Lunch Break (12:00 PM)</a></li><li class="lvl-4"><a href="#jo-o-made-60-bottles-needs-a-break">João made 60 bottles, needs a break</a></li><li class="lvl-4"><a href="#clicks-pause-button">Clicks &quot;Pause&quot; button</a></li><li class="lvl-4"><a href="#pin-required-again">PIN required again</a></li><li class="lvl-3"><a href="#after-lunch-1-00-pm">After Lunch (1:00 PM)</a></li><li class="lvl-4"><a href="#jo-o-returns-clicks-start-again">João returns, clicks &quot;Start&quot; again</a></li><li class="lvl-4"><a href="#continues-making-the-remaining-40-bottles">Continues making the remaining 40 bottles</a></li><li class="lvl-4"><a href="#at-2-30-pm-finishes-the-order">At 2:30 PM, finishes the order</a></li><li class="lvl-4"><a href="#clicks-stop">Clicks &quot;Stop&quot;</a></li><li class="lvl-3"><a href="#end-of-day">End of Day</a></li><li class="lvl-2"><a href="#why-this-is-brilliant">💡 Why This Is Brilliant</a></li><li class="lvl-3"><a href="#for-workers">For Workers:</a></li><li class="lvl-3"><a href="#for-managers">For Managers:</a></li><li class="lvl-3"><a href="#for-the-company">For the Company:</a></li><li class="lvl-2"><a href="#common-scenarios-solutions">🚨 Common Scenarios &amp; Solutions</a></li><li class="lvl-3"><a href="#oops-i-entered-wrong-quantity">&quot;Oops, I entered wrong quantity!&quot;</a></li><li class="lvl-3"><a href="#machine-broke-during-production">&quot;Machine broke during production!&quot;</a></li><li class="lvl-3"><a href="#we-ran-out-of-material">&quot;We ran out of material!&quot;</a></li><li class="lvl-3"><a href="#i-forgot-my-pin">&quot;I forgot my PIN!&quot;</a></li><li class="lvl-2"><a href="#the-magic-behind-the-scenes">🎯 The Magic Behind the Scenes</a></li><li class="lvl-2"><a href="#think-of-it-like">📚 Think of It Like...</a></li><li class="lvl-2"><a href="#bottom-line">✅ Bottom Line</a></li></ol></aside>
+<main class="content">
+
+<header class="doc-hero">
+  <div class="eyebrow"><span class="dot"></span>Implementation · Factory Floor System</div>
+  <h1>Factory Floor Production System — Plain-English Infographic</h1>
+  <p class="one-liner">A non-technical, metaphor-heavy explainer of the Factory Floor Production System that walks through the same architecture as the formal doc but via a day-in-the-life narrative about a worker named Joao making plastic bottles.</p>
+  <div class="meta-row">
+    <span class="meta-pill fmt-docx">DOCX</span>
+    <span class="meta-pill complexity-beginner">Beginner</span>
+    <span class="meta-pill"><span class="num">1,260</span> words</span>
+    <span class="meta-pill"><span class="num">6</span> min read</span>
+    <span class="meta-pill source">Source: <code>Education/FactoryFloor/ENG/FactoryFloorProductionSystemInfoGraphic.docx</code></span>
+  </div>
+</header>
+
+<div class="curation"><p class="intro-hook">You can describe a factory MES in two ways. One uses words like &#x27;transaction rollback&#x27; and &#x27;eager loading&#x27; and loses everyone in the room except the senior devs. The other one says &#x27;Joao clocks in, makes 60 bottles, hits pause, and accounting magically knows by the time he finishes his sandwich.&#x27; Both are correct. Only one gets the budget approved.</p>
+<div class="exec-summary"><h3>Executive summary</h3><p>This companion document to the formal Factory Floor technical spec explains the same system in plain English for non-developers. It uses kitchen and restaurant metaphors (the control center is like a kitchen order screen, the material modal is like a chef&#x27;s prep sheet, the service is like a sous chef) and walks through a full morning shift: Joao clocks in with his PIN, starts Order #1234 to make 100 plastic bottles, pauses for lunch at 60 bottles (triggering the material form), records usage, resumes after lunch, finishes the order, and manager Maria sees everything live on the dashboard. It covers the same three components (Factory_New.razor, MaterialConsumptionModal.razor, FactoryFloorService.cs) but frames their responsibilities in terms workers and managers can understand.</p></div>
+<div class="metaphor-callout"><div class="icon">💡</div><div class="body"><span class="label">Metaphor</span>If the formal tech doc is a car&#x27;s repair manual, this is the brochure the salesperson hands you. Same vehicle, same engine, but instead of torque specs and wiring diagrams you get &#x27;here&#x27;s how Joao drives it to work on Monday and comes home smiling on Friday.&#x27;</div></div>
+<div class="tutorial-structure"><div class="tutorial-section"><h3><span class="num">1</span>Why it exists</h3><p>Developers wrote the formal tech doc for themselves. But the people who actually USE this system — machine operators, line supervisors, factory managers, accountants — don&#x27;t read C# code or sequence diagrams. They need to know &#x27;what do I press, what happens, and why should I trust it?&#x27; This infographic exists so non-developer stakeholders can understand the value of the system, buy into adopting it, and train new workers. It also serves as onboarding material for junior developers who need the big-picture story before reading the formal spec.</p></div><div class="tutorial-section"><h3><span class="num">2</span>What it does</h3><p>Re-tells the Factory Floor Production System as a day-in-the-life narrative. The Factory_New page becomes &#x27;the control center&#x27; with a machine selector, today&#x27;s scoreboard, and a to-do list split into To Start and Started columns. The MaterialConsumptionModal becomes &#x27;the recipe tracker&#x27; that auto-calculates material needs based on quantity produced, shows planned versus actual, highlights low stock in red, and displays historical averages. The FactoryFloorService becomes &#x27;the brain&#x27; that updates stock, adds finished goods to inventory, records waste, and sends data to Primavera.</p></div><div class="tutorial-section"><h3><span class="num">3</span>How it works</h3><p>The narrative follows Joao at his morning shift: he arrives at 8:00, opens the tablet, enters his PIN, selects Machine #3, sees Order #1234 (100 plastic bottles) and Order #1235 (50 caps). At 8:15 he hits Start — PIN confirmation — order moves to Started. At 12:00 he pauses for lunch having made 60 bottles; the material form appears suggesting 6kg plastic used, he confirms, and the system automatically removes 6kg from warehouse stock, adds 60 bottles to finished goods, updates Order #1234 to &#x27;40 bottles remaining&#x27;, and logs everything. After lunch at 1:00pm he resumes, finishes at 2:30pm with 2 defective bottles recorded as waste, and the order closes. Manager Maria checks the dashboard at end of day, sees &#x27;100 bottles completed&#x27;, spots any unusual consumption, and accounting receives all data automatically. The doc also covers common scenarios (wrong quantity entered, machine broke, ran out of material, forgot PIN) and closes with a &#x27;bottom line&#x27; comparing paper chaos to real-time control.</p></div></div>
+<div class="context-row"><div class="context-card concepts"><h4>Key concepts covered</h4><ul><li>production order dashboard</li><li>material consumption modal</li><li>PIN clock-in workflow</li><li>historical consumption learning</li><li>real-time stock updates</li><li>ERP sync</li><li>variance warnings</li></ul></div><div class="context-card builds"><h4>Opens the door to</h4><ul><li>factory-floor-system</li></ul></div></div></div>
+<article>
+<h1 id="factory-floor-production-system">🏭 Factory Floor Production System</h1>
+<h2 id="what-is-this-system">📖 What Is This System?</h2>
+<p>Imagine you run a factory that makes products. This system is like a smart assistant that helps workers on the factory floor track what they&#x27;re making, how much material they&#x27;re using, and ensures everything gets recorded properly.</p>
+<p>Think of it like a recipe app for a factory - it tells you what ingredients you need, tracks what you actually use, and makes sure nothing gets wasted!</p>
+<h2 id="the-big-picture">🎯 The Big Picture</h2>
+<h3 id="what-problems-does-it-solve">What Problems Does It Solve?</h3>
+<p>Without this system:</p>
+<p>📝 Workers write production on paper (gets lost!)</p>
+<p>🤷 Nobody knows how much material was really used</p>
+<p>📊 Managers can&#x27;t see real-time production data</p>
+<p>💸 Materials get wasted without anyone noticing</p>
+<p>🔄 Stock counts are always wrong</p>
+<p>With this system:</p>
+<p>✅ Everything is digital and instant</p>
+<p>📱 Workers use tablets/computers on the factory floor</p>
+<p>📈 Managers see live production stats</p>
+<p>🎯 Material usage is tracked precisely</p>
+<p>📦 Stock levels update automatically</p>
+<h2 id="the-three-main-parts-explained">👥 The Three Main Parts Explained</h2>
+<h3 id="1-the-factory-floor-page-factory-new-razor-the-control-center">1. The Factory Floor Page (Factory_New.razor) - &quot;The Control Center&quot;</h3>
+<p>What it&#x27;s like: Think of this as the main dashboard a factory worker sees when they start their shift.</p>
+<p>Real-world analogy: It&#x27;s like a restaurant&#x27;s order screen in the kitchen - shows what needs to be made, what&#x27;s currently being made, and what&#x27;s done.</p>
+<p>What workers see:</p>
+<p>Today&#x27;s Stats Box 📊</p>
+<p>How many units completed today (like a scoreboard!)</p>
+<p>How many units still need to be made</p>
+<p>Machine Selector 🎮</p>
+<p>Like choosing which oven you&#x27;re using in a bakery</p>
+<p>Click &quot;GERAL&quot; to see all orders</p>
+<p>Click a specific machine to see only its orders</p>
+<p>Two Columns of Work Orders 📋</p>
+<p>Left side: &quot;To Start&quot; - Orders waiting to begin (like a to-do list)</p>
+<p>Right side: &quot;Started&quot; - Orders currently being worked on</p>
+<p>How workers use it:</p>
+<p>Come to work, open the page</p>
+<p>Select their machine</p>
+<p>See what needs to be made</p>
+<p>Click &quot;Start&quot; to begin working</p>
+<p>Click &quot;Pause&quot; for breaks</p>
+<p>Click &quot;Stop&quot; when done</p>
+<h3 id="2-the-material-consumption-modal-materialconsumptionmodal-razor-the-recipe-tracker">2. The Material Consumption Modal (MaterialConsumptionModal.razor) - &quot;The Recipe Tracker&quot;</h3>
+<p>What it&#x27;s like: This is the form that pops up when a worker finishes making something.</p>
+<p>Real-world analogy: Like a chef&#x27;s prep sheet where they record:</p>
+<p>How many dishes they made ✅</p>
+<p>What ingredients they used 🥕</p>
+<p>If anything was wasted 🗑️</p>
+<p>What it shows:</p>
+<p>Production Info 📦</p>
+<p>What product was made</p>
+<p>How many were ordered</p>
+<p>How many are still needed</p>
+<p>Quantity Fields 🔢</p>
+<p>Units Produced: &quot;I made 50 widgets&quot;</p>
+<p>Waste: &quot;3 widgets were defective&quot;</p>
+<p>Materials Table 📋</p>
+<p>Shows all materials needed (like a shopping list)</p>
+<p>Planned vs. Actual amounts</p>
+<p>Current stock levels (highlighted in red if running low!)</p>
+<p>Historical averages (&quot;Usually we use about this much...&quot;)</p>
+<p>Smart features:</p>
+<p>🎯 Auto-calculates material needs based on quantity produced</p>
+<p>📊 Shows if you&#x27;re using more/less than planned</p>
+<p>🔴 Warns if stock is too low</p>
+<p>📈 Learns from history (&quot;Last time we made 100, we used 15kg&quot;)</p>
+<h3 id="3-the-service-factoryfloorservice-cs-the-brain">3. The Service (FactoryFloorService.cs) - &quot;The Brain&quot;</h3>
+<p>What it&#x27;s like: This is the invisible helper that does all the calculations and record-keeping.</p>
+<p>Real-world analogy: Like having a super-efficient office manager who:</p>
+<p>Takes notes on everything 📝</p>
+<p>Updates inventory instantly 📦</p>
+<p>Calculates costs automatically 💰</p>
+<p>Sends reports to accounting 📊</p>
+<p>What it does behind the scenes:</p>
+<p>When production starts:</p>
+<p>Marks order as &quot;in progress&quot;</p>
+<p>Records who started it and when</p>
+<p>Like clocking in for a specific job</p>
+<p>When production pauses/stops:</p>
+<p>Updates the order status</p>
+<p>Triggers the material consumption form</p>
+<p>Like taking a coffee break but logging it</p>
+<p>When materials are recorded:</p>
+<p>Updates stock levels (removes used materials)</p>
+<p>Adds finished products to inventory</p>
+<p>Records any waste</p>
+<p>Sends data to accounting system (Primavera)</p>
+<p>Like a cashier processing a sale, but for production</p>
+<p>Smart calculations:</p>
+<p>If making 50 units needs 100kg of material...</p>
+<p>And you only make 25 units...</p>
+<p>It suggests you probably used 50kg</p>
+<p>But lets you adjust if needed!</p>
+<h2 id="a-day-in-the-life-how-it-all-works-together">🎬 A Day in the Life - How It All Works Together</h2>
+<h3 id="morning-shift-starts-8-00-am">Morning Shift Starts (8:00 AM)</h3>
+<p>João the Machine Operator arrives:</p>
+<p>Opens the system on the factory tablet</p>
+<p>Enters his PIN (like clocking in)</p>
+<p>Selects his machine (Machine #3 - the blue one)</p>
+<p>Sees today&#x27;s orders:</p>
+<p>Order #1234: Make 100 plastic bottles</p>
+<p>Order #1235: Make 50 bottle caps</p>
+<h3 id="starting-production-8-15-am">Starting Production (8:15 AM)</h3>
+<h4 id="jo-o-clicks-start-on-order-1234">João clicks &quot;Start&quot; on Order #1234</h4>
+<p>System asks for his PIN (security check!)</p>
+<p>System records:</p>
+<p>João started Order #1234</p>
+<p>At 8:15 AM</p>
+<p>On Machine #3</p>
+<h4 id="order-moves-from-to-start-to-started-column">Order moves from &quot;To Start&quot; to &quot;Started&quot; column</h4>
+<h3 id="lunch-break-12-00-pm">Lunch Break (12:00 PM)</h3>
+<h4 id="jo-o-made-60-bottles-needs-a-break">João made 60 bottles, needs a break</h4>
+<h4 id="clicks-pause-button">Clicks &quot;Pause&quot; button</h4>
+<h4 id="pin-required-again">PIN required again</h4>
+<p>Material Consumption form appears:</p>
+<p>Enters: &quot;60 bottles produced&quot;</p>
+<p>System shows: &quot;You probably used 6kg plastic&quot;</p>
+<p>João confirms or adjusts</p>
+<p>Clicks &quot;Confirm Production&quot;</p>
+<p>System automatically:</p>
+<p>Removes 6kg plastic from warehouse stock</p>
+<p>Adds 60 bottles to finished goods</p>
+<p>Updates Order #1234: &quot;40 bottles remaining&quot;</p>
+<p>Logs everything with timestamps</p>
+<h3 id="after-lunch-1-00-pm">After Lunch (1:00 PM)</h3>
+<h4 id="jo-o-returns-clicks-start-again">João returns, clicks &quot;Start&quot; again</h4>
+<h4 id="continues-making-the-remaining-40-bottles">Continues making the remaining 40 bottles</h4>
+<h4 id="at-2-30-pm-finishes-the-order">At 2:30 PM, finishes the order</h4>
+<h4 id="clicks-stop">Clicks &quot;Stop&quot;</h4>
+<p>Material form appears again:</p>
+<p>Enters: &quot;40 bottles produced&quot;</p>
+<p>Enters: &quot;2 bottles wasted&quot; (quality issues)</p>
+<p>System marks order as COMPLETE ✅</p>
+<h3 id="end-of-day">End of Day</h3>
+<p>Manager Maria checks the dashboard:</p>
+<p>Sees &quot;100 bottles completed today&quot;</p>
+<p>Sees &quot;50 caps still pending&quot;</p>
+<p>Reviews material usage (any unusual consumption?)</p>
+<p>All data already sent to accounting!</p>
+<h2 id="why-this-is-brilliant">💡 Why This Is Brilliant</h2>
+<h3 id="for-workers">For Workers:</h3>
+<p>No paperwork - everything is digital</p>
+<p>Can&#x27;t forget steps - system guides them</p>
+<p>Instant feedback - know if doing well</p>
+<p>Less blame - system tracks everything fairly</p>
+<h3 id="for-managers">For Managers:</h3>
+<p>Real-time visibility - see production live</p>
+<p>Accurate costs - know exactly what was used</p>
+<p>Spot problems early - unusual material usage = red flag</p>
+<p>Better planning - historical data helps predict future needs</p>
+<h3 id="for-the-company">For the Company:</h3>
+<p>Less waste - track and reduce material loss</p>
+<p>Better inventory - stock levels always accurate</p>
+<p>Faster billing - automatic integration with accounting</p>
+<p>Quality tracking - know which batches had issues</p>
+<h2 id="common-scenarios-solutions">🚨 Common Scenarios &amp; Solutions</h2>
+<h3 id="oops-i-entered-wrong-quantity">&quot;Oops, I entered wrong quantity!&quot;</h3>
+<p>Before confirming: Just change the number</p>
+<p>After confirming: Supervisor can create adjustment</p>
+<h3 id="machine-broke-during-production">&quot;Machine broke during production!&quot;</h3>
+<p>Hit &quot;Pause&quot; → Record what was made so far</p>
+<p>Maintenance fixes machine</p>
+<p>Hit &quot;Start&quot; again to continue</p>
+<h3 id="we-ran-out-of-material">&quot;We ran out of material!&quot;</h3>
+<p>System shows red warning before starting</p>
+<p>Can&#x27;t proceed without supervisor override</p>
+<p>Prevents starting impossible orders</p>
+<h3 id="i-forgot-my-pin">&quot;I forgot my PIN!&quot;</h3>
+<p>Supervisor has master access</p>
+<p>Can reset PIN</p>
+<p>All actions still tracked</p>
+<h2 id="the-magic-behind-the-scenes">🎯 The Magic Behind the Scenes</h2>
+<p>The system is smart because it:</p>
+<p>Learns from history 📊</p>
+<p>&quot;Last 10 times we made this, we used average 5.2kg&quot;</p>
+<p>Suggests this amount automatically</p>
+<p>Prevents mistakes 🛡️</p>
+<p>Can&#x27;t use more material than exists</p>
+<p>Can&#x27;t produce negative quantities</p>
+<p>Requires PIN for important actions</p>
+<p>Connects everything 🔗</p>
+<p>Production → Stock → Accounting</p>
+<p>All automatic, no double entry</p>
+<p>One action updates everything</p>
+<p>Provides insights 💡</p>
+<p>&quot;Machine #3 uses 10% more material than others&quot;</p>
+<p>&quot;Tuesday productions always have more waste&quot;</p>
+<p>Helps identify improvement areas</p>
+<h2 id="think-of-it-like">📚 Think of It Like...</h2>
+<p>The whole system is like a smart kitchen:</p>
+<p>Factory_New page = Kitchen order display</p>
+<p>Material Modal = Recipe card + prep sheet</p>
+<p>Service = Sous chef doing all calculations</p>
+<p>Or like a video game:</p>
+<p>Factory_New page = Game lobby/mission select</p>
+<p>Material Modal = Post-mission report</p>
+<p>Service = Game engine calculating scores</p>
+<h2 id="bottom-line">✅ Bottom Line</h2>
+<p>This system turns chaotic factory production into an organized, tracked, and optimized process. Workers know what to do, managers know what&#x27;s happening, and accountants know what it cost - all in real-time, with no paperwork!</p>
+<p>It&#x27;s like upgrading from:</p>
+<p>📝 Paper lists → 📱 Digital tracking</p>
+<p>🤷 Guessing → 📊 Knowing</p>
+<p>🐌 End-of-month reports → ⚡ Real-time data</p>
+<p>😰 Chaos → 😌 Control</p>
+</article>
+<div class="takeaways"><h3>Key takeaways</h3><ul><li>Non-technical stakeholders need narrative, not architecture diagrams</li><li>Day-in-the-life framing makes abstract software tangible</li><li>Worker benefits (no paperwork, fair tracking) and manager benefits (live visibility) should be separated</li><li>Common-scenario FAQs pre-empt the objections new users raise</li><li>Metaphors (kitchen, video game, accountant) give non-devs mental models they already own</li></ul></div>
+<aside class="cross-refs"><h2>Cross-references</h2><div class="cross-ref-list"><a href="../../APPLICATIONS/factory-floor/factory-floor-system.html"><span class="arrow">→</span>Factory Floor Production System — Technical Documentation</a></div></aside>
+<aside class="related"><h2>More in this category</h2><div class="related-grid"><a class="related-card" href="../../APPLICATIONS/factory-floor/ag-grid-custom-select2-editor-filter.html"><div class="title">AG Grid Custom Editors and Filters with Select2 - Method-by-Method Walkthrough</div><div class="meta"><span class="badge">PDF</span><span>3,825 words</span></div></a><a class="related-card" href="../../APPLICATIONS/factory-floor/factory-floor-system.html"><div class="title">Factory Floor Production System — Technical Documentation</div><div class="meta"><span class="badge">PDF</span><span>1,495 words</span></div></a><a class="related-card" href="../../APPLICATIONS/factory-floor/factory-floor-system__2.html"><div class="title">Factory Floor Production System — Technical Documentation</div><div class="meta"><span class="badge">DOCX</span><span>1,429 words</span></div></a><a class="related-card" href="../../APPLICATIONS/factory-floor/factory-floor-overview.html"><div class="title">Factory Floor Production System: Plain-English Overview</div><div class="meta"><span class="badge">PDF</span><span>1,384 words</span></div></a><a class="related-card" href="../../APPLICATIONS/factory-floor/select2-jquery-ag-grid-walkthrough.html"><div class="title">Select2 + jQuery Document Ready - Method Breakdown and AG Grid Custom Editor/Filter</div><div class="meta"><span class="badge">DOCX</span><span>3,014 words</span></div></a><a class="related-card" href="../../APPLICATIONS/factory-floor/factory-floor-system-pt.html"><div class="title">Sistema de Produção de Chão de Fábrica - Documentação Técnica (PT)</div><div class="meta"><span class="badge">PDF</span><span>1,757 words</span></div></a></div></aside>
+</main>
+</div>
+<script>
+// ─── Active TOC item on scroll ────────────────────────────────────
+(function() {
+  const tocLinks = document.querySelectorAll('.toc-sidebar a[href^="#"]');
+  if (!tocLinks.length) return;
+  const headings = Array.from(document.querySelectorAll(
+    'article h1[id], article h2[id], article h3[id], article h4[id], .pdf-page[id]'
+  ));
+  if (!headings.length) return;
+  function setActive(id) {
+    tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+  }
+  let lastVisible = headings[0].id;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) lastVisible = e.target.id; });
+    setActive(lastVisible);
+  }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+  headings.forEach(h => observer.observe(h));
+  setActive(headings[0].id);
+})();
+
+// ─── Copy code buttons ────────────────────────────────────────────
+(function() {
+  document.querySelectorAll('article pre').forEach(pre => {
+    if (pre.closest('.diagram-box')) return;
+    if (pre.closest('.pdf-page')) return;
+    if (pre.parentElement && pre.parentElement.classList.contains('code-block')) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'code-block';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.type = 'button';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', () => {
+      const code = pre.querySelector('code') || pre;
+      const text = code.innerText;
+      const done = () => {
+        btn.textContent = 'Copied';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(() => {});
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+    });
+    wrap.appendChild(btn);
+  });
+})();
+
+// ─── Live filter (master + hub + category pages) ─────────────────
+(function() {
+  const search = document.getElementById('search-input');
+  if (!search) return;
+  const items = document.querySelectorAll('[data-search]');
+  function apply() {
+    const q = search.value.toLowerCase().trim();
+    items.forEach(el => {
+      const match = !q || el.dataset.search.includes(q);
+      el.style.display = match ? '' : 'none';
+    });
+    document.querySelectorAll('[data-search-parent]').forEach(parent => {
+      const visible = Array.from(parent.querySelectorAll('[data-search]'))
+        .some(el => el.style.display !== 'none');
+      parent.style.display = visible ? '' : 'none';
+    });
+  }
+  search.addEventListener('input', apply);
+})();
+</script>
+</body>
+</html>

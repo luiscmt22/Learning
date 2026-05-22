@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Named Tuples — Value Semantics, Zero-Allocation, Destructuring</title>
+    <style>
+        :root{--bg:#1a1a2e;--surface:#16213e;--surface2:#0f3460;--accent:#e94560;--accent2:#533483;--text:#eee;--text-muted:#aab;--success:#4ecca3;--warning:#f0a500;--code-bg:#0d1117;--border:#333}*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;padding:2rem;max-width:900px;margin:0 auto}h1{text-align:center;font-size:2.2rem;margin-bottom:.5rem;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}.subtitle{text-align:center;color:var(--text-muted);margin-bottom:3rem;font-size:1.1rem}h2{color:var(--accent);font-size:1.6rem;margin:2.5rem 0 1rem 0;padding-bottom:.3rem;border-bottom:2px solid var(--accent)}h3{color:var(--success);font-size:1.2rem;margin:1.8rem 0 .8rem 0}h4{color:var(--warning);font-size:1.05rem;margin:1.2rem 0 .5rem 0}p{margin-bottom:1rem}pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1.2rem;overflow-x:auto;margin:1rem 0;font-size:.9rem;line-height:1.5}code{font-family:'Cascadia Code','Fira Code','Consolas',monospace;font-size:.9rem}p code,li code,td code{background:var(--code-bg);padding:.15rem .4rem;border-radius:4px;border:1px solid var(--border)}.keyword{color:#569cd6}.type{color:#4ec9b0}.string{color:#ce9178}.comment{color:#6a9955}.method{color:#dcdcaa}.number{color:#b5cea8}.param{color:#9cdcfe}.callout{border-radius:8px;padding:1.2rem 1.5rem;margin:1.5rem 0;border-left:4px solid}.callout-metaphor{background:rgba(83,52,131,.2);border-color:var(--accent2)}.callout-metaphor::before{content:"Metaphor";display:block;font-weight:bold;color:var(--accent2);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}.callout-english{background:rgba(78,204,163,.1);border-color:var(--success)}.callout-english::before{content:"Read It Like English";display:block;font-weight:bold;color:var(--success);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}.callout-warning{background:rgba(240,165,0,.1);border-color:var(--warning)}.callout-warning::before{content:"Common Confusion";display:block;font-weight:bold;color:var(--warning);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}.callout-rule{background:rgba(233,69,96,.1);border-color:var(--accent)}.callout-rule::before{content:"Golden Rule";display:block;font-weight:bold;color:var(--accent);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}ul,ol{margin:.5rem 0 1rem 1.5rem}li{margin-bottom:.3rem}table{width:100%;border-collapse:collapse;margin:1rem 0}th,td{border:1px solid var(--border);padding:.6rem 1rem;text-align:left}th{background:var(--surface2);color:var(--success)}td{background:var(--surface)}.diagram{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1.5rem;margin:1.5rem 0;font-family:'Cascadia Code',monospace;font-size:.85rem;line-height:1.6;white-space:pre;overflow-x:auto}
+    </style>
+</head>
+<body>
+
+<h1>Named Tuples in C#</h1>
+<p class="subtitle">Tutorial #32 — Value semantics, zero-allocation, and free destructuring</p>
+
+<!-- ============================================================ -->
+<h2>1. The Problem: Anonymous Types Can't Leave Home</h2>
+
+<p>Since C# 3, we've had anonymous types — those objects you create with <code>new { ... }</code> inside LINQ queries:</p>
+
+<pre><code><span class="keyword">var</span> categories = examples
+    .<span class="method">GroupBy</span>(e => e.Category)
+    .<span class="method">Select</span>(g => <span class="keyword">new</span> { <span class="param">Name</span> = g.Key, <span class="param">Examples</span> = g.<span class="method">ToList</span>() })
+    .<span class="method">ToList</span>();
+<span class="comment">// Type: List&lt;'a&gt;  — 'a is a compiler-generated anonymous class</span></code></pre>
+
+<p>They're convenient — until you want to <strong>return one from a method</strong>. You quickly hit a wall:</p>
+
+<pre><code><span class="comment">// ❌ Can't do this with anonymous types</span>
+<span class="keyword">public</span> <span class="type">List</span>&lt;{ <span class="keyword">string</span> Name, <span class="keyword">int</span> Age }&gt; <span class="method">GetPeople</span>() { ... }</code></pre>
+
+<p>The type has no name you can write down. It only exists inside the method that created it. If you want to return it, you're forced into ugly workarounds — <code>List&lt;object&gt;</code>, <code>dynamic</code>, or creating a throwaway class just for the return value. All of them lose type safety or clutter the codebase.</p>
+
+<div class="callout callout-rule">
+    Anonymous types are prisoners of the method they were born in. If your data needs to leave the method, you need a real, writable type.
+</div>
+
+<!-- ============================================================ -->
+<h2>2. Named Tuples — The Solution</h2>
+
+<p>C# 7 introduced <strong>named tuples</strong>. They look almost identical to anonymous types, but they have a <em>writable type</em>, so they can cross method boundaries freely.</p>
+
+<h3>Syntax comparison</h3>
+
+<pre><code><span class="comment">// Anonymous type — curly braces, property assignment</span>
+<span class="keyword">var</span> a = <span class="keyword">new</span> { <span class="param">Name</span> = <span class="string">"Alice"</span>, <span class="param">Age</span> = <span class="number">30</span> };
+
+<span class="comment">// Named tuple — parentheses, colon syntax</span>
+<span class="keyword">var</span> b = (<span class="param">Name</span>: <span class="string">"Alice"</span>, <span class="param">Age</span>: <span class="number">30</span>);</code></pre>
+
+<p>Notice the swap: <code>new { X = ..., Y = ... }</code> becomes <code>(X: ..., Y: ...)</code>. Curly braces with <code>=</code> turn into parentheses with <code>:</code>.</p>
+
+<h3>And now you can return them</h3>
+
+<pre><code><span class="comment">// ✅ This works perfectly</span>
+<span class="keyword">public</span> <span class="type">List</span>&lt;(<span class="keyword">string</span> Name, <span class="keyword">int</span> Age)&gt; <span class="method">GetPeople</span>()
+{
+    <span class="keyword">return</span> people
+        .<span class="method">Select</span>(p => (<span class="param">Name</span>: p.FullName, <span class="param">Age</span>: p.Years))
+        .<span class="method">ToList</span>();
+}
+
+<span class="comment">// At the call site — access by name, fully type-safe</span>
+<span class="keyword">foreach</span> (<span class="keyword">var</span> person <span class="keyword">in</span> <span class="method">GetPeople</span>())
+{
+    <span class="type">Console</span>.<span class="method">WriteLine</span>(<span class="string">$"{person.Name} is {person.Age}"</span>);
+}</code></pre>
+
+<!-- ============================================================ -->
+<h2>3. The Real-World Example</h2>
+
+<p>Here's a practical example — finding the top N customers by total spending:</p>
+
+<pre><code><span class="keyword">public</span> <span class="type">List</span>&lt;(<span class="keyword">int</span> CustomerId, <span class="keyword">decimal</span> TotalSpent)&gt; <span class="method">FindTopCustomers</span>(
+    <span class="type">List</span>&lt;<span class="type">Order</span>&gt; <span class="param">orders</span>, <span class="keyword">int</span> <span class="param">topCount</span>)
+{
+    <span class="keyword">var</span> topCustomers = <span class="param">orders</span>
+        .<span class="method">Where</span>(order => order.OrderStatus == <span class="type">OrderStatus</span>.Completed)
+        .<span class="method">GroupBy</span>(order => order.CustomerId)
+        .<span class="method">Select</span>(group => (
+            <span class="param">CustomerId</span>: group.Key,
+            <span class="param">TotalSpent</span>: group.<span class="method">Sum</span>(order => order.Total)
+        ))
+        .<span class="method">OrderByDescending</span>(customer => customer.TotalSpent)
+        .<span class="method">Take</span>(<span class="param">topCount</span>)
+        .<span class="method">ToList</span>();
+
+    <span class="keyword">return</span> topCustomers;
+}</code></pre>
+
+<p>Look at what this gives you:</p>
+
+<ul>
+    <li>The return type is <code>List&lt;(int CustomerId, decimal TotalSpent)&gt;</code> — self-documenting, fully typed</li>
+    <li>No throwaway <code>CustomerSummary</code> class needed just to carry two fields</li>
+    <li>Callers get IntelliSense on <code>.CustomerId</code> and <code>.TotalSpent</code></li>
+    <li>Inside the LINQ chain, later stages can reference <code>customer.TotalSpent</code> by name</li>
+</ul>
+
+<div class="callout callout-metaphor">
+    Anonymous types are like Post-it notes — perfect for scribbling something down at your desk, but you can't mail them. Named tuples are envelopes — you can write on them, seal them, and send them across methods.
+</div>
+
+<!-- ============================================================ -->
+<h2>4. Value Semantics — Copies, Not References</h2>
+
+<p>"Value semantics" means: when you <strong>assign</strong> or <strong>pass</strong> a value, you get an independent <em>copy</em>, not a shared reference. Change the copy, and the original stays intact.</p>
+
+<h3>Reference semantics (class) — mutation leaks</h3>
+
+<pre><code><span class="keyword">public class</span> <span class="type">CustomerClass</span>
+{
+    <span class="keyword">public int</span> CustomerId;
+    <span class="keyword">public decimal</span> TotalSpent;
+}
+
+<span class="keyword">var</span> a = <span class="keyword">new</span> <span class="type">CustomerClass</span> { CustomerId = <span class="number">1</span>, TotalSpent = <span class="number">100</span> };
+<span class="keyword">var</span> b = a;                  <span class="comment">// b points to the SAME object as a</span>
+b.TotalSpent = <span class="number">999</span>;
+<span class="type">Console</span>.<span class="method">WriteLine</span>(a.TotalSpent);  <span class="comment">// 999 — a was mutated through b!</span></code></pre>
+
+<h3>Value semantics (tuple) — safe</h3>
+
+<pre><code><span class="keyword">var</span> a = (<span class="param">CustomerId</span>: <span class="number">1</span>, <span class="param">TotalSpent</span>: <span class="number">100m</span>);
+<span class="keyword">var</span> b = a;                  <span class="comment">// b is a fresh COPY</span>
+b.TotalSpent = <span class="number">999</span>;
+<span class="type">Console</span>.<span class="method">WriteLine</span>(a.TotalSpent);  <span class="comment">// 100 — a is untouched</span></code></pre>
+
+<p>In the <code>FindTopCustomers</code> example, this means every <code>(CustomerId, TotalSpent)</code> pair in the list is an <strong>independent snapshot</strong>. Nobody can accidentally mutate one customer's total and corrupt another's. Safer by default.</p>
+
+<div class="callout callout-english">
+    "Value semantics" = the variable <em>holds the value itself</em>, not a pointer to it. Copy the variable → copy the value. Change the copy → original unchanged.
+</div>
+
+<!-- ============================================================ -->
+<h2>5. Zero-Allocation — Stack vs Heap</h2>
+
+<p>.NET stores data in two very different places:</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Heap</th>
+            <th>Stack</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Classes live here</td>
+            <td>Structs, tuples, primitives live here (when they're locals)</td>
+        </tr>
+        <tr>
+            <td>Allocation costs CPU</td>
+            <td>Allocation is free (just moves a pointer)</td>
+        </tr>
+        <tr>
+            <td>Garbage Collector tracks and frees them</td>
+            <td>Auto-freed when the method returns (stack unwinds)</td>
+        </tr>
+        <tr>
+            <td>Long-lived, shared across methods</td>
+            <td>Short-lived, scoped to one method call</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>What this means in practice</h3>
+
+<p>A class-based version of the customer summary creates heap garbage on every iteration:</p>
+
+<pre><code>.<span class="method">Select</span>(group => <span class="keyword">new</span> <span class="type">Customer</span> { ... })  <span class="comment">// ← heap allocation per group, GC pressure</span></code></pre>
+
+<p>A tuple version doesn't:</p>
+
+<pre><code>.<span class="method">Select</span>(group => (<span class="param">CustomerId</span>: ..., <span class="param">TotalSpent</span>: ...))  <span class="comment">// ← lives on the stack</span></code></pre>
+
+<div class="callout callout-warning">
+    In the <code>FindTopCustomers</code> example, the tuples end up inside <code>.ToList()</code>, which stores them in an array <em>on the heap</em>. So the tuples aren't truly zero-allocation there — they live inside the list's backing array. The big win shows up in <strong>hot loops that don't persist the result</strong>.
+</div>
+
+<h3>Where zero-allocation really shines</h3>
+
+<pre><code><span class="keyword">foreach</span> (<span class="keyword">var</span> group <span class="keyword">in</span> orders.<span class="method">GroupBy</span>(o => o.CustomerId))
+{
+    <span class="keyword">var</span> customer = (<span class="param">Id</span>: group.Key, <span class="param">Total</span>: group.<span class="method">Sum</span>(o => o.Total));
+    <span class="keyword">if</span> (customer.Total > <span class="number">1000</span>)
+        <span class="type">Console</span>.<span class="method">WriteLine</span>(customer.Id);
+    <span class="comment">// ← tuple lives on the stack, vanishes at end of iteration, zero GC pressure</span>
+}</code></pre>
+
+<p>Using a class there would create garbage to be collected every iteration. In a hot path processing millions of records, that's the difference between snappy and sluggish.</p>
+
+<!-- ============================================================ -->
+<h2>6. Free Destructuring</h2>
+
+<p>"Destructuring" = unpacking multiple values out of a container in one line. Tuples get this for free.</p>
+
+<pre><code><span class="keyword">var</span> topCustomers = <span class="method">FindTopCustomers</span>(orders, <span class="number">10</span>);
+
+<span class="keyword">foreach</span> (<span class="keyword">var</span> customer <span class="keyword">in</span> topCustomers)
+{
+    <span class="comment">// Option A: access by name</span>
+    <span class="type">Console</span>.<span class="method">WriteLine</span>(<span class="string">$"{customer.CustomerId}: {customer.TotalSpent}"</span>);
+
+    <span class="comment">// Option B: destructure into two separate variables</span>
+    <span class="keyword">var</span> (id, total) = customer;
+    <span class="type">Console</span>.<span class="method">WriteLine</span>(<span class="string">$"{id}: {total}"</span>);
+}</code></pre>
+
+<p>Or even right in the <code>foreach</code> itself — my favorite syntax:</p>
+
+<pre><code><span class="keyword">foreach</span> (<span class="keyword">var</span> (id, total) <span class="keyword">in</span> topCustomers)
+{
+    <span class="type">Console</span>.<span class="method">WriteLine</span>(<span class="string">$"{id}: {total}"</span>);
+}</code></pre>
+
+<h3>Destructuring your own classes</h3>
+
+<p>Destructuring isn't just for tuples. Any class can opt in by implementing a <code>Deconstruct</code> method:</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">Customer</span>
+{
+    <span class="keyword">public int</span> Id { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public decimal</span> Total { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+
+    <span class="keyword">public void</span> <span class="method">Deconstruct</span>(<span class="keyword">out int</span> <span class="param">id</span>, <span class="keyword">out decimal</span> <span class="param">total</span>)
+    {
+        <span class="param">id</span> = Id;
+        <span class="param">total</span> = Total;
+    }
+}
+
+<span class="comment">// Now this works on your class too:</span>
+<span class="keyword">var</span> (id, total) = someCustomer;</code></pre>
+
+<div class="callout callout-metaphor">
+    Destructuring is unboxing a multi-item delivery. Instead of <code>var box = GetBox(); var apple = box.Apple; var banana = box.Banana;</code>, you get <code>var (apple, banana) = GetBox();</code> — one line, two variables.
+</div>
+
+<p><code>record</code> types in C# 9+ get <code>Deconstruct</code> generated automatically for their positional parameters, which is a big part of why records feel so tuple-like but with more power (methods, inheritance, equality, etc.).</p>
+
+<!-- ============================================================ -->
+<h2>7. Under the Hood</h2>
+
+<p>Named tuples are a compile-time illusion over <code>System.ValueTuple&lt;T1, T2, ...&gt;</code> — a <strong>struct</strong>, not a class. The names you give (<code>CustomerId</code>, <code>TotalSpent</code>) are just metadata attributes; at runtime, the CLR only sees <code>ValueTuple&lt;int, decimal&gt;</code> with fields called <code>Item1</code> and <code>Item2</code>.</p>
+
+<p>You can actually access the raw fields if you want:</p>
+
+<pre><code><span class="keyword">var</span> t = (<span class="param">CustomerId</span>: <span class="number">1</span>, <span class="param">TotalSpent</span>: <span class="number">100m</span>);
+
+<span class="type">Console</span>.<span class="method">WriteLine</span>(t.CustomerId);  <span class="comment">// 1 — friendly name</span>
+<span class="type">Console</span>.<span class="method">WriteLine</span>(t.Item1);       <span class="comment">// 1 — same field, raw name</span></code></pre>
+
+<div class="callout callout-warning">
+    Because the names are compile-time metadata, two tuples with the same types but different names are still the same type at runtime. <code>(int Id, string Name)</code> and <code>(int Age, string City)</code> are both <code>ValueTuple&lt;int, string&gt;</code> under the hood — they're assignable to each other and the names may be lost across assembly boundaries in some edge cases.
+</div>
+
+<!-- ============================================================ -->
+<h2>8. When to Use What</h2>
+
+<p>Tuples are a sweet spot, but they're not the answer for everything. Here's a mental model:</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>You need...</th>
+            <th>Use...</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Tiny throwaway grouping inside one method</td>
+            <td><code>new { ... }</code> — anonymous type</td>
+        </tr>
+        <tr>
+            <td>Same, but the data needs to cross a method boundary</td>
+            <td><code>(int Id, string Name)</code> — named tuple</td>
+        </tr>
+        <tr>
+            <td>3+ fields, reused across the codebase, some logic</td>
+            <td><code>record</code></td>
+        </tr>
+        <tr>
+            <td>Full OO — mutation, inheritance, rich behavior</td>
+            <td><code>class</code></td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="callout callout-rule">
+    Tuples are for <strong>lightweight grouping</strong>. If you find yourself with more than 3–4 fields, or wanting methods on the type, you've outgrown tuples and want a <code>record</code>. If you want mutation and inheritance, go all the way to <code>class</code>.
+</div>
+
+<p>The <code>FindTopCustomers</code> example hits exactly the sweet spot for named tuples: two fields, crosses a method boundary, purely data, no behavior needed. Perfect fit.</p>
+
+<!-- ============================================================ -->
+<h2>9. Key Takeaways</h2>
+
+<ul>
+    <li><strong>Named tuples</strong> = anonymous types that can cross method boundaries</li>
+    <li><strong>Syntax swap</strong>: <code>new { X = ..., Y = ... }</code> → <code>(X: ..., Y: ...)</code></li>
+    <li><strong>Value semantics</strong>: copies are independent, mutation doesn't leak — safer by default</li>
+    <li><strong>Stack-allocated</strong>: zero GC pressure in hot loops that don't persist the result</li>
+    <li><strong>Free destructuring</strong>: <code>var (id, total) = customer;</code> just works</li>
+    <li><strong>Under the hood</strong>: it's all <code>ValueTuple&lt;T1, T2, ...&gt;</code>; names are compile-time metadata</li>
+    <li><strong>Sweet spot</strong>: 2–3 fields, pure data, crossing a method boundary — ideal. More than that? Use a <code>record</code>.</li>
+</ul>
+
+</body>
+</html>

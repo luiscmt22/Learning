@@ -1,0 +1,53 @@
+# =============================================================================
+# requirements.txt - Package Dependencies
+# =============================================================================
+#
+# This file lists all the packages your project needs.
+#
+# HOW TO USE:
+#   pip install -r requirements.txt
+#
+# This installs all packages listed below.
+#
+# FORMAT:
+#   package-name           <- installs latest version
+#   package-name==1.2.3    <- installs exactly version 1.2.3
+#   package-name>=1.2.0    <- installs version 1.2.0 or higher
+#
+# =============================================================================
+
+# FastAPI - The web framework
+# Handles HTTP requests, routing, validation, and auto-generates docs
+fastapi
+
+# Uvicorn - The ASGI server that runs FastAPI
+# [standard] includes useful extras like auto-reload and better performance
+uvicorn[standard]
+
+# Pydantic - Data validation (already included with FastAPI, but explicit is good)
+# Defines and validates request/response data structures
+pydantic
+
+# --- For Testing (Jupyter Notebook) ---
+
+# Requests - HTTP library for making API calls from Python
+# Used in the test notebook to call our web service
+requests
+
+# Jupyter - Interactive notebook environment
+jupyter
+
+# IPykernel - Lets VS Code use this venv as a Jupyter kernel
+ipykernel
+
+# =============================================================================
+# OPTIONAL: After installing, you can "freeze" exact versions:
+#
+#   pip freeze > requirements-lock.txt
+#
+# This creates a file with exact versions like:
+#   fastapi==0.109.0
+#   uvicorn==0.27.0
+#
+# Use the lock file to guarantee the same versions everywhere.
+# =============================================================================

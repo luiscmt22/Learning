@@ -1,0 +1,1655 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Factory Floor Production System — Technical Documentation</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #07090f;
+  --bg-1: #0c111c;
+  --bg-2: #11182a;
+  --bg-3: #1a2238;
+  --bg-4: #232e4a;
+  --border: #1e2840;
+  --border-2: #2a3551;
+  --border-3: #3a4870;
+  --text: #e9eef8;
+  --text-dim: #94a3bf;
+  --text-mut: #5f6b86;
+  --accent: #6aa6ff;
+  --accent-strong: #3b82f6;
+  --accent-2: #b86aff;
+  --accent-3: #f472b6;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+  --info: #38bdf8;
+  --code-bg: #0a1020;
+  --code-border: #1a2340;
+  --shadow: 0 8px 32px rgba(0,0,0,0.55);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.35);
+  --shadow-glow: 0 0 0 1px rgba(106,166,255,0.18), 0 12px 40px rgba(106,166,255,0.10);
+}
+
+/* Doc-type theming */
+[data-doc-type="core-concept"] {
+  --doc-accent: #6aa6ff;
+  --doc-accent-rgb: 106,166,255;
+  --doc-eyebrow: "Concept";
+}
+[data-doc-type="applied-implementation"] {
+  --doc-accent: #b86aff;
+  --doc-accent-rgb: 184,106,255;
+  --doc-eyebrow: "Implementation";
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font: 16px/1.7 -apple-system, "Inter", \'Segoe UI\', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+::selection { background: rgba(106,166,255,0.30); }
+
+/* ═══ Top bar ═══════════════════════════════════════════════════════ */
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(7,9,15,0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 28px;
+  display: flex; align-items: center; gap: 16px;
+}
+.topbar .crumbs {
+  flex: 1; font-size: 13px; color: var(--text-dim);
+  display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden;
+}
+.topbar .crumbs span.sep { color: var(--text-mut); }
+.topbar .crumbs .current {
+  color: var(--text); font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.topbar .crumbs a { color: var(--text-dim); text-decoration: none; }
+.topbar .crumbs a:hover { color: var(--accent); }
+.topbar .actions { display: flex; gap: 6px; flex-shrink: 0; }
+.topbar .action {
+  font-size: 13px; padding: 6px 14px; border-radius: 8px;
+  color: var(--text-dim); text-decoration: none;
+  border: 1px solid transparent; transition: all .15s;
+}
+.topbar .action:hover {
+  color: var(--text); background: var(--bg-2); border-color: var(--border);
+  text-decoration: none;
+}
+
+/* ═══ Document layout ═══════════════════════════════════════════════ */
+.layout {
+  display: grid; grid-template-columns: 280px 1fr;
+  max-width: 1380px; margin: 0 auto; align-items: start;
+}
+.layout.no-toc { grid-template-columns: 1fr; max-width: 940px; }
+
+.toc-sidebar {
+  position: sticky; top: 70px;
+  align-self: start;
+  max-height: calc(100vh - 90px);
+  overflow-y: auto;
+  padding: 40px 8px 40px 28px;
+  border-right: 1px solid var(--border);
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+.toc-sidebar::-webkit-scrollbar { width: 6px; }
+.toc-sidebar::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
+.toc-sidebar h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px; padding-left: 14px; font-weight: 600;
+}
+.toc-sidebar ol { list-style: none; margin: 0; padding: 0; }
+.toc-sidebar li { margin: 0; }
+.toc-sidebar a {
+  display: block;
+  padding: 5px 14px;
+  border-left: 2px solid transparent;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 13px;
+  line-height: 1.5;
+  transition: all .15s;
+  word-break: break-word;
+}
+.toc-sidebar a:hover {
+  color: var(--text); border-left-color: var(--border-2); text-decoration: none;
+}
+.toc-sidebar a.active {
+  color: var(--doc-accent, var(--accent));
+  border-left-color: var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.07);
+}
+.toc-sidebar .lvl-3 a { padding-left: 28px; font-size: 12.5px; }
+.toc-sidebar .lvl-4 a, .toc-sidebar .lvl-5 a, .toc-sidebar .lvl-6 a {
+  padding-left: 42px; font-size: 12px;
+}
+
+.content { padding: 40px 64px 120px; min-width: 0; }
+
+/* ═══ Hero (per-doc) ════════════════════════════════════════════════ */
+.doc-hero {
+  position: relative;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 32px;
+  margin-bottom: 36px;
+}
+.doc-hero::before {
+  content: ''; position: absolute;
+  top: -40px; left: -64px; right: -64px; height: 220px;
+  background: radial-gradient(ellipse 60% 100% at 0% 0%, rgba(var(--doc-accent-rgb, 106,166,255),0.10), transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+.doc-hero > * { position: relative; z-index: 1; }
+.doc-hero .eyebrow {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  color: var(--doc-accent, var(--accent)); font-weight: 600;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.doc-hero .eyebrow .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--doc-accent, var(--accent));
+  box-shadow: 0 0 8px var(--doc-accent, var(--accent));
+}
+.doc-hero h1 {
+  font-size: 40px; line-height: 1.1;
+  margin: 12px 0 16px;
+  font-weight: 700; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.doc-hero .one-liner {
+  font-size: 18px; line-height: 1.55;
+  color: var(--text-dim);
+  margin: 0 0 20px;
+  max-width: 70ch;
+}
+.doc-hero .meta-row {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  font-size: 12.5px;
+}
+.meta-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--bg-2); border: 1px solid var(--border);
+  padding: 5px 12px; border-radius: 14px;
+  font-size: 12px; color: var(--text-dim);
+}
+.meta-pill .num { color: var(--text); font-weight: 600; font-feature-settings: "tnum"; }
+.meta-pill.fmt-md   { color: #6aa6ff; border-color: rgba(106,166,255,0.30); background: rgba(106,166,255,0.06); }
+.meta-pill.fmt-pdf  { color: #f87171; border-color: rgba(248,113,113,0.30); background: rgba(248,113,113,0.06); }
+.meta-pill.fmt-docx { color: #38bdf8; border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.fmt-html { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.fmt-htm  { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.complexity-beginner    { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.06); }
+.meta-pill.complexity-intermediate { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.complexity-advanced     { color: #fb923c; border-color: rgba(251,146,60,0.30); background: rgba(251,146,60,0.06); }
+.meta-pill.complexity-unknown      { color: var(--text-mut); }
+.meta-pill.source code { background: transparent; padding: 0; border: 0; font-size: 11px; color: var(--text-dim); }
+
+/* ═══ Curation panels ═══════════════════════════════════════════════ */
+
+.curation {
+  margin-bottom: 36px;
+}
+
+.intro-hook {
+  font-size: 18px;
+  line-height: 1.65;
+  color: var(--text);
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  padding: 8px 0 8px 20px;
+  margin: 0 0 28px;
+  font-style: italic;
+  font-weight: 350;
+}
+
+.exec-summary {
+  background: linear-gradient(135deg, rgba(var(--doc-accent-rgb, 106,166,255),0.07), rgba(var(--doc-accent-rgb, 106,166,255),0.02));
+  border: 1px solid rgba(var(--doc-accent-rgb, 106,166,255),0.20);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 0 0 24px;
+}
+.exec-summary h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent, var(--accent));
+  font-weight: 600;
+}
+.exec-summary p {
+  margin: 0; font-size: 15px; line-height: 1.65; color: var(--text);
+}
+
+.metaphor-callout {
+  display: flex; gap: 14px; align-items: flex-start;
+  background: rgba(184,106,255,0.06);
+  border: 1px solid rgba(184,106,255,0.25);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 0 0 24px;
+}
+.metaphor-callout .icon {
+  font-size: 22px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 4px rgba(184,106,255,0.4));
+}
+.metaphor-callout .body {
+  flex: 1; font-size: 14.5px; line-height: 1.6;
+  color: var(--text);
+}
+.metaphor-callout .body .label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--accent-2); font-weight: 700;
+  display: block; margin-bottom: 4px;
+}
+
+.tutorial-structure {
+  display: grid; grid-template-columns: 1fr; gap: 14px;
+  margin: 0 0 28px;
+}
+.tutorial-section {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--doc-accent);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+}
+.tutorial-section h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent);
+  font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.tutorial-section h3 .num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--doc-accent); color: var(--bg);
+  font-size: 10px; font-weight: 700;
+}
+.tutorial-section p {
+  margin: 0; font-size: 14.5px; line-height: 1.65; color: var(--text);
+}
+
+.context-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin: 0 0 28px;
+}
+.context-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.context-card h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut);
+  font-weight: 600;
+}
+.context-card ul {
+  margin: 0; padding: 0; list-style: none;
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.context-card li {
+  background: var(--bg-3);
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--text-dim);
+  border: 1px solid var(--border-2);
+}
+.context-card.prereqs li { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.05); }
+.context-card.builds li { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.05); }
+.context-card.concepts li { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.05); }
+
+.takeaways {
+  background: linear-gradient(135deg, rgba(74,222,128,0.05), rgba(74,222,128,0.01));
+  border: 1px solid rgba(74,222,128,0.20);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin: 36px 0 0;
+}
+.takeaways h3 {
+  margin: 0 0 10px;
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--ok); font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.takeaways h3::before {
+  content: '✓';
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(74,222,128,0.18);
+  font-size: 12px; font-weight: 700;
+}
+.takeaways ul { margin: 0; padding-left: 22px; }
+.takeaways li {
+  font-size: 14.5px; line-height: 1.6; color: var(--text);
+  margin: 6px 0;
+}
+
+/* ═══ Article body ══════════════════════════════════════════════════ */
+article { font-size: 16px; line-height: 1.78; color: var(--text); max-width: 78ch; }
+article > * + * { margin-top: 1.0em; }
+article p { margin: 0; }
+article h1, article h2, article h3, article h4 {
+  font-weight: 650; letter-spacing: -0.01em; color: var(--text);
+  scroll-margin-top: 90px; position: relative;
+}
+article h1 { font-size: 28px; margin-top: 56px; }
+article h2 {
+  font-size: 24px; margin-top: 56px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+article h3 { font-size: 19px; margin-top: 36px; }
+article h4 { font-size: 16.5px; margin-top: 24px; color: var(--text-dim); }
+article h2::before, article h3::before {
+  content: '#'; position: absolute; left: -28px;
+  color: var(--text-mut); font-weight: 400;
+  opacity: 0; transition: opacity .15s;
+}
+article h2:hover::before, article h3:hover::before { opacity: 1; }
+
+article ul, article ol { padding-left: 1.5em; margin: 0; }
+article li { margin: .35em 0; }
+article li > p { margin: 0; }
+
+article hr {
+  border: 0; height: 1px; background: var(--border); margin: 36px 0;
+}
+
+article blockquote {
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.05);
+  padding: 14px 18px;
+  margin: 22px 0;
+  border-radius: 0 8px 8px 0;
+  color: var(--text-dim);
+}
+article blockquote p { margin: 0; }
+
+article pre {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-size: 13.5px;
+  line-height: 1.65;
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+article pre::-webkit-scrollbar { height: 7px; }
+article pre::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+article code, article pre {
+  font-family: "JetBrains Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+  font-feature-settings: "calt" 1;
+}
+article code.il {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  padding: 1px 7px; border-radius: 5px;
+  font-size: 0.88em;
+  color: var(--accent);
+}
+.code-block { position: relative; }
+.code-block .copy-btn {
+  position: absolute; top: 8px; right: 8px;
+  background: var(--bg-3); border: 1px solid var(--border);
+  color: var(--text-dim); padding: 4px 11px; border-radius: 5px;
+  font-size: 11px; font-family: inherit; cursor: pointer;
+  opacity: 0; transition: all .15s;
+}
+.code-block:hover .copy-btn { opacity: 1; }
+.code-block .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+.code-block .copy-btn.copied { color: var(--ok); border-color: var(--ok); }
+
+article pre .kw   { color: #c084fc; font-weight: 500; }
+article pre .type { color: #67e8f9; }
+article pre .str  { color: #fcd34d; }
+article pre .num  { color: #fb923c; }
+article pre .cmt  { color: #6b7d99; font-style: italic; }
+
+article .tbl-wrap {
+  overflow-x: auto; margin: 22px 0;
+  border-radius: 10px; border: 1px solid var(--border);
+}
+article table { border-collapse: collapse; width: 100%; font-size: 14px; }
+article th {
+  background: var(--bg-3); padding: 11px 14px; text-align: left;
+  font-weight: 600; color: var(--text);
+  border-bottom: 1px solid var(--border-2);
+}
+article td {
+  padding: 11px 14px; border-top: 1px solid var(--border); vertical-align: top;
+}
+article tr:nth-child(even) td { background: rgba(255,255,255,0.013); }
+
+article .diagram-box {
+  background: linear-gradient(135deg, #1c2540 0%, #0e1424 100%);
+  border: 1px solid var(--border-2);
+  border-radius: 12px;
+  padding: 22px 26px;
+  margin: 24px 0;
+  box-shadow: var(--shadow);
+}
+article .diagram-box pre {
+  background: transparent; border: 0; padding: 0;
+  color: #e8edf5; font-size: 13px; line-height: 1.55;
+}
+
+article .img-ref {
+  display: inline-block;
+  background: var(--bg-2); color: var(--text-mut);
+  padding: 1px 8px; border-radius: 4px;
+  font-size: 11px; font-style: normal;
+  border: 1px dashed var(--border-2);
+}
+
+/* ═══ Duplicate banners ═════════════════════════════════════════════ */
+.dup-banner {
+  background: linear-gradient(135deg, rgba(251,191,36,0.10), rgba(251,191,36,0.04));
+  border: 1px solid rgba(251,191,36,0.35);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 18px;
+  font-size: 14px; line-height: 1.55;
+  display: flex; gap: 14px; align-items: flex-start;
+}
+.dup-banner + .dup-banner { margin-top: 0; }
+.dup-banner .icon { font-size: 22px; line-height: 1.2; flex-shrink: 0; }
+.dup-banner .body { flex: 1; min-width: 0; }
+.dup-banner h4 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--warn); text-transform: uppercase; letter-spacing: 1px; }
+.dup-banner p { margin: 0; color: var(--text-dim); }
+.dup-banner ul { margin: 6px 0 0; padding-left: 22px; color: var(--text-dim); }
+.dup-banner ul li { margin: 3px 0; word-break: break-word; }
+.dup-banner code {
+  background: var(--bg-3); padding: 2px 7px; border-radius: 5px;
+  font-size: 0.92em; color: var(--text);
+}
+.dup-banner.exact {
+  border-color: rgba(248,113,113,0.40);
+  background: linear-gradient(135deg, rgba(248,113,113,0.10), rgba(248,113,113,0.04));
+}
+.dup-banner.exact h4 { color: var(--bad); }
+.dup-banner.near {
+  border-color: rgba(56,189,248,0.40);
+  background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(56,189,248,0.04));
+}
+.dup-banner.near h4 { color: var(--info); }
+.banner-stack { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+
+/* ═══ PDF page cards ════════════════════════════════════════════════ */
+.pdf-page {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin: 24px 0;
+  overflow: hidden;
+  scroll-margin-top: 90px;
+}
+.pdf-page .page-head {
+  background: var(--bg-3);
+  padding: 9px 20px;
+  font-size: 11px; font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 1.4px;
+  border-bottom: 1px solid var(--border);
+}
+.pdf-page .page-body { padding: 18px 24px 22px; }
+.pdf-page pre {
+  margin: 0; background: transparent; border: 0; padding: 0;
+  white-space: pre-wrap; word-wrap: break-word;
+  color: var(--text); font-size: 13px; line-height: 1.6;
+}
+
+.empty-note {
+  background: var(--bg-2);
+  border: 1px dashed var(--border-2);
+  border-radius: 10px;
+  padding: 18px 22px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* ═══ Cross-references + related ════════════════════════════════════ */
+.cross-refs {
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.cross-refs h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.cross-ref-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.cross-ref-list a {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: all .15s;
+}
+.cross-ref-list a:hover {
+  color: var(--text);
+  border-color: var(--doc-accent, var(--accent));
+  background: var(--bg-3);
+  text-decoration: none;
+}
+.cross-ref-list a .arrow { color: var(--doc-accent, var(--accent)); margin-right: 6px; }
+
+.related {
+  margin-top: 48px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.related h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 18px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.related-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+.related-card {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+}
+.related-card:hover {
+  border-color: var(--doc-accent, var(--accent));
+  transform: translateY(-1px);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+}
+.related-card .title {
+  font-weight: 600; font-size: 13.5px; line-height: 1.35;
+  color: var(--text);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.related-card .meta {
+  font-size: 11px; color: var(--text-mut); margin-top: 6px;
+  display: flex; gap: 8px; align-items: center;
+}
+.related-card .meta .badge {
+  padding: 1px 6px; border-radius: 3px;
+  background: var(--bg-3); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* ═══ Master index page ═════════════════════════════════════════════ */
+
+.index-hero {
+  text-align: center;
+  padding: 80px 24px 56px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.index-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 30% 0%, rgba(106,166,255,0.13), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 70% 30%, rgba(184,106,255,0.10), transparent 70%);
+  pointer-events: none;
+}
+.index-hero > * { position: relative; z-index: 1; }
+.index-hero .eyebrow {
+  color: var(--accent); font-size: 12px;
+  text-transform: uppercase; letter-spacing: 1.8px; font-weight: 600;
+}
+.index-hero h1 {
+  font-size: 56px; margin: 16px 0 12px;
+  font-weight: 750; letter-spacing: -0.025em;
+  background: linear-gradient(135deg, #6aa6ff 0%, #b86aff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.index-hero .tagline {
+  color: var(--text-dim); font-size: 18px;
+  max-width: 720px; margin: 14px auto 0; line-height: 1.6;
+}
+.search-row {
+  display: flex; gap: 12px;
+  max-width: 720px; margin: 36px auto 0;
+}
+.search-row input {
+  flex: 1;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 15px;
+  padding: 14px 22px;
+  border-radius: 14px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color .15s, box-shadow .15s;
+}
+.search-row input::placeholder { color: var(--text-mut); }
+.search-row input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(106,166,255,0.13);
+}
+
+.summary-stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  max-width: 1080px; margin: 36px auto 56px; padding: 0 24px;
+}
+.stat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  text-align: center;
+  transition: border-color .15s;
+}
+.stat-card:hover { border-color: var(--border-2); }
+.stat-card .num {
+  font-size: 32px; font-weight: 700; color: var(--accent);
+  font-feature-settings: "tnum"; line-height: 1.1;
+}
+.stat-card .lbl {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--text-mut); margin-top: 6px;
+}
+
+.split-view {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  max-width: 1320px; margin: 0 auto; padding: 0 24px 60px;
+}
+@media (max-width: 980px) {
+  .split-view { grid-template-columns: 1fr; }
+}
+
+.hub-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 32px 36px;
+  position: relative;
+  overflow: hidden;
+  transition: all .2s;
+}
+.hub-card.core::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 0% 0%, rgba(106,166,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card.applications::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 100% 0%, rgba(184,106,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card > * { position: relative; z-index: 1; }
+.hub-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.hub-card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 700;
+}
+.hub-card.core .label { color: var(--accent); }
+.hub-card.applications .label { color: var(--accent-2); }
+.hub-card h2 {
+  font-size: 32px; line-height: 1.15;
+  margin: 8px 0 12px;
+  font-weight: 700; letter-spacing: -0.02em;
+  color: var(--text);
+}
+.hub-card .desc {
+  font-size: 15px; line-height: 1.6; color: var(--text-dim);
+  margin: 0 0 24px;
+}
+.hub-card .stats {
+  display: flex; gap: 18px; margin-bottom: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-card .stats .num { color: var(--text); font-weight: 600; }
+.hub-card .cta {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 10px;
+  font-size: 13.5px; font-weight: 600;
+  text-decoration: none;
+}
+.hub-card.core .cta {
+  background: rgba(106,166,255,0.12);
+  color: var(--accent);
+  border: 1px solid rgba(106,166,255,0.30);
+}
+.hub-card.applications .cta {
+  background: rgba(184,106,255,0.12);
+  color: var(--accent-2);
+  border: 1px solid rgba(184,106,255,0.30);
+}
+.hub-card .cta:hover { text-decoration: none; transform: translateX(2px); }
+.hub-card .quick {
+  margin-top: 24px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.hub-card .quick h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut); font-weight: 600;
+}
+.hub-card .quick ul { list-style: none; margin: 0; padding: 0; }
+.hub-card .quick li { padding: 4px 0; font-size: 13px; }
+.hub-card .quick li a { color: var(--text-dim); text-decoration: none; }
+.hub-card .quick li a:hover { color: var(--text); }
+
+/* ═══ Hub page (CORE / APPLICATIONS landing) ════════════════════════ */
+
+.hub-hero {
+  padding: 64px 32px 36px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1240px; margin: 0 auto;
+}
+.hub-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 600;
+}
+.hub-hero h1 {
+  font-size: 48px; margin: 12px 0 14px;
+  font-weight: 750; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.hub-hero p {
+  color: var(--text-dim); font-size: 17px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.hub-hero .stats {
+  display: flex; gap: 22px; margin-top: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-hero .stats .num { color: var(--text); font-weight: 600; }
+
+.cat-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 18px;
+  max-width: 1280px; margin: 28px auto; padding: 0 32px 80px;
+}
+.cat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 24px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.cat-card:hover {
+  border-color: var(--border-3);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+}
+.cat-card .head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 12px;
+}
+.cat-card .head .icon {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 18px;
+  color: var(--accent);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.cat-card.app .head .icon { color: var(--accent-2); }
+.cat-card .title {
+  font-size: 18px; font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  flex: 1;
+}
+.cat-card .head .count {
+  font-size: 12px; color: var(--text-mut);
+  flex-shrink: 0;
+}
+.cat-card .tagline {
+  font-size: 13px; color: var(--accent);
+  font-weight: 500;
+  margin: 0;
+}
+.cat-card.app .tagline { color: var(--accent-2); }
+.cat-card .desc {
+  font-size: 13.5px; color: var(--text-dim);
+  line-height: 1.55;
+  margin: 4px 0 0;
+}
+
+/* ═══ Category landing (per family/domain) ══════════════════════════ */
+
+.cat-hero {
+  padding: 56px 32px 32px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1180px; margin: 0 auto;
+}
+.cat-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px; font-weight: 600;
+}
+.cat-hero h1 {
+  font-size: 42px; margin: 10px 0 14px;
+  font-weight: 700; letter-spacing: -0.02em;
+}
+.cat-hero p {
+  color: var(--text-dim); font-size: 16px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.cat-hero .stats {
+  display: flex; gap: 20px; margin-top: 22px;
+  font-size: 13px; color: var(--text-mut);
+}
+.cat-hero .stats .num { color: var(--text); font-weight: 600; }
+.cat-hero .search-row {
+  max-width: 520px; margin: 24px 0 0;
+}
+.cat-hero .search-row input { padding: 12px 18px; font-size: 14px; }
+
+.doc-cards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 14px;
+  max-width: 1180px; margin: 36px auto 96px;
+  padding: 0 32px;
+}
+.doc-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 22px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .18s;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.doc-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.doc-card.app:hover { border-color: var(--accent-2); }
+.doc-card .head {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+}
+.doc-card .title {
+  font-size: 16px; font-weight: 650; line-height: 1.3;
+  color: var(--text); flex: 1;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  letter-spacing: -0.01em;
+}
+.doc-card .badges { display: flex; gap: 4px; flex-shrink: 0; }
+.doc-card .badge {
+  font-size: 9px; padding: 2px 7px; border-radius: 3px;
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px;
+  background: var(--bg-3); color: var(--text-mut);
+}
+.doc-card .badge.dup { background: rgba(248,113,113,0.18); color: var(--bad); }
+.doc-card .badge.fmt-md { background: rgba(106,166,255,0.18); color: #6aa6ff; }
+.doc-card .badge.fmt-pdf { background: rgba(248,113,113,0.18); color: #f87171; }
+.doc-card .badge.fmt-docx { background: rgba(56,189,248,0.18); color: #38bdf8; }
+.doc-card .badge.fmt-html { background: rgba(251,191,36,0.18); color: #fbbf24; }
+.doc-card .one-liner {
+  font-size: 13.5px; color: var(--text-dim); line-height: 1.55;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  flex: 1;
+}
+.doc-card .meta {
+  display: flex; gap: 14px; font-size: 11px; color: var(--text-mut);
+  border-top: 1px solid var(--border); padding-top: 12px;
+  margin-top: auto;
+}
+.doc-card .meta .num { color: var(--text-dim); font-weight: 600; font-feature-settings: "tnum"; }
+
+/* ═══ Mobile ════════════════════════════════════════════════════════ */
+@media (max-width: 980px) {
+  .layout { grid-template-columns: 1fr; }
+  .toc-sidebar { display: none; }
+  .content { padding: 28px 24px 80px; }
+  .doc-hero h1 { font-size: 30px; }
+  .doc-hero .one-liner { font-size: 16px; }
+  .topbar { padding: 10px 18px; }
+  .index-hero h1 { font-size: 38px; }
+  .index-hero { padding: 56px 20px 36px; }
+  .hub-hero h1 { font-size: 34px; }
+  .hub-hero { padding: 40px 20px 24px; }
+  .cat-hero h1 { font-size: 32px; }
+  .cat-hero { padding: 36px 20px 24px; }
+  .doc-cards, .cat-grid { padding: 0 20px 60px; }
+  .split-view { padding: 0 20px 40px; }
+}
+</style>
+</head>
+<body data-doc-type="applied-implementation">
+<nav class="topbar">
+<div class="crumbs"><a href="../../00-Index.html">Learning</a><span class="sep">›</span><a href="../_Hub.html">APPLICATIONS</a><span class="sep">›</span><a href="_Category.html">Factory Floor System</a><span class="sep">›</span><span class="current">Factory Floor Production System — Technical Documentation</span></div>
+<div class="actions"><a class="action" href="factory-floor-system.pdf" download>↓ Download</a><a class="action" href="../../00-Index.html">All docs</a></div>
+</nav>
+<div class="layout">
+<aside class="toc-sidebar"><h3>On this page</h3><ol><li class="lvl-2"><a href="#page-1">Page 1</a></li><li class="lvl-2"><a href="#page-2">Page 2</a></li><li class="lvl-2"><a href="#page-3">Page 3</a></li><li class="lvl-2"><a href="#page-4">Page 4</a></li><li class="lvl-2"><a href="#page-5">Page 5</a></li><li class="lvl-2"><a href="#page-6">Page 6</a></li><li class="lvl-2"><a href="#page-7">Page 7</a></li><li class="lvl-2"><a href="#page-8">Page 8</a></li><li class="lvl-2"><a href="#page-9">Page 9</a></li><li class="lvl-2"><a href="#page-10">Page 10</a></li><li class="lvl-2"><a href="#page-11">Page 11</a></li><li class="lvl-2"><a href="#page-12">Page 12</a></li></ol></aside>
+<main class="content">
+
+<header class="doc-hero">
+  <div class="eyebrow"><span class="dot"></span>Implementation · Factory Floor System</div>
+  <h1>Factory Floor Production System — Technical Documentation</h1>
+  <p class="one-liner">A real-time manufacturing execution system (MES) built in Blazor Server + EF Core that tracks production orders, material consumption with variance analysis, stock movements, and Primavera ERP integration.</p>
+  <div class="meta-row">
+    <span class="meta-pill fmt-pdf">PDF</span>
+    <span class="meta-pill complexity-intermediate">Intermediate</span>
+    <span class="meta-pill"><span class="num">1,495</span> words</span>
+    <span class="meta-pill"><span class="num">7</span> min read</span>
+    <span class="meta-pill source">Source: <code>Education/FactoryFloor/ENG/FactoryFloorProductionSystem.pdf</code></span>
+  </div>
+</header>
+<div class="banner-stack"><div class="dup-banner near"><div class="icon">≈</div><div class="body"><h4>Near-duplicate content</h4><p>Significant text overlap (Jaccard ≥ 0.65) with — likely audience variants (ENG/PT, ForDummies/Formal) of the same source:</p><ul><li><code>Education/FactoryFloor/ENG/FactoryFloorProductionSystemFormalDocumentation.docx</code></li></ul></div></div></div>
+<div class="curation"><p class="intro-hook">Imagine your factory runs on paper and clipboards. Someone writes &#x27;60 bottles made&#x27; on a clipboard at lunch. By the time that reaches accounting on Friday, three hands have copied it, one typo has slipped in, and nobody knows how much plastic was actually used. Now imagine a worker taps Pause on a tablet, confirms &#x27;60 bottles, 6kg plastic, 0 waste&#x27;, and sixty seconds later stock, production, and ERP are all simultaneously correct. That&#x27;s the difference this system is built to make.</p>
+<div class="exec-summary"><h3>Executive summary</h3><p>The Factory Floor Production System is a Blazor Server MES for tracking production orders on a factory floor. It uses a Repository + Service layer pattern where Factory_New.razor is the control dashboard and MaterialConsumptionModal.razor is the recipe-tracking popup. FactoryFloorService orchestrates Start/Pause/End production actions, calculates proportional material consumption based on planned quantity versus actual quantity produced, generates ENTSTOCK/SAIDASTOCK/DESP stock movements inside a database transaction, and pushes the result to Primavera ERP. Worker actions require PIN-based authentication, all changes are audit-logged, and material loading uses a 1.5-second debounce to avoid re-querying on every keystroke.</p></div>
+<div class="metaphor-callout"><div class="icon">💡</div><div class="body"><span class="label">Metaphor</span>This system is like a self-checkout kiosk for manufacturing. The worker scans their badge (PIN), picks their job (order), hits Start, makes stuff, and at Pause or Stop the system asks &#x27;how many did you make, how many did you waste?&#x27; Then it does everything a human accountant used to do in their head: subtracts the raw materials from the warehouse, adds the finished goods to inventory, records the waste, and mails the receipt to the ERP. The worker just punched two buttons; the accounting department got five perfectly matched entries.</div></div>
+<div class="tutorial-structure"><div class="tutorial-section"><h3><span class="num">1</span>Why it exists</h3><p>Manufacturing floors historically ran on paper: workers scribbled production numbers on clipboards, stock counts drifted, managers learned about problems days later. This system replaces all that with a tablet-friendly Blazor interface that tracks each production order in real time from Start to Pause to End, automatically calculates what materials should have been consumed for the actual quantity produced, flags variances, and pushes everything to the Primavera ERP in one atomic operation. The goal is zero double entry — one worker confirmation updates production orders, stock levels, waste records, and accounting simultaneously.</p></div><div class="tutorial-section"><h3><span class="num">2</span>What it does</h3><p>Factory_New.razor shows today&#x27;s stats, a machine selector, and two columns of orders (To Start / Started). URL parameter /factory_new/{maquinaid} bookmarks a specific machine view. When a worker clicks Start/Pause/Stop, a PIN dialog validates them against the hashed CrmUtilizador.Pin, then ExecuteProductionAction calls FactoryFloorService&#x27;s StartProductionAsync / PauseProductionAsync / EndProductionAsync. Pause and Stop trigger MaterialConsumptionModal which asks for QuantityProduced and Waste, then loads materials — after a 1.5s debounce — via GetMaterialsForProductionAsync which computes perUnitQuantity = totalPlannedForOrder / orderQuantity and suggests proportionalQty = perUnitQuantity * quantityProduced, enriched with a HistoricalAverage when prior QuantidadeMedia exists. The worker confirms, and RegisterProductionAsync runs inside a database transaction that updates order.QuantidadeFeita, decrements order.QuantidadeFalta, bumps gastoFase.QuantidadeConsumida, calls GenerateStockMovementsAsync, and commits — or rolls back on any failure.</p></div><div class="tutorial-section"><h3><span class="num">3</span>How it works</h3><p>The service layer uses IDbContextFactory&lt;BioBragaContext&gt; so every operation gets a fresh context (except when passing an existingContext to chain operations inside a transaction). The OrdemProducao composite model bundles CrmOrdemProducao, CrmDocumento, CrmDocumentoDetalhe, CrmArtigo, and a List&lt;ComponenteProd&gt; so the UI has everything it needs in one object. MaterialConsumptionDto exposes computed properties Variance and VariancePercentage so the UI can colour-code over-consumption without server logic. Stock movements generate three document types: ENTSTOCK (finished goods entering stock), SAIDASTOCK (raw materials leaving stock), and DESP (waste). After commit, _primaveraRepo.SendMovimentacaoStock(doc, lines) pushes the movement to the external ERP. If Primavera fails, the local transaction still commits — integration failures are logged but don&#x27;t block production. Cascading parameters propagate CurrentWorker across the component tree. Local filtering (FilterOrdersByMachine) happens client-side so machine selection doesn&#x27;t roundtrip to the server.</p></div></div>
+<div class="context-row"><div class="context-card prereqs"><h4>You should know first</h4><ul><li>Blazor Server component lifecycle</li><li>EF Core with transactions</li><li>dependency injection</li><li>MudBlazor components</li></ul></div><div class="context-card concepts"><h4>Key concepts covered</h4><ul><li>Blazor Server MES</li><li>production order state machine</li><li>proportional material consumption</li><li>variance analysis</li><li>transaction with BeginTransactionAsync</li><li>PIN-based authentication</li><li>debounced material loading</li><li>Primavera ERP integration</li></ul></div><div class="context-card builds"><h4>Opens the door to</h4><ul><li>event-driven-stock-updates</li><li>signalr-live-dashboard</li><li>erp-integration-patterns</li></ul></div></div></div>
+<article>
+<div class="pdf-page" id="page-1"><div class="page-head">Page 1</div><div class="page-body"><pre>Factory Floor Production System -
+Technical Documentation
+
+Table of Contents
+
+    1. System Overview
+    2. Architecture
+    3. Component Documentation
+    4. Service Layer
+    5. Data Models
+    6. API Reference
+    7. State Management
+    8. Integration Points
+    9. Security
+    10. Performance Considerations
+
+System Overview
+
+Purpose
+
+The Factory Floor Production System is a real-time manufacturing execution system (MES)
+designed to track production orders, material consumption, and inventory movements in a
+manufacturing environment.
+
+Key Features
+
+    • Real-time production order management
+    • Material consumption tracking with variance analysis
+    • Automated stock movement generation
+    • Historical consumption pattern analysis
+    • Multi-machine production support
+    • Integration with Primavera ERP system
+
+Technology Stack
+
+    • Frontend: Blazor Server (.NET 8)
+    • UI Framework: MudBlazor
+    • Backend: ASP.NET Core
+    • Database: Entity Framework Core
+    • External Integration: Primavera ERP</pre></div></div>
+<div class="pdf-page" id="page-2"><div class="page-head">Page 2</div><div class="page-body"><pre>Architecture
+
+System Architecture Diagram
+
+┌─────────────────────────────────────────────────────────┐
+
+│                  Presentation Layer                             │
+
+│ ┌──────────────┐ ┌───────────────────────────┐                  │
+
+│ │Factory_New │ │MaterialConsumptionModal │                      │
+
+│ │ (.razor) │ │             (.razor)      │                      │
+
+│ └──────┬───────┘ └────────────┬──────────────┘                  │
+
+└─────────┼───────────────────────┼───────────────────────┘
+
+    │                             │
+
+┌─────────▼───────────────────────▼──────────────────────┐
+
+│                  Service Layer                              │
+
+│ ┌─────────────────────────────────────────────────┐ │
+
+││     IFactoryFloorService                                   ││
+
+││     FactoryFloorService                                    ││
+
+│ └─────────────────┬───────────────────────────────┘ │
+
+└────────────────────┼───────────────────────────────────┘
+
+                   │
+
+┌────────────────────▼────────────────────────────────────┐
+
+│                  Data Access Layer                              │
+
+│ ┌──────────────────┐ ┌────────────────────────┐                 │
+
+│ │BioBragaContext │ │IPrimaveraRepository │                      │
+
+│ │(Entity Framework)│ │(ERP Integration)         │               │
+
+│ └──────────────────┘ └────────────────────────┘                 │
+
+└─────────────────────────────────────────────────────────┘
+
+Design Patterns
+
+    • Repository Pattern: Data access abstraction
+    • Service Layer Pattern: Business logic encapsulation
+    • Dependency Injection: IoC container for loose coupling
+    • Unit of Work: Transaction management via EF Core
+
+Component Documentation
+
+Factory_New.razor
+
+Purpose
+
+Main production floor interface providing real-time visualization of production orders and
+control mechanisms.
+
+Component Structure
+
+@page &quot;/factory_new&quot;
+@page &quot;/factory_new/{maquinaid}&quot;
+@layout FactoryLayout</pre></div></div>
+<div class="pdf-page" id="page-3"><div class="page-head">Page 3</div><div class="page-body"><pre>Key Properties
+
+Property                      Type                                 Description
+
+maquinaid            string?         Route parameter for machine filtering
+
+CurrentWorker        CrmUtilizador?  Cascading parameter for
+                                     authenticated worker
+
+allProductionOrders  List&lt;OrdemProducao&gt; Complete order collection
+
+filteredProductionOrders List&lt;OrdemProducao&gt; Machine-filtered orders
+
+selectedMachine      CrmEquipamento? Currently selected machine
+
+todayStats           ProductionStatsDto? Today&#x27;s production metrics
+
+Lifecycle Methods
+
+OnInitializedAsync()
+
+protected override async Task OnInitializedAsync()
+{
+
+       await LoadInitialData();
+       isDataLoaded = true;
+}
+
+    • Loads machines and production orders
+    • Sets initial data loaded flag
+
+OnParametersSetAsync()
+
+protected override async Task OnParametersSetAsync()
+
+    • Handles URL parameter changes
+    • Manages browser navigation (back/forward)
+    • Updates filtered data based on machine selection
+
+Key Methods
+
+SelectMachine(string? machineId)
+
+    • Updates URL for bookmarkability
+    • Filters orders locally without server roundtrip
+    • Updates production statistics
+
+RequestPinForAction(OrdemProducao order, ProductionAction action)
+
+    • Opens PIN authentication dialog
+    • Validates worker credentials
+    • Executes production action upon successful authentication</pre></div></div>
+<div class="pdf-page" id="page-4"><div class="page-head">Page 4</div><div class="page-body"><pre>ExecuteProductionAction(OrdemProducao order, ProductionAction action)
+
+    • Processes Start/Pause/Stop actions
+    • Opens material consumption modal for Pause/Stop
+    • Updates order status via service layer
+
+MaterialConsumptionModal.razor
+
+Purpose
+
+Modal dialog for recording actual material consumption and production quantities.
+
+Key Features
+
+    • Dynamic material loading based on production quantity
+    • Real-time variance calculation
+    • Historical consumption pattern display
+    • Stock availability validation
+    • Multi-step submission progress indicator
+
+Component Properties
+
+Property                  Type  Description
+
+OrdemProducao OrdemProducao?    Production order being processed
+
+WorkerId   int                  Authenticated worker ID
+
+QuantityProduced decimal        Actual production quantity
+
+Waste      decimal              Waste/scrap quantity
+
+Materials  List&lt;MaterialConsumptionDto&gt; Material consumption list
+
+Material Loading Strategy
+
+private async Task OnQuantityProducedChanged(decimal value)
+{
+
+       // Debounce mechanism with 1.5s delay
+       _loadMaterialsCts?.Cancel();
+       _loadMaterialsCts = new CancellationTokenSource();
+       await Task.Delay(1500, token);
+
+       if (!token.IsCancellationRequested)
+              await LoadMaterials();
+
+}
+
+Submission Process
+
+    1. Validate data
+    2. Update order quantities
+    3. Generate stock movements
+    4. Register material consumption
+    5. Send to Primavera ERP
+    6. Finalize transaction</pre></div></div>
+<div class="pdf-page" id="page-5"><div class="page-head">Page 5</div><div class="page-body"><pre>Progress Tracking
+
+private async Task UpdateProgress(int step, string message)
+{
+
+       CurrentStepNumber = step;
+       CurrentStep = message;
+       StateHasChanged();
+       await Task.Yield(); // Allow UI update
+}
+
+Service Layer
+
+IFactoryFloorService Interface
+
+Core Operations
+
+Production Order Management
+
+Task&lt;List&lt;OrdemProducao&gt;&gt; GetProductionOrdersAsync(string? maquinaId =
+null);
+Task&lt;OrdemProducao?&gt; GetProductionOrderByIdAsync(int orderId,
+BioBragaContext? existingContext = null);
+
+Production Control
+
+Task&lt;(bool success, string message)&gt; StartProductionAsync(int orderId, int
+userId);
+Task&lt;(bool success, string message)&gt; PauseProductionAsync(int orderId, int
+userId);
+Task&lt;(bool success, string message)&gt; EndProductionAsync(int orderId, int
+userId);
+
+Material Management
+
+Task&lt;List&lt;MaterialConsumptionDto&gt;&gt; GetMaterialsForProductionAsync(int
+orderId, decimal quantityProduced);
+Task&lt;(bool success, string message)&gt; RegisterProductionAsync(
+
+       int orderId, int userId, decimal quantityProduced,
+       decimal waste, List&lt;MaterialConsumptionDto&gt; actualConsumption);
+
+FactoryFloorService Implementation
+
+Dependency Injection
+
+public FactoryFloorService(
+       IDbContextFactory&lt;BioBragaContext&gt; contextFactory,
+       IPrimaveraRepository primaveraRepo,
+       ILogger&lt;FactoryFloorService&gt; logger,
+       IConfiguration configuration)
+
+Material Calculation Algorithm
+
+GetMaterialsForProductionAsync Logic
+
+// Core calculation for proportional material consumption</pre></div></div>
+<div class="pdf-page" id="page-6"><div class="page-head">Page 6</div><div class="page-body"><pre>var totalPlannedForOrder = mat.gf.Quantidade ?? 0;
+var orderQuantity = order.Quantidade ?? 1;
+var perUnitQuantity = totalPlannedForOrder / orderQuantity;
+var proportionalQty = Math.Round(perUnitQuantity * quantityProduced, 6);
+
+// Historical average consideration
+decimal? suggestedQty = null;
+if (mat.gf.QuantidadeMedia.HasValue &amp;&amp; mat.gf.QuantidadeMedia.Value &gt; 0)
+{
+
+       suggestedQty = Math.Round(mat.gf.QuantidadeMedia.Value *
+quantityProduced, 6);
+}
+
+Transaction Management
+
+RegisterProductionAsync Transaction Flow
+
+using var transaction = await context.Database.BeginTransactionAsync();
+try
+{
+
+       // 1. Update order quantities
+       order.QuantidadeFeita += quantityProduced;
+       order.QuantidadeFalta -= quantityProduced;
+
+       // 2. Update consumption tracking
+       gastoFase.QuantidadeConsumida += material.ActualQuantity;
+       gastoFase.NumeroProducoes++;
+
+       // 3. Generate stock movements
+       await GenerateStockMovementsAsync(...);
+
+       // 4. Commit transaction
+       await transaction.CommitAsync();
+}
+catch
+{
+       await transaction.RollbackAsync();
+       throw;
+}
+
+Stock Movement Generation
+
+Document Generation Pattern
+
+    1. Stock Entry (ENTSTOCK): Records finished goods
+    2. Stock Exit (SAIDASTOCK): Records material consumption
+    3. Waste Document (DESP): Records production waste
+
+private async Task GenerateStockEntryAsync(
+       BioBragaContext context,
+       OrdemProducao order,
+       int userId,
+       decimal quantity)
+
+{
+       // Document header creation
+       var doc = new CrmDocumento
+       {
+              Tipodocumentoid = tipoDoc.Id,</pre></div></div>
+<div class="pdf-page" id="page-7"><div class="page-head">Page 7</div><div class="page-body"><pre>              Numero = await GetNextDocumentNumber(),
+              Data = DateTime.Now,
+              DocumentoOrdemFabrico = order.op.Id
+       };
+
+       // Document lines for product and reference
+}
+
+Data Models
+
+Core DTOs
+
+MaterialConsumptionDto
+
+public class MaterialConsumptionDto
+{
+
+       public int GastosFaseId { get; set; }
+       public int? ArtigoId { get; set; }
+       public string ArtigoNome { get; set; }
+       public string ArtigoCodigo { get; set; }
+       public string Unidade { get; set; }
+
+       // Quantities
+       public decimal PlannedQuantity { get; set; }
+       public decimal ActualQuantity { get; set; }
+       public decimal Stock { get; set; }
+
+       // Variance Analysis
+       public decimal Variance =&gt; ActualQuantity - PlannedQuantity;
+       public decimal VariancePercentage =&gt;
+
+              PlannedQuantity != 0 ? (Variance / PlannedQuantity) * 100 : 0;
+
+       // Historical Data
+       public decimal? HistoricalAverage { get; set; }
+       public decimal? TotalConsumed { get; set; }
+       public int? ProductionCount { get; set; }
+}
+
+ProductionStatsDto
+
+public class ProductionStatsDto
+{
+
+       public decimal? TotalProduced { get; set; }
+       public decimal? TotalPending { get; set; }
+}</pre></div></div>
+<div class="pdf-page" id="page-8"><div class="page-head">Page 8</div><div class="page-body"><pre>Entity Models
+
+OrdemProducao (Composite Model)
+
+public class OrdemProducao
+{
+
+       public CrmOrdemProducao op { get; set; }
+       public CrmDocumentoDetalhe docline { get; set; }
+       public CrmDocumento doc { get; set; }
+       public CrmArtigo artigo { get; set; }
+       public List&lt;ComponenteProd&gt; ListaComponentes { get; set; }
+}
+
+API Reference
+
+Service Registration
+
+// Program.cs
+services.AddScoped&lt;IFactoryFloorService, FactoryFloorService&gt;();
+services.AddDbContextFactory&lt;BioBragaContext&gt;(options =&gt;
+
+       options.UseSqlServer(connectionString));
+
+Endpoint Patterns
+
+    • /factory_new - General production view
+    • /factory_new/{maquinaid} - Machine-specific view
+
+State Management
+
+Component State Flow
+
+User Action → Component Event → Service Call → Database Update → UI Refresh
+
+↑                                                                  ↓
+
+└──────────────── StateHasChanged() ←─────────────────────────┘
+
+Cascading Parameters
+
+[CascadingParameter] public CrmUtilizador? CurrentWorker { get; set; }
+[CascadingParameter] public EventCallback&lt;CrmUtilizador?&gt; OnWorkerChanged {
+get; set; }
+
+State Persistence
+
+    • URL-based state for machine selection
+    • Session-based worker authentication
+    • Database-persisted production state</pre></div></div>
+<div class="pdf-page" id="page-9"><div class="page-head">Page 9</div><div class="page-body"><pre>Integration Points
+
+Primavera ERP Integration
+
+await _primaveraRepo.SendMovimentacaoStock(doc, lines);
+
+Database Context Management
+
+// Context reuse pattern for transactions
+var shouldDisposeContext = existingContext == null;
+var context = existingContext ?? await
+_contextFactory.CreateDbContextAsync();
+try
+{
+
+       // Operations
+}
+finally
+{
+
+       if (shouldDisposeContext)
+              await context.DisposeAsync();
+
+}
+
+Security
+
+Authentication Flow
+
+    1. PIN-based worker authentication
+    2. Hashed PIN storage (Utils.Hash(pin))
+    3. Active user validation
+    4. Action-level authentication requirements
+
+Authorization Checks
+
+if (CurrentWorker == null) return;
+if (worker != null &amp;&amp; worker.Isactive != true) return null;
+
+Audit Trail
+
+    • All actions logged with user ID and timestamp
+    • Production logs stored in CrmOrdemProducaoLog
+    • Document creation tracked with Criadopor field</pre></div></div>
+<div class="pdf-page" id="page-10"><div class="page-head">Page 10</div><div class="page-body"><pre>Performance Considerations
+
+Optimization Strategies
+
+Debouncing
+
+// 1.5-second debounce for material loading
+await Task.Delay(1500, token);
+
+Eager Loading
+
+var query = from op in context.CrmOrdemProducaos
+                     join docDetail in context.CrmDocumentoDetalhes...
+                     // Multiple joins for complete data
+
+Local Filtering
+
+private void FilterOrdersByMachine()
+{
+
+       // Client-side filtering to avoid server roundtrip
+       filteredProductionOrders = allProductionOrders
+
+              .Where(o =&gt; o.op.Equipamentoid.ToString() == maquinaid)
+              .ToList();
+}
+
+Scalability Considerations
+
+    • Database connection pooling via IDbContextFactory
+    • Asynchronous operations throughout
+    • Transaction scope minimization
+    • Indexed database queries on frequently accessed fields
+
+Monitoring Points
+
+    • Production order query performance
+    • Material calculation response time
+    • Stock movement generation duration
+    • Primavera integration latency</pre></div></div>
+<div class="pdf-page" id="page-11"><div class="page-head">Page 11</div><div class="page-body"><pre>Error Handling
+
+Service Layer Pattern
+
+try
+{
+
+       // Operation
+       return (true, &quot;Success message&quot;);
+}
+catch (Exception ex)
+{
+       _logger.LogError(ex, &quot;Error description&quot;);
+       return (false, $&quot;Error message: {ex.Message}&quot;);
+}
+
+UI Error Feedback
+
+Snackbar.Add($&quot;Error message&quot;, Severity.Error);
+
+Deployment Considerations
+
+Configuration Requirements
+
+    • Connection strings for BioBraga database
+    • Primavera API endpoints
+    • Logging configuration
+    • Image storage path configuration
+
+Environment Variables
+
+{
+   &quot;ConnectionStrings&quot;: {
+       &quot;DefaultConnection&quot;: &quot;Server=...;Database=BioBraga;...&quot;
+   },
+   &quot;Primavera&quot;: {
+       &quot;ApiEndpoint&quot;: &quot;https://...&quot;
+   }
+
+}
+
+Health Checks
+
+    • Database connectivity
+    • Primavera API availability
+    • Service layer responsiveness
+
+Maintenance and Support
+
+Logging Strategy
+
+    • Structured logging with correlation IDs
+    • Performance metrics for key operations</pre></div></div>
+<div class="pdf-page" id="page-12"><div class="page-head">Page 12</div><div class="page-body"><pre>    • Error tracking with stack traces
+    • User action audit trail
+
+Database Maintenance
+
+    • Regular index optimization
+    • Archive historical production logs
+    • Stock level reconciliation procedures
+    • Cleanup of cancelled/completed orders
+
+Version Control
+
+    • Semantic versioning for releases
+    • Database migration scripts
+    • Backward compatibility considerations
+    • Feature flag implementation for gradual rollouts</pre></div></div>
+</article>
+<div class="takeaways"><h3>Key takeaways</h3><ul><li>A composite DTO (OrdemProducao) that bundles related entities avoids lazy loading surprises</li><li>Use BeginTransactionAsync + try/catch/rollback whenever a single user action mutates multiple tables</li><li>Debounce expensive lookups (1.5s delay + CancellationTokenSource) to survive fast typing</li><li>Proportional material consumption scales by actual quantity but still suggests historical averages</li><li>ExistingContext parameter lets you chain service calls inside an outer transaction</li><li>Hash PINs with Utils.Hash and validate IsActive on every authentication check</li><li>ERP integration should not block the local transaction — log failures and retry</li></ul></div>
+<aside class="cross-refs"><h2>Cross-references</h2><div class="cross-ref-list"><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>repository-pattern</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>ef-core-transactions</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>blazor-component-lifecycle</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>debouncing-input</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>erp-integration-patterns</a></div></aside>
+<aside class="related"><h2>More in this category</h2><div class="related-grid"><a class="related-card" href="../../APPLICATIONS/factory-floor/ag-grid-custom-select2-editor-filter.html"><div class="title">AG Grid Custom Editors and Filters with Select2 - Method-by-Method Walkthrough</div><div class="meta"><span class="badge">PDF</span><span>3,825 words</span></div></a><a class="related-card" href="../../APPLICATIONS/factory-floor/factory-floor-system-plain-english.html"><div class="title">Factory Floor Production System — Plain-English Infographic</div><div class="meta"><span class="badge">DOCX</span><span>1,260 words</span></div></a><a class="related-card" href="../../APPLICATIONS/factory-floor/factory-floor-system__2.html"><div class="title">Factory Floor Production System — Technical Documentation</div><div class="meta"><span class="badge">DOCX</span><span>1,429 words</span></div></a><a class="related-card" href="../../APPLICATIONS/factory-floor/factory-floor-overview.html"><div class="title">Factory Floor Production System: Plain-English Overview</div><div class="meta"><span class="badge">PDF</span><span>1,384 words</span></div></a><a class="related-card" href="../../APPLICATIONS/factory-floor/select2-jquery-ag-grid-walkthrough.html"><div class="title">Select2 + jQuery Document Ready - Method Breakdown and AG Grid Custom Editor/Filter</div><div class="meta"><span class="badge">DOCX</span><span>3,014 words</span></div></a><a class="related-card" href="../../APPLICATIONS/factory-floor/factory-floor-system-pt.html"><div class="title">Sistema de Produção de Chão de Fábrica - Documentação Técnica (PT)</div><div class="meta"><span class="badge">PDF</span><span>1,757 words</span></div></a></div></aside>
+</main>
+</div>
+<script>
+// ─── Active TOC item on scroll ────────────────────────────────────
+(function() {
+  const tocLinks = document.querySelectorAll('.toc-sidebar a[href^="#"]');
+  if (!tocLinks.length) return;
+  const headings = Array.from(document.querySelectorAll(
+    'article h1[id], article h2[id], article h3[id], article h4[id], .pdf-page[id]'
+  ));
+  if (!headings.length) return;
+  function setActive(id) {
+    tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+  }
+  let lastVisible = headings[0].id;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) lastVisible = e.target.id; });
+    setActive(lastVisible);
+  }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+  headings.forEach(h => observer.observe(h));
+  setActive(headings[0].id);
+})();
+
+// ─── Copy code buttons ────────────────────────────────────────────
+(function() {
+  document.querySelectorAll('article pre').forEach(pre => {
+    if (pre.closest('.diagram-box')) return;
+    if (pre.closest('.pdf-page')) return;
+    if (pre.parentElement && pre.parentElement.classList.contains('code-block')) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'code-block';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.type = 'button';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', () => {
+      const code = pre.querySelector('code') || pre;
+      const text = code.innerText;
+      const done = () => {
+        btn.textContent = 'Copied';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(() => {});
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+    });
+    wrap.appendChild(btn);
+  });
+})();
+
+// ─── Live filter (master + hub + category pages) ─────────────────
+(function() {
+  const search = document.getElementById('search-input');
+  if (!search) return;
+  const items = document.querySelectorAll('[data-search]');
+  function apply() {
+    const q = search.value.toLowerCase().trim();
+    items.forEach(el => {
+      const match = !q || el.dataset.search.includes(q);
+      el.style.display = match ? '' : 'none';
+    });
+    document.querySelectorAll('[data-search-parent]').forEach(parent => {
+      const visible = Array.from(parent.querySelectorAll('[data-search]'))
+        .some(el => el.style.display !== 'none');
+      parent.style.display = visible ? '' : 'none';
+    });
+  }
+  search.addEventListener('input', apply);
+})();
+</script>
+</body>
+</html>

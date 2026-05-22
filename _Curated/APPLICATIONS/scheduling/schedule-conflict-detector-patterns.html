@@ -1,0 +1,1379 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Design Patterns &amp; SOLID Principles - For Dummies (Schedule Conflict Detector)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #07090f;
+  --bg-1: #0c111c;
+  --bg-2: #11182a;
+  --bg-3: #1a2238;
+  --bg-4: #232e4a;
+  --border: #1e2840;
+  --border-2: #2a3551;
+  --border-3: #3a4870;
+  --text: #e9eef8;
+  --text-dim: #94a3bf;
+  --text-mut: #5f6b86;
+  --accent: #6aa6ff;
+  --accent-strong: #3b82f6;
+  --accent-2: #b86aff;
+  --accent-3: #f472b6;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+  --info: #38bdf8;
+  --code-bg: #0a1020;
+  --code-border: #1a2340;
+  --shadow: 0 8px 32px rgba(0,0,0,0.55);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.35);
+  --shadow-glow: 0 0 0 1px rgba(106,166,255,0.18), 0 12px 40px rgba(106,166,255,0.10);
+}
+
+/* Doc-type theming */
+[data-doc-type="core-concept"] {
+  --doc-accent: #6aa6ff;
+  --doc-accent-rgb: 106,166,255;
+  --doc-eyebrow: "Concept";
+}
+[data-doc-type="applied-implementation"] {
+  --doc-accent: #b86aff;
+  --doc-accent-rgb: 184,106,255;
+  --doc-eyebrow: "Implementation";
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font: 16px/1.7 -apple-system, "Inter", \'Segoe UI\', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+::selection { background: rgba(106,166,255,0.30); }
+
+/* ═══ Top bar ═══════════════════════════════════════════════════════ */
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(7,9,15,0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 28px;
+  display: flex; align-items: center; gap: 16px;
+}
+.topbar .crumbs {
+  flex: 1; font-size: 13px; color: var(--text-dim);
+  display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden;
+}
+.topbar .crumbs span.sep { color: var(--text-mut); }
+.topbar .crumbs .current {
+  color: var(--text); font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.topbar .crumbs a { color: var(--text-dim); text-decoration: none; }
+.topbar .crumbs a:hover { color: var(--accent); }
+.topbar .actions { display: flex; gap: 6px; flex-shrink: 0; }
+.topbar .action {
+  font-size: 13px; padding: 6px 14px; border-radius: 8px;
+  color: var(--text-dim); text-decoration: none;
+  border: 1px solid transparent; transition: all .15s;
+}
+.topbar .action:hover {
+  color: var(--text); background: var(--bg-2); border-color: var(--border);
+  text-decoration: none;
+}
+
+/* ═══ Document layout ═══════════════════════════════════════════════ */
+.layout {
+  display: grid; grid-template-columns: 280px 1fr;
+  max-width: 1380px; margin: 0 auto; align-items: start;
+}
+.layout.no-toc { grid-template-columns: 1fr; max-width: 940px; }
+
+.toc-sidebar {
+  position: sticky; top: 70px;
+  align-self: start;
+  max-height: calc(100vh - 90px);
+  overflow-y: auto;
+  padding: 40px 8px 40px 28px;
+  border-right: 1px solid var(--border);
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+.toc-sidebar::-webkit-scrollbar { width: 6px; }
+.toc-sidebar::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
+.toc-sidebar h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px; padding-left: 14px; font-weight: 600;
+}
+.toc-sidebar ol { list-style: none; margin: 0; padding: 0; }
+.toc-sidebar li { margin: 0; }
+.toc-sidebar a {
+  display: block;
+  padding: 5px 14px;
+  border-left: 2px solid transparent;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 13px;
+  line-height: 1.5;
+  transition: all .15s;
+  word-break: break-word;
+}
+.toc-sidebar a:hover {
+  color: var(--text); border-left-color: var(--border-2); text-decoration: none;
+}
+.toc-sidebar a.active {
+  color: var(--doc-accent, var(--accent));
+  border-left-color: var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.07);
+}
+.toc-sidebar .lvl-3 a { padding-left: 28px; font-size: 12.5px; }
+.toc-sidebar .lvl-4 a, .toc-sidebar .lvl-5 a, .toc-sidebar .lvl-6 a {
+  padding-left: 42px; font-size: 12px;
+}
+
+.content { padding: 40px 64px 120px; min-width: 0; }
+
+/* ═══ Hero (per-doc) ════════════════════════════════════════════════ */
+.doc-hero {
+  position: relative;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 32px;
+  margin-bottom: 36px;
+}
+.doc-hero::before {
+  content: ''; position: absolute;
+  top: -40px; left: -64px; right: -64px; height: 220px;
+  background: radial-gradient(ellipse 60% 100% at 0% 0%, rgba(var(--doc-accent-rgb, 106,166,255),0.10), transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+.doc-hero > * { position: relative; z-index: 1; }
+.doc-hero .eyebrow {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  color: var(--doc-accent, var(--accent)); font-weight: 600;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.doc-hero .eyebrow .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--doc-accent, var(--accent));
+  box-shadow: 0 0 8px var(--doc-accent, var(--accent));
+}
+.doc-hero h1 {
+  font-size: 40px; line-height: 1.1;
+  margin: 12px 0 16px;
+  font-weight: 700; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.doc-hero .one-liner {
+  font-size: 18px; line-height: 1.55;
+  color: var(--text-dim);
+  margin: 0 0 20px;
+  max-width: 70ch;
+}
+.doc-hero .meta-row {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  font-size: 12.5px;
+}
+.meta-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--bg-2); border: 1px solid var(--border);
+  padding: 5px 12px; border-radius: 14px;
+  font-size: 12px; color: var(--text-dim);
+}
+.meta-pill .num { color: var(--text); font-weight: 600; font-feature-settings: "tnum"; }
+.meta-pill.fmt-md   { color: #6aa6ff; border-color: rgba(106,166,255,0.30); background: rgba(106,166,255,0.06); }
+.meta-pill.fmt-pdf  { color: #f87171; border-color: rgba(248,113,113,0.30); background: rgba(248,113,113,0.06); }
+.meta-pill.fmt-docx { color: #38bdf8; border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.fmt-html { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.fmt-htm  { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.complexity-beginner    { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.06); }
+.meta-pill.complexity-intermediate { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.complexity-advanced     { color: #fb923c; border-color: rgba(251,146,60,0.30); background: rgba(251,146,60,0.06); }
+.meta-pill.complexity-unknown      { color: var(--text-mut); }
+.meta-pill.source code { background: transparent; padding: 0; border: 0; font-size: 11px; color: var(--text-dim); }
+
+/* ═══ Curation panels ═══════════════════════════════════════════════ */
+
+.curation {
+  margin-bottom: 36px;
+}
+
+.intro-hook {
+  font-size: 18px;
+  line-height: 1.65;
+  color: var(--text);
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  padding: 8px 0 8px 20px;
+  margin: 0 0 28px;
+  font-style: italic;
+  font-weight: 350;
+}
+
+.exec-summary {
+  background: linear-gradient(135deg, rgba(var(--doc-accent-rgb, 106,166,255),0.07), rgba(var(--doc-accent-rgb, 106,166,255),0.02));
+  border: 1px solid rgba(var(--doc-accent-rgb, 106,166,255),0.20);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 0 0 24px;
+}
+.exec-summary h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent, var(--accent));
+  font-weight: 600;
+}
+.exec-summary p {
+  margin: 0; font-size: 15px; line-height: 1.65; color: var(--text);
+}
+
+.metaphor-callout {
+  display: flex; gap: 14px; align-items: flex-start;
+  background: rgba(184,106,255,0.06);
+  border: 1px solid rgba(184,106,255,0.25);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 0 0 24px;
+}
+.metaphor-callout .icon {
+  font-size: 22px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 4px rgba(184,106,255,0.4));
+}
+.metaphor-callout .body {
+  flex: 1; font-size: 14.5px; line-height: 1.6;
+  color: var(--text);
+}
+.metaphor-callout .body .label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--accent-2); font-weight: 700;
+  display: block; margin-bottom: 4px;
+}
+
+.tutorial-structure {
+  display: grid; grid-template-columns: 1fr; gap: 14px;
+  margin: 0 0 28px;
+}
+.tutorial-section {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--doc-accent);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+}
+.tutorial-section h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent);
+  font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.tutorial-section h3 .num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--doc-accent); color: var(--bg);
+  font-size: 10px; font-weight: 700;
+}
+.tutorial-section p {
+  margin: 0; font-size: 14.5px; line-height: 1.65; color: var(--text);
+}
+
+.context-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin: 0 0 28px;
+}
+.context-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.context-card h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut);
+  font-weight: 600;
+}
+.context-card ul {
+  margin: 0; padding: 0; list-style: none;
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.context-card li {
+  background: var(--bg-3);
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--text-dim);
+  border: 1px solid var(--border-2);
+}
+.context-card.prereqs li { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.05); }
+.context-card.builds li { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.05); }
+.context-card.concepts li { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.05); }
+
+.takeaways {
+  background: linear-gradient(135deg, rgba(74,222,128,0.05), rgba(74,222,128,0.01));
+  border: 1px solid rgba(74,222,128,0.20);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin: 36px 0 0;
+}
+.takeaways h3 {
+  margin: 0 0 10px;
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--ok); font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.takeaways h3::before {
+  content: '✓';
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(74,222,128,0.18);
+  font-size: 12px; font-weight: 700;
+}
+.takeaways ul { margin: 0; padding-left: 22px; }
+.takeaways li {
+  font-size: 14.5px; line-height: 1.6; color: var(--text);
+  margin: 6px 0;
+}
+
+/* ═══ Article body ══════════════════════════════════════════════════ */
+article { font-size: 16px; line-height: 1.78; color: var(--text); max-width: 78ch; }
+article > * + * { margin-top: 1.0em; }
+article p { margin: 0; }
+article h1, article h2, article h3, article h4 {
+  font-weight: 650; letter-spacing: -0.01em; color: var(--text);
+  scroll-margin-top: 90px; position: relative;
+}
+article h1 { font-size: 28px; margin-top: 56px; }
+article h2 {
+  font-size: 24px; margin-top: 56px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+article h3 { font-size: 19px; margin-top: 36px; }
+article h4 { font-size: 16.5px; margin-top: 24px; color: var(--text-dim); }
+article h2::before, article h3::before {
+  content: '#'; position: absolute; left: -28px;
+  color: var(--text-mut); font-weight: 400;
+  opacity: 0; transition: opacity .15s;
+}
+article h2:hover::before, article h3:hover::before { opacity: 1; }
+
+article ul, article ol { padding-left: 1.5em; margin: 0; }
+article li { margin: .35em 0; }
+article li > p { margin: 0; }
+
+article hr {
+  border: 0; height: 1px; background: var(--border); margin: 36px 0;
+}
+
+article blockquote {
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.05);
+  padding: 14px 18px;
+  margin: 22px 0;
+  border-radius: 0 8px 8px 0;
+  color: var(--text-dim);
+}
+article blockquote p { margin: 0; }
+
+article pre {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-size: 13.5px;
+  line-height: 1.65;
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+article pre::-webkit-scrollbar { height: 7px; }
+article pre::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+article code, article pre {
+  font-family: "JetBrains Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+  font-feature-settings: "calt" 1;
+}
+article code.il {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  padding: 1px 7px; border-radius: 5px;
+  font-size: 0.88em;
+  color: var(--accent);
+}
+.code-block { position: relative; }
+.code-block .copy-btn {
+  position: absolute; top: 8px; right: 8px;
+  background: var(--bg-3); border: 1px solid var(--border);
+  color: var(--text-dim); padding: 4px 11px; border-radius: 5px;
+  font-size: 11px; font-family: inherit; cursor: pointer;
+  opacity: 0; transition: all .15s;
+}
+.code-block:hover .copy-btn { opacity: 1; }
+.code-block .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+.code-block .copy-btn.copied { color: var(--ok); border-color: var(--ok); }
+
+article pre .kw   { color: #c084fc; font-weight: 500; }
+article pre .type { color: #67e8f9; }
+article pre .str  { color: #fcd34d; }
+article pre .num  { color: #fb923c; }
+article pre .cmt  { color: #6b7d99; font-style: italic; }
+
+article .tbl-wrap {
+  overflow-x: auto; margin: 22px 0;
+  border-radius: 10px; border: 1px solid var(--border);
+}
+article table { border-collapse: collapse; width: 100%; font-size: 14px; }
+article th {
+  background: var(--bg-3); padding: 11px 14px; text-align: left;
+  font-weight: 600; color: var(--text);
+  border-bottom: 1px solid var(--border-2);
+}
+article td {
+  padding: 11px 14px; border-top: 1px solid var(--border); vertical-align: top;
+}
+article tr:nth-child(even) td { background: rgba(255,255,255,0.013); }
+
+article .diagram-box {
+  background: linear-gradient(135deg, #1c2540 0%, #0e1424 100%);
+  border: 1px solid var(--border-2);
+  border-radius: 12px;
+  padding: 22px 26px;
+  margin: 24px 0;
+  box-shadow: var(--shadow);
+}
+article .diagram-box pre {
+  background: transparent; border: 0; padding: 0;
+  color: #e8edf5; font-size: 13px; line-height: 1.55;
+}
+
+article .img-ref {
+  display: inline-block;
+  background: var(--bg-2); color: var(--text-mut);
+  padding: 1px 8px; border-radius: 4px;
+  font-size: 11px; font-style: normal;
+  border: 1px dashed var(--border-2);
+}
+
+/* ═══ Duplicate banners ═════════════════════════════════════════════ */
+.dup-banner {
+  background: linear-gradient(135deg, rgba(251,191,36,0.10), rgba(251,191,36,0.04));
+  border: 1px solid rgba(251,191,36,0.35);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 18px;
+  font-size: 14px; line-height: 1.55;
+  display: flex; gap: 14px; align-items: flex-start;
+}
+.dup-banner + .dup-banner { margin-top: 0; }
+.dup-banner .icon { font-size: 22px; line-height: 1.2; flex-shrink: 0; }
+.dup-banner .body { flex: 1; min-width: 0; }
+.dup-banner h4 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--warn); text-transform: uppercase; letter-spacing: 1px; }
+.dup-banner p { margin: 0; color: var(--text-dim); }
+.dup-banner ul { margin: 6px 0 0; padding-left: 22px; color: var(--text-dim); }
+.dup-banner ul li { margin: 3px 0; word-break: break-word; }
+.dup-banner code {
+  background: var(--bg-3); padding: 2px 7px; border-radius: 5px;
+  font-size: 0.92em; color: var(--text);
+}
+.dup-banner.exact {
+  border-color: rgba(248,113,113,0.40);
+  background: linear-gradient(135deg, rgba(248,113,113,0.10), rgba(248,113,113,0.04));
+}
+.dup-banner.exact h4 { color: var(--bad); }
+.dup-banner.near {
+  border-color: rgba(56,189,248,0.40);
+  background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(56,189,248,0.04));
+}
+.dup-banner.near h4 { color: var(--info); }
+.banner-stack { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+
+/* ═══ PDF page cards ════════════════════════════════════════════════ */
+.pdf-page {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin: 24px 0;
+  overflow: hidden;
+  scroll-margin-top: 90px;
+}
+.pdf-page .page-head {
+  background: var(--bg-3);
+  padding: 9px 20px;
+  font-size: 11px; font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 1.4px;
+  border-bottom: 1px solid var(--border);
+}
+.pdf-page .page-body { padding: 18px 24px 22px; }
+.pdf-page pre {
+  margin: 0; background: transparent; border: 0; padding: 0;
+  white-space: pre-wrap; word-wrap: break-word;
+  color: var(--text); font-size: 13px; line-height: 1.6;
+}
+
+.empty-note {
+  background: var(--bg-2);
+  border: 1px dashed var(--border-2);
+  border-radius: 10px;
+  padding: 18px 22px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* ═══ Cross-references + related ════════════════════════════════════ */
+.cross-refs {
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.cross-refs h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.cross-ref-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.cross-ref-list a {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: all .15s;
+}
+.cross-ref-list a:hover {
+  color: var(--text);
+  border-color: var(--doc-accent, var(--accent));
+  background: var(--bg-3);
+  text-decoration: none;
+}
+.cross-ref-list a .arrow { color: var(--doc-accent, var(--accent)); margin-right: 6px; }
+
+.related {
+  margin-top: 48px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.related h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 18px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.related-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+.related-card {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+}
+.related-card:hover {
+  border-color: var(--doc-accent, var(--accent));
+  transform: translateY(-1px);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+}
+.related-card .title {
+  font-weight: 600; font-size: 13.5px; line-height: 1.35;
+  color: var(--text);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.related-card .meta {
+  font-size: 11px; color: var(--text-mut); margin-top: 6px;
+  display: flex; gap: 8px; align-items: center;
+}
+.related-card .meta .badge {
+  padding: 1px 6px; border-radius: 3px;
+  background: var(--bg-3); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* ═══ Master index page ═════════════════════════════════════════════ */
+
+.index-hero {
+  text-align: center;
+  padding: 80px 24px 56px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.index-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 30% 0%, rgba(106,166,255,0.13), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 70% 30%, rgba(184,106,255,0.10), transparent 70%);
+  pointer-events: none;
+}
+.index-hero > * { position: relative; z-index: 1; }
+.index-hero .eyebrow {
+  color: var(--accent); font-size: 12px;
+  text-transform: uppercase; letter-spacing: 1.8px; font-weight: 600;
+}
+.index-hero h1 {
+  font-size: 56px; margin: 16px 0 12px;
+  font-weight: 750; letter-spacing: -0.025em;
+  background: linear-gradient(135deg, #6aa6ff 0%, #b86aff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.index-hero .tagline {
+  color: var(--text-dim); font-size: 18px;
+  max-width: 720px; margin: 14px auto 0; line-height: 1.6;
+}
+.search-row {
+  display: flex; gap: 12px;
+  max-width: 720px; margin: 36px auto 0;
+}
+.search-row input {
+  flex: 1;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 15px;
+  padding: 14px 22px;
+  border-radius: 14px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color .15s, box-shadow .15s;
+}
+.search-row input::placeholder { color: var(--text-mut); }
+.search-row input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(106,166,255,0.13);
+}
+
+.summary-stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  max-width: 1080px; margin: 36px auto 56px; padding: 0 24px;
+}
+.stat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  text-align: center;
+  transition: border-color .15s;
+}
+.stat-card:hover { border-color: var(--border-2); }
+.stat-card .num {
+  font-size: 32px; font-weight: 700; color: var(--accent);
+  font-feature-settings: "tnum"; line-height: 1.1;
+}
+.stat-card .lbl {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--text-mut); margin-top: 6px;
+}
+
+.split-view {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  max-width: 1320px; margin: 0 auto; padding: 0 24px 60px;
+}
+@media (max-width: 980px) {
+  .split-view { grid-template-columns: 1fr; }
+}
+
+.hub-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 32px 36px;
+  position: relative;
+  overflow: hidden;
+  transition: all .2s;
+}
+.hub-card.core::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 0% 0%, rgba(106,166,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card.applications::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 100% 0%, rgba(184,106,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card > * { position: relative; z-index: 1; }
+.hub-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.hub-card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 700;
+}
+.hub-card.core .label { color: var(--accent); }
+.hub-card.applications .label { color: var(--accent-2); }
+.hub-card h2 {
+  font-size: 32px; line-height: 1.15;
+  margin: 8px 0 12px;
+  font-weight: 700; letter-spacing: -0.02em;
+  color: var(--text);
+}
+.hub-card .desc {
+  font-size: 15px; line-height: 1.6; color: var(--text-dim);
+  margin: 0 0 24px;
+}
+.hub-card .stats {
+  display: flex; gap: 18px; margin-bottom: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-card .stats .num { color: var(--text); font-weight: 600; }
+.hub-card .cta {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 10px;
+  font-size: 13.5px; font-weight: 600;
+  text-decoration: none;
+}
+.hub-card.core .cta {
+  background: rgba(106,166,255,0.12);
+  color: var(--accent);
+  border: 1px solid rgba(106,166,255,0.30);
+}
+.hub-card.applications .cta {
+  background: rgba(184,106,255,0.12);
+  color: var(--accent-2);
+  border: 1px solid rgba(184,106,255,0.30);
+}
+.hub-card .cta:hover { text-decoration: none; transform: translateX(2px); }
+.hub-card .quick {
+  margin-top: 24px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.hub-card .quick h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut); font-weight: 600;
+}
+.hub-card .quick ul { list-style: none; margin: 0; padding: 0; }
+.hub-card .quick li { padding: 4px 0; font-size: 13px; }
+.hub-card .quick li a { color: var(--text-dim); text-decoration: none; }
+.hub-card .quick li a:hover { color: var(--text); }
+
+/* ═══ Hub page (CORE / APPLICATIONS landing) ════════════════════════ */
+
+.hub-hero {
+  padding: 64px 32px 36px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1240px; margin: 0 auto;
+}
+.hub-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 600;
+}
+.hub-hero h1 {
+  font-size: 48px; margin: 12px 0 14px;
+  font-weight: 750; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.hub-hero p {
+  color: var(--text-dim); font-size: 17px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.hub-hero .stats {
+  display: flex; gap: 22px; margin-top: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-hero .stats .num { color: var(--text); font-weight: 600; }
+
+.cat-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 18px;
+  max-width: 1280px; margin: 28px auto; padding: 0 32px 80px;
+}
+.cat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 24px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.cat-card:hover {
+  border-color: var(--border-3);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+}
+.cat-card .head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 12px;
+}
+.cat-card .head .icon {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 18px;
+  color: var(--accent);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.cat-card.app .head .icon { color: var(--accent-2); }
+.cat-card .title {
+  font-size: 18px; font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  flex: 1;
+}
+.cat-card .head .count {
+  font-size: 12px; color: var(--text-mut);
+  flex-shrink: 0;
+}
+.cat-card .tagline {
+  font-size: 13px; color: var(--accent);
+  font-weight: 500;
+  margin: 0;
+}
+.cat-card.app .tagline { color: var(--accent-2); }
+.cat-card .desc {
+  font-size: 13.5px; color: var(--text-dim);
+  line-height: 1.55;
+  margin: 4px 0 0;
+}
+
+/* ═══ Category landing (per family/domain) ══════════════════════════ */
+
+.cat-hero {
+  padding: 56px 32px 32px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1180px; margin: 0 auto;
+}
+.cat-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px; font-weight: 600;
+}
+.cat-hero h1 {
+  font-size: 42px; margin: 10px 0 14px;
+  font-weight: 700; letter-spacing: -0.02em;
+}
+.cat-hero p {
+  color: var(--text-dim); font-size: 16px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.cat-hero .stats {
+  display: flex; gap: 20px; margin-top: 22px;
+  font-size: 13px; color: var(--text-mut);
+}
+.cat-hero .stats .num { color: var(--text); font-weight: 600; }
+.cat-hero .search-row {
+  max-width: 520px; margin: 24px 0 0;
+}
+.cat-hero .search-row input { padding: 12px 18px; font-size: 14px; }
+
+.doc-cards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 14px;
+  max-width: 1180px; margin: 36px auto 96px;
+  padding: 0 32px;
+}
+.doc-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 22px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .18s;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.doc-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.doc-card.app:hover { border-color: var(--accent-2); }
+.doc-card .head {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+}
+.doc-card .title {
+  font-size: 16px; font-weight: 650; line-height: 1.3;
+  color: var(--text); flex: 1;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  letter-spacing: -0.01em;
+}
+.doc-card .badges { display: flex; gap: 4px; flex-shrink: 0; }
+.doc-card .badge {
+  font-size: 9px; padding: 2px 7px; border-radius: 3px;
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px;
+  background: var(--bg-3); color: var(--text-mut);
+}
+.doc-card .badge.dup { background: rgba(248,113,113,0.18); color: var(--bad); }
+.doc-card .badge.fmt-md { background: rgba(106,166,255,0.18); color: #6aa6ff; }
+.doc-card .badge.fmt-pdf { background: rgba(248,113,113,0.18); color: #f87171; }
+.doc-card .badge.fmt-docx { background: rgba(56,189,248,0.18); color: #38bdf8; }
+.doc-card .badge.fmt-html { background: rgba(251,191,36,0.18); color: #fbbf24; }
+.doc-card .one-liner {
+  font-size: 13.5px; color: var(--text-dim); line-height: 1.55;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  flex: 1;
+}
+.doc-card .meta {
+  display: flex; gap: 14px; font-size: 11px; color: var(--text-mut);
+  border-top: 1px solid var(--border); padding-top: 12px;
+  margin-top: auto;
+}
+.doc-card .meta .num { color: var(--text-dim); font-weight: 600; font-feature-settings: "tnum"; }
+
+/* ═══ Mobile ════════════════════════════════════════════════════════ */
+@media (max-width: 980px) {
+  .layout { grid-template-columns: 1fr; }
+  .toc-sidebar { display: none; }
+  .content { padding: 28px 24px 80px; }
+  .doc-hero h1 { font-size: 30px; }
+  .doc-hero .one-liner { font-size: 16px; }
+  .topbar { padding: 10px 18px; }
+  .index-hero h1 { font-size: 38px; }
+  .index-hero { padding: 56px 20px 36px; }
+  .hub-hero h1 { font-size: 34px; }
+  .hub-hero { padding: 40px 20px 24px; }
+  .cat-hero h1 { font-size: 32px; }
+  .cat-hero { padding: 36px 20px 24px; }
+  .doc-cards, .cat-grid { padding: 0 20px 60px; }
+  .split-view { padding: 0 20px 40px; }
+}
+</style>
+</head>
+<body data-doc-type="applied-implementation">
+<nav class="topbar">
+<div class="crumbs"><a href="../../00-Index.html">Learning</a><span class="sep">›</span><a href="../_Hub.html">APPLICATIONS</a><span class="sep">›</span><a href="_Category.html">Scheduling Module</a><span class="sep">›</span><span class="current">Design Patterns &amp; SOLID Principles - For Dummies (Schedule Conflict Detector)</span></div>
+<div class="actions"><a class="action" href="schedule-conflict-detector-patterns.md" download>↓ Download</a><a class="action" href="../../00-Index.html">All docs</a></div>
+</nav>
+<div class="layout">
+<aside class="toc-sidebar"><h3>On this page</h3><ol><li class="lvl-2"><a href="#design-patterns-solid-principles-for-dummies">Design Patterns &amp; SOLID Principles - For Dummies</a></li><li class="lvl-2"><a href="#the-real-world-problem">The Real-World Problem</a></li><li class="lvl-2"><a href="#what-we-built">What We Built</a></li><li class="lvl-2"><a href="#the-patterns-we-used-in-order">The Patterns We Used (In Order)</a></li><li class="lvl-3"><a href="#pattern-1-interface-isp-interface-segregation-principle">Pattern 1: Interface (ISP - Interface Segregation Principle)</a></li><li class="lvl-3"><a href="#pattern-2-strategy-pattern-ocp-open-closed-principle">Pattern 2: Strategy Pattern (OCP - Open/Closed Principle)</a></li><li class="lvl-3"><a href="#pattern-3-dependency-injection-with-ienumerable-t">Pattern 3: Dependency Injection with IEnumerable&lt;T&gt;</a></li><li class="lvl-3"><a href="#pattern-4-facade-pattern-srp-single-responsibility">Pattern 4: Facade Pattern (SRP - Single Responsibility)</a></li><li class="lvl-2"><a href="#the-complete-picture">The Complete Picture</a></li><li class="lvl-2"><a href="#solid-principles-summary">SOLID Principles Summary</a></li><li class="lvl-2"><a href="#design-patterns-summary">Design Patterns Summary</a></li><li class="lvl-2"><a href="#the-payoff-adding-a-new-entity-type">The Payoff: Adding a New Entity Type</a></li><li class="lvl-2"><a href="#key-takeaways">Key Takeaways</a></li><li class="lvl-2"><a href="#real-code-locations">Real Code Locations</a></li></ol></aside>
+<main class="content">
+
+<header class="doc-hero">
+  <div class="eyebrow"><span class="dot"></span>Implementation · Scheduling Module</div>
+  <h1>Design Patterns &amp; SOLID Principles - For Dummies (Schedule Conflict Detector)</h1>
+  <p class="one-liner">Walks through how the schedule conflict detector was refactored using Interface, Strategy, DI with IEnumerable&lt;T&gt;, and Facade patterns, mapping each step to its SOLID principle - starting from the real problem of needing the same conflict logic for Employees, Equipment and (later) Vehicles.</p>
+  <div class="meta-row">
+    <span class="meta-pill fmt-md">MD</span>
+    <span class="meta-pill complexity-beginner">Beginner</span>
+    <span class="meta-pill"><span class="num">1,383</span> words</span>
+    <span class="meta-pill"><span class="num">7</span> min read</span>
+    <span class="meta-pill source">Source: <code>Education/ForDummies/08-Design-Patterns-For-Dummies.md</code></span>
+  </div>
+</header>
+
+<div class="curation"><p class="intro-hook">If your first instinct when adding Equipment scheduling was &#x27;I will just copy EmployeeConflictService and rename it,&#x27; read this. There is a version of you six months from now whose job is much easier if you spend forty minutes on patterns today.</p>
+<div class="exec-summary"><h3>Executive summary</h3><p>This doc tells the story of a real refactor: the team had a scheduling conflict detector that only handled Employees, then Equipment was added, and Vehicles were on the horizon. Instead of copy-pasting, they built an IScheduleEntry interface for the row shape, an IScheduleConflictStrategy interface for the per-entity-type query, registered both Employee and Equipment strategies in DI as IEnumerable&lt;T&gt;, and put a ScheduleConflictDetector facade in front so callers just say HasTimeOverlapAsync(&#x27;Employee&#x27;, 123, ...). Each step is tied to a SOLID letter (ISP, OCP, DIP, SRP), and the payoff section shows that adding Vehicles is now &#x27;create class, register, done, no existing code changes.&#x27;</p></div>
+<div class="metaphor-callout"><div class="icon">💡</div><div class="body"><span class="label">Metaphor</span>Picture a customs office at an airport with one window for citizens, one for residents, and one for tourists. Each clerk (strategy) only knows how to look up their own kind of traveler in their own database. The information desk (facade) just asks &#x27;what kind are you?&#x27; and points you at the right window. Adding a new visa class means hiring one new clerk - the desk and the other windows do not need to change at all.</div></div>
+<div class="tutorial-structure"><div class="tutorial-section"><h3><span class="num">1</span>Why it exists</h3><p>The scheduling system originally only handled Employees, but the same &#x27;does this overlap with anything I am already booked for&#x27; logic was needed for Equipment, and Vehicles were coming next. Without a refactor, every entity type meant another full copy of EmployeeConflictService, with bugs to fix in N places and features to add in N places. The doc is the team&#x27;s record of how they made the third entity type cheap.</p></div><div class="tutorial-section"><h3><span class="num">2</span>What it does</h3><p>Lets any caller ask &#x27;does Entity X with id Y have a scheduling conflict in this time window?&#x27; without knowing or caring what type X is. Internally it routes the question to the right per-type query strategy and uses a shared row interface so the overlap math works against either JobSchedules or JobEquipmentSchedules with the same code path.</p></div><div class="tutorial-section"><h3><span class="num">3</span>How it works</h3><p>Both JobSchedule and JobEquipmentSchedule implement IScheduleEntry (ActualStartDateTime, ActualEndDateTime, OverlapsWith). For each entity type there is a class that implements IScheduleConflictStrategy with EntityType property and HasConflictAsync method that queries the right table. All strategies are registered in DI as IScheduleConflictStrategy, so injecting IEnumerable&lt;IScheduleConflictStrategy&gt; gives you the full collection. The ScheduleConflictDetector facade does .First(s =&gt; s.EntityType == requestedType) and delegates. Adding Vehicle means: implement IScheduleEntry on JobVehicleSchedule, write VehicleScheduleConflictStrategy, register it - existing files untouched.</p></div></div>
+<div class="context-row"><div class="context-card prereqs"><h4>You should know first</h4><ul><li>interfaces in C#</li><li>ASP.NET Core dependency injection</li><li>the basic problem of code duplication</li></ul></div><div class="context-card concepts"><h4>Key concepts covered</h4><ul><li>Strategy pattern</li><li>Facade pattern</li><li>Adapter via shared interface</li><li>Interface Segregation Principle</li><li>Open/Closed Principle</li><li>Dependency Inversion Principle</li><li>IEnumerable&lt;T&gt; DI to collect all implementations</li></ul></div><div class="context-card builds"><h4>Opens the door to</h4><ul><li>plugin architectures</li><li>rules engines</li><li>extensible domain models</li></ul></div></div></div>
+<article>
+<h1 id="design-patterns-solid-principles-for-dummies">Design Patterns &amp; SOLID Principles - For Dummies</h1>
+<h2 id="the-real-world-problem">The Real-World Problem</h2>
+<p>We had a scheduling system that only worked for <strong>Employees</strong>. Now we needed to add <strong>Equipment</strong> scheduling with the same conflict detection logic.</p>
+<p><strong>The naive approach:</strong> Copy-paste the entire service and change &quot;Employee&quot; to &quot;Equipment&quot; everywhere.</p>
+<p><strong>The problem with copy-paste:</strong></p>
+<ul>
+<li>Bug in one place? Fix it in two places.</li>
+<li>Add a feature? Add it in two places.</li>
+<li>Add Vehicles later? Now fix bugs in THREE places.</li>
+</ul>
+<p><strong>The smart approach:</strong> Use design patterns to write it ONCE and reuse it for any entity type.</p>
+<hr>
+<h2 id="what-we-built">What We Built</h2>
+<pre><code class="lang-text">&quot;Hey system, does Employee #123 have a conflict on Monday?&quot;
+&quot;Hey system, does Equipment #456 have a conflict on Monday?&quot;
+&quot;Hey system, does Vehicle #789 have a conflict on Monday?&quot;
+
+Same question, same code, different data sources.</code></pre>
+<hr>
+<h2 id="the-patterns-we-used-in-order">The Patterns We Used (In Order)</h2>
+<h3 id="pattern-1-interface-isp-interface-segregation-principle">Pattern 1: Interface (ISP - Interface Segregation Principle)</h3>
+<p><strong>The Problem:</strong> Employee schedules and Equipment schedules are different classes, but they share common properties (start time, end time, etc.).</p>
+<p><strong>The Solution:</strong> Create a &quot;contract&quot; that both must follow.</p>
+<pre><code class="lang-csharp"><span class="cmt">// The contract - &quot;If you want to be a schedule, you must have these things&quot;</span>
+<span class="kw">public</span> <span class="kw">interface</span> <span class="type">IScheduleEntry</span>
+{
+    <span class="type">DateTime</span> <span class="type">ActualStartDateTime</span> { <span class="kw">get</span>; }
+    <span class="type">DateTime</span> <span class="type">ActualEndDateTime</span> { <span class="kw">get</span>; }
+    <span class="kw">bool</span> <span class="type">OverlapsWith</span>(<span class="type">IScheduleEntry</span> other);
+}</code></pre>
+<p><strong>Now both models &quot;sign the contract&quot;:</strong></p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">JobSchedule</span> : <span class="type">IScheduleEntry</span>          <span class="cmt">// &quot;I promise to have these properties&quot;</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">JobEquipmentSchedule</span> : <span class="type">IScheduleEntry</span> <span class="cmt">// &quot;I also promise!&quot;</span></code></pre>
+<p><strong>Why this matters:</strong></p>
+<pre><code class="lang-csharp"><span class="cmt">// WITHOUT interface - need separate methods:</span>
+<span class="kw">bool</span> <span class="type">CheckOverlap</span>(<span class="type">JobSchedule</span> a, <span class="type">JobSchedule</span> b) { ... }
+<span class="kw">bool</span> <span class="type">CheckOverlap</span>(<span class="type">JobEquipmentSchedule</span> a, <span class="type">JobEquipmentSchedule</span> b) { ... }
+<span class="kw">bool</span> <span class="type">CheckOverlap</span>(<span class="type">JobSchedule</span> a, <span class="type">JobEquipmentSchedule</span> b) { ... }  <span class="cmt">// Combinations explode!</span>
+
+<span class="cmt">// WITH interface - one method handles ALL types:</span>
+<span class="kw">bool</span> <span class="type">CheckOverlap</span>(<span class="type">IScheduleEntry</span> a, <span class="type">IScheduleEntry</span> b)
+{
+    <span class="kw">return</span> a.<span class="type">OverlapsWith</span>(b);  <span class="cmt">// Works with ANY schedule type!</span>
+}</code></pre>
+<p><strong>SOLID Principle Applied:</strong> <strong>ISP</strong> - Interface Segregation Principle</p>
+<blockquote>&quot;Don&#x27;t force classes to implement things they don&#x27;t need&quot;</blockquote>
+<p>We only put what&#x27;s needed for conflict detection in <code class="il">IScheduleEntry</code>. Employee-specific stuff (like <code class="il">EmployeeName</code>) stays out.</p>
+<hr>
+<h3 id="pattern-2-strategy-pattern-ocp-open-closed-principle">Pattern 2: Strategy Pattern (OCP - Open/Closed Principle)</h3>
+<p><strong>The Problem:</strong> Employee schedules live in <code class="il">JobSchedules</code> table. Equipment schedules live in <code class="il">JobEquipmentSchedules</code> table. The LOGIC is the same, but the DATA SOURCE is different.</p>
+<p><strong>The Solution:</strong> Each entity type gets its own &quot;strategy&quot; for fetching data.</p>
+<pre><code class="lang-csharp"><span class="cmt">// The strategy contract</span>
+<span class="kw">public</span> <span class="kw">interface</span> <span class="type">IScheduleConflictStrategy</span>
+{
+    <span class="kw">string</span> <span class="type">EntityType</span> { <span class="kw">get</span>; }  <span class="cmt">// &quot;Employee&quot; or &quot;Equipment&quot;</span>
+    <span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">HasConflictAsync</span>(<span class="kw">int</span> entityId, ...);
+}
+
+<span class="cmt">// Employee strategy - queries JobSchedules table</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">EmployeeScheduleConflictStrategy</span> : <span class="type">IScheduleConflictStrategy</span>
+{
+    <span class="kw">public</span> <span class="kw">string</span> <span class="type">EntityType</span> =&gt; <span class="str">&quot;Employee&quot;</span>;
+
+    <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">HasConflictAsync</span>(<span class="kw">int</span> entityId, ...)
+    {
+        <span class="cmt">// Query JobSchedules WHERE EmployeeId = entityId</span>
+    }
+}
+
+<span class="cmt">// Equipment strategy - queries JobEquipmentSchedules table</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">EquipmentScheduleConflictStrategy</span> : <span class="type">IScheduleConflictStrategy</span>
+{
+    <span class="kw">public</span> <span class="kw">string</span> <span class="type">EntityType</span> =&gt; <span class="str">&quot;Equipment&quot;</span>;
+
+    <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">HasConflictAsync</span>(<span class="kw">int</span> entityId, ...)
+    {
+        <span class="cmt">// Query JobEquipmentSchedules WHERE EquipmentId = entityId</span>
+    }
+}</code></pre>
+<p><strong>Why this matters:</strong></p>
+<pre><code class="lang-csharp"><span class="cmt">// WITHOUT strategy - ugly switch statement:</span>
+<span class="kw">public</span> <span class="kw">bool</span> <span class="type">HasConflict</span>(<span class="kw">string</span> type, <span class="kw">int</span> id)
+{
+    <span class="kw">switch</span> (type)
+    {
+        <span class="kw">case</span> <span class="str">&quot;Employee&quot;</span>: <span class="kw">return</span> <span class="type">CheckEmployeeConflict</span>(id);
+        <span class="kw">case</span> <span class="str">&quot;Equipment&quot;</span>: <span class="kw">return</span> <span class="type">CheckEquipmentConflict</span>(id);
+        <span class="kw">case</span> <span class="str">&quot;Vehicle&quot;</span>: <span class="kw">return</span> <span class="type">CheckVehicleConflict</span>(id);  <span class="cmt">// Must modify!</span>
+        <span class="kw">default</span>: <span class="kw">throw</span> <span class="kw">new</span> <span class="type">Exception</span>();
+    }
+}
+
+<span class="cmt">// WITH strategy - no modification needed:</span>
+<span class="kw">public</span> <span class="kw">bool</span> <span class="type">HasConflict</span>(<span class="kw">string</span> type, <span class="kw">int</span> id)
+{
+    <span class="kw">var</span> strategy = strategies.<span class="type">First</span>(s =&gt; s.<span class="type">EntityType</span> == type);
+    <span class="kw">return</span> strategy.<span class="type">HasConflictAsync</span>(id);
+    <span class="cmt">// Adding Vehicle? Just register a new strategy. This code never changes!</span>
+}</code></pre>
+<p><strong>SOLID Principle Applied:</strong> <strong>OCP</strong> - Open/Closed Principle</p>
+<blockquote>&quot;Open for extension, closed for modification&quot;</blockquote>
+<p>To add Vehicles, we CREATE a new <code class="il">VehicleScheduleConflictStrategy</code>. We DON&#x27;T MODIFY existing code.</p>
+<hr>
+<h3 id="pattern-3-dependency-injection-with-ienumerable-t">Pattern 3: Dependency Injection with IEnumerable&lt;T&gt;</h3>
+<p><strong>The Problem:</strong> How does the system know which strategies exist?</p>
+<p><strong>The Solution:</strong> Register all strategies in <code class="il">Program.cs</code>, and .NET DI collects them automatically.</p>
+<pre><code class="lang-csharp"><span class="cmt">// Program.cs - Registration</span>
+builder.<span class="type">Services</span>.<span class="type">AddScoped</span>&lt;<span class="type">IScheduleConflictStrategy</span>, <span class="type">EmployeeScheduleConflictStrategy</span>&gt;();
+builder.<span class="type">Services</span>.<span class="type">AddScoped</span>&lt;<span class="type">IScheduleConflictStrategy</span>, <span class="type">EquipmentScheduleConflictStrategy</span>&gt;();</code></pre>
+<pre><code class="lang-csharp"><span class="cmt">// The detector asks for ALL strategies</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">ScheduleConflictDetector</span>
+{
+    <span class="kw">public</span> <span class="type">ScheduleConflictDetector</span>(<span class="type">IEnumerable</span>&lt;<span class="type">IScheduleConflictStrategy</span>&gt; strategies)
+    {
+        <span class="cmt">// .NET DI automatically gives us [EmployeeStrategy, EquipmentStrategy]</span>
+        <span class="cmt">// We don&#x27;t manually create them!</span>
+    }
+}</code></pre>
+<p><strong>The magic:</strong> When you inject <code class="il">IEnumerable&lt;IScheduleConflictStrategy&gt;</code>, .NET DI gives you ALL registered implementations as a collection.</p>
+<p><strong>SOLID Principle Applied:</strong> <strong>DIP</strong> - Dependency Inversion Principle</p>
+<blockquote>&quot;Depend on abstractions, not concrete classes&quot;</blockquote>
+<p>The detector doesn&#x27;t know about <code class="il">EmployeeScheduleConflictStrategy</code> directly. It only knows <code class="il">IScheduleConflictStrategy</code>. The concrete classes are &quot;injected&quot; from outside.</p>
+<hr>
+<h3 id="pattern-4-facade-pattern-srp-single-responsibility">Pattern 4: Facade Pattern (SRP - Single Responsibility)</h3>
+<p><strong>The Problem:</strong> The caller shouldn&#x27;t need to know about strategies. They just want to ask &quot;is there a conflict?&quot;</p>
+<p><strong>The Solution:</strong> Create a simple &quot;facade&quot; that hides the complexity.</p>
+<pre><code class="lang-csharp"><span class="cmt">// The simple interface callers use</span>
+<span class="kw">public</span> <span class="kw">interface</span> <span class="type">IScheduleConflictDetector</span>
+{
+    <span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">HasTimeOverlapAsync</span>(<span class="kw">string</span> entityType, <span class="kw">int</span> entityId, ...);
+}
+
+<span class="cmt">// The implementation that hides the strategy selection</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">ScheduleConflictDetector</span> : <span class="type">IScheduleConflictDetector</span>
+{
+    <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">HasTimeOverlapAsync</span>(<span class="kw">string</span> entityType, <span class="kw">int</span> entityId, ...)
+    {
+        <span class="cmt">// 1. Find the right strategy</span>
+        <span class="kw">var</span> strategy = _strategies.<span class="type">First</span>(s =&gt; s.<span class="type">EntityType</span> == entityType);
+
+        <span class="cmt">// 2. Delegate to it</span>
+        <span class="kw">return</span> <span class="kw">await</span> strategy.<span class="type">HasTimeOverlapAsync</span>(entityId, ...);
+    }
+}</code></pre>
+<p><strong>From the caller&#x27;s perspective:</strong></p>
+<pre><code class="lang-csharp"><span class="cmt">// Simple! Caller doesn&#x27;t know about strategies</span>
+<span class="kw">await</span> _conflictDetector.<span class="type">HasTimeOverlapAsync</span>(<span class="str">&quot;Employee&quot;</span>, <span class="num">123</span>, ...);
+<span class="kw">await</span> _conflictDetector.<span class="type">HasTimeOverlapAsync</span>(<span class="str">&quot;Equipment&quot;</span>, <span class="num">456</span>, ...);</code></pre>
+<p><strong>SOLID Principle Applied:</strong> <strong>SRP</strong> - Single Responsibility Principle</p>
+<blockquote>&quot;A class should have only one reason to change&quot;</blockquote>
+<ul>
+<li><code class="il">ScheduleConflictDetector</code> - routes to strategies (ONE job)</li>
+<li><code class="il">EmployeeScheduleConflictStrategy</code> - queries employee schedules (ONE job)</li>
+<li><code class="il">EquipmentScheduleConflictStrategy</code> - queries equipment schedules (ONE job)</li>
+</ul>
+<hr>
+<h2 id="the-complete-picture">The Complete Picture</h2>
+<div class="diagram-box"><pre>┌─────────────────────────────────────────────────────────────────┐
+│                         CALLER                                   │
+│   &quot;Does Employee 123 have a conflict?&quot;                          │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              IScheduleConflictDetector (Facade)                  │
+│                                                                  │
+│   HasTimeOverlapAsync(&quot;Employee&quot;, 123, ...)                     │
+│                                                                  │
+│   1. Look through _strategies                                    │
+│   2. Find one where EntityType == &quot;Employee&quot;                    │
+│   3. Call that strategy&#x27;s method                                │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│         IEnumerable&lt;IScheduleConflictStrategy&gt;                   │
+│                                                                  │
+│   [0] EmployeeStrategy   (EntityType = &quot;Employee&quot;)  ◄── MATCH!  │
+│   [1] EquipmentStrategy  (EntityType = &quot;Equipment&quot;)             │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│            EmployeeScheduleConflictStrategy                      │
+│                                                                  │
+│   Queries: context.Set&lt;JobSchedule&gt;()                           │
+│            .Where(s =&gt; s.EmployeeId == 123)                     │
+│                                                                  │
+│   JobSchedule implements IScheduleEntry                         │
+│   So overlap logic works via the interface                      │
+└─────────────────────────────────────────────────────────────────┘</pre></div>
+<hr>
+<h2 id="solid-principles-summary">SOLID Principles Summary</h2>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Principle</th>
+<th>What It Means</th>
+<th>How We Applied It</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>S</strong>ingle Responsibility</td>
+<td>One class = One job</td>
+<td>Each strategy handles ONE entity type</td>
+</tr>
+<tr>
+<td><strong>O</strong>pen/Closed</td>
+<td>Add features without modifying existing code</td>
+<td>New entity = new strategy file, no changes elsewhere</td>
+</tr>
+<tr>
+<td><strong>L</strong>iskov Substitution</td>
+<td>Subtypes are interchangeable</td>
+<td>Any <code class="il">IScheduleEntry</code> can be compared with any other</td>
+</tr>
+<tr>
+<td><strong>I</strong>nterface Segregation</td>
+<td>Don&#x27;t force unnecessary implementations</td>
+<td><code class="il">IScheduleEntry</code> has ONLY conflict-related properties</td>
+</tr>
+<tr>
+<td><strong>D</strong>ependency Inversion</td>
+<td>Depend on abstractions</td>
+<td>Detector depends on <code class="il">IScheduleConflictStrategy</code>, not concrete classes</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="design-patterns-summary">Design Patterns Summary</h2>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Pattern</th>
+<th>What It Does</th>
+<th>Where We Used It</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Strategy</strong></td>
+<td>Different algorithms, same interface</td>
+<td>Employee vs Equipment conflict detection</td>
+</tr>
+<tr>
+<td><strong>Facade</strong></td>
+<td>Simple interface hiding complexity</td>
+<td><code class="il">IScheduleConflictDetector</code> hides strategy selection</td>
+</tr>
+<tr>
+<td><strong>Adapter</strong> (via interface)</td>
+<td>Makes incompatible types compatible</td>
+<td><code class="il">IScheduleEntry</code> makes JobSchedule and JobEquipmentSchedule comparable</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="the-payoff-adding-a-new-entity-type">The Payoff: Adding a New Entity Type</h2>
+<p><strong>Before (without patterns):</strong></p>
+<ol>
+<li>Copy-paste EmployeeConflictService</li>
+<li>Rename everything to Vehicle</li>
+<li>Hope you didn&#x27;t miss anything</li>
+<li>Now maintain two (or three, or four) copies</li>
+</ol>
+<p><strong>After (with patterns):</strong></p>
+<ol>
+<li>Create <code class="il">JobVehicleSchedule : IScheduleEntry</code></li>
+<li>Create <code class="il">VehicleScheduleConflictStrategy : IScheduleConflictStrategy</code></li>
+<li>Register in <code class="il">Program.cs</code></li>
+<li>Done. Existing code unchanged.</li>
+</ol>
+<pre><code class="lang-csharp"><span class="cmt">// This code NEVER changes, no matter how many entity types we add:</span>
+<span class="kw">var</span> strategy = _strategies.<span class="type">First</span>(s =&gt; s.<span class="type">EntityType</span> == entityType);
+<span class="kw">return</span> <span class="kw">await</span> strategy.<span class="type">HasConflictAsync</span>(entityId, ...);</code></pre>
+<hr>
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ol>
+<li><strong>Interfaces define contracts</strong> - &quot;If you want to play, follow these rules&quot;</li>
+<li><strong>Strategy pattern = pluggable algorithms</strong> - Same question, different data sources</li>
+<li><strong>IEnumerable&lt;T&gt; in DI = collect all implementations</strong> - Register many, inject as collection</li>
+<li><strong>Facade = simple front door</strong> - Hide complexity behind a simple interface</li>
+<li><strong>SOLID = maintainable code</strong> - Changes are additions, not modifications</li>
+</ol>
+<hr>
+<h2 id="real-code-locations">Real Code Locations</h2>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Concept</th>
+<th>File</th>
+</tr></thead><tbody>
+<tr>
+<td>Interface contract</td>
+<td><code class="il">Services/Core/Scheduling/IScheduleEntry.cs</code></td>
+</tr>
+<tr>
+<td>Strategy interface</td>
+<td><code class="il">Services/Core/Scheduling/IScheduleConflictStrategy.cs</code></td>
+</tr>
+<tr>
+<td>Facade interface</td>
+<td><code class="il">Services/Core/Scheduling/IScheduleConflictDetector.cs</code></td>
+</tr>
+<tr>
+<td>Facade implementation</td>
+<td><code class="il">Services/Core/Scheduling/ScheduleConflictDetector.cs</code></td>
+</tr>
+<tr>
+<td>Employee strategy</td>
+<td><code class="il">Services/Core/Scheduling/Strategies/EmployeeScheduleConflictStrategy.cs</code></td>
+</tr>
+<tr>
+<td>Equipment strategy</td>
+<td><code class="il">Services/Core/Scheduling/Strategies/EquipmentScheduleConflictStrategy.cs</code></td>
+</tr>
+<tr>
+<td>DI registration</td>
+<td><code class="il">Program.cs</code> (search for &quot;Schedule Conflict Detection&quot;)</td>
+</tr>
+</tbody></table></div>
+</article>
+<div class="takeaways"><h3>Key takeaways</h3><ul><li>If you find yourself about to copy-paste a service to support a new entity type, that is the moment Strategy pays off</li><li>Injecting IEnumerable&lt;IInterface&gt; in .NET DI gives you every registered implementation as a collection - no service locator needed</li><li>A Facade keeps callers ignorant of the strategy lookup, which is itself the SRP win</li><li>OCP is real: &#x27;open for extension, closed for modification&#x27; is exactly what &#x27;no existing files change&#x27; looks like in practice</li><li>ISP means the shared interface should only carry what the cross-cutting code actually needs - not the full entity</li></ul></div>
+<aside class="cross-refs"><h2>Cross-references</h2><div class="cross-ref-list"><a href="../../CORE/patterns/strategy-pattern.html"><span class="arrow">→</span>Strategy Pattern: Pluggable Algorithms</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>facade-pattern</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>solid-principles</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>dependency-injection-fundamentals</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>scheduling-system</a></div></aside>
+<aside class="related"><h2>More in this category</h2><div class="related-grid"><a class="related-card" href="../../APPLICATIONS/scheduling/generic-schedule-grid__2.html"><div class="title">Generic Schedule Grid - For Dummies</div><div class="meta"><span class="badge">MD</span><span>1,316 words</span></div></a><a class="related-card" href="../../APPLICATIONS/scheduling/generic-schedule-grid.html"><div class="title">Generic Schedule Grid Architecture</div><div class="meta"><span class="badge">MD</span><span>1,484 words</span></div></a><a class="related-card" href="../../APPLICATIONS/scheduling/givingcare-validator-pipeline.html"><div class="title">Validator Pipeline: Chain of Responsibility &amp; Strategy Pattern</div><div class="meta"><span class="badge">HTML</span><span>3,414 words</span></div></a></div></aside>
+</main>
+</div>
+<script>
+// ─── Active TOC item on scroll ────────────────────────────────────
+(function() {
+  const tocLinks = document.querySelectorAll('.toc-sidebar a[href^="#"]');
+  if (!tocLinks.length) return;
+  const headings = Array.from(document.querySelectorAll(
+    'article h1[id], article h2[id], article h3[id], article h4[id], .pdf-page[id]'
+  ));
+  if (!headings.length) return;
+  function setActive(id) {
+    tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+  }
+  let lastVisible = headings[0].id;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) lastVisible = e.target.id; });
+    setActive(lastVisible);
+  }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+  headings.forEach(h => observer.observe(h));
+  setActive(headings[0].id);
+})();
+
+// ─── Copy code buttons ────────────────────────────────────────────
+(function() {
+  document.querySelectorAll('article pre').forEach(pre => {
+    if (pre.closest('.diagram-box')) return;
+    if (pre.closest('.pdf-page')) return;
+    if (pre.parentElement && pre.parentElement.classList.contains('code-block')) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'code-block';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.type = 'button';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', () => {
+      const code = pre.querySelector('code') || pre;
+      const text = code.innerText;
+      const done = () => {
+        btn.textContent = 'Copied';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(() => {});
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+    });
+    wrap.appendChild(btn);
+  });
+})();
+
+// ─── Live filter (master + hub + category pages) ─────────────────
+(function() {
+  const search = document.getElementById('search-input');
+  if (!search) return;
+  const items = document.querySelectorAll('[data-search]');
+  function apply() {
+    const q = search.value.toLowerCase().trim();
+    items.forEach(el => {
+      const match = !q || el.dataset.search.includes(q);
+      el.style.display = match ? '' : 'none';
+    });
+    document.querySelectorAll('[data-search-parent]').forEach(parent => {
+      const visible = Array.from(parent.querySelectorAll('[data-search]'))
+        .some(el => el.style.display !== 'none');
+      parent.style.display = visible ? '' : 'none';
+    });
+  }
+  search.addEventListener('input', apply);
+})();
+</script>
+</body>
+</html>

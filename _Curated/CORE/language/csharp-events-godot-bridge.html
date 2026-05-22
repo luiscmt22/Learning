@@ -1,0 +1,1411 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>C# Events and Async Patterns for Godot Developers</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #07090f;
+  --bg-1: #0c111c;
+  --bg-2: #11182a;
+  --bg-3: #1a2238;
+  --bg-4: #232e4a;
+  --border: #1e2840;
+  --border-2: #2a3551;
+  --border-3: #3a4870;
+  --text: #e9eef8;
+  --text-dim: #94a3bf;
+  --text-mut: #5f6b86;
+  --accent: #6aa6ff;
+  --accent-strong: #3b82f6;
+  --accent-2: #b86aff;
+  --accent-3: #f472b6;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+  --info: #38bdf8;
+  --code-bg: #0a1020;
+  --code-border: #1a2340;
+  --shadow: 0 8px 32px rgba(0,0,0,0.55);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.35);
+  --shadow-glow: 0 0 0 1px rgba(106,166,255,0.18), 0 12px 40px rgba(106,166,255,0.10);
+}
+
+/* Doc-type theming */
+[data-doc-type="core-concept"] {
+  --doc-accent: #6aa6ff;
+  --doc-accent-rgb: 106,166,255;
+  --doc-eyebrow: "Concept";
+}
+[data-doc-type="applied-implementation"] {
+  --doc-accent: #b86aff;
+  --doc-accent-rgb: 184,106,255;
+  --doc-eyebrow: "Implementation";
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font: 16px/1.7 -apple-system, "Inter", \'Segoe UI\', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+::selection { background: rgba(106,166,255,0.30); }
+
+/* ═══ Top bar ═══════════════════════════════════════════════════════ */
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(7,9,15,0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 28px;
+  display: flex; align-items: center; gap: 16px;
+}
+.topbar .crumbs {
+  flex: 1; font-size: 13px; color: var(--text-dim);
+  display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden;
+}
+.topbar .crumbs span.sep { color: var(--text-mut); }
+.topbar .crumbs .current {
+  color: var(--text); font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.topbar .crumbs a { color: var(--text-dim); text-decoration: none; }
+.topbar .crumbs a:hover { color: var(--accent); }
+.topbar .actions { display: flex; gap: 6px; flex-shrink: 0; }
+.topbar .action {
+  font-size: 13px; padding: 6px 14px; border-radius: 8px;
+  color: var(--text-dim); text-decoration: none;
+  border: 1px solid transparent; transition: all .15s;
+}
+.topbar .action:hover {
+  color: var(--text); background: var(--bg-2); border-color: var(--border);
+  text-decoration: none;
+}
+
+/* ═══ Document layout ═══════════════════════════════════════════════ */
+.layout {
+  display: grid; grid-template-columns: 280px 1fr;
+  max-width: 1380px; margin: 0 auto; align-items: start;
+}
+.layout.no-toc { grid-template-columns: 1fr; max-width: 940px; }
+
+.toc-sidebar {
+  position: sticky; top: 70px;
+  align-self: start;
+  max-height: calc(100vh - 90px);
+  overflow-y: auto;
+  padding: 40px 8px 40px 28px;
+  border-right: 1px solid var(--border);
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+.toc-sidebar::-webkit-scrollbar { width: 6px; }
+.toc-sidebar::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
+.toc-sidebar h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px; padding-left: 14px; font-weight: 600;
+}
+.toc-sidebar ol { list-style: none; margin: 0; padding: 0; }
+.toc-sidebar li { margin: 0; }
+.toc-sidebar a {
+  display: block;
+  padding: 5px 14px;
+  border-left: 2px solid transparent;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 13px;
+  line-height: 1.5;
+  transition: all .15s;
+  word-break: break-word;
+}
+.toc-sidebar a:hover {
+  color: var(--text); border-left-color: var(--border-2); text-decoration: none;
+}
+.toc-sidebar a.active {
+  color: var(--doc-accent, var(--accent));
+  border-left-color: var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.07);
+}
+.toc-sidebar .lvl-3 a { padding-left: 28px; font-size: 12.5px; }
+.toc-sidebar .lvl-4 a, .toc-sidebar .lvl-5 a, .toc-sidebar .lvl-6 a {
+  padding-left: 42px; font-size: 12px;
+}
+
+.content { padding: 40px 64px 120px; min-width: 0; }
+
+/* ═══ Hero (per-doc) ════════════════════════════════════════════════ */
+.doc-hero {
+  position: relative;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 32px;
+  margin-bottom: 36px;
+}
+.doc-hero::before {
+  content: ''; position: absolute;
+  top: -40px; left: -64px; right: -64px; height: 220px;
+  background: radial-gradient(ellipse 60% 100% at 0% 0%, rgba(var(--doc-accent-rgb, 106,166,255),0.10), transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+.doc-hero > * { position: relative; z-index: 1; }
+.doc-hero .eyebrow {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  color: var(--doc-accent, var(--accent)); font-weight: 600;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.doc-hero .eyebrow .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--doc-accent, var(--accent));
+  box-shadow: 0 0 8px var(--doc-accent, var(--accent));
+}
+.doc-hero h1 {
+  font-size: 40px; line-height: 1.1;
+  margin: 12px 0 16px;
+  font-weight: 700; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.doc-hero .one-liner {
+  font-size: 18px; line-height: 1.55;
+  color: var(--text-dim);
+  margin: 0 0 20px;
+  max-width: 70ch;
+}
+.doc-hero .meta-row {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  font-size: 12.5px;
+}
+.meta-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--bg-2); border: 1px solid var(--border);
+  padding: 5px 12px; border-radius: 14px;
+  font-size: 12px; color: var(--text-dim);
+}
+.meta-pill .num { color: var(--text); font-weight: 600; font-feature-settings: "tnum"; }
+.meta-pill.fmt-md   { color: #6aa6ff; border-color: rgba(106,166,255,0.30); background: rgba(106,166,255,0.06); }
+.meta-pill.fmt-pdf  { color: #f87171; border-color: rgba(248,113,113,0.30); background: rgba(248,113,113,0.06); }
+.meta-pill.fmt-docx { color: #38bdf8; border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.fmt-html { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.fmt-htm  { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.complexity-beginner    { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.06); }
+.meta-pill.complexity-intermediate { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.complexity-advanced     { color: #fb923c; border-color: rgba(251,146,60,0.30); background: rgba(251,146,60,0.06); }
+.meta-pill.complexity-unknown      { color: var(--text-mut); }
+.meta-pill.source code { background: transparent; padding: 0; border: 0; font-size: 11px; color: var(--text-dim); }
+
+/* ═══ Curation panels ═══════════════════════════════════════════════ */
+
+.curation {
+  margin-bottom: 36px;
+}
+
+.intro-hook {
+  font-size: 18px;
+  line-height: 1.65;
+  color: var(--text);
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  padding: 8px 0 8px 20px;
+  margin: 0 0 28px;
+  font-style: italic;
+  font-weight: 350;
+}
+
+.exec-summary {
+  background: linear-gradient(135deg, rgba(var(--doc-accent-rgb, 106,166,255),0.07), rgba(var(--doc-accent-rgb, 106,166,255),0.02));
+  border: 1px solid rgba(var(--doc-accent-rgb, 106,166,255),0.20);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 0 0 24px;
+}
+.exec-summary h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent, var(--accent));
+  font-weight: 600;
+}
+.exec-summary p {
+  margin: 0; font-size: 15px; line-height: 1.65; color: var(--text);
+}
+
+.metaphor-callout {
+  display: flex; gap: 14px; align-items: flex-start;
+  background: rgba(184,106,255,0.06);
+  border: 1px solid rgba(184,106,255,0.25);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 0 0 24px;
+}
+.metaphor-callout .icon {
+  font-size: 22px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 4px rgba(184,106,255,0.4));
+}
+.metaphor-callout .body {
+  flex: 1; font-size: 14.5px; line-height: 1.6;
+  color: var(--text);
+}
+.metaphor-callout .body .label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--accent-2); font-weight: 700;
+  display: block; margin-bottom: 4px;
+}
+
+.tutorial-structure {
+  display: grid; grid-template-columns: 1fr; gap: 14px;
+  margin: 0 0 28px;
+}
+.tutorial-section {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--doc-accent);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+}
+.tutorial-section h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent);
+  font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.tutorial-section h3 .num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--doc-accent); color: var(--bg);
+  font-size: 10px; font-weight: 700;
+}
+.tutorial-section p {
+  margin: 0; font-size: 14.5px; line-height: 1.65; color: var(--text);
+}
+
+.context-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin: 0 0 28px;
+}
+.context-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.context-card h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut);
+  font-weight: 600;
+}
+.context-card ul {
+  margin: 0; padding: 0; list-style: none;
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.context-card li {
+  background: var(--bg-3);
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--text-dim);
+  border: 1px solid var(--border-2);
+}
+.context-card.prereqs li { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.05); }
+.context-card.builds li { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.05); }
+.context-card.concepts li { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.05); }
+
+.takeaways {
+  background: linear-gradient(135deg, rgba(74,222,128,0.05), rgba(74,222,128,0.01));
+  border: 1px solid rgba(74,222,128,0.20);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin: 36px 0 0;
+}
+.takeaways h3 {
+  margin: 0 0 10px;
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--ok); font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.takeaways h3::before {
+  content: '✓';
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(74,222,128,0.18);
+  font-size: 12px; font-weight: 700;
+}
+.takeaways ul { margin: 0; padding-left: 22px; }
+.takeaways li {
+  font-size: 14.5px; line-height: 1.6; color: var(--text);
+  margin: 6px 0;
+}
+
+/* ═══ Article body ══════════════════════════════════════════════════ */
+article { font-size: 16px; line-height: 1.78; color: var(--text); max-width: 78ch; }
+article > * + * { margin-top: 1.0em; }
+article p { margin: 0; }
+article h1, article h2, article h3, article h4 {
+  font-weight: 650; letter-spacing: -0.01em; color: var(--text);
+  scroll-margin-top: 90px; position: relative;
+}
+article h1 { font-size: 28px; margin-top: 56px; }
+article h2 {
+  font-size: 24px; margin-top: 56px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+article h3 { font-size: 19px; margin-top: 36px; }
+article h4 { font-size: 16.5px; margin-top: 24px; color: var(--text-dim); }
+article h2::before, article h3::before {
+  content: '#'; position: absolute; left: -28px;
+  color: var(--text-mut); font-weight: 400;
+  opacity: 0; transition: opacity .15s;
+}
+article h2:hover::before, article h3:hover::before { opacity: 1; }
+
+article ul, article ol { padding-left: 1.5em; margin: 0; }
+article li { margin: .35em 0; }
+article li > p { margin: 0; }
+
+article hr {
+  border: 0; height: 1px; background: var(--border); margin: 36px 0;
+}
+
+article blockquote {
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.05);
+  padding: 14px 18px;
+  margin: 22px 0;
+  border-radius: 0 8px 8px 0;
+  color: var(--text-dim);
+}
+article blockquote p { margin: 0; }
+
+article pre {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-size: 13.5px;
+  line-height: 1.65;
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+article pre::-webkit-scrollbar { height: 7px; }
+article pre::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+article code, article pre {
+  font-family: "JetBrains Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+  font-feature-settings: "calt" 1;
+}
+article code.il {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  padding: 1px 7px; border-radius: 5px;
+  font-size: 0.88em;
+  color: var(--accent);
+}
+.code-block { position: relative; }
+.code-block .copy-btn {
+  position: absolute; top: 8px; right: 8px;
+  background: var(--bg-3); border: 1px solid var(--border);
+  color: var(--text-dim); padding: 4px 11px; border-radius: 5px;
+  font-size: 11px; font-family: inherit; cursor: pointer;
+  opacity: 0; transition: all .15s;
+}
+.code-block:hover .copy-btn { opacity: 1; }
+.code-block .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+.code-block .copy-btn.copied { color: var(--ok); border-color: var(--ok); }
+
+article pre .kw   { color: #c084fc; font-weight: 500; }
+article pre .type { color: #67e8f9; }
+article pre .str  { color: #fcd34d; }
+article pre .num  { color: #fb923c; }
+article pre .cmt  { color: #6b7d99; font-style: italic; }
+
+article .tbl-wrap {
+  overflow-x: auto; margin: 22px 0;
+  border-radius: 10px; border: 1px solid var(--border);
+}
+article table { border-collapse: collapse; width: 100%; font-size: 14px; }
+article th {
+  background: var(--bg-3); padding: 11px 14px; text-align: left;
+  font-weight: 600; color: var(--text);
+  border-bottom: 1px solid var(--border-2);
+}
+article td {
+  padding: 11px 14px; border-top: 1px solid var(--border); vertical-align: top;
+}
+article tr:nth-child(even) td { background: rgba(255,255,255,0.013); }
+
+article .diagram-box {
+  background: linear-gradient(135deg, #1c2540 0%, #0e1424 100%);
+  border: 1px solid var(--border-2);
+  border-radius: 12px;
+  padding: 22px 26px;
+  margin: 24px 0;
+  box-shadow: var(--shadow);
+}
+article .diagram-box pre {
+  background: transparent; border: 0; padding: 0;
+  color: #e8edf5; font-size: 13px; line-height: 1.55;
+}
+
+article .img-ref {
+  display: inline-block;
+  background: var(--bg-2); color: var(--text-mut);
+  padding: 1px 8px; border-radius: 4px;
+  font-size: 11px; font-style: normal;
+  border: 1px dashed var(--border-2);
+}
+
+/* ═══ Duplicate banners ═════════════════════════════════════════════ */
+.dup-banner {
+  background: linear-gradient(135deg, rgba(251,191,36,0.10), rgba(251,191,36,0.04));
+  border: 1px solid rgba(251,191,36,0.35);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 18px;
+  font-size: 14px; line-height: 1.55;
+  display: flex; gap: 14px; align-items: flex-start;
+}
+.dup-banner + .dup-banner { margin-top: 0; }
+.dup-banner .icon { font-size: 22px; line-height: 1.2; flex-shrink: 0; }
+.dup-banner .body { flex: 1; min-width: 0; }
+.dup-banner h4 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--warn); text-transform: uppercase; letter-spacing: 1px; }
+.dup-banner p { margin: 0; color: var(--text-dim); }
+.dup-banner ul { margin: 6px 0 0; padding-left: 22px; color: var(--text-dim); }
+.dup-banner ul li { margin: 3px 0; word-break: break-word; }
+.dup-banner code {
+  background: var(--bg-3); padding: 2px 7px; border-radius: 5px;
+  font-size: 0.92em; color: var(--text);
+}
+.dup-banner.exact {
+  border-color: rgba(248,113,113,0.40);
+  background: linear-gradient(135deg, rgba(248,113,113,0.10), rgba(248,113,113,0.04));
+}
+.dup-banner.exact h4 { color: var(--bad); }
+.dup-banner.near {
+  border-color: rgba(56,189,248,0.40);
+  background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(56,189,248,0.04));
+}
+.dup-banner.near h4 { color: var(--info); }
+.banner-stack { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+
+/* ═══ PDF page cards ════════════════════════════════════════════════ */
+.pdf-page {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin: 24px 0;
+  overflow: hidden;
+  scroll-margin-top: 90px;
+}
+.pdf-page .page-head {
+  background: var(--bg-3);
+  padding: 9px 20px;
+  font-size: 11px; font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 1.4px;
+  border-bottom: 1px solid var(--border);
+}
+.pdf-page .page-body { padding: 18px 24px 22px; }
+.pdf-page pre {
+  margin: 0; background: transparent; border: 0; padding: 0;
+  white-space: pre-wrap; word-wrap: break-word;
+  color: var(--text); font-size: 13px; line-height: 1.6;
+}
+
+.empty-note {
+  background: var(--bg-2);
+  border: 1px dashed var(--border-2);
+  border-radius: 10px;
+  padding: 18px 22px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* ═══ Cross-references + related ════════════════════════════════════ */
+.cross-refs {
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.cross-refs h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.cross-ref-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.cross-ref-list a {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: all .15s;
+}
+.cross-ref-list a:hover {
+  color: var(--text);
+  border-color: var(--doc-accent, var(--accent));
+  background: var(--bg-3);
+  text-decoration: none;
+}
+.cross-ref-list a .arrow { color: var(--doc-accent, var(--accent)); margin-right: 6px; }
+
+.related {
+  margin-top: 48px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.related h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 18px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.related-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+.related-card {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+}
+.related-card:hover {
+  border-color: var(--doc-accent, var(--accent));
+  transform: translateY(-1px);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+}
+.related-card .title {
+  font-weight: 600; font-size: 13.5px; line-height: 1.35;
+  color: var(--text);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.related-card .meta {
+  font-size: 11px; color: var(--text-mut); margin-top: 6px;
+  display: flex; gap: 8px; align-items: center;
+}
+.related-card .meta .badge {
+  padding: 1px 6px; border-radius: 3px;
+  background: var(--bg-3); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* ═══ Master index page ═════════════════════════════════════════════ */
+
+.index-hero {
+  text-align: center;
+  padding: 80px 24px 56px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.index-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 30% 0%, rgba(106,166,255,0.13), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 70% 30%, rgba(184,106,255,0.10), transparent 70%);
+  pointer-events: none;
+}
+.index-hero > * { position: relative; z-index: 1; }
+.index-hero .eyebrow {
+  color: var(--accent); font-size: 12px;
+  text-transform: uppercase; letter-spacing: 1.8px; font-weight: 600;
+}
+.index-hero h1 {
+  font-size: 56px; margin: 16px 0 12px;
+  font-weight: 750; letter-spacing: -0.025em;
+  background: linear-gradient(135deg, #6aa6ff 0%, #b86aff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.index-hero .tagline {
+  color: var(--text-dim); font-size: 18px;
+  max-width: 720px; margin: 14px auto 0; line-height: 1.6;
+}
+.search-row {
+  display: flex; gap: 12px;
+  max-width: 720px; margin: 36px auto 0;
+}
+.search-row input {
+  flex: 1;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 15px;
+  padding: 14px 22px;
+  border-radius: 14px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color .15s, box-shadow .15s;
+}
+.search-row input::placeholder { color: var(--text-mut); }
+.search-row input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(106,166,255,0.13);
+}
+
+.summary-stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  max-width: 1080px; margin: 36px auto 56px; padding: 0 24px;
+}
+.stat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  text-align: center;
+  transition: border-color .15s;
+}
+.stat-card:hover { border-color: var(--border-2); }
+.stat-card .num {
+  font-size: 32px; font-weight: 700; color: var(--accent);
+  font-feature-settings: "tnum"; line-height: 1.1;
+}
+.stat-card .lbl {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--text-mut); margin-top: 6px;
+}
+
+.split-view {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  max-width: 1320px; margin: 0 auto; padding: 0 24px 60px;
+}
+@media (max-width: 980px) {
+  .split-view { grid-template-columns: 1fr; }
+}
+
+.hub-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 32px 36px;
+  position: relative;
+  overflow: hidden;
+  transition: all .2s;
+}
+.hub-card.core::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 0% 0%, rgba(106,166,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card.applications::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 100% 0%, rgba(184,106,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card > * { position: relative; z-index: 1; }
+.hub-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.hub-card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 700;
+}
+.hub-card.core .label { color: var(--accent); }
+.hub-card.applications .label { color: var(--accent-2); }
+.hub-card h2 {
+  font-size: 32px; line-height: 1.15;
+  margin: 8px 0 12px;
+  font-weight: 700; letter-spacing: -0.02em;
+  color: var(--text);
+}
+.hub-card .desc {
+  font-size: 15px; line-height: 1.6; color: var(--text-dim);
+  margin: 0 0 24px;
+}
+.hub-card .stats {
+  display: flex; gap: 18px; margin-bottom: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-card .stats .num { color: var(--text); font-weight: 600; }
+.hub-card .cta {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 10px;
+  font-size: 13.5px; font-weight: 600;
+  text-decoration: none;
+}
+.hub-card.core .cta {
+  background: rgba(106,166,255,0.12);
+  color: var(--accent);
+  border: 1px solid rgba(106,166,255,0.30);
+}
+.hub-card.applications .cta {
+  background: rgba(184,106,255,0.12);
+  color: var(--accent-2);
+  border: 1px solid rgba(184,106,255,0.30);
+}
+.hub-card .cta:hover { text-decoration: none; transform: translateX(2px); }
+.hub-card .quick {
+  margin-top: 24px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.hub-card .quick h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut); font-weight: 600;
+}
+.hub-card .quick ul { list-style: none; margin: 0; padding: 0; }
+.hub-card .quick li { padding: 4px 0; font-size: 13px; }
+.hub-card .quick li a { color: var(--text-dim); text-decoration: none; }
+.hub-card .quick li a:hover { color: var(--text); }
+
+/* ═══ Hub page (CORE / APPLICATIONS landing) ════════════════════════ */
+
+.hub-hero {
+  padding: 64px 32px 36px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1240px; margin: 0 auto;
+}
+.hub-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 600;
+}
+.hub-hero h1 {
+  font-size: 48px; margin: 12px 0 14px;
+  font-weight: 750; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.hub-hero p {
+  color: var(--text-dim); font-size: 17px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.hub-hero .stats {
+  display: flex; gap: 22px; margin-top: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-hero .stats .num { color: var(--text); font-weight: 600; }
+
+.cat-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 18px;
+  max-width: 1280px; margin: 28px auto; padding: 0 32px 80px;
+}
+.cat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 24px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.cat-card:hover {
+  border-color: var(--border-3);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+}
+.cat-card .head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 12px;
+}
+.cat-card .head .icon {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 18px;
+  color: var(--accent);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.cat-card.app .head .icon { color: var(--accent-2); }
+.cat-card .title {
+  font-size: 18px; font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  flex: 1;
+}
+.cat-card .head .count {
+  font-size: 12px; color: var(--text-mut);
+  flex-shrink: 0;
+}
+.cat-card .tagline {
+  font-size: 13px; color: var(--accent);
+  font-weight: 500;
+  margin: 0;
+}
+.cat-card.app .tagline { color: var(--accent-2); }
+.cat-card .desc {
+  font-size: 13.5px; color: var(--text-dim);
+  line-height: 1.55;
+  margin: 4px 0 0;
+}
+
+/* ═══ Category landing (per family/domain) ══════════════════════════ */
+
+.cat-hero {
+  padding: 56px 32px 32px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1180px; margin: 0 auto;
+}
+.cat-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px; font-weight: 600;
+}
+.cat-hero h1 {
+  font-size: 42px; margin: 10px 0 14px;
+  font-weight: 700; letter-spacing: -0.02em;
+}
+.cat-hero p {
+  color: var(--text-dim); font-size: 16px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.cat-hero .stats {
+  display: flex; gap: 20px; margin-top: 22px;
+  font-size: 13px; color: var(--text-mut);
+}
+.cat-hero .stats .num { color: var(--text); font-weight: 600; }
+.cat-hero .search-row {
+  max-width: 520px; margin: 24px 0 0;
+}
+.cat-hero .search-row input { padding: 12px 18px; font-size: 14px; }
+
+.doc-cards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 14px;
+  max-width: 1180px; margin: 36px auto 96px;
+  padding: 0 32px;
+}
+.doc-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 22px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .18s;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.doc-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.doc-card.app:hover { border-color: var(--accent-2); }
+.doc-card .head {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+}
+.doc-card .title {
+  font-size: 16px; font-weight: 650; line-height: 1.3;
+  color: var(--text); flex: 1;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  letter-spacing: -0.01em;
+}
+.doc-card .badges { display: flex; gap: 4px; flex-shrink: 0; }
+.doc-card .badge {
+  font-size: 9px; padding: 2px 7px; border-radius: 3px;
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px;
+  background: var(--bg-3); color: var(--text-mut);
+}
+.doc-card .badge.dup { background: rgba(248,113,113,0.18); color: var(--bad); }
+.doc-card .badge.fmt-md { background: rgba(106,166,255,0.18); color: #6aa6ff; }
+.doc-card .badge.fmt-pdf { background: rgba(248,113,113,0.18); color: #f87171; }
+.doc-card .badge.fmt-docx { background: rgba(56,189,248,0.18); color: #38bdf8; }
+.doc-card .badge.fmt-html { background: rgba(251,191,36,0.18); color: #fbbf24; }
+.doc-card .one-liner {
+  font-size: 13.5px; color: var(--text-dim); line-height: 1.55;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  flex: 1;
+}
+.doc-card .meta {
+  display: flex; gap: 14px; font-size: 11px; color: var(--text-mut);
+  border-top: 1px solid var(--border); padding-top: 12px;
+  margin-top: auto;
+}
+.doc-card .meta .num { color: var(--text-dim); font-weight: 600; font-feature-settings: "tnum"; }
+
+/* ═══ Mobile ════════════════════════════════════════════════════════ */
+@media (max-width: 980px) {
+  .layout { grid-template-columns: 1fr; }
+  .toc-sidebar { display: none; }
+  .content { padding: 28px 24px 80px; }
+  .doc-hero h1 { font-size: 30px; }
+  .doc-hero .one-liner { font-size: 16px; }
+  .topbar { padding: 10px 18px; }
+  .index-hero h1 { font-size: 38px; }
+  .index-hero { padding: 56px 20px 36px; }
+  .hub-hero h1 { font-size: 34px; }
+  .hub-hero { padding: 40px 20px 24px; }
+  .cat-hero h1 { font-size: 32px; }
+  .cat-hero { padding: 36px 20px 24px; }
+  .doc-cards, .cat-grid { padding: 0 20px 60px; }
+  .split-view { padding: 0 20px 40px; }
+}
+</style>
+</head>
+<body data-doc-type="core-concept">
+<nav class="topbar">
+<div class="crumbs"><a href="../../00-Index.html">Learning</a><span class="sep">›</span><a href="../_Hub.html">CORE</a><span class="sep">›</span><a href="_Category.html">C# Language</a><span class="sep">›</span><span class="current">C# Events and Async Patterns for Godot Developers</span></div>
+<div class="actions"><a class="action" href="csharp-events-godot-bridge.docx" download>↓ Download</a><a class="action" href="../../00-Index.html">All docs</a></div>
+</nav>
+<div class="layout">
+<aside class="toc-sidebar"><h3>On this page</h3><ol><li class="lvl-2"><a href="#c-events-and-async-patterns-for-godot-developers">C# Events and Async Patterns for Godot Developers</a></li><li class="lvl-2"><a href="#understanding-events-actions-and-async-patterns-in-net">Understanding Events, Actions, and Async Patterns in .NET</a></li><li class="lvl-2"><a href="#table-of-contents">Table of Contents</a></li><li class="lvl-2"><a href="#events-actions-godot-signals">Events/Actions = Godot Signals</a></li><li class="lvl-3"><a href="#direct-comparison-godot-signal-vs-c-event">Direct Comparison: Godot Signal vs C# Event</a></li><li class="lvl-3"><a href="#understanding-action-types">Understanding Action Types</a></li><li class="lvl-2"><a href="#the-observer-pattern-connection">The Observer Pattern Connection</a></li><li class="lvl-3"><a href="#pattern-structure">Pattern Structure:</a></li><li class="lvl-2"><a href="#understanding-async-void">Understanding async void</a></li><li class="lvl-3"><a href="#why-async-void-is-usually-bad">Why async void is Usually Bad</a></li><li class="lvl-3"><a href="#why-events-must-use-async-void">Why Events MUST Use async void</a></li><li class="lvl-3"><a href="#the-godot-analogy">The Godot Analogy</a></li><li class="lvl-2"><a href="#complete-comparison-reference">Complete Comparison Reference</a></li><li class="lvl-3"><a href="#terminology-mapping">Terminology Mapping</a></li><li class="lvl-3"><a href="#memory-management-comparison">Memory Management Comparison</a></li><li class="lvl-2"><a href="#practical-implementation">Practical Implementation</a></li><li class="lvl-3"><a href="#complete-themechange-system-example">Complete ThemeChange System Example</a></li><li class="lvl-3"><a href="#thread-safety-considerations">Thread Safety Considerations</a></li><li class="lvl-3"><a href="#service-lifetime-comparison">Service Lifetime Comparison</a></li><li class="lvl-2"><a href="#key-takeaways">Key Takeaways</a></li><li class="lvl-2"><a href="#best-practices">Best Practices</a></li><li class="lvl-3"><a href="#always-implement-idisposable-when-using-events">Always Implement IDisposable When Using Events:</a></li><li class="lvl-3"><a href="#always-handle-exceptions-in-async-void">Always Handle Exceptions in async void:</a></li><li class="lvl-3"><a href="#use-invokeasync-for-ui-updates">Use InvokeAsync for UI Updates:</a></li></ol></aside>
+<main class="content">
+
+<header class="doc-hero">
+  <div class="eyebrow"><span class="dot"></span>Concept · C# Language</div>
+  <h1>C# Events and Async Patterns for Godot Developers</h1>
+  <p class="one-liner">A Godot-to-C# translation guide that maps Godot signals onto C# events, explains why async void is required (but dangerous) in event handlers, and shows the manual cleanup C# needs compared to Godot&#x27;s automatic disconnection.</p>
+  <div class="meta-row">
+    <span class="meta-pill fmt-docx">DOCX</span>
+    <span class="meta-pill complexity-intermediate">Intermediate</span>
+    <span class="meta-pill"><span class="num">1,206</span> words</span>
+    <span class="meta-pill"><span class="num">6</span> min read</span>
+    <span class="meta-pill source">Source: <code>Actions&amp;Events.docx</code></span>
+  </div>
+</header>
+
+<div class="curation"><p class="intro-hook">You spent two years writing emit_signal(&#x27;health_changed&#x27;, 50) in Godot and everything just worked. You move to Blazor, type OnHealthChanged?.Invoke(50), and six weeks later production is crashing with unhandled exceptions that don&#x27;t even have a stack trace pointing to your code. What changed? Nothing, and everything - the signal metaphor is identical, but C# will happily let your events leak memory, eat exceptions, and crash your app if you don&#x27;t follow three rules.</p>
+<div class="exec-summary"><h3>Executive summary</h3><p>This document bridges the mental gap between Godot&#x27;s signal system and C#&#x27;s event/delegate system for Godot developers learning .NET. It maps signal/emit_signal/connect directly to event/Invoke/+= with side-by-side code examples, shows Action&lt;T&gt; as the parametric delegate equivalent, and walks through the Observer pattern that underpins both. The second half tackles async void: why it&#x27;s dangerous in general (exceptions escape the Task, can crash the app), why events MUST use async void (Action returns void, not Task), and how to safely use it by always wrapping the body in try/catch. It closes with a full ThemeChangeService example in both Godot and C#, discussing thread safety via InvokeAsync and the three DI lifetimes (Singleton=AutoLoad, Scoped=per-user, Transient=rare).</p></div>
+<div class="metaphor-callout"><div class="icon">💡</div><div class="body"><span class="label">Metaphor</span>Godot is like a landlord who automatically changes the locks when a tenant moves out. You can hand out as many keys (connect to signals) as you want and when the node leaves the tree Godot quietly recalls every key. C# is a landlord who writes down every key you give out and hands you a checklist on move-out day - if you forget to return even one, that key is still open and the old tenant (your handler) can walk back into your memory forever. That checklist is IDisposable.Dispose(). Miss it once and you&#x27;ve got a memory leak haunting the building.</div></div>
+<div class="context-row"><div class="context-card prereqs"><h4>You should know first</h4><ul><li>Godot signals or similar observer patterns</li><li>basic C# syntax</li><li>async/await introduction</li></ul></div><div class="context-card concepts"><h4>Key concepts covered</h4><ul><li>C# event vs Godot signal</li><li>Action&lt;T&gt; delegate types</li><li>Observer pattern</li><li>async void exception trap</li><li>try/catch in event handlers</li><li>IDisposable manual unsubscribe</li><li>InvokeAsync thread marshaling</li><li>DI lifetimes (Singleton/Scoped/Transient)</li></ul></div><div class="context-card builds"><h4>Opens the door to</h4><ul><li>MediatR in-process messaging</li><li>SignalR client events</li><li>Blazor component lifecycle</li><li>reactive extensions (Rx)</li></ul></div></div></div>
+<article>
+<h1 id="c-events-and-async-patterns-for-godot-developers">C# Events and Async Patterns for Godot Developers</h1>
+<h2 id="understanding-events-actions-and-async-patterns-in-net">Understanding Events, Actions, and Async Patterns in .NET</h2>
+<h2 id="table-of-contents">Table of Contents</h2>
+<p>Events/Actions = Godot Signals</p>
+<p>The Observer Pattern Connection</p>
+<p>Understanding async void</p>
+<p>Complete Comparison Reference</p>
+<p>Practical Implementation</p>
+<h2 id="events-actions-godot-signals">Events/Actions = Godot Signals</h2>
+<h3 id="direct-comparison-godot-signal-vs-c-event">Direct Comparison: Godot Signal vs C# Event</h3>
+<p>Events in C# are exactly like Signals in Godot - they implement the same Observer pattern for decoupled communication between objects.</p>
+<p>In Godot (GDScript):</p>
+<pre><code class="lang-text"># Define a signal
+signal health_changed(new_health)
+# Emit the signal
+emit_signal(&quot;health_changed&quot;, 50)
+# Connect to the signal
+player.connect(&quot;health_changed&quot;, self, &quot;_on_player_health_changed&quot;)
+func _on_player_health_changed(new_health):
+print(&quot;Health is now: &quot;, new_health)</code></pre>
+<p>In C# (Events):</p>
+<pre><code class="lang-csharp"><span class="cmt">// Define an event (like a signal)</span>
+<span class="kw">public</span> <span class="kw">event</span> <span class="type">Action</span>&lt;<span class="kw">int</span>&gt; <span class="type">OnHealthChanged</span>;
+<span class="cmt">// Fire the event (like emit_signal)</span>
+<span class="type">OnHealthChanged</span>?.<span class="type">Invoke</span>(<span class="num">50</span>);
+<span class="cmt">// Subscribe to the event (like connect)</span>
+player.<span class="type">OnHealthChanged</span> += <span class="type">OnPlayerHealthChanged</span>;
+<span class="kw">private</span> <span class="kw">void</span> <span class="type">OnPlayerHealthChanged</span>(<span class="kw">int</span> newHealth)
+{
+<span class="type">Console</span>.<span class="type">WriteLine</span>($<span class="str">&quot;Health is now: {newHealth}&quot;</span>);
+}</code></pre>
+<h3 id="understanding-action-types">Understanding Action Types</h3>
+<p>Action is a delegate type (function pointer) that defines what parameters the signal/event sends:</p>
+<pre><code class="lang-csharp"><span class="cmt">// Godot signal with parameters</span>
+signal item_picked_up(item_name, quantity)  <span class="cmt">// Sends string and int</span>
+<span class="cmt">// C# equivalent</span>
+<span class="kw">public</span> <span class="kw">event</span> <span class="type">Action</span>&lt;<span class="kw">string</span>, <span class="kw">int</span>&gt; <span class="type">OnItemPickedUp</span>;  <span class="cmt">// Action&lt;string, int&gt; = sends string and int</span></code></pre>
+<p>Common Action Types:</p>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Action Type</th>
+<th>Parameters</th>
+<th>Godot Equivalent</th>
+</tr></thead><tbody>
+<tr>
+<td>Action</td>
+<td>None</td>
+<td>signal clicked()</td>
+</tr>
+<tr>
+<td>Action&lt;int&gt;</td>
+<td>One integer</td>
+<td>signal health_changed(amount)</td>
+</tr>
+<tr>
+<td>Action&lt;string, int&gt;</td>
+<td>String and integer</td>
+<td>signal item_picked(name, qty)</td>
+</tr>
+<tr>
+<td>Action&lt;CrmEmpresa&gt;</td>
+<td>Complex object</td>
+<td>signal company_changed(company_data)</td>
+</tr>
+</tbody></table></div>
+<h2 id="the-observer-pattern-connection">The Observer Pattern Connection</h2>
+<p>Events and Signals are implementations of the Observer Pattern, providing loose coupling between components.</p>
+<h3 id="pattern-structure">Pattern Structure:</h3>
+<pre><code class="lang-csharp"><span class="cmt">// THE PATTERN:</span>
+<span class="cmt">// Subject (Observable) ← Has the event</span>
+<span class="cmt">// Observers (Listeners) ← Subscribe to the event</span>
+<span class="cmt">// In practice:</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">ThemeChangeService</span>  <span class="cmt">// Subject (like a Godot Node with signals)</span>
+{
+<span class="kw">public</span> <span class="kw">event</span> <span class="type">Action</span>&lt;<span class="type">CrmEmpresa</span>&gt; <span class="type">OnThemeChanged</span>;  <span class="cmt">// The signal</span>
+<span class="kw">public</span> <span class="kw">void</span> <span class="type">NotifyThemeChanged</span>(<span class="type">CrmEmpresa</span> empresa)
+{
+<span class="type">OnThemeChanged</span>?.<span class="type">Invoke</span>(empresa);  <span class="cmt">// emit_signal()</span>
+}
+}
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">MainLayout</span>  <span class="cmt">// Observer (like a Godot Node listening to signals)</span>
+{
+<span class="kw">void</span> <span class="type">Subscribe</span>()
+{
+service.<span class="type">OnThemeChanged</span> += <span class="type">HandleChange</span>;  <span class="cmt">// connect()</span>
+}
+<span class="kw">void</span> <span class="type">HandleChange</span>(<span class="type">CrmEmpresa</span> empresa)  <span class="cmt">// Signal handler</span>
+{
+<span class="cmt">// React to the signal</span>
+}
+<span class="kw">void</span> <span class="type">Unsubscribe</span>()
+{
+service.<span class="type">OnThemeChanged</span> -= <span class="type">HandleChange</span>;  <span class="cmt">// disconnect()</span>
+}
+}</code></pre>
+<h2 id="understanding-async-void">Understanding async void</h2>
+<h3 id="why-async-void-is-usually-bad">Why async void is Usually Bad</h3>
+<p>The main issue with async void is exception handling and error propagation.</p>
+<p>Normal async method (Good):</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">SaveDataAsync</span>()  <span class="cmt">// Returns Task</span>
+{
+<span class="kw">await</span> <span class="type">DatabaseSave</span>();
+<span class="cmt">// If this crashes, the Task contains the exception</span>
+<span class="cmt">// Caller can catch it</span>
+}
+<span class="cmt">// Usage:</span>
+<span class="kw">try</span>
+{
+<span class="kw">await</span> <span class="type">SaveDataAsync</span>();  <span class="cmt">// Can catch exceptions!</span>
+}
+<span class="kw">catch</span>(<span class="type">Exception</span> ex)
+{
+<span class="cmt">// We can handle errors</span>
+}</code></pre>
+<p>Async void method (Dangerous):</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">async</span> <span class="kw">void</span> <span class="type">SaveDataAsync</span>()  <span class="cmt">// Returns nothing</span>
+{
+<span class="kw">await</span> <span class="type">DatabaseSave</span>();
+<span class="cmt">// If this crashes, exception goes to global handler</span>
+<span class="cmt">// Can CRASH your entire app!</span>
+}
+<span class="cmt">// Usage:</span>
+<span class="type">SaveDataAsync</span>();  <span class="cmt">// Can&#x27;t await it! Can&#x27;t catch exceptions!</span>
+<span class="cmt">// If it fails, your app might crash</span></code></pre>
+<h3 id="why-events-must-use-async-void">Why Events MUST Use async void</h3>
+<p>Events are defined to return void, not Task, because they follow a fire-and-forget pattern:</p>
+<pre><code class="lang-csharp"><span class="cmt">// The event delegate signature is fixed:</span>
+<span class="kw">public</span> <span class="kw">event</span> <span class="type">Action</span>&lt;<span class="type">CrmEmpresa</span>&gt; <span class="type">OnThemeChanged</span>;
+<span class="cmt">//            ^^^^^^</span>
+<span class="cmt">//            Action returns void, not Task!</span>
+<span class="cmt">// So handlers must match:</span>
+<span class="kw">async</span> <span class="kw">void</span> <span class="type">HandleThemeChanged</span>(<span class="type">CrmEmpresa</span> e)  <span class="cmt">// Must be void to match Action</span>
+{
+<span class="kw">try</span>
+{
+<span class="cmt">// Always wrap async void in try-catch!</span>
+<span class="kw">await</span> <span class="type">DoStuff</span>();
+}
+<span class="kw">catch</span>(<span class="type">Exception</span> ex)
+{
+<span class="cmt">// Handle errors here, don&#x27;t let them escape!</span>
+_logger.<span class="type">LogError</span>(ex, <span class="str">&quot;Error in event handler&quot;</span>);
+}
+}</code></pre>
+<h3 id="the-godot-analogy">The Godot Analogy</h3>
+<p>In Godot, signals are fire-and-forget:</p>
+<pre><code class="lang-text"># This doesn&#x27;t wait for handlers
+emit_signal(&quot;theme_changed&quot;, empresa)
+# Next line runs immediately
+# Similar to C#:
+ThemeChangeService.NotifyThemeChanged(empresa);
+// Code continues immediately, doesn&#x27;t wait for handlers</code></pre>
+<h2 id="complete-comparison-reference">Complete Comparison Reference</h2>
+<h3 id="terminology-mapping">Terminology Mapping</h3>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Godot</th>
+<th>C#</th>
+<th>Purpose</th>
+</tr></thead><tbody>
+<tr>
+<td>signal</td>
+<td>event</td>
+<td>Declare an observable event</td>
+</tr>
+<tr>
+<td>emit_signal()</td>
+<td>Invoke()</td>
+<td>Fire the event</td>
+</tr>
+<tr>
+<td>connect()</td>
+<td>+=</td>
+<td>Subscribe to event</td>
+</tr>
+<tr>
+<td>disconnect()</td>
+<td>-=</td>
+<td>Unsubscribe from event</td>
+</tr>
+<tr>
+<td>Signal handler</td>
+<td>Event handler</td>
+<td>Function that responds</td>
+</tr>
+<tr>
+<td>queue_free()</td>
+<td>Dispose()</td>
+<td>Cleanup when destroying</td>
+</tr>
+<tr>
+<td>AutoLoad singleton</td>
+<td>Singleton service</td>
+<td>Global accessible instance</td>
+</tr>
+<tr>
+<td>_ready()</td>
+<td>OnInitialized()</td>
+<td>Component initialization</td>
+</tr>
+<tr>
+<td>_exit_tree()</td>
+<td>Dispose()</td>
+<td>Component cleanup</td>
+</tr>
+</tbody></table></div>
+<h3 id="memory-management-comparison">Memory Management Comparison</h3>
+<p>Godot (Automatic):</p>
+<pre><code class="lang-text">func _ready():
+player.connect(&quot;health_changed&quot;, self, &quot;_on_health_changed&quot;)
+# Godot automatically disconnects when node is freed
+func _exit_tree():
+# Optional - Godot handles this automatically
+pass</code></pre>
+<p>C# (Manual):</p>
+<pre><code class="lang-csharp"><span class="kw">protected</span> <span class="kw">override</span> <span class="kw">void</span> <span class="type">OnInitialized</span>()
+{
+player.<span class="type">OnHealthChanged</span> += <span class="type">OnHealthChanged</span>;
+<span class="cmt">// We MUST manually unsubscribe!</span>
+}
+<span class="kw">public</span> <span class="kw">void</span> <span class="type">Dispose</span>()
+{
+<span class="cmt">// REQUIRED - prevent memory leaks!</span>
+player.<span class="type">OnHealthChanged</span> -= <span class="type">OnHealthChanged</span>;
+}</code></pre>
+<h2 id="practical-implementation">Practical Implementation</h2>
+<h3 id="complete-themechange-system-example">Complete ThemeChange System Example</h3>
+<p>If this were Godot:</p>
+<pre><code class="lang-text"># ThemeChangeService.gd (like a global AutoLoad)
+extends Node
+signal theme_changed(company_data)
+func notify_theme_changed(company):
+emit_signal(&quot;theme_changed&quot;, company)
+# MainLayout.gd
+extends Control
+func _ready():
+# Subscribe to the global signal
+ThemeChangeService.connect(&quot;theme_changed&quot;, self, &quot;_on_theme_changed&quot;)
+func _on_theme_changed(company):
+# Update UI with new theme
+update_colors(company.color1, company.color2)
+update_logo(company.logo_path)
+func _exit_tree():
+# Cleanup (automatic in Godot, manual in C#)
+ThemeChangeService.disconnect(&quot;theme_changed&quot;, self, &quot;_on_theme_changed&quot;)</code></pre>
+<p>The C# Implementation:</p>
+<pre><code class="lang-csharp"><span class="cmt">// ThemeChangeService.cs (Singleton/Scoped service)</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">ThemeChangeService</span> : <span class="type">IThemeChangeService</span>
+{
+<span class="kw">public</span> <span class="kw">event</span> <span class="type">Action</span>&lt;<span class="type">CrmEmpresa</span>&gt; <span class="type">OnThemeChanged</span>;
+<span class="kw">public</span> <span class="kw">void</span> <span class="type">NotifyThemeChanged</span>(<span class="type">CrmEmpresa</span> empresa)
+{
+<span class="type">OnThemeChanged</span>?.<span class="type">Invoke</span>(empresa);
+}
+}
+<span class="cmt">// MainLayout.razor</span>
+@implements <span class="type">IDisposable</span>
+@code {
+<span class="kw">protected</span> <span class="kw">override</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">OnInitializedAsync</span>()
+{
+<span class="cmt">// Subscribe to theme changes (_ready equivalent)</span>
+<span class="type">ThemeChangeService</span>.<span class="type">OnThemeChanged</span> += <span class="type">HandleThemeChanged</span>;
+}
+<span class="kw">private</span> <span class="kw">async</span> <span class="kw">void</span> <span class="type">HandleThemeChanged</span>(<span class="type">CrmEmpresa</span> empresa)
+{
+<span class="kw">try</span>
+{
+<span class="cmt">// Update UI with new theme</span>
+<span class="kw">await</span> <span class="type">UpdateColors</span>(empresa.<span class="type">Cor1</span>, empresa.<span class="type">Cor2</span>);
+<span class="kw">await</span> <span class="type">UpdateLogo</span>(empresa.<span class="type">LogoNavBar</span>);
+<span class="cmt">// Tell Blazor to re-render (Godot does this automatically)</span>
+<span class="kw">await</span> <span class="type">InvokeAsync</span>(<span class="type">StateHasChanged</span>);
+}
+<span class="kw">catch</span> (<span class="type">Exception</span> ex)
+{
+<span class="cmt">// Always handle exceptions in async void!</span>
+_logger.<span class="type">LogError</span>(ex, <span class="str">&quot;Theme update failed&quot;</span>);
+}
+}
+<span class="kw">public</span> <span class="kw">void</span> <span class="type">Dispose</span>()
+{
+<span class="cmt">// Manual cleanup required (_exit_tree equivalent)</span>
+<span class="type">ThemeChangeService</span>.<span class="type">OnThemeChanged</span> -= <span class="type">HandleThemeChanged</span>;
+}
+}</code></pre>
+<h3 id="thread-safety-considerations">Thread Safety Considerations</h3>
+<p>Why InvokeAsync is Needed:</p>
+<p>Blazor components are not thread-safe, similar to how Godot&#x27;s scene tree must be accessed from the main thread:</p>
+<pre><code class="lang-csharp"><span class="cmt">// Event might fire from any thread</span>
+<span class="kw">private</span> <span class="kw">async</span> <span class="kw">void</span> <span class="type">HandleThemeChanged</span>(<span class="type">CrmEmpresa</span> empresa)
+{
+<span class="cmt">// Wrong - might crash if on wrong thread:</span>
+<span class="cmt">// StateHasChanged();</span>
+<span class="cmt">// Correct - ensures UI thread:</span>
+<span class="kw">await</span> <span class="type">InvokeAsync</span>(<span class="type">StateHasChanged</span>);
+<span class="cmt">// Similar to Godot&#x27;s:</span>
+<span class="cmt">// call_deferred(&quot;update_ui&quot;)</span>
+}</code></pre>
+<h3 id="service-lifetime-comparison">Service Lifetime Comparison</h3>
+<p>Singleton (Global, like AutoLoad):</p>
+<pre><code class="lang-text">builder.Services.AddSingleton&lt;IThemeChangeService, ThemeChangeService&gt;();
+// One instance for entire application
+// All users share the same instance
+// Like Godot&#x27;s AutoLoad</code></pre>
+<p>Scoped (Per-Connection):</p>
+<pre><code class="lang-text">builder.Services.AddScoped&lt;IThemeChangeService, ThemeChangeService&gt;();
+// One instance per user session
+// Each user gets their own instance
+// Better for user-specific state</code></pre>
+<p>Transient (New Each Time):</p>
+<pre><code class="lang-text">builder.Services.AddTransient&lt;IThemeChangeService, ThemeChangeService&gt;();
+// New instance every injection
+// Rarely used for event systems</code></pre>
+<h2 id="key-takeaways">Key Takeaways</h2>
+<p>Events = Signals: C# events are functionally identical to Godot signals</p>
+<p>Manual Memory Management: Unlike Godot, C# requires manual event unsubscription</p>
+<p>async void Exception: Only use with events, always wrap in try-catch</p>
+<p>Thread Safety: Use InvokeAsync() when updating UI from events</p>
+<p>Service Lifetimes: Choose Scoped for user-specific events, Singleton for app-wide</p>
+<h2 id="best-practices">Best Practices</h2>
+<h3 id="always-implement-idisposable-when-using-events">Always Implement IDisposable When Using Events:</h3>
+<pre><code class="lang-csharp">@implements <span class="type">IDisposable</span>
+<span class="kw">public</span> <span class="kw">void</span> <span class="type">Dispose</span>()
+{
+<span class="cmt">// Unsubscribe all events</span>
+<span class="type">Service</span>.<span class="type">OnEvent</span> -= <span class="type">Handler</span>;
+}</code></pre>
+<h3 id="always-handle-exceptions-in-async-void">Always Handle Exceptions in async void:</h3>
+<pre><code class="lang-csharp"><span class="kw">private</span> <span class="kw">async</span> <span class="kw">void</span> <span class="type">EventHandler</span>(<span class="type">Data</span> data)
+{
+<span class="kw">try</span>
+{
+<span class="kw">await</span> <span class="type">AsyncOperation</span>();
+}
+<span class="kw">catch</span> (<span class="type">Exception</span> ex)
+{
+_logger.<span class="type">LogError</span>(ex, <span class="str">&quot;Handler failed&quot;</span>);
+}
+}</code></pre>
+<h3 id="use-invokeasync-for-ui-updates">Use InvokeAsync for UI Updates:</h3>
+<pre><code class="lang-csharp"><span class="kw">await</span> <span class="type">InvokeAsync</span>(() =&gt;
+{
+<span class="cmt">// UI updates here</span>
+<span class="type">StateHasChanged</span>();
+});</code></pre>
+<p>This guide bridges the conceptual gap between Godot&#x27;s signal system and C#&#x27;s event system, helping Godot developers quickly understand and apply C# patterns in their .NET applications.</p>
+</article>
+<div class="takeaways"><h3>Key takeaways</h3><ul><li>C# events = Godot signals - same Observer pattern, different plumbing</li><li>Action&lt;T&gt; is a delegate type defining parameter signatures, not a base class</li><li>Events must return void, so async event handlers must be async void</li><li>ALWAYS wrap async void handlers in try/catch - unhandled exceptions can crash the app</li><li>Always implement IDisposable and -= unsubscribe, or handlers leak memory forever</li><li>Use await InvokeAsync(StateHasChanged) in Blazor - events may fire from any thread</li><li>Singleton service = Godot AutoLoad; Scoped = per-user session; Transient = rare</li></ul></div>
+<aside class="cross-refs"><h2>Cross-references</h2><div class="cross-ref-list"><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>csharp-async-await</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>blazor-component-lifecycle</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>dependency-injection-lifetimes</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>observer-pattern</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>memory-leaks-dotnet</a></div></aside>
+<aside class="related"><h2>More in this category</h2><div class="related-grid"><a class="related-card" href="../../CORE/language/delegates-lambdas-expression-bodies.html"><div class="title">C# Deep Dive: Delegates, Lambdas and Expression-Bodied Members</div><div class="meta"><span class="badge">HTML</span><span>2,771 words</span></div></a><a class="related-card" href="../../CORE/language/csharp-generics-and-functional-builders.html"><div class="title">C# Deep Dive: Generics, Builders &amp; Everything In Between</div><div class="meta"><span class="badge">HTML</span><span>4,353 words</span></div></a><a class="related-card" href="../../CORE/language/csharp-flags-enum.html"><div class="title">C# Flags Enum Guide</div><div class="meta"><span class="badge">MD</span><span>815 words</span></div></a><a class="related-card" href="../../CORE/language/expression-trees-compiled-reflection.html"><div class="title">Expression Trees &amp; Compiled Reflection — From Slow Reflection to Native Speed</div><div class="meta"><span class="badge">HTML</span><span>2,883 words</span></div></a><a class="related-card" href="../../CORE/language/csharp-generics.html"><div class="title">Generics in C#: A Comprehensive Guide</div><div class="meta"><span class="badge">MD</span><span>4,388 words</span></div></a><a class="related-card" href="../../CORE/language/csharp-generics-comprehensive.html"><div class="title">Generics in C#: A Comprehensive Guide</div><div class="meta"><span class="badge">PDF</span><span>4,009 words</span></div></a></div></aside>
+</main>
+</div>
+<script>
+// ─── Active TOC item on scroll ────────────────────────────────────
+(function() {
+  const tocLinks = document.querySelectorAll('.toc-sidebar a[href^="#"]');
+  if (!tocLinks.length) return;
+  const headings = Array.from(document.querySelectorAll(
+    'article h1[id], article h2[id], article h3[id], article h4[id], .pdf-page[id]'
+  ));
+  if (!headings.length) return;
+  function setActive(id) {
+    tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+  }
+  let lastVisible = headings[0].id;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) lastVisible = e.target.id; });
+    setActive(lastVisible);
+  }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+  headings.forEach(h => observer.observe(h));
+  setActive(headings[0].id);
+})();
+
+// ─── Copy code buttons ────────────────────────────────────────────
+(function() {
+  document.querySelectorAll('article pre').forEach(pre => {
+    if (pre.closest('.diagram-box')) return;
+    if (pre.closest('.pdf-page')) return;
+    if (pre.parentElement && pre.parentElement.classList.contains('code-block')) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'code-block';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.type = 'button';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', () => {
+      const code = pre.querySelector('code') || pre;
+      const text = code.innerText;
+      const done = () => {
+        btn.textContent = 'Copied';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(() => {});
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+    });
+    wrap.appendChild(btn);
+  });
+})();
+
+// ─── Live filter (master + hub + category pages) ─────────────────
+(function() {
+  const search = document.getElementById('search-input');
+  if (!search) return;
+  const items = document.querySelectorAll('[data-search]');
+  function apply() {
+    const q = search.value.toLowerCase().trim();
+    items.forEach(el => {
+      const match = !q || el.dataset.search.includes(q);
+      el.style.display = match ? '' : 'none';
+    });
+    document.querySelectorAll('[data-search-parent]').forEach(parent => {
+      const visible = Array.from(parent.querySelectorAll('[data-search]'))
+        .some(el => el.style.display !== 'none');
+      parent.style.display = visible ? '' : 'none';
+    });
+  }
+  search.addEventListener('input', apply);
+})();
+</script>
+</body>
+</html>

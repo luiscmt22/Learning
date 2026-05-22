@@ -1,0 +1,1026 @@
+{
+  "base": "C:\\Users\\User\\Desktop\\AGILE\\Learning",
+  "total_files": 95,
+  "categories": [
+    "00-Meta",
+    "01-Basics",
+    "02-Architecture-and-Patterns",
+    "03-Blazor",
+    "04-CSharp-Language",
+    "05-Scheduling",
+    "06-Auth-and-Identity",
+    "07-Database-EF-SQL",
+    "08-Concurrency-and-Async",
+    "09-Realtime-SignalR",
+    "10-Integrations",
+    "11-Web-Fundamentals",
+    "12-JavaScript",
+    "13-Testing",
+    "14-Code-Quality",
+    "15-Feature-Management",
+    "16-Domain-Examples-FactoryFloor",
+    "17-Domain-Examples-Stock",
+    "18-Machine-Learning",
+    "19-For-Dummies",
+    "20-Git"
+  ],
+  "exact_dup_clusters": {},
+  "cross_format_dup_clusters": {
+    "blazorguidefordummies": [
+      "Education/Basics/Blazor_Guide_For_Dummies (1).pdf",
+      "Education/Basics/Blazor_Guide_For_Dummies.pdf"
+    ],
+    "csharpgenericsguide": [
+      "Education/Basics/CSharp_Generics_Guide.md",
+      "Education/Basics/CSharp_Generics_Guide.pdf"
+    ],
+    "factoryfloorproductionsysteminfographic": [
+      "Education/FactoryFloor/ENG/FactoryFloorProductionSystemInfoGraphic.docx",
+      "Education/FactoryFloor/ENG/FactoryFloorProductionSystemInfoGraphic.pdf"
+    ],
+    "sistemaproduçãochãofábricadocumentaçãoformal": [
+      "Education/FactoryFloor/PT/SistemaProduçãoChãoFábricaDocumentaçãoFormal.docx",
+      "Education/FactoryFloor/PT/SistemaProduçãoChãoFábricaDocumentaçãoFormal.pdf"
+    ],
+    "sistemaproduçãochãofábricainfográfico": [
+      "Education/FactoryFloor/PT/SistemaProduçãoChãoFábricaInfoGráfico.docx",
+      "Education/FactoryFloor/PT/SistemaProduçãoChãoFábricaInfoGráfico.pdf"
+    ],
+    "stockservicesystemformaldocumentation": [
+      "Education/Stock/ENG/StockServiceSystemFormalDocumentation.docx",
+      "Education/Stock/ENG/StockServiceSystemFormalDocumentation.pdf"
+    ],
+    "stockservicesysteminfographic": [
+      "Education/Stock/ENG/StockServiceSystemInfoGraphic.docx",
+      "Education/Stock/ENG/StockServiceSystemInfoGraphic.pdf"
+    ],
+    "sistemaserviçostockdocumentaçãoformal": [
+      "Education/Stock/PT/SistemaServiçoStockDocumentaçãoFormal.docx",
+      "Education/Stock/PT/SistemaServiçoStockDocumentaçãoFormal.pdf"
+    ],
+    "sistemaserviçostockinfográfico": [
+      "Education/Stock/PT/SistemaServiçoStockInfoGráfico.docx",
+      "Education/Stock/PT/SistemaServiçoStockInfoGráfico.pdf"
+    ],
+    "identityprojectknowledge": [
+      "Identity/IdentityProjectKnowledge.pdf",
+      "Identity/IdentityProjectKnowledgeEditable.docx"
+    ],
+    "document1": [
+      "JScript/Document 1.docx",
+      "JScript/Document 1.pdf"
+    ]
+  },
+  "files": [
+    {
+      "src_rel": "Actions&Events.docx",
+      "category": "03-Blazor",
+      "organized_name": "Actions&Events.docx",
+      "html_name": "Actions&Events.html",
+      "ext": ".docx",
+      "md5": "fc0324eb047268ae91398a08087d6229",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Adding-New-Category.html",
+      "category": "03-Blazor",
+      "organized_name": "Adding-New-Category.html",
+      "html_name": "Adding-New-Category.html",
+      "ext": ".html",
+      "md5": "f94288983665ec7d1355370bc54b6266",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "CookieHandlingBlazorServerApplications.docx",
+      "category": "03-Blazor",
+      "organized_name": "CookieHandlingBlazorServerApplications.docx",
+      "html_name": "CookieHandlingBlazorServerApplications.html",
+      "ext": ".docx",
+      "md5": "c0166353edf509a27260f2b0911e58d2",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/01-Understanding-Clean-Architecture.md",
+      "category": "02-Architecture-and-Patterns",
+      "organized_name": "01-Understanding-Clean-Architecture.md",
+      "html_name": "01-Understanding-Clean-Architecture.html",
+      "ext": ".md",
+      "md5": "f1e32faf7f0ec30a19351d84d94400f0",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/02-Role-Based-Authorization.md",
+      "category": "06-Auth-and-Identity",
+      "organized_name": "02-Role-Based-Authorization.md",
+      "html_name": "02-Role-Based-Authorization.html",
+      "ext": ".md",
+      "md5": "13efb8e328db2fc7d66b66c43d06a2fc",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/03-Adapter-Pattern-Explained.md",
+      "category": "02-Architecture-and-Patterns",
+      "organized_name": "03-Adapter-Pattern-Explained.md",
+      "html_name": "03-Adapter-Pattern-Explained.html",
+      "ext": ".md",
+      "md5": "b86d132965414b11d88834212d18fb93",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/04-Authorization-Architecture.md",
+      "category": "06-Auth-and-Identity",
+      "organized_name": "04-Authorization-Architecture.md",
+      "html_name": "04-Authorization-Architecture.html",
+      "ext": ".md",
+      "md5": "226684904f030d919e784a265d207128",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/05-Polite-Code-Style.md",
+      "category": "14-Code-Quality",
+      "organized_name": "05-Polite-Code-Style.md",
+      "html_name": "05-Polite-Code-Style.html",
+      "ext": ".md",
+      "md5": "9ee88e122d1eeca6fadfcf39d960f95c",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/06-Blazor-JS-Interop-Static-Events.md",
+      "category": "12-JavaScript",
+      "organized_name": "06-Blazor-JS-Interop-Static-Events.md",
+      "html_name": "06-Blazor-JS-Interop-Static-Events.html",
+      "ext": ".md",
+      "md5": "45d363706ea56252edb5b831fd599332",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/07-Facial-Recognition-Architecture.md",
+      "category": "10-Integrations",
+      "organized_name": "07-Facial-Recognition-Architecture.md",
+      "html_name": "07-Facial-Recognition-Architecture.html",
+      "ext": ".md",
+      "md5": "f5a8c45cb486045c925ef6186490c40e",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/08-Agnostic-Schedule-Conflict-Detection.md",
+      "category": "05-Scheduling",
+      "organized_name": "08-Agnostic-Schedule-Conflict-Detection.md",
+      "html_name": "08-Agnostic-Schedule-Conflict-Detection.html",
+      "ext": ".md",
+      "md5": "24589fe90010062f75fd25b904c42365",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/09-Generic-Schedule-Grid-Architecture.md",
+      "category": "05-Scheduling",
+      "organized_name": "09-Generic-Schedule-Grid-Architecture.md",
+      "html_name": "09-Generic-Schedule-Grid-Architecture.html",
+      "ext": ".md",
+      "md5": "8dc0ee2219537c37ed81b1d6bd68aed6",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/10-Web-Fundamentals.md",
+      "category": "11-Web-Fundamentals",
+      "organized_name": "10-Web-Fundamentals.md",
+      "html_name": "10-Web-Fundamentals.html",
+      "ext": ".md",
+      "md5": "805c84a903f63f849b87286ad7f1e842",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/11-SignalR-Real-Time-Communication.md",
+      "category": "09-Realtime-SignalR",
+      "organized_name": "11-SignalR-Real-Time-Communication.md",
+      "html_name": "11-SignalR-Real-Time-Communication.html",
+      "ext": ".md",
+      "md5": "36cc73a0ef5b119c6c31b6393fcaae29",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/12-CSharp-Flags-Enum.md",
+      "category": "04-CSharp-Language",
+      "organized_name": "12-CSharp-Flags-Enum.md",
+      "html_name": "12-CSharp-Flags-Enum.html",
+      "ext": ".md",
+      "md5": "dc2dab90a5f1be2a4766ff181696f2ea",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/13-Export-Service-Strategy-Pattern.md",
+      "category": "02-Architecture-and-Patterns",
+      "organized_name": "13-Export-Service-Strategy-Pattern.md",
+      "html_name": "13-Export-Service-Strategy-Pattern.html",
+      "ext": ".md",
+      "md5": "503ec7c323a0aa70da20afa2a6463993",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/14-SignalR-Notification-System.md",
+      "category": "09-Realtime-SignalR",
+      "organized_name": "14-SignalR-Notification-System.md",
+      "html_name": "14-SignalR-Notification-System.html",
+      "ext": ".md",
+      "md5": "a0efd433224b6ce9fdc855b46cdc685f",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/15-Notification-Recipient-Resolver-Pipeline.md",
+      "category": "09-Realtime-SignalR",
+      "organized_name": "15-Notification-Recipient-Resolver-Pipeline.md",
+      "html_name": "15-Notification-Recipient-Resolver-Pipeline.html",
+      "ext": ".md",
+      "md5": "62d2e8ec227190e23c88a57fe9299fe5",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/16-SignalR-Chat-System.html",
+      "category": "09-Realtime-SignalR",
+      "organized_name": "16-SignalR-Chat-System.html",
+      "html_name": "16-SignalR-Chat-System.html",
+      "ext": ".html",
+      "md5": "506bb6109bfc68e1f36f02a6210dcf61",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/17-Database-Reset-And-Migration.html",
+      "category": "07-Database-EF-SQL",
+      "organized_name": "17-Database-Reset-And-Migration.html",
+      "html_name": "17-Database-Reset-And-Migration.html",
+      "ext": ".html",
+      "md5": "71ae1c47d4f0c40c29a20b6336a3101c",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/18-Migration-And-Seeding-Mechanism.html",
+      "category": "07-Database-EF-SQL",
+      "organized_name": "18-Migration-And-Seeding-Mechanism.html",
+      "html_name": "18-Migration-And-Seeding-Mechanism.html",
+      "ext": ".html",
+      "md5": "ead9081686757155cd7350cca9fd77cc",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/19-Feature-Flags-Hierarchy-Dependencies.html",
+      "category": "15-Feature-Management",
+      "organized_name": "19-Feature-Flags-Hierarchy-Dependencies.html",
+      "html_name": "19-Feature-Flags-Hierarchy-Dependencies.html",
+      "ext": ".html",
+      "md5": "68d1a218336eae0964634560ab4c3f87",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/20-IMemoryCache-Dual-Caching-Strategy.html",
+      "category": "08-Concurrency-and-Async",
+      "organized_name": "20-IMemoryCache-Dual-Caching-Strategy.html",
+      "html_name": "20-IMemoryCache-Dual-Caching-Strategy.html",
+      "ext": ".html",
+      "md5": "8de298477d5c150476e698690cee3f70",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/21-Background-Services-Smart-Scheduling.html",
+      "category": "08-Concurrency-and-Async",
+      "organized_name": "21-Background-Services-Smart-Scheduling.html",
+      "html_name": "21-Background-Services-Smart-Scheduling.html",
+      "ext": ".html",
+      "md5": "3a3d651b69d5ddd9fdf2c4e93f1f3a8e",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/22-ConcurrentDictionary-Thread-Safe-Caching.html",
+      "category": "08-Concurrency-and-Async",
+      "organized_name": "22-ConcurrentDictionary-Thread-Safe-Caching.html",
+      "html_name": "22-ConcurrentDictionary-Thread-Safe-Caching.html",
+      "ext": ".html",
+      "md5": "352a584835e04227a36a9bbb818cdeb9",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/23-EF-Core-Audit-Trail-Two-Layer-System.html",
+      "category": "07-Database-EF-SQL",
+      "organized_name": "23-EF-Core-Audit-Trail-Two-Layer-System.html",
+      "html_name": "23-EF-Core-Audit-Trail-Two-Layer-System.html",
+      "ext": ".html",
+      "md5": "b940ffc61741144f5c7195c004cb3434",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/24-Geofencing-Haversine-Location-Validation.html",
+      "category": "10-Integrations",
+      "organized_name": "24-Geofencing-Haversine-Location-Validation.html",
+      "html_name": "24-Geofencing-Haversine-Location-Validation.html",
+      "ext": ".html",
+      "md5": "f818829425168aab7589904517c630f1",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/25-IMAP-SMTP-Email-Integration.html",
+      "category": "10-Integrations",
+      "organized_name": "25-IMAP-SMTP-Email-Integration.html",
+      "html_name": "25-IMAP-SMTP-Email-Integration.html",
+      "ext": ".html",
+      "md5": "244b49266eac9ec86c9ca43d9a9ff3fb",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/26-Expression-Trees-Compiled-Reflection.html",
+      "category": "04-CSharp-Language",
+      "organized_name": "26-Expression-Trees-Compiled-Reflection.html",
+      "html_name": "26-Expression-Trees-Compiled-Reflection.html",
+      "ext": ".html",
+      "md5": "a06fc7fd0c366330c996392cafba304f",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/27-Base-Entity-Abstractions-Soft-Delete.html",
+      "category": "07-Database-EF-SQL",
+      "organized_name": "27-Base-Entity-Abstractions-Soft-Delete.html",
+      "html_name": "27-Base-Entity-Abstractions-Soft-Delete.html",
+      "ext": ".html",
+      "md5": "973bfbfbde55c2e9cf3f1dc884cffaa2",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/28-Password-Security-BCrypt.html",
+      "category": "06-Auth-and-Identity",
+      "organized_name": "28-Password-Security-BCrypt.html",
+      "html_name": "28-Password-Security-BCrypt.html",
+      "ext": ".html",
+      "md5": "b5dd544f1289bc72d3c0eee552408400",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/29-Validator-Pipeline-Chain-Of-Responsibility.html",
+      "category": "02-Architecture-and-Patterns",
+      "organized_name": "29-Validator-Pipeline-Chain-Of-Responsibility.html",
+      "html_name": "29-Validator-Pipeline-Chain-Of-Responsibility.html",
+      "ext": ".html",
+      "md5": "ade176e677bc9b3090096c8083b86aa0",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/30-SemaphoreSlim-Controlled-Access.html",
+      "category": "08-Concurrency-and-Async",
+      "organized_name": "30-SemaphoreSlim-Controlled-Access.html",
+      "html_name": "30-SemaphoreSlim-Controlled-Access.html",
+      "ext": ".html",
+      "md5": "f2c61af4ed0068042619525fae88b60c",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/31-Strategy-Pattern-Pluggable-Algorithms.html",
+      "category": "02-Architecture-and-Patterns",
+      "organized_name": "31-Strategy-Pattern-Pluggable-Algorithms.html",
+      "html_name": "31-Strategy-Pattern-Pluggable-Algorithms.html",
+      "ext": ".html",
+      "md5": "c5668ba810eaae9749bf5ccc23c41a50",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/32-Named-Tuples-Value-Semantics.html",
+      "category": "04-CSharp-Language",
+      "organized_name": "32-Named-Tuples-Value-Semantics.html",
+      "html_name": "32-Named-Tuples-Value-Semantics.html",
+      "ext": ".html",
+      "md5": "7484bbd79e36588e19568cb7549edf0c",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/Basics/Blazor_Architecture_and_Security_Guide.pdf",
+      "category": "01-Basics",
+      "organized_name": "Blazor_Architecture_and_Security_Guide.pdf",
+      "html_name": "Blazor_Architecture_and_Security_Guide.html",
+      "ext": ".pdf",
+      "md5": "95d96f5c13cf3f97ecdba3f6e5bf4c9c",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/Basics/Blazor_Guide_For_Dummies (1).pdf",
+      "category": "01-Basics",
+      "organized_name": "Blazor_Guide_For_Dummies (1).pdf",
+      "html_name": "Blazor_Guide_For_Dummies (1).html",
+      "ext": ".pdf",
+      "md5": "a7da6e3b8c40acef12e5734e1e26af28",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": true
+    },
+    {
+      "src_rel": "Education/Basics/Blazor_Guide_For_Dummies.pdf",
+      "category": "01-Basics",
+      "organized_name": "Blazor_Guide_For_Dummies.pdf",
+      "html_name": "Blazor_Guide_For_Dummies.html",
+      "ext": ".pdf",
+      "md5": "819b7870574ba08adce0a7567236a270",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": true
+    },
+    {
+      "src_rel": "Education/Basics/CSharp_Generics_Guide.md",
+      "category": "01-Basics",
+      "organized_name": "CSharp_Generics_Guide.md",
+      "html_name": "CSharp_Generics_Guide.html",
+      "ext": ".md",
+      "md5": "2a2740d3c3b3954d6c6697022011210b",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": true
+    },
+    {
+      "src_rel": "Education/Basics/CSharp_Generics_Guide.pdf",
+      "category": "01-Basics",
+      "organized_name": "CSharp_Generics_Guide.pdf",
+      "html_name": "CSharp_Generics_Guide__pdf.html",
+      "ext": ".pdf",
+      "md5": "a337c46a2143cab9b280dc8c804cd7e9",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": true
+    },
+    {
+      "src_rel": "Education/Basics/CSharp_Stack_and_Heap_Guide.pdf",
+      "category": "01-Basics",
+      "organized_name": "CSharp_Stack_and_Heap_Guide.pdf",
+      "html_name": "CSharp_Stack_and_Heap_Guide.html",
+      "ext": ".pdf",
+      "md5": "e4e65ad9710c535b4c5efa3f02f608e0",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/delegates-lambdas-expression-bodies.html",
+      "category": "04-CSharp-Language",
+      "organized_name": "delegates-lambdas-expression-bodies.html",
+      "html_name": "delegates-lambdas-expression-bodies.html",
+      "ext": ".html",
+      "md5": "7638186a63961b4d9ef28a6fccc170d1",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/Educational_ML/backprop-visualization.html",
+      "category": "18-Machine-Learning",
+      "organized_name": "backprop-visualization.html",
+      "html_name": "backprop-visualization.html",
+      "ext": ".html",
+      "md5": "003af588445ccb5275a732a40c063bb0",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/Educational_ML/Backpropagation.md",
+      "category": "18-Machine-Learning",
+      "organized_name": "Backpropagation.md",
+      "html_name": "Backpropagation.html",
+      "ext": ".md",
+      "md5": "b9878ab9c7b383927a82726affcb9c47",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/Educational_ML/neural-network-journeyV0.html",
+      "category": "18-Machine-Learning",
+      "organized_name": "neural-network-journeyV0.html",
+      "html_name": "neural-network-journeyV0.html",
+      "ext": ".html",
+      "md5": "6b03931ef81825230aa7525a67b4ae42",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/Educational_ML/neural-network-journeyV1.html",
+      "category": "18-Machine-Learning",
+      "organized_name": "neural-network-journeyV1.html",
+      "html_name": "neural-network-journeyV1.html",
+      "ext": ".html",
+      "md5": "08ae68263dc8ac390927c124a7542564",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/Educational_ML/neural-network-journeyV2.html",
+      "category": "18-Machine-Learning",
+      "organized_name": "neural-network-journeyV2.html",
+      "html_name": "neural-network-journeyV2.html",
+      "ext": ".html",
+      "md5": "cf0044ea1bbfcfcf855a71fe4026e843",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/Educational_ML/sigmoid-derivative.html",
+      "category": "18-Machine-Learning",
+      "organized_name": "sigmoid-derivative.html",
+      "html_name": "sigmoid-derivative.html",
+      "ext": ".html",
+      "md5": "2a6f9a2b7ecd801338b5bbc5a61304b1",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/Educational_ML/training-flow-visualization.html",
+      "category": "18-Machine-Learning",
+      "organized_name": "training-flow-visualization.html",
+      "html_name": "training-flow-visualization.html",
+      "ext": ".html",
+      "md5": "23acfd59c8a48f05f4f74427307c4ac1",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/FactoryFloor/ENG/FactoryFloorProductionSystem.pdf",
+      "category": "16-Domain-Examples-FactoryFloor",
+      "organized_name": "FactoryFloorProductionSystem.pdf",
+      "html_name": "FactoryFloorProductionSystem.html",
+      "ext": ".pdf",
+      "md5": "4beaa220df5873a43e13ad23171c6fb1",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/FactoryFloor/ENG/FactoryFloorProductionSystemFormalDocumentation.docx",
+      "category": "16-Domain-Examples-FactoryFloor",
+      "organized_name": "FactoryFloorProductionSystemFormalDocumentation.docx",
+      "html_name": "FactoryFloorProductionSystemFormalDocumentation.html",
+      "ext": ".docx",
+      "md5": "63da30c41e97af4ceaa66b0a8bf24661",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/FactoryFloor/ENG/FactoryFloorProductionSystemInfoGraphic.docx",
+      "category": "16-Domain-Examples-FactoryFloor",
+      "organized_name": "FactoryFloorProductionSystemInfoGraphic.docx",
+      "html_name": "FactoryFloorProductionSystemInfoGraphic.html",
+      "ext": ".docx",
+      "md5": "4727037bde7d7ca1f562b4bbc3120324",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": true
+    },
+    {
+      "src_rel": "Education/FactoryFloor/ENG/FactoryFloorProductionSystemInfoGraphic.pdf",
+      "category": "16-Domain-Examples-FactoryFloor",
+      "organized_name": "FactoryFloorProductionSystemInfoGraphic.pdf",
+      "html_name": "FactoryFloorProductionSystemInfoGraphic__pdf.html",
+      "ext": ".pdf",
+      "md5": "8a9432041075fe9a459d2b4922401128",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": true
+    },
+    {
+      "src_rel": "Education/FactoryFloor/PT/SistemaProduçãoChãoFábricaDocumentaçãoFormal.docx",
+      "category": "16-Domain-Examples-FactoryFloor",
+      "organized_name": "SistemaProduçãoChãoFábricaDocumentaçãoFormal.docx",
+      "html_name": "SistemaProduçãoChãoFábricaDocumentaçãoFormal.html",
+      "ext": ".docx",
+      "md5": "fae9f6b2bfad2df9eab4b35a1ebb02ab",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": true
+    },
+    {
+      "src_rel": "Education/FactoryFloor/PT/SistemaProduçãoChãoFábricaDocumentaçãoFormal.pdf",
+      "category": "16-Domain-Examples-FactoryFloor",
+      "organized_name": "SistemaProduçãoChãoFábricaDocumentaçãoFormal.pdf",
+      "html_name": "SistemaProduçãoChãoFábricaDocumentaçãoFormal__pdf.html",
+      "ext": ".pdf",
+      "md5": "50aa32f8223fab703fd4b1fc91882360",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": true
+    },
+    {
+      "src_rel": "Education/FactoryFloor/PT/SistemaProduçãoChãoFábricaInfoGráfico.docx",
+      "category": "16-Domain-Examples-FactoryFloor",
+      "organized_name": "SistemaProduçãoChãoFábricaInfoGráfico.docx",
+      "html_name": "SistemaProduçãoChãoFábricaInfoGráfico.html",
+      "ext": ".docx",
+      "md5": "eb0c95e9f531eef6fe0f63dc20de37f5",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": true
+    },
+    {
+      "src_rel": "Education/FactoryFloor/PT/SistemaProduçãoChãoFábricaInfoGráfico.pdf",
+      "category": "16-Domain-Examples-FactoryFloor",
+      "organized_name": "SistemaProduçãoChãoFábricaInfoGráfico.pdf",
+      "html_name": "SistemaProduçãoChãoFábricaInfoGráfico__pdf.html",
+      "ext": ".pdf",
+      "md5": "379f876407a11c33bf36925335aaa707",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": true
+    },
+    {
+      "src_rel": "Education/ForDummies/06-Blazor-JS-Interop-Static-Events-ForDummies.md",
+      "category": "19-For-Dummies",
+      "organized_name": "06-Blazor-JS-Interop-Static-Events-ForDummies.md",
+      "html_name": "06-Blazor-JS-Interop-Static-Events-ForDummies.html",
+      "ext": ".md",
+      "md5": "f8945281fc25d1b45cda575c8a62206e",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/ForDummies/07-Facial-Recognition-Architecture-ForDummies.md",
+      "category": "19-For-Dummies",
+      "organized_name": "07-Facial-Recognition-Architecture-ForDummies.md",
+      "html_name": "07-Facial-Recognition-Architecture-ForDummies.html",
+      "ext": ".md",
+      "md5": "79271cc521fd506b51991dc46dde0159",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/ForDummies/08-Design-Patterns-For-Dummies.md",
+      "category": "19-For-Dummies",
+      "organized_name": "08-Design-Patterns-For-Dummies.md",
+      "html_name": "08-Design-Patterns-For-Dummies.html",
+      "ext": ".md",
+      "md5": "71668efb6eb4eed9fb24d3e2dea91293",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/ForDummies/09-GenericScheduleGrid-ForDummies.md",
+      "category": "19-For-Dummies",
+      "organized_name": "09-GenericScheduleGrid-ForDummies.md",
+      "html_name": "09-GenericScheduleGrid-ForDummies.html",
+      "ext": ".md",
+      "md5": "ae79c0e5f23488f17175c85168b7ed3b",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/ForDummies/11-SignalR-Real-Time-Communication-ForDummies.md",
+      "category": "19-For-Dummies",
+      "organized_name": "11-SignalR-Real-Time-Communication-ForDummies.md",
+      "html_name": "11-SignalR-Real-Time-Communication-ForDummies.html",
+      "ext": ".md",
+      "md5": "a8a4f6d00bb2d55a6ad5ac264f08dafc",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/ForDummies/14-SignalR-Notification-System-ForDummies.md",
+      "category": "19-For-Dummies",
+      "organized_name": "14-SignalR-Notification-System-ForDummies.md",
+      "html_name": "14-SignalR-Notification-System-ForDummies.html",
+      "ext": ".md",
+      "md5": "82eb024d4eddd6c052838edd7071a824",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/ForDummies/15-Notification-Recipient-Resolver-Pipeline-ForDummies.md",
+      "category": "19-For-Dummies",
+      "organized_name": "15-Notification-Recipient-Resolver-Pipeline-ForDummies.md",
+      "html_name": "15-Notification-Recipient-Resolver-Pipeline-ForDummies.html",
+      "ext": ".md",
+      "md5": "e19dbeff702b903d57062d4b96e5684e",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/generics-builders-deep-dive.html",
+      "category": "04-CSharp-Language",
+      "organized_name": "generics-builders-deep-dive.html",
+      "html_name": "generics-builders-deep-dive.html",
+      "ext": ".html",
+      "md5": "2e733bdeb6d2ac3fa09484ca07f7cabd",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/Git/separating-repos.md",
+      "category": "20-Git",
+      "organized_name": "separating-repos.md",
+      "html_name": "separating-repos.html",
+      "ext": ".md",
+      "md5": "11d74d0008bc68f1e4d0b94ae9fd2809",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/login.html",
+      "category": "06-Auth-and-Identity",
+      "organized_name": "login.html",
+      "html_name": "login.html",
+      "ext": ".html",
+      "md5": "0701d6a2a39bfce70f6ace332f19f205",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/README.md",
+      "category": "00-Meta",
+      "organized_name": "README.md",
+      "html_name": "README.html",
+      "ext": ".md",
+      "md5": "b955e8ac7a1f475fbf3897e18c7f835e",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/SQL/backup-and-cleanup.html",
+      "category": "07-Database-EF-SQL",
+      "organized_name": "backup-and-cleanup.html",
+      "html_name": "backup-and-cleanup.html",
+      "ext": ".html",
+      "md5": "a688c62d9f326b6f8934623e29a5efea",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/SQL/ef-core-multi-tenant.html",
+      "category": "07-Database-EF-SQL",
+      "organized_name": "ef-core-multi-tenant.html",
+      "html_name": "ef-core-multi-tenant.html",
+      "ext": ".html",
+      "md5": "0824d14229106a252a921be75c2a846d",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Education/Stock/ENG/StockServiceSystemFormalDocumentation.docx",
+      "category": "17-Domain-Examples-Stock",
+      "organized_name": "StockServiceSystemFormalDocumentation.docx",
+      "html_name": "StockServiceSystemFormalDocumentation.html",
+      "ext": ".docx",
+      "md5": "8e9d78d4a6b3c5c114176eb25fc424ae",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": true
+    },
+    {
+      "src_rel": "Education/Stock/ENG/StockServiceSystemFormalDocumentation.pdf",
+      "category": "17-Domain-Examples-Stock",
+      "organized_name": "StockServiceSystemFormalDocumentation.pdf",
+      "html_name": "StockServiceSystemFormalDocumentation__pdf.html",
+      "ext": ".pdf",
+      "md5": "e4de0b0da340a05368caddd2d6b35321",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": true
+    },
+    {
+      "src_rel": "Education/Stock/ENG/StockServiceSystemInfoGraphic.docx",
+      "category": "17-Domain-Examples-Stock",
+      "organized_name": "StockServiceSystemInfoGraphic.docx",
+      "html_name": "StockServiceSystemInfoGraphic.html",
+      "ext": ".docx",
+      "md5": "fd12aeecbf454b49c0daca5c6a2e5cb3",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": true
+    },
+    {
+      "src_rel": "Education/Stock/ENG/StockServiceSystemInfoGraphic.pdf",
+      "category": "17-Domain-Examples-Stock",
+      "organized_name": "StockServiceSystemInfoGraphic.pdf",
+      "html_name": "StockServiceSystemInfoGraphic__pdf.html",
+      "ext": ".pdf",
+      "md5": "71216a504894f4844cedad10b17fb674",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": true
+    },
+    {
+      "src_rel": "Education/Stock/PT/SistemaServiçoStockDocumentaçãoFormal.docx",
+      "category": "17-Domain-Examples-Stock",
+      "organized_name": "SistemaServiçoStockDocumentaçãoFormal.docx",
+      "html_name": "SistemaServiçoStockDocumentaçãoFormal.html",
+      "ext": ".docx",
+      "md5": "24a6ce4718f8d3a03cc25be8319dfb58",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": true
+    },
+    {
+      "src_rel": "Education/Stock/PT/SistemaServiçoStockDocumentaçãoFormal.pdf",
+      "category": "17-Domain-Examples-Stock",
+      "organized_name": "SistemaServiçoStockDocumentaçãoFormal.pdf",
+      "html_name": "SistemaServiçoStockDocumentaçãoFormal__pdf.html",
+      "ext": ".pdf",
+      "md5": "13425f1ae71d0732fd2b87bc0a07aaa2",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": true
+    },
+    {
+      "src_rel": "Education/Stock/PT/SistemaServiçoStockInfoGráfico.docx",
+      "category": "17-Domain-Examples-Stock",
+      "organized_name": "SistemaServiçoStockInfoGráfico.docx",
+      "html_name": "SistemaServiçoStockInfoGráfico.html",
+      "ext": ".docx",
+      "md5": "23d8c5d8673205df766faadc17355617",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": true
+    },
+    {
+      "src_rel": "Education/Stock/PT/SistemaServiçoStockInfoGráfico.pdf",
+      "category": "17-Domain-Examples-Stock",
+      "organized_name": "SistemaServiçoStockInfoGráfico.pdf",
+      "html_name": "SistemaServiçoStockInfoGráfico__pdf.html",
+      "ext": ".pdf",
+      "md5": "81d95199483beba939be513194d86bf1",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": true
+    },
+    {
+      "src_rel": "Education/tutorial.html",
+      "category": "11-Web-Fundamentals",
+      "organized_name": "tutorial.html",
+      "html_name": "tutorial.html",
+      "ext": ".html",
+      "md5": "2df493b541877b3dcaa613ff095ee8e8",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Identity/IdentityProjectKnowledge.pdf",
+      "category": "06-Auth-and-Identity",
+      "organized_name": "IdentityProjectKnowledge.pdf",
+      "html_name": "IdentityProjectKnowledge.html",
+      "ext": ".pdf",
+      "md5": "d7057fb11b263969e0618eaf11f87e4e",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": true
+    },
+    {
+      "src_rel": "Identity/IdentityProjectKnowledgeEditable.docx",
+      "category": "06-Auth-and-Identity",
+      "organized_name": "IdentityProjectKnowledgeEditable.docx",
+      "html_name": "IdentityProjectKnowledgeEditable.html",
+      "ext": ".docx",
+      "md5": "6e629410ea4372520bdabc75d2aa98fb",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": true
+    },
+    {
+      "src_rel": "Identity/IdentityRoadmap.pdf",
+      "category": "06-Auth-and-Identity",
+      "organized_name": "IdentityRoadmap.pdf",
+      "html_name": "IdentityRoadmap.html",
+      "ext": ".pdf",
+      "md5": "8aa3d1448d78cc153ef0e49dc82ea914",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "JScript/AG_Grid_JS_learning.docx",
+      "category": "12-JavaScript",
+      "organized_name": "AG_Grid_JS_learning.docx",
+      "html_name": "AG_Grid_JS_learning.html",
+      "ext": ".docx",
+      "md5": "78d90d7e33fadbf718de423c765c9b94",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "JScript/Document 1.docx",
+      "category": "12-JavaScript",
+      "organized_name": "Document 1.docx",
+      "html_name": "Document 1.html",
+      "ext": ".docx",
+      "md5": "6f02f34e412a1785b590de6c56b74ca1",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": true
+    },
+    {
+      "src_rel": "JScript/Document 1.pdf",
+      "category": "12-JavaScript",
+      "organized_name": "Document 1.pdf",
+      "html_name": "Document 1__pdf.html",
+      "ext": ".pdf",
+      "md5": "73a502fbb680e6350a4ed26081e7be62",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": true
+    },
+    {
+      "src_rel": "JScript/Exemplo2Buttons.html",
+      "category": "12-JavaScript",
+      "organized_name": "Exemplo2Buttons.html",
+      "html_name": "Exemplo2Buttons.html",
+      "ext": ".html",
+      "md5": "bb2d5a76b679568af7d512f5329b48ee",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "JScript/ExemploCores.html",
+      "category": "12-JavaScript",
+      "organized_name": "ExemploCores.html",
+      "html_name": "ExemploCores.html",
+      "ext": ".html",
+      "md5": "529f9d8fc37552b67fa399a8fd929df4",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "JScript/JS_Select2&CustomMethods.pdf",
+      "category": "12-JavaScript",
+      "organized_name": "JS_Select2&CustomMethods.pdf",
+      "html_name": "JS_Select2&CustomMethods.html",
+      "ext": ".pdf",
+      "md5": "3d9526e938538a8a057ef7bbdb40b1f2",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "JScript/Manual de Processos-Design.pdf",
+      "category": "12-JavaScript",
+      "organized_name": "Manual de Processos-Design.pdf",
+      "html_name": "Manual de Processos-Design.html",
+      "ext": ".pdf",
+      "md5": "9c1a0d0feeed2f36551bd124df1f05a6",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "JScript/Select2_JQuery_explanation.docx",
+      "category": "12-JavaScript",
+      "organized_name": "Select2_JQuery_explanation.docx",
+      "html_name": "Select2_JQuery_explanation.html",
+      "ext": ".docx",
+      "md5": "99a78c1ca02fae8ac53d240fe7ba7c27",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Microsoft_Fullstack/ASyncPattern.docx",
+      "category": "08-Concurrency-and-Async",
+      "organized_name": "ASyncPattern.docx",
+      "html_name": "ASyncPattern.html",
+      "ext": ".docx",
+      "md5": "faa56d83bb19c9a85b69ead1dc811a21",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Microsoft_Fullstack/HowToCreateUnitTesting.docx",
+      "category": "13-Testing",
+      "organized_name": "HowToCreateUnitTesting.docx",
+      "html_name": "HowToCreateUnitTesting.html",
+      "ext": ".docx",
+      "md5": "b20a04c47e27ae750aea5d1dff06e0ab",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Microsoft_Fullstack/The Complete Guide to Unit Testing.docx",
+      "category": "13-Testing",
+      "organized_name": "The Complete Guide to Unit Testing.docx",
+      "html_name": "The Complete Guide to Unit Testing.html",
+      "ext": ".docx",
+      "md5": "84fdc8b35df478cd030b0c92917808db",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "Microsoft_Fullstack/UnitTestingTutorial.pdf",
+      "category": "13-Testing",
+      "organized_name": "UnitTestingTutorial.pdf",
+      "html_name": "UnitTestingTutorial.html",
+      "ext": ".pdf",
+      "md5": "8ef2e73ab8e67d8f5bf2dbd5fe87c735",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    },
+    {
+      "src_rel": "📘 Loadings_Includes_virtuals.docx",
+      "category": "07-Database-EF-SQL",
+      "organized_name": "📘 Loadings_Includes_virtuals.docx",
+      "html_name": "📘 Loadings_Includes_virtuals.html",
+      "ext": ".docx",
+      "md5": "f124a22ec9f1c479038086bf24a7fa66",
+      "is_exact_duplicate": false,
+      "is_cross_format_duplicate": false
+    }
+  ]
+}

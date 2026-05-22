@@ -1,0 +1,274 @@
+Inside async/await — State Machines and Hidden Mains
+Inside async/await
+Tutorial #33 — State machines, hidden Mains, and the compiler tricks you never see
+1. The Two Mysteries
+When you use modern C#, two things happen that look like magic but aren't:
+Top-level statements — your Program.cs has no visible Main , yet the app runs.
+async/await — a single method seems to "pause" and "resume", which should be impossible.
+Both are resolved by the same underlying idea: the compiler is doing something very clever before the runtime ever sees your code . The runtime is dumb and strict. The compiler is clever and lenient. Understanding where that line sits is one of the biggest jumps in C# intuition.
+Syntactic sugar is always about what the compiler does with your code before the runtime sees it. Once you grasp this, a lot of C# "magic" disappears.
+2. Mystery #1 — The Hidden Main
+Consider this Program.cs from a modern C# console app:
+using System;
+Console . WriteLine ( "Hello, World!" );
+Where is Main ? It must exist — the CLR (the .NET runtime) has no concept of "top-level statements". Every .NET executable must have a static Main method in its assembly. The compiler won't run your program without one.
+The secret: the compiler generates one for you . Behind the scenes, your file is transformed into something equivalent to:
+using System;
+internal class Program
+{
+private static void Main ( string [] args )
+{
+Console . WriteLine ( "Hello, World!" );
+}
+}
+You can verify this on sharplab.io — paste any top-level C# code and it decompiles to exactly this kind of structure. The hidden Program class and synthetic Main are real IL code in the compiled DLL.
+The compiler picks the right Main signature
+Here's the clever part. The compiler looks at what your code does and picks a Main signature that fits:
+Your top-level code uses...
+Compiler generates...
+No await
+static void Main(string[] args)
+await anywhere
+static async Task Main(string[] args)
+return 0; at the end
+static int Main(string[] args)
+Both await and return 0;
+static async Task<int> Main(string[] args)
+This means: the very moment you add a single await to Program.cs, the compiler silently switches the generated Main from static void to static async Task . You didn't write a line of configuration. No async keyword at the top. No Task return. The compiler inferred it all from the presence of await .
+Top-level statements = "write your Main method body without typing the Main method." The compiler picks the right signature based on what it sees inside.
+Scoping other methods with top-level statements
+You can still declare classes and methods — there's just one ordering rule: top-level statements must come before any type declarations in the file .
+using System;
+// Top-level statements first
+Console . WriteLine ( "hi" );
+Foo . Bar ();
+// Local function — lives INSIDE the synthesized Main
+void HelperFunction ()
+{
+Console . WriteLine ( "I'm a local function inside Main" );
+}
+// Type declaration — lives OUTSIDE Main, at the namespace level
+public static class Foo
+{
+public static void Bar () => Console . WriteLine ( "I'm a real static method" );
+}
+The reverse ordering fails:
+public static class Foo { ... }
+Console . WriteLine ( "hi" ); // ❌ compile error — top-level after a type is illegal
+The compiler needs a clear boundary to decide "where does the hidden Main end?". Once it sees a type declaration, the top-level region is over.
+3. Mystery #2 — State Machines
+Now the bigger mystery. Take this method:
+async Task FetchDataAsync ()
+{
+Console . WriteLine ( "Starting..." );
+var data = await httpClient. GetStringAsync (url);
+Console . WriteLine ( $"Got: {data}" );
+}
+At the await line, this method needs to pause , release its thread back to the thread pool, and resume only when the HTTP call finishes. But methods don't work that way in C# — a method either runs to completion or throws an exception. There's no native "pause here" instruction.
+So how does it work? The compiler rewrites your method as a state machine .
+What a state machine is
+A state machine is a well-known CS concept: a data structure with a current state and rules for transitioning between states when events happen. You've probably seen them in videogames — an enemy might be in state Idle , and when the player enters range, it transitions to Chasing . When health hits zero, it transitions to Dead .
+Videogame State Machine: Async State Machine:
+┌──────┐ sees player ┌──────┐ ┌─────┐
+│ Idle │ ───────────────> │Chase │ │ -1 │ initial entry
+└──────┘ └──────┘ └──┬──┘
+^ │ │ runs code up to first await
+│ lost │ in range v
+│ v ┌─────┐
+│ ┌──────┐ │ 0 │ suspended, waiting for Task
+└───────────────────── │Attack│ └──┬──┘
+└──────┘ │ Task completes, MoveNext called
+v
+┌─────┐
+│ 1 │ runs code between awaits
+└──┬──┘
+v
+┌─────┐
+│ -2 │ done
+└─────┘
+Both are state machines. The difference is who designs them and what the states mean :
+Videogame state machine
+Async state machine
+You design it by hand
+Compiler generates it from your async method
+States have semantic meaning ( Idle , Walking , Dead )
+States are mechanical checkpoints ("the code between await #0 and #1")
+Transitions triggered by game events (input, collisions)
+Transitions triggered only by Task completion
+The state is the abstraction you care about
+The state is an implementation detail you never see
+If you've built a state machine for a Unity NPC, you've built the same thing the compiler builds for async — same pattern, different purpose. Async is a state machine with a single question driving transitions: "did the Task I was waiting on finish yet?"
+What the compiler actually generates
+Here's a simplified version of what FetchDataAsync becomes after compilation. The original single method is transformed into a stub plus a generated struct :
+// Your method becomes a stub that kicks off the state machine
+Task FetchDataAsync ()
+{
+var sm = new FetchDataAsyncStateMachine ();
+sm.builder = AsyncTaskMethodBuilder . Create ();
+sm.state = -1 ;
+sm.builder. Start ( ref sm);
+return sm.builder.Task;
+}
+// The state machine — compiler-generated, never written by you
+[ CompilerGenerated ]
+struct FetchDataAsyncStateMachine : IAsyncStateMachine
+{
+public int state; // where are we in the method?
+public AsyncTaskMethodBuilder builder; // tracks the Task to return
+public TaskAwaiter < string > awaiter; // the current Task we're waiting on
+public string data; // local variable, hoisted to a field
+public void MoveNext ()
+{
+switch (state)
+{
+case -1 : // first entry into the method
+Console . WriteLine ( "Starting..." );
+awaiter = httpClient. GetStringAsync (url). GetAwaiter ();
+if (!awaiter.IsCompleted)
+{
+state = 0 ;
+builder. AwaitUnsafeOnCompleted ( ref awaiter, ref this );
+return ; // SUSPEND HERE — release the thread
+}
+goto case 0 ;
+case 0 : // resumed after the await completed
+data = awaiter. GetResult ();
+Console . WriteLine ( $"Got: {data}" );
+builder. SetResult ();
+return ;
+}
+}
+}
+What to notice:
+Your local variable data became a field on the struct ("hoisted"). It has to live beyond the method's stack frame because the method can be paused and resumed.
+The state variable tracks which chunk of original code to run next. It starts at -1 (not yet started), and each await adds a new case.
+When the Task isn't done yet, MoveNext returns early. This is the "pause" — the method literally returns, freeing the thread. The state machine is now dormant, its current state saved in the state field.
+When the awaited Task completes, the runtime calls MoveNext again. The switch sees state == 0 and jumps to the "resumed" branch, continuing where it left off.
+The whole thing is one struct , not a class — structs live on the stack when possible, which saves allocations for synchronous completions.
+The compiler does this transformation every time you write async , whether or not the method actually has any awaits. Even an async method with no await at all gets the full state machine treatment. That's where the next section comes in.
+4. The Cost of Unused Async
+Consider these two methods. They're functionally identical — both produce a Task that's already completed when returned:
+// Version A — async keyword, no awaits
+async Task SyncyFoo ()
+{
+Console . WriteLine ( "hi" );
+}
+// Version B — return Task.CompletedTask directly
+Task SyncyFoo ()
+{
+Console . WriteLine ( "hi" );
+return Task .CompletedTask;
+}
+At the call site, they behave identically — both return a completed Task, both can be await ed, both produce no errors. But the compiled output is dramatically different.
+Version A — compiled
+// A struct is generated
+struct SyncyFooStateMachine : IAsyncStateMachine
+{
+public int state;
+public AsyncTaskMethodBuilder builder;
+public void MoveNext ()
+{
+try
+{
+Console . WriteLine ( "hi" );
+}
+catch ( Exception ex)
+{
+state = -2 ;
+builder. SetException (ex);
+return ;
+}
+state = -2 ;
+builder. SetResult ();
+}
+public void SetStateMachine ( IAsyncStateMachine sm) { }
+}
+// Your original method becomes a stub
+Task SyncyFoo ()
+{
+var sm = new SyncyFooStateMachine ();
+sm.builder = AsyncTaskMethodBuilder . Create ();
+sm.state = -1 ;
+sm.builder. Start ( ref sm);
+return sm.builder.Task;
+}
+Version B — compiled
+Task SyncyFoo ()
+{
+Console . WriteLine ( "hi" );
+return Task .CompletedTask;
+}
+That's it. Version B compiles to exactly what you wrote. Same two lines. No state machine, no builder, no struct.
+The measurable difference
+Aspect
+async Task Foo() { ... }
+Task Foo() { ...; return Task.CompletedTask; }
+State machine struct
+Generated
+None
+AsyncTaskMethodBuilder allocation
+Created
+None
+Task allocation
+Sometimes (builder may cache)
+Singleton Task.CompletedTask
+Method call indirection
+Builder.Start → MoveNext
+Direct execution
+JIT inlining
+Harder (state machine boundary)
+Full inlining possible
+Debugging stack traces
+Noisy (shows state machine frames)
+Clean
+For one call, the difference is nanoseconds. For a web API handling millions of requests, or an ORM building thousands of query plans per second, or a hot game loop — it adds up measurably.
+5. The Three Sentinel Tasks
+When you don't have any actual async work to do but still need to return a Task , use one of these three pre-built sentinels:
+Return type
+Sentinel
+Use case
+Task
+Task.CompletedTask
+Method did its work synchronously, no result
+Task<T>
+Task.FromResult(value)
+Method did its work synchronously, here's the value
+Task or Task<T>
+Task.FromException(ex)
+Method failed synchronously, here's the error
+public Task ClearCache ()
+{
+_cache. Clear ();
+return Task .CompletedTask;
+}
+public Task < int > GetCachedCount ()
+{
+return Task . FromResult (_cache.Count);
+}
+public Task < User > GetUserOrFail ( int id)
+{
+if (id < 0 )
+return Task . FromException < User >( new ArgumentException ( "Invalid id" ));
+return Task . FromResult (_users[id]);
+}
+Only add the async keyword to a method if that method actually uses await . If it doesn't, return a Task directly and use one of the sentinel tasks. The compiler cannot tell that your async method has no awaits — it generates the state machine regardless.
+6. Awaiting an Already-Completed Task
+One more optimization worth knowing: when you await a Task that's already completed (like Task.CompletedTask or a Task returned from a method that ran synchronously), the runtime detects this and skips the suspension entirely . No continuation is scheduled. No thread switch happens. Execution just continues on the same thread, synchronously.
+async Task Caller ()
+{
+await SyncWorker (); // If SyncWorker returns Task.CompletedTask...
+Console . WriteLine ( "hi" ); // ...this runs immediately, same thread, no reschedule
+}
+This is why mixing sync and async freely has very low cost in C#. The overhead of await only kicks in when the Task is genuinely incomplete. For completed Tasks, it's essentially a couple of branch predictions and a function call.
+"Await that Task" really means "check if the Task is already done; if yes, keep going; if no, schedule the rest of this method to run when the Task finishes, then return." The fast path is just two checks and a branch.
+7. Key Takeaways
+Top-level statements are a compile-time transformation. The compiler generates a hidden Program class and a Main method, then stuffs your top-level code inside.
+The compiler picks the right Main signature based on what your code does. Use await → get async Task Main . Use return 0 → get int Main . Both → get async Task<int> Main .
+Top-level statements must come before type declarations . Local functions can live in top-level code; actual classes must come after.
+async/await is 100% syntactic sugar . The CLR has no concept of it. The compiler rewrites every async method as a state machine struct with a MoveNext method and a state field.
+Local variables get "hoisted" to fields on the state machine struct because they need to survive suspension.
+State machines are the same CS concept as videogame FSMs. The difference is that async state machines are generated mechanically, with meaningless intermediate states, driven purely by Task completion events.
+An async method with no await still pays the full cost of state machine generation. Prefer returning Task.CompletedTask directly for sync work.
+The three sentinel tasks — Task.CompletedTask , Task.FromResult(x) , Task.FromException(ex) — let you fulfill a Task-returning contract with zero async overhead.
+Awaiting a completed Task is nearly free . The runtime detects synchronous completion and skips the continuation machinery entirely.
+Verify any of this yourself on sharplab.io — paste C# code, see exactly what the compiler generates. It's one of the best tools for dissolving "magic" in the language.

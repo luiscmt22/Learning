@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Welcome back!</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #EDE8E3;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.card {
+  display: flex;
+  width: min(820px, 96vw);
+  min-height: 520px;
+  background: #F7F3EF;
+  border-radius: 28px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.13);
+  overflow: hidden;
+  position: relative;
+}
+
+.plus-deco {
+  position: absolute;
+  top: 22px; right: 30px;
+  font-size: 28px;
+  font-weight: 200;
+  color: #C8C0B8;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* ── Character Panel ── */
+.char-panel {
+  width: 330px;
+  flex-shrink: 0;
+  background: #E8E2DB;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+}
+.char-panel svg { width: 100%; height: auto; display: block; }
+
+/* ── Form Panel ── */
+.form-panel {
+  flex: 1;
+  padding: 52px 46px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.form-panel h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 33px;
+  color: #1a1a1a;
+  margin-bottom: 5px;
+}
+.subtitle { font-size: 14px; color: #aaa; margin-bottom: 28px; }
+
+.field { margin-bottom: 16px; }
+.field label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #666;
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
+}
+.field input[type="email"],
+.field input[type="password"],
+.field input[type="text"] {
+  width: 100%;
+  height: 46px;
+  border: 1.5px solid #E2DBD5;
+  border-radius: 10px;
+  padding: 0 14px;
+  font-size: 14px;
+  font-family: 'DM Sans', sans-serif;
+  color: #1a1a1a;
+  outline: none;
+  background: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.field input:focus {
+  border-color: #7B5CF5;
+  box-shadow: 0 0 0 3px rgba(123,92,245,0.11);
+}
+.field.err input  { border-color: #e05252 !important; box-shadow: none !important; }
+.field.ok  input  { border-color: #38c172 !important; box-shadow: none !important; }
+
+.pw-wrap { position: relative; }
+.pw-wrap input { padding-right: 46px; }
+.pw-toggle {
+  position: absolute; right: 12px; top: 50%;
+  transform: translateY(-50%);
+  background: none; border: none; cursor: pointer;
+  color: #C0B8B0; padding: 4px; line-height: 1;
+  display: flex; align-items: center;
+  transition: color 0.2s;
+}
+.pw-toggle:hover { color: #888; }
+
+.remember-row {
+  display: flex; align-items: center;
+  gap: 8px; margin-bottom: 22px;
+  font-size: 13px; color: #888; cursor: pointer;
+}
+.remember-row input { accent-color: #7B5CF5; cursor: pointer; }
+
+.msg {
+  font-size: 13px; text-align: center;
+  min-height: 18px; margin-bottom: 10px;
+}
+#app.s-success .msg { color: #27ae60; }
+#app.s-error   .msg { color: #e05252; }
+
+.btn-primary {
+  width: 100%; height: 50px;
+  background: #1a1a1a; color: white;
+  border: none; border-radius: 12px;
+  font-size: 15px; font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: background 0.2s, transform 0.1s, opacity 0.2s;
+  margin-bottom: 12px;
+}
+.btn-primary:hover:not(:disabled) { background: #2e2e2e; }
+.btn-primary:active:not(:disabled) { transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.65; cursor: not-allowed; }
+
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white; border-radius: 50%;
+  display: none;
+  animation: spin 0.65s linear infinite;
+}
+#app.s-loading .spinner  { display: block; }
+#app.s-loading .btn-arr  { display: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.btn-google {
+  width: 100%; height: 46px;
+  background: white; color: #555;
+  border: 1.5px solid #E2DBD5; border-radius: 12px;
+  font-size: 13.5px; font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  margin-bottom: 22px;
+}
+.btn-google:hover { border-color: #c5bdb5; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+
+.signup-text { text-align: center; font-size: 13px; color: #bbb; }
+.signup-text a { color: #7B5CF5; text-decoration: none; font-weight: 500; }
+.signup-text a:hover { text-decoration: underline; }
+
+
+/* ════════════════════════════════════════════
+   CHARACTER STATE MACHINE
+   ════════════════════════════════════════════ */
+
+/* Default: show neutral, hide others */
+.e-smile, .e-frown, .e-squint, .e-peek { display: none; }
+.e-neutral { display: block; }
+
+/* Arm + body group transitions */
+.arm-left, .arm-right {
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-box: fill-box;
+  transform-origin: center top;
+}
+.c-purple {
+  transition: transform 0.35s ease;
+  transform-box: fill-box;
+  transform-origin: center bottom;
+}
+.c-black, .c-yellow {
+  transition: transform 0.35s ease;
+  transform-box: fill-box;
+  transform-origin: center bottom;
+}
+
+/* ── s-email: lean toward form ── */
+#app.s-email .c-purple { transform: rotate(4deg) translateX(3px); }
+#app.s-email .c-black  { transform: rotate(2deg); }
+
+/* ── s-email-ok: smiles ── */
+#app.s-email-ok .e-neutral        { display: none; }
+#app.s-email-ok .e-smile          { display: block; }
+#app.s-email-ok .c-purple         { transform: rotate(4deg) translateX(3px); }
+#app.s-email-ok .c-black          { transform: rotate(2deg); }
+
+/* ── s-email-bad: frowns ── */
+#app.s-email-bad .e-neutral       { display: none; }
+#app.s-email-bad .e-frown         { display: block; }
+
+/* ── s-password: cover eyes ── */
+#app.s-password .e-neutral        { display: none; }
+#app.s-password .e-squint         { display: block; }
+#app.s-password .arm-left         { transform: translateY(-190px); }
+#app.s-password .arm-right        { transform: translateY(-190px); }
+
+/* ── s-peek: right arm drops, peeking ── */
+#app.s-peek .e-neutral            { display: none; }
+#app.s-peek .e-peek               { display: block; }
+#app.s-peek .arm-left             { transform: translateY(-190px); }
+#app.s-peek .arm-right            { transform: translateY(-80px); }
+
+/* ── s-success: celebrate ── */
+#app.s-success .e-neutral         { display: none; }
+#app.s-success .e-smile           { display: block; }
+#app.s-success .c-purple          { animation: bounce 0.8s ease both; }
+#app.s-success .c-yellow          { animation: bounce 0.85s 0.08s ease both; }
+#app.s-success .c-black           { animation: bounce 0.75s 0.04s ease both; }
+
+/* ── s-error: sad ── */
+#app.s-error .e-neutral           { display: none; }
+#app.s-error .e-frown             { display: block; }
+#app.s-error .c-purple            { animation: shake 0.5s ease both; }
+
+/* ── Keyframes ── */
+@keyframes bounce {
+  0%   { transform: translateY(0); }
+  28%  { transform: translateY(-16px); }
+  50%  { transform: translateY(-5px); }
+  68%  { transform: translateY(-12px); }
+  85%  { transform: translateY(-2px); }
+  100% { transform: translateY(0); }
+}
+@keyframes shake {
+  0%,100% { transform: rotate(0); }
+  20%     { transform: rotate(-5deg); }
+  40%     { transform: rotate(5deg); }
+  60%     { transform: rotate(-3.5deg); }
+  80%     { transform: rotate(3.5deg); }
+}
+</style>
+</head>
+<body>
+
+<div id="app" class="s-idle">
+<div class="card">
+
+  <div class="plus-deco">+</div>
+
+  <!-- ═══════════ CHARACTERS ═══════════ -->
+  <div class="char-panel">
+  <svg viewBox="0 0 280 370" xmlns="http://www.w3.org/2000/svg">
+
+    <!-- Orange circle (back layer) -->
+    <circle cx="50" cy="350" r="112" fill="#F06A25"/>
+
+    <!-- ── BLACK BIRD ── -->
+    <g class="c-black">
+      <rect x="148" y="194" width="60" height="86" rx="30" fill="#1D1D1D"/>
+
+      <!-- neutral -->
+      <g class="e-neutral">
+        <circle cx="168" cy="223" r="9" fill="white"/>
+        <circle id="p-black-l" cx="170" cy="225" r="4" fill="#111"/>
+        <circle cx="192" cy="223" r="9" fill="white"/>
+        <circle id="p-black-r" cx="194" cy="225" r="4" fill="#111"/>
+        <path d="M 163 248 Q 180 258 197 248" stroke="white" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      </g>
+      <!-- smile -->
+      <g class="e-smile">
+        <path d="M 159 221 Q 168 212 177 221" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M 183 221 Q 192 212 201 221" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M 163 246 Q 180 258 197 246" stroke="white" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      </g>
+      <!-- frown -->
+      <g class="e-frown">
+        <circle cx="168" cy="226" r="9" fill="white"/>
+        <circle cx="168" cy="231" r="4" fill="#111"/>
+        <circle cx="192" cy="226" r="9" fill="white"/>
+        <circle cx="192" cy="231" r="4" fill="#111"/>
+        <path d="M 163 256 Q 180 247 197 256" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </g>
+      <!-- squint -->
+      <g class="e-squint">
+        <path d="M 159 223 Q 168 216 177 223" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M 183 223 Q 192 216 201 223" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      </g>
+      <!-- peek -->
+      <g class="e-peek">
+        <path d="M 159 222 Q 168 215 177 222" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <circle cx="192" cy="223" r="8" fill="white"/>
+        <circle cx="194" cy="225" r="3.5" fill="#111"/>
+      </g>
+    </g>
+
+    <!-- ── PURPLE BIRD (main) ── -->
+    <g class="c-purple">
+      <!-- Body -->
+      <rect x="58" y="34" width="92" height="232" rx="46" fill="#7C5CF6"/>
+
+      <!-- ── Expressions (rendered before arms so arms appear on top) ── -->
+
+      <!-- neutral -->
+      <g class="e-neutral">
+        <circle cx="88" cy="118" r="16" fill="white"/>
+        <circle id="p-purple-l" cx="91" cy="121" r="7" fill="#111"/>
+        <circle cx="120" cy="118" r="16" fill="white"/>
+        <circle id="p-purple-r" cx="123" cy="121" r="7" fill="#111"/>
+        <path d="M 88 152 Q 104 164 120 152" stroke="#111" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+      </g>
+
+      <!-- smile -->
+      <g class="e-smile">
+        <path d="M 72 116 Q 88 103 104 116" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <path d="M 104 116 Q 120 103 136 116" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <path d="M 84 152 Q 104 172 124 152" stroke="#111" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </g>
+
+      <!-- frown -->
+      <g class="e-frown">
+        <circle cx="88" cy="121" r="16" fill="white"/>
+        <circle cx="88" cy="127" r="7" fill="#111"/>
+        <circle cx="120" cy="121" r="16" fill="white"/>
+        <circle cx="120" cy="127" r="7" fill="#111"/>
+        <path d="M 86 166 Q 104 154 122 166" stroke="#111" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+      </g>
+
+      <!-- squint (password covered, hint of expression) -->
+      <g class="e-squint">
+        <path d="M 72 118 Q 88 108 104 118" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <path d="M 104 118 Q 120 108 136 118" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/>
+      </g>
+
+      <!-- peek -->
+      <g class="e-peek">
+        <path d="M 72 117 Q 88 107 104 117" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <circle cx="120" cy="118" r="14" fill="white"/>
+        <circle cx="122" cy="120" r="6" fill="#111"/>
+        <path d="M 88 152 Q 104 164 120 152" stroke="#111" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+      </g>
+
+      <!-- ── ARMS (rendered last = draws on top of face) ── -->
+      <!-- Left arm hangs below face, centered under left eye (cx=88) -->
+      <g class="arm-left">
+        <rect x="72" y="228" width="30" height="62" rx="15" fill="#6A4EE0"/>
+        <circle cx="87" cy="296" r="19" fill="#6A4EE0"/>
+      </g>
+
+      <!-- Right arm hangs below face, centered under right eye (cx=120) -->
+      <g class="arm-right">
+        <rect x="106" y="228" width="30" height="62" rx="15" fill="#6A4EE0"/>
+        <circle cx="121" cy="296" r="19" fill="#6A4EE0"/>
+      </g>
+
+    </g>
+
+    <!-- ── YELLOW DUCK ── -->
+    <g class="c-yellow">
+      <!-- Body -->
+      <ellipse cx="224" cy="283" rx="50" ry="55" fill="#F5C62A"/>
+      <!-- Wing -->
+      <ellipse cx="202" cy="302" rx="22" ry="13" fill="#E0B020" transform="rotate(-18 202 302)"/>
+      <!-- Beak -->
+      <path d="M 258 272 L 279 280 L 258 288 Z" fill="#F07030"/>
+
+      <!-- neutral -->
+      <g class="e-neutral">
+        <circle cx="242" cy="257" r="12" fill="white"/>
+        <circle id="p-yellow" cx="244" cy="259" r="5.5" fill="#111"/>
+        <path d="M 228 280 Q 240 290 252 280" stroke="#D4A018" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      </g>
+      <!-- smile -->
+      <g class="e-smile">
+        <path d="M 230 255 Q 242 244 254 255" stroke="#111" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M 226 280 Q 239 294 252 280" stroke="#D4A018" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+      </g>
+      <!-- frown -->
+      <g class="e-frown">
+        <circle cx="242" cy="261" r="12" fill="white"/>
+        <circle cx="242" cy="267" r="5.5" fill="#111"/>
+        <path d="M 228 290 Q 240 280 252 290" stroke="#D4A018" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      </g>
+      <!-- squint -->
+      <g class="e-squint">
+        <path d="M 230 257 Q 242 250 254 257" stroke="#111" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+      </g>
+      <!-- peek -->
+      <g class="e-peek">
+        <path d="M 230 256 Q 242 248 254 256" stroke="#111" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+      </g>
+    </g>
+
+  </svg>
+  </div>
+
+  <!-- ═══════════ FORM ═══════════ -->
+  <div class="form-panel">
+    <h1>Welcome back!</h1>
+    <p class="subtitle">Please enter your details</p>
+
+    <div class="field" id="emailFld">
+      <label for="emailInp">Email</label>
+      <input type="email" id="emailInp" placeholder="anna@gmail.com" autocomplete="off" spellcheck="false"/>
+    </div>
+
+    <div class="field" id="passFld">
+      <label for="passInp">Password</label>
+      <div class="pw-wrap">
+        <input type="password" id="passInp" placeholder="••••••••••" autocomplete="off"/>
+        <button class="pw-toggle" id="pwToggle" type="button" aria-label="Toggle password">
+          <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="remember-row">
+      <input type="checkbox" id="rememberMe"/>
+      <label for="rememberMe">Remember for 30 days</label>
+    </div>
+
+    <p class="msg" id="msgEl"></p>
+
+    <button class="btn-primary" id="loginBtn" type="button">
+      <span>Log in</span>
+      <svg class="btn-arr" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14M12 5l7 7-7 7"/>
+      </svg>
+      <div class="spinner"></div>
+    </button>
+
+    <button class="btn-google" type="button">
+      <svg width="18" height="18" viewBox="0 0 24 24">
+        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+      </svg>
+      Log in with Google
+    </button>
+
+    <p class="signup-text">Don't have an account? <a href="#">Sign up</a></p>
+  </div>
+
+</div>
+</div>
+
+<script>
+const app      = document.getElementById('app');
+
+/* ── Cursor tracking ── */
+const TRACKING_STATES = new Set(['s-idle','s-email','s-email-ok']);
+const charSvg = document.querySelector('.char-panel svg');
+const pupils = [
+  { el: null, id: 'p-purple-l', ox: 91,  oy: 121, range: 5 },
+  { el: null, id: 'p-purple-r', ox: 123, oy: 121, range: 5 },
+  { el: null, id: 'p-black-l',  ox: 170, oy: 225, range: 3.5 },
+  { el: null, id: 'p-black-r',  ox: 194, oy: 225, range: 3.5 },
+  { el: null, id: 'p-yellow',   ox: 244, oy: 259, range: 4 },
+];
+// Resolve after DOM ready
+pupils.forEach(p => p.el = document.getElementById(p.id));
+
+document.addEventListener('mousemove', e => {
+  if (!TRACKING_STATES.has(app.className)) {
+    pupils.forEach(p => {
+      p.el.setAttribute('cx', p.ox);
+      p.el.setAttribute('cy', p.oy);
+    });
+    return;
+  }
+  const rect  = charSvg.getBoundingClientRect();
+  const vb    = charSvg.viewBox.baseVal;
+  const sx    = vb.width  / rect.width;
+  const sy    = vb.height / rect.height;
+  const mx    = (e.clientX - rect.left) * sx;
+  const my    = (e.clientY - rect.top)  * sy;
+
+  pupils.forEach(({ el, ox, oy, range }) => {
+    const dx   = mx - ox, dy = my - oy;
+    const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+    const c    = Math.min(dist, range) / dist;
+    el.setAttribute('cx', (ox + dx * c).toFixed(2));
+    el.setAttribute('cy', (oy + dy * c).toFixed(2));
+  });
+});
+
+const emailInp = document.getElementById('emailInp');
+const passInp  = document.getElementById('passInp');
+const pwToggle = document.getElementById('pwToggle');
+const eyeIcon  = document.getElementById('eyeIcon');
+const loginBtn = document.getElementById('loginBtn');
+const msgEl    = document.getElementById('msgEl');
+const emailFld = document.getElementById('emailFld');
+const passFld  = document.getElementById('passFld');
+
+let showPw    = false;
+let emailMode = 'idle'; // idle | focus | valid | invalid
+
+const validEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+const setState   = s  => { app.className = 's-' + s; };
+
+/* ── Email ── */
+emailInp.addEventListener('focus', () => {
+  emailMode = 'focus';
+  setState('email');
+});
+
+emailInp.addEventListener('input', () => {
+  emailFld.classList.remove('err', 'ok');
+  if (validEmail(emailInp.value)) {
+    emailMode = 'valid';
+    setState('email-ok');
+    emailFld.classList.add('ok');
+  } else {
+    emailMode = 'focus';
+    setState('email');
+  }
+});
+
+emailInp.addEventListener('blur', () => {
+  if (!emailInp.value) {
+    emailMode = 'idle';
+    setState('idle');
+  } else if (validEmail(emailInp.value)) {
+    emailMode = 'valid';
+    setState('email-ok');
+    emailFld.classList.add('ok');
+  } else {
+    emailMode = 'invalid';
+    setState('email-bad');
+    emailFld.classList.add('err');
+  }
+});
+
+/* ── Password ── */
+passInp.addEventListener('focus', () => {
+  passFld.classList.remove('err');
+  setState(showPw ? 'peek' : 'password');
+});
+
+passInp.addEventListener('blur', () => {
+  // Auto-close show password on blur
+  if (showPw) { toggleShowPw(false); }
+  if (emailMode === 'valid')   setState('email-ok');
+  else if (emailMode === 'invalid') setState('email-bad');
+  else setState('idle');
+});
+
+/* ── Toggle visibility ── */
+pwToggle.addEventListener('click', () => {
+  toggleShowPw(!showPw);
+  passInp.focus();
+});
+
+function toggleShowPw(val) {
+  showPw = val;
+  passInp.type = showPw ? 'text' : 'password';
+  eyeIcon.innerHTML = showPw
+    ? `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>`
+    : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+  if (document.activeElement === passInp) {
+    setState(showPw ? 'peek' : 'password');
+  }
+}
+
+/* ── Login ── */
+loginBtn.addEventListener('click', () => {
+  emailFld.classList.remove('err', 'ok');
+  passFld.classList.remove('err');
+  msgEl.textContent = '';
+
+  let err = false;
+  if (!validEmail(emailInp.value)) { emailFld.classList.add('err'); err = true; }
+  if (!passInp.value)              { passFld.classList.add('err');  err = true; }
+
+  if (err) {
+    setState('error');
+    msgEl.textContent = 'Fill in your details first!';
+    setTimeout(() => { setState('idle'); msgEl.textContent = ''; }, 2200);
+    return;
+  }
+
+  setState('loading');
+  loginBtn.disabled = true;
+
+  // Simulate async auth
+  setTimeout(() => {
+    loginBtn.disabled = false;
+    const success = passInp.value.length >= 6;
+    if (success) {
+      setState('success');
+      msgEl.textContent = '🎉 Welcome back!';
+    } else {
+      setState('error');
+      msgEl.textContent = 'Wrong credentials — try again!';
+      passFld.classList.add('err');
+    }
+    setTimeout(() => {
+      msgEl.textContent = '';
+      setState(emailMode === 'valid' ? 'email-ok' : 'idle');
+    }, 2600);
+  }, 1300);
+});
+</script>
+</body>
+</html>

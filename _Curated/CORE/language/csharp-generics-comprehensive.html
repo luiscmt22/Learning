@@ -1,0 +1,2260 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Generics in C#: A Comprehensive Guide</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #07090f;
+  --bg-1: #0c111c;
+  --bg-2: #11182a;
+  --bg-3: #1a2238;
+  --bg-4: #232e4a;
+  --border: #1e2840;
+  --border-2: #2a3551;
+  --border-3: #3a4870;
+  --text: #e9eef8;
+  --text-dim: #94a3bf;
+  --text-mut: #5f6b86;
+  --accent: #6aa6ff;
+  --accent-strong: #3b82f6;
+  --accent-2: #b86aff;
+  --accent-3: #f472b6;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+  --info: #38bdf8;
+  --code-bg: #0a1020;
+  --code-border: #1a2340;
+  --shadow: 0 8px 32px rgba(0,0,0,0.55);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.35);
+  --shadow-glow: 0 0 0 1px rgba(106,166,255,0.18), 0 12px 40px rgba(106,166,255,0.10);
+}
+
+/* Doc-type theming */
+[data-doc-type="core-concept"] {
+  --doc-accent: #6aa6ff;
+  --doc-accent-rgb: 106,166,255;
+  --doc-eyebrow: "Concept";
+}
+[data-doc-type="applied-implementation"] {
+  --doc-accent: #b86aff;
+  --doc-accent-rgb: 184,106,255;
+  --doc-eyebrow: "Implementation";
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font: 16px/1.7 -apple-system, "Inter", \'Segoe UI\', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+::selection { background: rgba(106,166,255,0.30); }
+
+/* ═══ Top bar ═══════════════════════════════════════════════════════ */
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(7,9,15,0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 28px;
+  display: flex; align-items: center; gap: 16px;
+}
+.topbar .crumbs {
+  flex: 1; font-size: 13px; color: var(--text-dim);
+  display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden;
+}
+.topbar .crumbs span.sep { color: var(--text-mut); }
+.topbar .crumbs .current {
+  color: var(--text); font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.topbar .crumbs a { color: var(--text-dim); text-decoration: none; }
+.topbar .crumbs a:hover { color: var(--accent); }
+.topbar .actions { display: flex; gap: 6px; flex-shrink: 0; }
+.topbar .action {
+  font-size: 13px; padding: 6px 14px; border-radius: 8px;
+  color: var(--text-dim); text-decoration: none;
+  border: 1px solid transparent; transition: all .15s;
+}
+.topbar .action:hover {
+  color: var(--text); background: var(--bg-2); border-color: var(--border);
+  text-decoration: none;
+}
+
+/* ═══ Document layout ═══════════════════════════════════════════════ */
+.layout {
+  display: grid; grid-template-columns: 280px 1fr;
+  max-width: 1380px; margin: 0 auto; align-items: start;
+}
+.layout.no-toc { grid-template-columns: 1fr; max-width: 940px; }
+
+.toc-sidebar {
+  position: sticky; top: 70px;
+  align-self: start;
+  max-height: calc(100vh - 90px);
+  overflow-y: auto;
+  padding: 40px 8px 40px 28px;
+  border-right: 1px solid var(--border);
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+.toc-sidebar::-webkit-scrollbar { width: 6px; }
+.toc-sidebar::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
+.toc-sidebar h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px; padding-left: 14px; font-weight: 600;
+}
+.toc-sidebar ol { list-style: none; margin: 0; padding: 0; }
+.toc-sidebar li { margin: 0; }
+.toc-sidebar a {
+  display: block;
+  padding: 5px 14px;
+  border-left: 2px solid transparent;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 13px;
+  line-height: 1.5;
+  transition: all .15s;
+  word-break: break-word;
+}
+.toc-sidebar a:hover {
+  color: var(--text); border-left-color: var(--border-2); text-decoration: none;
+}
+.toc-sidebar a.active {
+  color: var(--doc-accent, var(--accent));
+  border-left-color: var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.07);
+}
+.toc-sidebar .lvl-3 a { padding-left: 28px; font-size: 12.5px; }
+.toc-sidebar .lvl-4 a, .toc-sidebar .lvl-5 a, .toc-sidebar .lvl-6 a {
+  padding-left: 42px; font-size: 12px;
+}
+
+.content { padding: 40px 64px 120px; min-width: 0; }
+
+/* ═══ Hero (per-doc) ════════════════════════════════════════════════ */
+.doc-hero {
+  position: relative;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 32px;
+  margin-bottom: 36px;
+}
+.doc-hero::before {
+  content: ''; position: absolute;
+  top: -40px; left: -64px; right: -64px; height: 220px;
+  background: radial-gradient(ellipse 60% 100% at 0% 0%, rgba(var(--doc-accent-rgb, 106,166,255),0.10), transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+.doc-hero > * { position: relative; z-index: 1; }
+.doc-hero .eyebrow {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  color: var(--doc-accent, var(--accent)); font-weight: 600;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.doc-hero .eyebrow .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--doc-accent, var(--accent));
+  box-shadow: 0 0 8px var(--doc-accent, var(--accent));
+}
+.doc-hero h1 {
+  font-size: 40px; line-height: 1.1;
+  margin: 12px 0 16px;
+  font-weight: 700; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.doc-hero .one-liner {
+  font-size: 18px; line-height: 1.55;
+  color: var(--text-dim);
+  margin: 0 0 20px;
+  max-width: 70ch;
+}
+.doc-hero .meta-row {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  font-size: 12.5px;
+}
+.meta-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--bg-2); border: 1px solid var(--border);
+  padding: 5px 12px; border-radius: 14px;
+  font-size: 12px; color: var(--text-dim);
+}
+.meta-pill .num { color: var(--text); font-weight: 600; font-feature-settings: "tnum"; }
+.meta-pill.fmt-md   { color: #6aa6ff; border-color: rgba(106,166,255,0.30); background: rgba(106,166,255,0.06); }
+.meta-pill.fmt-pdf  { color: #f87171; border-color: rgba(248,113,113,0.30); background: rgba(248,113,113,0.06); }
+.meta-pill.fmt-docx { color: #38bdf8; border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.fmt-html { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.fmt-htm  { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.complexity-beginner    { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.06); }
+.meta-pill.complexity-intermediate { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.complexity-advanced     { color: #fb923c; border-color: rgba(251,146,60,0.30); background: rgba(251,146,60,0.06); }
+.meta-pill.complexity-unknown      { color: var(--text-mut); }
+.meta-pill.source code { background: transparent; padding: 0; border: 0; font-size: 11px; color: var(--text-dim); }
+
+/* ═══ Curation panels ═══════════════════════════════════════════════ */
+
+.curation {
+  margin-bottom: 36px;
+}
+
+.intro-hook {
+  font-size: 18px;
+  line-height: 1.65;
+  color: var(--text);
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  padding: 8px 0 8px 20px;
+  margin: 0 0 28px;
+  font-style: italic;
+  font-weight: 350;
+}
+
+.exec-summary {
+  background: linear-gradient(135deg, rgba(var(--doc-accent-rgb, 106,166,255),0.07), rgba(var(--doc-accent-rgb, 106,166,255),0.02));
+  border: 1px solid rgba(var(--doc-accent-rgb, 106,166,255),0.20);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 0 0 24px;
+}
+.exec-summary h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent, var(--accent));
+  font-weight: 600;
+}
+.exec-summary p {
+  margin: 0; font-size: 15px; line-height: 1.65; color: var(--text);
+}
+
+.metaphor-callout {
+  display: flex; gap: 14px; align-items: flex-start;
+  background: rgba(184,106,255,0.06);
+  border: 1px solid rgba(184,106,255,0.25);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 0 0 24px;
+}
+.metaphor-callout .icon {
+  font-size: 22px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 4px rgba(184,106,255,0.4));
+}
+.metaphor-callout .body {
+  flex: 1; font-size: 14.5px; line-height: 1.6;
+  color: var(--text);
+}
+.metaphor-callout .body .label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--accent-2); font-weight: 700;
+  display: block; margin-bottom: 4px;
+}
+
+.tutorial-structure {
+  display: grid; grid-template-columns: 1fr; gap: 14px;
+  margin: 0 0 28px;
+}
+.tutorial-section {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--doc-accent);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+}
+.tutorial-section h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent);
+  font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.tutorial-section h3 .num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--doc-accent); color: var(--bg);
+  font-size: 10px; font-weight: 700;
+}
+.tutorial-section p {
+  margin: 0; font-size: 14.5px; line-height: 1.65; color: var(--text);
+}
+
+.context-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin: 0 0 28px;
+}
+.context-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.context-card h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut);
+  font-weight: 600;
+}
+.context-card ul {
+  margin: 0; padding: 0; list-style: none;
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.context-card li {
+  background: var(--bg-3);
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--text-dim);
+  border: 1px solid var(--border-2);
+}
+.context-card.prereqs li { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.05); }
+.context-card.builds li { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.05); }
+.context-card.concepts li { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.05); }
+
+.takeaways {
+  background: linear-gradient(135deg, rgba(74,222,128,0.05), rgba(74,222,128,0.01));
+  border: 1px solid rgba(74,222,128,0.20);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin: 36px 0 0;
+}
+.takeaways h3 {
+  margin: 0 0 10px;
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--ok); font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.takeaways h3::before {
+  content: '✓';
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(74,222,128,0.18);
+  font-size: 12px; font-weight: 700;
+}
+.takeaways ul { margin: 0; padding-left: 22px; }
+.takeaways li {
+  font-size: 14.5px; line-height: 1.6; color: var(--text);
+  margin: 6px 0;
+}
+
+/* ═══ Article body ══════════════════════════════════════════════════ */
+article { font-size: 16px; line-height: 1.78; color: var(--text); max-width: 78ch; }
+article > * + * { margin-top: 1.0em; }
+article p { margin: 0; }
+article h1, article h2, article h3, article h4 {
+  font-weight: 650; letter-spacing: -0.01em; color: var(--text);
+  scroll-margin-top: 90px; position: relative;
+}
+article h1 { font-size: 28px; margin-top: 56px; }
+article h2 {
+  font-size: 24px; margin-top: 56px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+article h3 { font-size: 19px; margin-top: 36px; }
+article h4 { font-size: 16.5px; margin-top: 24px; color: var(--text-dim); }
+article h2::before, article h3::before {
+  content: '#'; position: absolute; left: -28px;
+  color: var(--text-mut); font-weight: 400;
+  opacity: 0; transition: opacity .15s;
+}
+article h2:hover::before, article h3:hover::before { opacity: 1; }
+
+article ul, article ol { padding-left: 1.5em; margin: 0; }
+article li { margin: .35em 0; }
+article li > p { margin: 0; }
+
+article hr {
+  border: 0; height: 1px; background: var(--border); margin: 36px 0;
+}
+
+article blockquote {
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.05);
+  padding: 14px 18px;
+  margin: 22px 0;
+  border-radius: 0 8px 8px 0;
+  color: var(--text-dim);
+}
+article blockquote p { margin: 0; }
+
+article pre {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-size: 13.5px;
+  line-height: 1.65;
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+article pre::-webkit-scrollbar { height: 7px; }
+article pre::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+article code, article pre {
+  font-family: "JetBrains Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+  font-feature-settings: "calt" 1;
+}
+article code.il {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  padding: 1px 7px; border-radius: 5px;
+  font-size: 0.88em;
+  color: var(--accent);
+}
+.code-block { position: relative; }
+.code-block .copy-btn {
+  position: absolute; top: 8px; right: 8px;
+  background: var(--bg-3); border: 1px solid var(--border);
+  color: var(--text-dim); padding: 4px 11px; border-radius: 5px;
+  font-size: 11px; font-family: inherit; cursor: pointer;
+  opacity: 0; transition: all .15s;
+}
+.code-block:hover .copy-btn { opacity: 1; }
+.code-block .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+.code-block .copy-btn.copied { color: var(--ok); border-color: var(--ok); }
+
+article pre .kw   { color: #c084fc; font-weight: 500; }
+article pre .type { color: #67e8f9; }
+article pre .str  { color: #fcd34d; }
+article pre .num  { color: #fb923c; }
+article pre .cmt  { color: #6b7d99; font-style: italic; }
+
+article .tbl-wrap {
+  overflow-x: auto; margin: 22px 0;
+  border-radius: 10px; border: 1px solid var(--border);
+}
+article table { border-collapse: collapse; width: 100%; font-size: 14px; }
+article th {
+  background: var(--bg-3); padding: 11px 14px; text-align: left;
+  font-weight: 600; color: var(--text);
+  border-bottom: 1px solid var(--border-2);
+}
+article td {
+  padding: 11px 14px; border-top: 1px solid var(--border); vertical-align: top;
+}
+article tr:nth-child(even) td { background: rgba(255,255,255,0.013); }
+
+article .diagram-box {
+  background: linear-gradient(135deg, #1c2540 0%, #0e1424 100%);
+  border: 1px solid var(--border-2);
+  border-radius: 12px;
+  padding: 22px 26px;
+  margin: 24px 0;
+  box-shadow: var(--shadow);
+}
+article .diagram-box pre {
+  background: transparent; border: 0; padding: 0;
+  color: #e8edf5; font-size: 13px; line-height: 1.55;
+}
+
+article .img-ref {
+  display: inline-block;
+  background: var(--bg-2); color: var(--text-mut);
+  padding: 1px 8px; border-radius: 4px;
+  font-size: 11px; font-style: normal;
+  border: 1px dashed var(--border-2);
+}
+
+/* ═══ Duplicate banners ═════════════════════════════════════════════ */
+.dup-banner {
+  background: linear-gradient(135deg, rgba(251,191,36,0.10), rgba(251,191,36,0.04));
+  border: 1px solid rgba(251,191,36,0.35);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 18px;
+  font-size: 14px; line-height: 1.55;
+  display: flex; gap: 14px; align-items: flex-start;
+}
+.dup-banner + .dup-banner { margin-top: 0; }
+.dup-banner .icon { font-size: 22px; line-height: 1.2; flex-shrink: 0; }
+.dup-banner .body { flex: 1; min-width: 0; }
+.dup-banner h4 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--warn); text-transform: uppercase; letter-spacing: 1px; }
+.dup-banner p { margin: 0; color: var(--text-dim); }
+.dup-banner ul { margin: 6px 0 0; padding-left: 22px; color: var(--text-dim); }
+.dup-banner ul li { margin: 3px 0; word-break: break-word; }
+.dup-banner code {
+  background: var(--bg-3); padding: 2px 7px; border-radius: 5px;
+  font-size: 0.92em; color: var(--text);
+}
+.dup-banner.exact {
+  border-color: rgba(248,113,113,0.40);
+  background: linear-gradient(135deg, rgba(248,113,113,0.10), rgba(248,113,113,0.04));
+}
+.dup-banner.exact h4 { color: var(--bad); }
+.dup-banner.near {
+  border-color: rgba(56,189,248,0.40);
+  background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(56,189,248,0.04));
+}
+.dup-banner.near h4 { color: var(--info); }
+.banner-stack { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+
+/* ═══ PDF page cards ════════════════════════════════════════════════ */
+.pdf-page {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin: 24px 0;
+  overflow: hidden;
+  scroll-margin-top: 90px;
+}
+.pdf-page .page-head {
+  background: var(--bg-3);
+  padding: 9px 20px;
+  font-size: 11px; font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 1.4px;
+  border-bottom: 1px solid var(--border);
+}
+.pdf-page .page-body { padding: 18px 24px 22px; }
+.pdf-page pre {
+  margin: 0; background: transparent; border: 0; padding: 0;
+  white-space: pre-wrap; word-wrap: break-word;
+  color: var(--text); font-size: 13px; line-height: 1.6;
+}
+
+.empty-note {
+  background: var(--bg-2);
+  border: 1px dashed var(--border-2);
+  border-radius: 10px;
+  padding: 18px 22px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* ═══ Cross-references + related ════════════════════════════════════ */
+.cross-refs {
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.cross-refs h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.cross-ref-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.cross-ref-list a {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: all .15s;
+}
+.cross-ref-list a:hover {
+  color: var(--text);
+  border-color: var(--doc-accent, var(--accent));
+  background: var(--bg-3);
+  text-decoration: none;
+}
+.cross-ref-list a .arrow { color: var(--doc-accent, var(--accent)); margin-right: 6px; }
+
+.related {
+  margin-top: 48px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.related h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 18px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.related-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+.related-card {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+}
+.related-card:hover {
+  border-color: var(--doc-accent, var(--accent));
+  transform: translateY(-1px);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+}
+.related-card .title {
+  font-weight: 600; font-size: 13.5px; line-height: 1.35;
+  color: var(--text);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.related-card .meta {
+  font-size: 11px; color: var(--text-mut); margin-top: 6px;
+  display: flex; gap: 8px; align-items: center;
+}
+.related-card .meta .badge {
+  padding: 1px 6px; border-radius: 3px;
+  background: var(--bg-3); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* ═══ Master index page ═════════════════════════════════════════════ */
+
+.index-hero {
+  text-align: center;
+  padding: 80px 24px 56px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.index-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 30% 0%, rgba(106,166,255,0.13), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 70% 30%, rgba(184,106,255,0.10), transparent 70%);
+  pointer-events: none;
+}
+.index-hero > * { position: relative; z-index: 1; }
+.index-hero .eyebrow {
+  color: var(--accent); font-size: 12px;
+  text-transform: uppercase; letter-spacing: 1.8px; font-weight: 600;
+}
+.index-hero h1 {
+  font-size: 56px; margin: 16px 0 12px;
+  font-weight: 750; letter-spacing: -0.025em;
+  background: linear-gradient(135deg, #6aa6ff 0%, #b86aff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.index-hero .tagline {
+  color: var(--text-dim); font-size: 18px;
+  max-width: 720px; margin: 14px auto 0; line-height: 1.6;
+}
+.search-row {
+  display: flex; gap: 12px;
+  max-width: 720px; margin: 36px auto 0;
+}
+.search-row input {
+  flex: 1;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 15px;
+  padding: 14px 22px;
+  border-radius: 14px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color .15s, box-shadow .15s;
+}
+.search-row input::placeholder { color: var(--text-mut); }
+.search-row input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(106,166,255,0.13);
+}
+
+.summary-stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  max-width: 1080px; margin: 36px auto 56px; padding: 0 24px;
+}
+.stat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  text-align: center;
+  transition: border-color .15s;
+}
+.stat-card:hover { border-color: var(--border-2); }
+.stat-card .num {
+  font-size: 32px; font-weight: 700; color: var(--accent);
+  font-feature-settings: "tnum"; line-height: 1.1;
+}
+.stat-card .lbl {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--text-mut); margin-top: 6px;
+}
+
+.split-view {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  max-width: 1320px; margin: 0 auto; padding: 0 24px 60px;
+}
+@media (max-width: 980px) {
+  .split-view { grid-template-columns: 1fr; }
+}
+
+.hub-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 32px 36px;
+  position: relative;
+  overflow: hidden;
+  transition: all .2s;
+}
+.hub-card.core::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 0% 0%, rgba(106,166,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card.applications::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 100% 0%, rgba(184,106,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card > * { position: relative; z-index: 1; }
+.hub-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.hub-card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 700;
+}
+.hub-card.core .label { color: var(--accent); }
+.hub-card.applications .label { color: var(--accent-2); }
+.hub-card h2 {
+  font-size: 32px; line-height: 1.15;
+  margin: 8px 0 12px;
+  font-weight: 700; letter-spacing: -0.02em;
+  color: var(--text);
+}
+.hub-card .desc {
+  font-size: 15px; line-height: 1.6; color: var(--text-dim);
+  margin: 0 0 24px;
+}
+.hub-card .stats {
+  display: flex; gap: 18px; margin-bottom: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-card .stats .num { color: var(--text); font-weight: 600; }
+.hub-card .cta {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 10px;
+  font-size: 13.5px; font-weight: 600;
+  text-decoration: none;
+}
+.hub-card.core .cta {
+  background: rgba(106,166,255,0.12);
+  color: var(--accent);
+  border: 1px solid rgba(106,166,255,0.30);
+}
+.hub-card.applications .cta {
+  background: rgba(184,106,255,0.12);
+  color: var(--accent-2);
+  border: 1px solid rgba(184,106,255,0.30);
+}
+.hub-card .cta:hover { text-decoration: none; transform: translateX(2px); }
+.hub-card .quick {
+  margin-top: 24px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.hub-card .quick h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut); font-weight: 600;
+}
+.hub-card .quick ul { list-style: none; margin: 0; padding: 0; }
+.hub-card .quick li { padding: 4px 0; font-size: 13px; }
+.hub-card .quick li a { color: var(--text-dim); text-decoration: none; }
+.hub-card .quick li a:hover { color: var(--text); }
+
+/* ═══ Hub page (CORE / APPLICATIONS landing) ════════════════════════ */
+
+.hub-hero {
+  padding: 64px 32px 36px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1240px; margin: 0 auto;
+}
+.hub-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 600;
+}
+.hub-hero h1 {
+  font-size: 48px; margin: 12px 0 14px;
+  font-weight: 750; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.hub-hero p {
+  color: var(--text-dim); font-size: 17px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.hub-hero .stats {
+  display: flex; gap: 22px; margin-top: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-hero .stats .num { color: var(--text); font-weight: 600; }
+
+.cat-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 18px;
+  max-width: 1280px; margin: 28px auto; padding: 0 32px 80px;
+}
+.cat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 24px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.cat-card:hover {
+  border-color: var(--border-3);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+}
+.cat-card .head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 12px;
+}
+.cat-card .head .icon {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 18px;
+  color: var(--accent);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.cat-card.app .head .icon { color: var(--accent-2); }
+.cat-card .title {
+  font-size: 18px; font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  flex: 1;
+}
+.cat-card .head .count {
+  font-size: 12px; color: var(--text-mut);
+  flex-shrink: 0;
+}
+.cat-card .tagline {
+  font-size: 13px; color: var(--accent);
+  font-weight: 500;
+  margin: 0;
+}
+.cat-card.app .tagline { color: var(--accent-2); }
+.cat-card .desc {
+  font-size: 13.5px; color: var(--text-dim);
+  line-height: 1.55;
+  margin: 4px 0 0;
+}
+
+/* ═══ Category landing (per family/domain) ══════════════════════════ */
+
+.cat-hero {
+  padding: 56px 32px 32px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1180px; margin: 0 auto;
+}
+.cat-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px; font-weight: 600;
+}
+.cat-hero h1 {
+  font-size: 42px; margin: 10px 0 14px;
+  font-weight: 700; letter-spacing: -0.02em;
+}
+.cat-hero p {
+  color: var(--text-dim); font-size: 16px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.cat-hero .stats {
+  display: flex; gap: 20px; margin-top: 22px;
+  font-size: 13px; color: var(--text-mut);
+}
+.cat-hero .stats .num { color: var(--text); font-weight: 600; }
+.cat-hero .search-row {
+  max-width: 520px; margin: 24px 0 0;
+}
+.cat-hero .search-row input { padding: 12px 18px; font-size: 14px; }
+
+.doc-cards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 14px;
+  max-width: 1180px; margin: 36px auto 96px;
+  padding: 0 32px;
+}
+.doc-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 22px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .18s;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.doc-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.doc-card.app:hover { border-color: var(--accent-2); }
+.doc-card .head {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+}
+.doc-card .title {
+  font-size: 16px; font-weight: 650; line-height: 1.3;
+  color: var(--text); flex: 1;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  letter-spacing: -0.01em;
+}
+.doc-card .badges { display: flex; gap: 4px; flex-shrink: 0; }
+.doc-card .badge {
+  font-size: 9px; padding: 2px 7px; border-radius: 3px;
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px;
+  background: var(--bg-3); color: var(--text-mut);
+}
+.doc-card .badge.dup { background: rgba(248,113,113,0.18); color: var(--bad); }
+.doc-card .badge.fmt-md { background: rgba(106,166,255,0.18); color: #6aa6ff; }
+.doc-card .badge.fmt-pdf { background: rgba(248,113,113,0.18); color: #f87171; }
+.doc-card .badge.fmt-docx { background: rgba(56,189,248,0.18); color: #38bdf8; }
+.doc-card .badge.fmt-html { background: rgba(251,191,36,0.18); color: #fbbf24; }
+.doc-card .one-liner {
+  font-size: 13.5px; color: var(--text-dim); line-height: 1.55;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  flex: 1;
+}
+.doc-card .meta {
+  display: flex; gap: 14px; font-size: 11px; color: var(--text-mut);
+  border-top: 1px solid var(--border); padding-top: 12px;
+  margin-top: auto;
+}
+.doc-card .meta .num { color: var(--text-dim); font-weight: 600; font-feature-settings: "tnum"; }
+
+/* ═══ Mobile ════════════════════════════════════════════════════════ */
+@media (max-width: 980px) {
+  .layout { grid-template-columns: 1fr; }
+  .toc-sidebar { display: none; }
+  .content { padding: 28px 24px 80px; }
+  .doc-hero h1 { font-size: 30px; }
+  .doc-hero .one-liner { font-size: 16px; }
+  .topbar { padding: 10px 18px; }
+  .index-hero h1 { font-size: 38px; }
+  .index-hero { padding: 56px 20px 36px; }
+  .hub-hero h1 { font-size: 34px; }
+  .hub-hero { padding: 40px 20px 24px; }
+  .cat-hero h1 { font-size: 32px; }
+  .cat-hero { padding: 36px 20px 24px; }
+  .doc-cards, .cat-grid { padding: 0 20px 60px; }
+  .split-view { padding: 0 20px 40px; }
+}
+</style>
+</head>
+<body data-doc-type="core-concept">
+<nav class="topbar">
+<div class="crumbs"><a href="../../00-Index.html">Learning</a><span class="sep">›</span><a href="../_Hub.html">CORE</a><span class="sep">›</span><a href="_Category.html">C# Language</a><span class="sep">›</span><span class="current">Generics in C#: A Comprehensive Guide</span></div>
+<div class="actions"><a class="action" href="csharp-generics-comprehensive.pdf" download>↓ Download</a><a class="action" href="../../00-Index.html">All docs</a></div>
+</nav>
+<div class="layout">
+<aside class="toc-sidebar"><h3>On this page</h3><ol><li class="lvl-2"><a href="#page-1">Page 1</a></li><li class="lvl-2"><a href="#page-2">Page 2</a></li><li class="lvl-2"><a href="#page-3">Page 3</a></li><li class="lvl-2"><a href="#page-4">Page 4</a></li><li class="lvl-2"><a href="#page-5">Page 5</a></li><li class="lvl-2"><a href="#page-6">Page 6</a></li><li class="lvl-2"><a href="#page-7">Page 7</a></li><li class="lvl-2"><a href="#page-8">Page 8</a></li><li class="lvl-2"><a href="#page-9">Page 9</a></li><li class="lvl-2"><a href="#page-10">Page 10</a></li><li class="lvl-2"><a href="#page-11">Page 11</a></li><li class="lvl-2"><a href="#page-12">Page 12</a></li><li class="lvl-2"><a href="#page-13">Page 13</a></li><li class="lvl-2"><a href="#page-14">Page 14</a></li><li class="lvl-2"><a href="#page-15">Page 15</a></li><li class="lvl-2"><a href="#page-16">Page 16</a></li><li class="lvl-2"><a href="#page-17">Page 17</a></li><li class="lvl-2"><a href="#page-18">Page 18</a></li><li class="lvl-2"><a href="#page-19">Page 19</a></li><li class="lvl-2"><a href="#page-20">Page 20</a></li><li class="lvl-2"><a href="#page-21">Page 21</a></li><li class="lvl-2"><a href="#page-22">Page 22</a></li><li class="lvl-2"><a href="#page-23">Page 23</a></li><li class="lvl-2"><a href="#page-24">Page 24</a></li><li class="lvl-2"><a href="#page-25">Page 25</a></li><li class="lvl-2"><a href="#page-26">Page 26</a></li><li class="lvl-2"><a href="#page-27">Page 27</a></li><li class="lvl-2"><a href="#page-28">Page 28</a></li><li class="lvl-2"><a href="#page-29">Page 29</a></li><li class="lvl-2"><a href="#page-30">Page 30</a></li><li class="lvl-2"><a href="#page-31">Page 31</a></li><li class="lvl-2"><a href="#page-32">Page 32</a></li><li class="lvl-2"><a href="#page-33">Page 33</a></li><li class="lvl-2"><a href="#page-34">Page 34</a></li></ol></aside>
+<main class="content">
+
+<header class="doc-hero">
+  <div class="eyebrow"><span class="dot"></span>Concept · C# Language</div>
+  <h1>Generics in C#: A Comprehensive Guide</h1>
+  <p class="one-liner">A full tour of C# generics from the pre-generics pain of ArrayList boxing to advanced topics like reification, variance, constraints, and reflection over open generic types.</p>
+  <div class="meta-row">
+    <span class="meta-pill fmt-pdf">PDF</span>
+    <span class="meta-pill complexity-intermediate">Intermediate</span>
+    <span class="meta-pill"><span class="num">4,009</span> words</span>
+    <span class="meta-pill"><span class="num">20</span> min read</span>
+    <span class="meta-pill source">Source: <code>Education/Basics/CSharp_Generics_Guide.pdf</code></span>
+  </div>
+</header>
+
+<div class="curation"><p class="intro-hook">In 2004, you couldn&#x27;t put an integer in a .NET collection without boxing it onto the heap and unboxing it on the way out — a tax you paid in every tight loop. Then C# 2.0 shipped, and suddenly the List&lt;int&gt; you wrote was literally a different type in memory than List&lt;string&gt;. This guide explains what that actually means and why it&#x27;s still the most impactful feature to understand in modern .NET.</p>
+<div class="exec-summary"><h3>Executive summary</h3><p>This is an end-to-end reference on C# generics that starts with the historical motivation (boxing penalties and lost type safety in object-based collections) and walks through generic classes, methods, interfaces, constraints, variance, static members per constructed type, reflection, and idiomatic patterns like Repository, Factory, Specification, and Result. Its standout insight is the contrast between Java&#x27;s type erasure and C#&#x27;s reification — the CLR preserves generic type information at runtime, which is why frameworks like EF Core, DI containers, and serializers can do the things they do. The guide closes with practical usage in EF Core, open-generic DI registration, and Blazor @typeparam components.</p></div>
+<div class="metaphor-callout"><div class="icon">💡</div><div class="body"><span class="label">Metaphor</span>Generics are like a pasta machine with swappable dies. The machine itself is one design — feed dough in and turn the crank — but you snap a different die on top and out comes spaghetti, rigatoni, or fettuccine. The List&lt;T&gt; class is that one machine; List&lt;int&gt; and List&lt;Employee&gt; are the pasta shapes you get when you choose the die. Boxing in the old ArrayList world was like shoving every noodle into an unlabelled tupperware and then guessing what shape it was when you opened it later.</div></div>
+<div class="context-row"><div class="context-card prereqs"><h4>You should know first</h4><ul><li>C# classes and interfaces</li><li>basic OOP inheritance</li><li>value types vs reference types</li></ul></div><div class="context-card concepts"><h4>Key concepts covered</h4><ul><li>type parameters</li><li>reification vs type erasure</li><li>generic constraints</li><li>covariance and contravariance</li><li>boxing and unboxing</li><li>open vs closed generic types</li><li>type inference</li></ul></div><div class="context-card builds"><h4>Opens the door to</h4><ul><li>dependency-injection-open-generics</li><li>ef-core-generic-repository</li><li>specification-pattern</li><li>blazor-generic-components</li></ul></div></div></div>
+<article>
+<div class="pdf-page" id="page-1"><div class="page-head">Page 1</div><div class="page-body"><pre>              Generics in C#
+                           A Comprehensive Guide
+
+From Historical Context to Modern Patterns</pre></div></div>
+<div class="pdf-page" id="page-2"><div class="page-head">Page 2</div><div class="page-body"><pre>Part I: Historical Context</pre></div></div>
+<div class="pdf-page" id="page-3"><div class="page-head">Page 3</div><div class="page-body"><pre>Chapter 1: The World Before Generics
+
+1.1 The Problem of Type Safety
+
+Before generics were introduced, developers faced a fundamental tension in programming: flexibility
+versus type safety.
+
+Imagine you&#x27;re building a collection to store items. You want it to be reusable—capable of storing integers
+today, strings tomorrow, and custom Employee objects next week. In the early days of C# (versions 1.0
+and 1.1), you had two imperfect options.
+
+Option A: Create Type-Specific Collections
+
+             public class IntegerList
+             {
+
+                    private int[] _items;
+                    public void Add(int item) { /* ... */ }
+                    public int Get(int index) { /* ... */ }
+             }
+
+             public class StringList
+             {
+
+                    private string[] _items;
+                    public void Add(string item) { /* ... */ }
+                    public string Get(int index) { /* ... */ }
+             }
+
+This approach provided type safety—the compiler would catch errors like adding a string to an IntegerList.
+However, it was utterly impractical. For every type you needed to store, you had to write an entirely new
+collection class. Code duplication ran rampant.
+
+Option B: Use System.Object
+
+The .NET Framework offered a seemingly elegant solution: since every type in .NET inherits from
+System.Object, you could create a single collection that stores objects:
+
+             public class ArrayList
+             {
+
+                    private object[] _items;
+
+                    public void Add(object item) { /* ... */ }
+                    public object Get(int index) { /* ... */ }
+             }
+
+This was the approach taken by System.Collections.ArrayList, and it worked—sort of. You could store
+anything. But this flexibility came at a severe cost.
+
+1.2 The Two Penalties of Object-Based Collections
+
+Penalty #1: Boxing and Unboxing (Performance)
+
+In .NET, types are divided into two categories: Value types (e.g., int, double, bool, struct) stored directly
+on the stack, and Reference types (e.g., string, classes) stored on the heap with a reference on the stack.
+
+When you store a value type in an object-based collection, the runtime must perform boxing: wrapping the
+value in an object on the heap. When retrieving, unboxing occurs.
+
+             ArrayList numbers = new ArrayList();
+             numbers.Add(42); // Boxing occurs here: int → object</pre></div></div>
+<div class="pdf-page" id="page-4"><div class="page-head">Page 4</div><div class="page-body"><pre>             int value = (int)numbers[0]; // Unboxing: object → int
+
+Boxing and unboxing are expensive operations involving memory allocation on the heap, copying data
+between stack and heap, and additional garbage collection pressure. In tight loops processing thousands
+of items, this overhead was devastating to performance.
+
+Penalty #2: Loss of Type Safety (Correctness)
+
+With object-based collections, the compiler had no way to enforce what types were stored:
+
+             ArrayList list = new ArrayList();
+             list.Add(1);
+             list.Add(2);
+             list.Add(&quot;three&quot;); // Compiles fine!
+
+             foreach (object item in list)
+             {
+
+                    int number = (int)item; // Runtime exception on &quot;three&quot;!
+             }
+
+Errors that should have been caught at compile time now exploded at runtime—sometimes in production,
+sometimes in edge cases that testing missed. This violated a core principle of strongly-typed languages:
+catch errors as early as possible.
+
+1.3 The Industry Response
+
+The limitations of object-based collections were not unique to C#. The Java community faced identical
+challenges, and in 2004, Java 5.0 introduced generics. C++ had long offered templates, a compile-time
+mechanism for generic programming.
+
+Microsoft and the C# team, led by Anders Hejlsberg, recognized that a robust generics implementation
+was essential. However, they made a crucial design decision that differentiated C# generics from Java&#x27;s
+approach.</pre></div></div>
+<div class="pdf-page" id="page-5"><div class="page-head">Page 5</div><div class="page-body"><pre>Part II: The Advent of Generics</pre></div></div>
+<div class="pdf-page" id="page-6"><div class="page-head">Page 6</div><div class="page-body"><pre>Chapter 2: Generics Arrive in C# 2.0
+
+In November 2005, C# 2.0 was released alongside .NET Framework 2.0. Generics were the flagship
+feature.
+
+2.1 The Core Concept
+
+A generic is a type or method that is parameterized by one or more type parameters. Instead of
+committing to a specific type, you define a &quot;placeholder&quot; that gets filled in when the generic is used.
+
+             public class List&lt;T&gt;
+             {
+
+                    private T[] _items;
+
+                    public void Add(T item) { /* ... */ }
+                    public T Get(int index) { /* ... */ }
+             }
+
+The &lt;T&gt; is a type parameter. By convention: T for general purpose, TKey/TValue for key-value scenarios,
+TInput/TOutput for transformation scenarios, and TEntity for entity/model scenarios.
+
+When you use the generic, you provide a type argument:
+
+             List&lt;int&gt; numbers = new List&lt;int&gt;();
+             List&lt;string&gt; names = new List&lt;string&gt;();
+             List&lt;Employee&gt; employees = new List&lt;Employee&gt;();
+
+Each of these is a constructed type—a specific version of the generic with concrete types substituted for
+the parameters.
+
+2.2 The Benefits Realized
+
+Benefit #1: Type Safety Restored
+
+The compiler now enforces type correctness:
+
+             List&lt;int&gt; numbers = new List&lt;int&gt;();
+             numbers.Add(1);
+             numbers.Add(2);
+             numbers.Add(&quot;three&quot;); // Compile error! Cannot convert string to int
+
+Errors are caught immediately, in your IDE, before the code ever runs.
+
+Benefit #2: No Boxing for Value Types
+
+The .NET runtime generates specialized versions of generic types for value types. When you use
+List&lt;int&gt;, the runtime creates a version that works directly with integers—no boxing required.
+
+             List&lt;int&gt; numbers = new List&lt;int&gt;();
+             numbers.Add(42); // No boxing! Stored directly as int
+             int value = numbers[0]; // No unboxing! Retrieved directly as int
+
+Benefit #3: Code Reuse Without Sacrifice
+
+A single generic class serves infinite use cases:
+
+             // One implementation, infinite applications
+             List&lt;int&gt; integers = new List&lt;int&gt;();
+             List&lt;string&gt; strings = new List&lt;string&gt;();
+             List&lt;Customer&gt; customers = new List&lt;Customer&gt;();
+             List&lt;List&lt;int&gt;&gt; matrix = new List&lt;List&lt;int&gt;&gt;(); // Generics can nest!</pre></div></div>
+<div class="pdf-page" id="page-7"><div class="page-head">Page 7</div><div class="page-body"><pre>2.3 Reification: C#&#x27;s Secret Weapon
+
+Here lies a critical distinction between C# and Java generics.
+
+Java uses type erasure: generic type information exists only at compile time. At runtime, a List&lt;String&gt;
+and a List&lt;Integer&gt; are both just List. This was done for backward compatibility with older JVMs but limits
+what generics can do.
+
+C# uses reification: generic type information is preserved at runtime. The CLR (Common Language
+Runtime) knows the difference between List&lt;int&gt; and List&lt;string&gt;. This enables:
+
+// You can check generic types at runtime              // System.Int32
+Type listType = typeof(List&lt;int&gt;);
+Console.WriteLine(listType.IsGenericType); // True
+Console.WriteLine(listType.GetGenericArguments()[0]);
+
+             // You can create generic types dynamically
+             Type openType = typeof(List&lt;&gt;);
+             Type closedType = openType.MakeGenericType(typeof(string));
+             object instance = Activator.CreateInstance(closedType);
+
+This design decision makes C# generics more powerful and enables sophisticated scenarios in
+frameworks like Entity Framework, dependency injection containers, and serialization libraries.</pre></div></div>
+<div class="pdf-page" id="page-8"><div class="page-head">Page 8</div><div class="page-body"><pre>Part III: Mastering Generic Syntax</pre></div></div>
+<div class="pdf-page" id="page-9"><div class="page-head">Page 9</div><div class="page-body"><pre>Chapter 3: Generic Classes and Structures
+
+3.1 Defining a Generic Class
+
+Let&#x27;s build a practical example—a generic Result&lt;T&gt; type for handling operation outcomes:
+
+             public class Result&lt;T&gt;
+             {
+
+                    public bool IsSuccess { get; }
+                    public T Value { get; }
+                    public string Error { get; }
+
+                    private Result(bool isSuccess, T value, string error)
+                    {
+
+                            IsSuccess = isSuccess;
+                            Value = value;
+                            Error = error;
+                    }
+
+                    public static Result&lt;T&gt; Success(T value)
+                    {
+
+                            return new Result&lt;T&gt;(true, value, null);
+                    }
+
+                    public static Result&lt;T&gt; Failure(string error)
+                    {
+
+                            return new Result&lt;T&gt;(false, default, error);
+                    }
+             }
+
+Usage:
+
+             public Result&lt;Employee&gt; GetEmployee(int id)
+             {
+
+                    var employee = _database.Find(id);
+
+                    if (employee == null)
+                            return Result&lt;Employee&gt;.Failure(&quot;Employee not found&quot;);
+
+                    return Result&lt;Employee&gt;.Success(employee);
+             }
+
+             // Calling code
+             var result = GetEmployee(42);
+             if (result.IsSuccess)
+
+                    Console.WriteLine(result.Value.Name);
+             else
+
+                    Console.WriteLine(result.Error);
+
+3.2 Multiple Type Parameters
+
+Generics can have multiple type parameters:
+
+             public class Pair&lt;TFirst, TSecond&gt;
+             {
+
+                    public TFirst First { get; set; }
+                    public TSecond Second { get; set; }
+
+                    public Pair(TFirst first, TSecond second)
+                    {
+
+                            First = first;
+                            Second = second;
+                    }</pre></div></div>
+<div class="pdf-page" id="page-10"><div class="page-head">Page 10</div><div class="page-body"><pre>             }
+
+             // Usage
+             var pair = new Pair&lt;string, int&gt;(&quot;Age&quot;, 30);
+             var coordinate = new Pair&lt;double, double&gt;(45.5, 122.7);
+
+3.3 Generic Structs
+
+Value types can also be generic:
+
+             public struct Point&lt;T&gt;
+             {
+
+                    public T X { get; }
+                    public T Y { get; }
+
+                    public Point(T x, T y)
+                    {
+
+                            X = x;
+                            Y = y;
+                    }
+             }
+
+             // Usage
+             Point&lt;int&gt; pixelPoint = new Point&lt;int&gt;(100, 200);
+             Point&lt;double&gt; precisePoint = new Point&lt;double&gt;(3.14159, 2.71828);</pre></div></div>
+<div class="pdf-page" id="page-11"><div class="page-head">Page 11</div><div class="page-body"><pre>Chapter 4: Generic Methods
+
+4.1 Methods with Type Parameters
+
+Methods can be generic independently of their containing class:
+
+             public class Utilities
+             {
+
+                    public static void Swap&lt;T&gt;(ref T a, ref T b)
+                    {
+
+                            T temp = a;
+                            a = b;
+                            b = temp;
+                    }
+             }
+
+             // Usage
+             int x = 5, y = 10;
+             Utilities.Swap&lt;int&gt;(ref x, ref y); // x = 10, y = 5
+
+             string first = &quot;Hello&quot;, second = &quot;World&quot;;
+             Utilities.Swap&lt;string&gt;(ref first, ref second); // Swapped!
+
+4.2 Type Inference
+
+The compiler can often infer type arguments:
+
+             int x = 5, y = 10;
+             Utilities.Swap(ref x, ref y); // Compiler infers &lt;int&gt;
+
+             string a = &quot;Hello&quot;, b = &quot;World&quot;;
+             Utilities.Swap(ref a, ref b); // Compiler infers &lt;string&gt;
+
+This makes generic methods feel as natural as non-generic ones.
+
+4.3 Generic Methods in Non-Generic Classes
+
+A common pattern in utility classes:
+
+             public static class CollectionExtensions
+             {
+
+                    public static bool IsEmpty&lt;T&gt;(this ICollection&lt;T&gt; collection)
+                    {
+
+                            return collection == null || collection.Count == 0;
+                    }
+
+                    public static T FirstOrDefault&lt;T&gt;(this IEnumerable&lt;T&gt; source, T defaultValue)
+                    {
+
+                            foreach (T item in source)
+                                   return item;
+
+                            return defaultValue;
+                    }
+             }
+
+             // Usage
+             List&lt;int&gt; numbers = new List&lt;int&gt;();
+             bool empty = numbers.IsEmpty(); // True
+             int first = numbers.FirstOrDefault(-1); // Returns -1</pre></div></div>
+<div class="pdf-page" id="page-12"><div class="page-head">Page 12</div><div class="page-body"><pre>Chapter 5: Generic Interfaces
+
+5.1 Defining Generic Interfaces
+
+Interfaces can be parameterized just like classes:
+
+             public interface IRepository&lt;TEntity&gt; where TEntity : class
+             {
+
+                    TEntity GetById(int id);
+                    IEnumerable&lt;TEntity&gt; GetAll();
+                    void Add(TEntity entity);
+                    void Update(TEntity entity);
+                    void Delete(TEntity entity);
+             }
+
+5.2 Implementing Generic Interfaces
+
+             public class EmployeeRepository : IRepository&lt;Employee&gt;
+             {
+
+                    private readonly AppDbContext _context;
+
+                    public EmployeeRepository(AppDbContext context)
+                    {
+
+                            _context = context;
+                    }
+
+                    public Employee GetById(int id) =&gt; _context.Employees.Find(id);
+                    public IEnumerable&lt;Employee&gt; GetAll() =&gt; _context.Employees.ToList();
+                    public void Add(Employee entity) =&gt; _context.Employees.Add(entity);
+                    public void Update(Employee entity) =&gt; _context.Employees.Update(entity);
+                    public void Delete(Employee entity) =&gt; _context.Employees.Remove(entity);
+             }
+
+5.3 Key Generic Interfaces in .NET
+
+The .NET Base Class Library is rich with generic interfaces:
+
+Interface                  Purpose
+IEnumerable&lt;T&gt;             Iteration over a sequence
+ICollection&lt;T&gt;             Sized, modifiable collection
+IList&lt;T&gt;                   Indexed access
+IDictionary&lt;TKey, TValue&gt;  Key-value mapping
+IComparable&lt;T&gt;             Type-safe comparison
+IEquatable&lt;T&gt;              Type-safe equality
+IComparer&lt;T&gt;               External comparison logic
+IEqualityComparer&lt;T&gt;       External equality logic</pre></div></div>
+<div class="pdf-page" id="page-13"><div class="page-head">Page 13</div><div class="page-body"><pre>Part IV: Constraints — Controlling Generic
+                       Flexibility</pre></div></div>
+<div class="pdf-page" id="page-14"><div class="page-head">Page 14</div><div class="page-body"><pre>Chapter 6: The Need for Constraints
+
+6.1 The Problem: Too Much Freedom
+
+Consider this innocent-looking generic method:
+
+             public static T Max&lt;T&gt;(T a, T b)
+             {
+
+                    if (a &gt; b) // Compile error!
+                            return a;
+
+                    return b;
+             }
+
+This won&#x27;t compile. Why? The compiler knows nothing about T. It could be int, which supports &gt;, or it could
+be Employee, which might not. Without knowing what operations T supports, the compiler must reject the
+code.
+
+6.2 Constraints to the Rescue
+
+Constraints tell the compiler: &quot;I promise T will have certain capabilities.&quot;
+
+             public static T Max&lt;T&gt;(T a, T b) where T : IComparable&lt;T&gt;
+             {
+
+                    if (a.CompareTo(b) &gt; 0)
+                            return a;
+
+                    return b;
+             }
+
+Now the compiler knows T implements IComparable&lt;T&gt;, which guarantees the CompareTo method
+exists.</pre></div></div>
+<div class="pdf-page" id="page-15"><div class="page-head">Page 15</div><div class="page-body"><pre>Chapter 7: Types of Constraints
+
+7.1 Reference Type Constraint (class)
+
+Restricts T to reference types (classes, interfaces, delegates, arrays):
+
+             public class EntityCache&lt;T&gt; where T : class
+             {
+
+                    private T _cached;
+
+                    public T GetOrDefault()
+                    {
+
+                            return _cached; // Can be null
+                    }
+             }
+
+7.2 Value Type Constraint (struct)
+
+Restricts T to non-nullable value types:
+
+             public struct Nullable&lt;T&gt; where T : struct
+             {
+
+                    private readonly T _value;
+                    private readonly bool _hasValue;
+
+                    // This is essentially how System.Nullable&lt;T&gt; works
+             }
+
+7.3 Constructor Constraint (new())
+
+Requires T to have a public parameterless constructor:
+
+             public static T CreateInstance&lt;T&gt;() where T : new()
+             {
+
+                    return new T(); // Now this is valid!
+             }
+
+             // Usage
+             var employee = CreateInstance&lt;Employee&gt;(); // Works if Employee has parameterless ctor
+
+7.4 Base Class Constraint
+
+Restricts T to a specific class or its descendants:
+
+             public class AnimalShelter&lt;T&gt; where T : Animal
+             {
+
+                    private List&lt;T&gt; _animals = new List&lt;T&gt;();
+
+                    public void Admit(T animal)
+                    {
+
+                            animal.Feed(); // Valid: Animal has Feed() method
+                            _animals.Add(animal);
+                    }
+             }
+
+             // Usage
+             var dogShelter = new AnimalShelter&lt;Dog&gt;(); // Dog : Animal
+             var catShelter = new AnimalShelter&lt;Cat&gt;(); // Cat : Animal
+             // var carShelter = new AnimalShelter&lt;Car&gt;(); // Error!</pre></div></div>
+<div class="pdf-page" id="page-16"><div class="page-head">Page 16</div><div class="page-body"><pre>7.5 Interface Constraint
+
+Restricts T to types implementing specific interfaces:
+
+             public class SortedCollection&lt;T&gt; where T : IComparable&lt;T&gt;
+             {
+
+                    private List&lt;T&gt; _items = new List&lt;T&gt;();
+
+                    public void Add(T item)
+                    {
+
+                            int index = _items.BinarySearch(item); // Uses IComparable&lt;T&gt;
+                            if (index &lt; 0) index = ~index;
+                            _items.Insert(index, item);
+                    }
+             }
+
+7.6 Multiple Constraints
+
+Constraints can be combined:
+
+public class Repository&lt;TEntity&gt;
+
+   where TEntity : class, IEntity, new()
+
+{
+
+   public TEntity Create()
+
+   {
+
+      var entity = new TEntity(); // new() constraint
+
+      entity.Id = GenerateId(); // IEntity constraint
+
+      return entity;              // class constraint allows null checks
+
+   }
+
+}
+
+7.7 The notnull Constraint (C# 8.0+)
+
+In nullable reference type contexts, ensures T cannot be null:
+
+             public class NonNullCache&lt;T&gt; where T : notnull
+             {
+
+                    private Dictionary&lt;string, T&gt; _cache = new();
+
+                    public void Set(string key, T value)
+                    {
+
+                            _cache[key] = value; // value is guaranteed non-null
+                    }
+             }
+
+7.8 The unmanaged Constraint (C# 7.3+)
+
+Restricts to unmanaged types (primitives and structs containing only unmanaged types):
+
+             public unsafe void ProcessBuffer&lt;T&gt;(T* buffer, int length)
+                    where T : unmanaged
+
+             {
+                    // Can use pointer arithmetic with T
+                    for (int i = 0; i &lt; length; i++)
+                    {
+                            Process(buffer[i]);
+                    }
+
+             }</pre></div></div>
+<div class="pdf-page" id="page-17"><div class="page-head">Page 17</div><div class="page-body"><pre>Chapter 8: Constraint Combinations and Rules
+
+8.1 Constraint Ordering
+
+When specifying multiple constraints, they must appear in a specific order:
+
+      • 1. class or struct (mutually exclusive)
+      • 2. Base class name (if any)
+      • 3. Interface names
+      • 4. new() (must be last)
+
+             // Correct order
+             public class Example&lt;T&gt;
+
+                    where T : class, BaseClass, IInterface1, IInterface2, new()
+             {}
+
+8.2 Constraints on Multiple Type Parameters
+
+Each type parameter can have its own constraints:
+
+             public class Mapper&lt;TSource, TDestination&gt;
+                    where TSource : class
+                    where TDestination : class, new()
+
+             {
+                    public TDestination Map(TSource source)
+                    {
+                            var destination = new TDestination();
+                            // Map properties...
+                            return destination;
+                    }
+
+             }</pre></div></div>
+<div class="pdf-page" id="page-18"><div class="page-head">Page 18</div><div class="page-body"><pre>Part V: Advanced Topics</pre></div></div>
+<div class="pdf-page" id="page-19"><div class="page-head">Page 19</div><div class="page-body"><pre>Chapter 9: Covariance and Contravariance
+
+9.1 The Variance Problem
+
+Consider this scenario:
+
+             class Animal { }
+             class Dog : Animal { }
+
+             List&lt;Dog&gt; dogs = new List&lt;Dog&gt;();
+             List&lt;Animal&gt; animals = dogs; // Compile error! Why?
+
+Intuitively, since every Dog is an Animal, a list of dogs should be usable as a list of animals. But consider:
+animals.Add(new Cat()); — This would corrupt the dog list! This is why List&lt;T&gt; doesn&#x27;t allow such
+assignments. But sometimes variance is safe...
+
+9.2 Covariance (out keyword)
+
+Covariance allows a generic type to preserve the inheritance relationship of its type argument. It&#x27;s safe
+when the type parameter is only used in output positions:
+
+             public interface IProducer&lt;out T&gt;
+             {
+
+                    T Produce(); // T only appears as output (return type)
+             }
+
+             class DogProducer : IProducer&lt;Dog&gt;
+             {
+
+                    public Dog Produce() =&gt; new Dog();
+             }
+
+             // Now this is valid:
+             IProducer&lt;Animal&gt; producer = new DogProducer();
+             Animal animal = producer.Produce(); // Safe! We get a Dog, which is an Animal
+
+IEnumerable&lt;T&gt; is covariant:
+
+             IEnumerable&lt;Dog&gt; dogs = new List&lt;Dog&gt;();
+             IEnumerable&lt;Animal&gt; animals = dogs; // Valid! IEnumerable only produces items
+
+9.3 Contravariance (in keyword)
+
+Contravariance reverses the inheritance relationship. It&#x27;s safe when the type parameter is only used in
+input positions:
+
+             public interface IConsumer&lt;in T&gt;
+             {
+
+                    void Consume(T item); // T only appears as input (parameter)
+             }
+
+             class AnimalConsumer : IConsumer&lt;Animal&gt;
+             {
+
+                    public void Consume(Animal animal) =&gt; Console.WriteLine(&quot;Fed an animal&quot;);
+             }
+
+             // Now this is valid:
+             IConsumer&lt;Dog&gt; dogConsumer = new AnimalConsumer();
+             dogConsumer.Consume(new Dog()); // Safe! AnimalConsumer can handle any Animal
+
+9.4 Invariance</pre></div></div>
+<div class="pdf-page" id="page-20"><div class="page-head">Page 20</div><div class="page-body"><pre>When a type parameter appears in both input and output positions, variance is not possible:
+
+             public interface ITransformer&lt;T&gt;
+             {
+
+                    T Transform(T input); // T is both input and output
+             }
+             // ITransformer&lt;T&gt; is invariant</pre></div></div>
+<div class="pdf-page" id="page-21"><div class="page-head">Page 21</div><div class="page-body"><pre>Chapter 10: Static Members in Generic Types
+
+10.1 Static Fields Are Per Constructed Type
+
+A critical detail often overlooked:
+
+public class Counter&lt;T&gt;
+{
+
+       public static int Count = 0;
+
+       public Counter()
+       {
+
+              Count++;
+       }
+}
+
+// Usage
+var intCounter1 = new Counter&lt;int&gt;();
+var intCounter2 = new Counter&lt;int&gt;();
+var stringCounter = new Counter&lt;string&gt;();
+
+Console.WriteLine(Counter&lt;int&gt;.Count);      // 2
+
+Console.WriteLine(Counter&lt;string&gt;.Count); // 1
+
+Each constructed type (Counter&lt;int&gt;, Counter&lt;string&gt;) has its own static field. They are completely
+independent.
+
+10.2 Static Constructors
+
+Static constructors also run once per constructed type:
+
+             public class TypeLogger&lt;T&gt;
+             {
+
+                    static TypeLogger()
+                    {
+
+                            Console.WriteLine($&quot;TypeLogger&lt;{typeof(T).Name}&gt; initialized&quot;);
+                    }
+             }
+
+             // Using TypeLogger&lt;int&gt; and TypeLogger&lt;string&gt; prints two messages</pre></div></div>
+<div class="pdf-page" id="page-22"><div class="page-head">Page 22</div><div class="page-body"><pre>Chapter 11: Generic Type Inference
+
+11.1 How Inference Works
+
+The compiler examines method arguments to infer type parameters:
+
+public static List&lt;T&gt; CreateList&lt;T&gt;(T first, T second)
+{
+
+       return new List&lt;T&gt; { first, second };
+}
+
+// Compiler infers T from arguments  // List&lt;int&gt;
+var ints = CreateList(1, 2);         // List&lt;string&gt;
+var strings = CreateList(&quot;a&quot;, &quot;b&quot;);
+
+11.2 Inference Limitations
+
+Inference only works from arguments, not return types:
+
+             public static T Parse&lt;T&gt;(string value) { /* ... */ }
+
+             // This won&#x27;t work:
+             int number = Parse(&quot;42&quot;); // Error: Cannot infer T
+
+             // You must specify:
+             int number = Parse&lt;int&gt;(&quot;42&quot;);
+
+11.3 Complex Inference
+
+The compiler can infer through multiple levels:
+
+             public static TResult Select&lt;TSource, TResult&gt;(
+                    TSource source,
+                    Func&lt;TSource, TResult&gt; selector)
+
+             {
+                    return selector(source);
+
+             }
+
+             // Both TSource and TResult are inferred
+             string result = Select(42, n =&gt; n.ToString());
+             // TSource = int, TResult = string</pre></div></div>
+<div class="pdf-page" id="page-23"><div class="page-head">Page 23</div><div class="page-body"><pre>Chapter 12: Reflection and Generics
+
+12.1 Examining Generic Types at Runtime
+
+Type listType = typeof(List&lt;int&gt;);
+
+Console.WriteLine(listType.IsGenericType);     // True
+
+Console.WriteLine(listType.IsConstructedGenericType); // True
+
+Type[] args = listType.GetGenericArguments();
+Console.WriteLine(args[0]); // System.Int32
+
+Type definition = listType.GetGenericTypeDefinition();
+Console.WriteLine(definition); // System.Collections.Generic.List`1[T]
+
+12.2 Open vs. Closed Generic Types
+
+             Type openType = typeof(Dictionary&lt;,&gt;); // Open: no type arguments
+             Type closedType = typeof(Dictionary&lt;string, int&gt;); // Closed: fully specified
+
+             Console.WriteLine(openType.IsGenericTypeDefinition); // True
+             Console.WriteLine(closedType.IsGenericTypeDefinition); // False
+
+12.3 Creating Generic Types Dynamically
+
+             Type openList = typeof(List&lt;&gt;);
+             Type closedList = openList.MakeGenericType(typeof(string));
+             object instance = Activator.CreateInstance(closedList);
+
+             // instance is now a List&lt;string&gt;
+             var list = (List&lt;string&gt;)instance;
+             list.Add(&quot;Dynamic!&quot;);
+
+12.4 Invoking Generic Methods via Reflection
+
+             public class Processor
+             {
+
+                    public void Process&lt;T&gt;(T item)
+                    {
+
+                            Console.WriteLine($&quot;Processing {typeof(T).Name}: {item}&quot;);
+                    }
+             }
+
+             // Invoke via reflection
+             var processor = new Processor();
+             MethodInfo openMethod = typeof(Processor).GetMethod(&quot;Process&quot;);
+             MethodInfo closedMethod = openMethod.MakeGenericMethod(typeof(int));
+             closedMethod.Invoke(processor, new object[] { 42 });</pre></div></div>
+<div class="pdf-page" id="page-24"><div class="page-head">Page 24</div><div class="page-body"><pre>Part VI: Patterns and Best Practices</pre></div></div>
+<div class="pdf-page" id="page-25"><div class="page-head">Page 25</div><div class="page-body"><pre>Chapter 13: Common Generic Patterns
+
+13.1 The Repository Pattern
+
+             public interface IRepository&lt;TEntity&gt; where TEntity : class, IEntity
+             {
+
+                    Task&lt;TEntity?&gt; GetByIdAsync(int id);
+                    Task&lt;IReadOnlyList&lt;TEntity&gt;&gt; GetAllAsync();
+                    Task&lt;TEntity&gt; AddAsync(TEntity entity);
+                    Task UpdateAsync(TEntity entity);
+                    Task DeleteAsync(TEntity entity);
+             }
+
+             public class Repository&lt;TEntity&gt; : IRepository&lt;TEntity&gt;
+                    where TEntity : class, IEntity
+
+             {
+                    protected readonly DbContext _context;
+                    protected readonly DbSet&lt;TEntity&gt; _dbSet;
+
+                    public Repository(DbContext context)
+                    {
+
+                            _context = context;
+                            _dbSet = context.Set&lt;TEntity&gt;();
+                    }
+
+                    public virtual async Task&lt;TEntity?&gt; GetByIdAsync(int id)
+                    {
+
+                            return await _dbSet.FindAsync(id);
+                    }
+
+                    // ... other implementations
+             }
+
+13.2 The Factory Pattern
+
+             public interface IFactory&lt;out T&gt;
+             {
+
+                    T Create();
+             }
+
+             public class ServiceFactory&lt;T&gt; : IFactory&lt;T&gt; where T : class, new()
+             {
+
+                    public T Create() =&gt; new T();
+             }
+
+             // With parameters using Func&lt;T&gt;
+             public class ConfigurableFactory&lt;T&gt;
+             {
+
+                    private readonly Func&lt;T&gt; _creator;
+
+                    public ConfigurableFactory(Func&lt;T&gt; creator)
+                    {
+
+                            _creator = creator;
+                    }
+
+                    public T Create() =&gt; _creator();
+             }
+
+13.3 The Specification Pattern
+
+             public interface ISpecification&lt;T&gt;
+             {</pre></div></div>
+<div class="pdf-page" id="page-26"><div class="page-head">Page 26</div><div class="page-body"><pre>                    bool IsSatisfiedBy(T entity);
+                    Expression&lt;Func&lt;T, bool&gt;&gt; ToExpression();
+             }
+
+             public abstract class Specification&lt;T&gt; : ISpecification&lt;T&gt;
+             {
+
+                    public bool IsSatisfiedBy(T entity)
+                    {
+
+                            return ToExpression().Compile()(entity);
+                    }
+
+                    public abstract Expression&lt;Func&lt;T, bool&gt;&gt; ToExpression();
+
+                    public Specification&lt;T&gt; And(Specification&lt;T&gt; other)
+                    {
+
+                            return new AndSpecification&lt;T&gt;(this, other);
+                    }
+             }
+
+             // Usage
+             public class ActiveEmployeeSpecification : Specification&lt;Employee&gt;
+             {
+
+                    public override Expression&lt;Func&lt;Employee, bool&gt;&gt; ToExpression()
+                    {
+
+                            return e =&gt; e.IsActive &amp;&amp; e.TerminationDate == null;
+                    }
+             }
+
+13.4 The Result/Either Pattern
+
+             public class Result&lt;TSuccess, TFailure&gt;
+             {
+
+                    public TSuccess? Success { get; }
+                    public TFailure? Failure { get; }
+                    public bool IsSuccess { get; }
+
+                    public static Result&lt;TSuccess, TFailure&gt; Ok(TSuccess value) =&gt; new(value);
+                    public static Result&lt;TSuccess, TFailure&gt; Fail(TFailure error) =&gt; new(error);
+
+                    public TResult Match&lt;TResult&gt;(
+                            Func&lt;TSuccess, TResult&gt; onSuccess,
+                            Func&lt;TFailure, TResult&gt; onFailure)
+
+                    {
+                            return IsSuccess ? onSuccess(Success!) : onFailure(Failure!);
+
+                    }
+             }
+
+             // Usage
+             var result = CreateEmployee(&quot;Alice&quot;, &quot;alice@example.com&quot;);
+             var message = result.Match(
+
+                    onSuccess: emp =&gt; $&quot;Created employee: {emp.Name}&quot;,
+                    onFailure: err =&gt; $&quot;Error: {err}&quot;
+             );</pre></div></div>
+<div class="pdf-page" id="page-27"><div class="page-head">Page 27</div><div class="page-body"><pre>Chapter 14: Best Practices
+
+14.1 Naming Conventions
+
+• Single type parameter: T
+• Multiple parameters: Descriptive names starting with T
+
+// Good
+Dictionary&lt;TKey, TValue&gt;
+Func&lt;TInput, TOutput&gt;
+IRepository&lt;TEntity&gt;
+
+// Avoid
+
+Dictionary&lt;K, V&gt; // Not immediately clear
+
+List&lt;Type&gt;  // Confusing with System.Type
+
+14.2 Prefer Generic Collections
+
+Always prefer System.Collections.Generic over System.Collections:
+
+// Good
+List&lt;Employee&gt; employees = new();
+Dictionary&lt;string, int&gt; scores = new();
+
+// Avoid
+
+ArrayList employees = new(); // Boxing, no type safety
+
+Hashtable scores = new();  // Boxing, no type safety
+
+14.3 Use Constraints Judiciously
+
+Add constraints only when necessary:
+
+             // Over-constrained: Do we really need all these?
+             public class Repository&lt;T&gt;
+
+                    where T : class, IEntity, IValidatable, IAuditable, new()
+
+             // Better: Only what&#x27;s actually used
+             public class Repository&lt;T&gt; where T : class, IEntity
+
+14.4 Consider Variance When Designing Interfaces
+
+If your interface only produces T, make it covariant:
+
+             public interface IReadOnlyRepository&lt;out TEntity&gt;
+             {
+
+                    TEntity GetById(int id);
+                    IEnumerable&lt;TEntity&gt; GetAll();
+             }
+
+If it only consumes T, make it contravariant:
+
+             public interface IValidator&lt;in T&gt;
+             {
+
+                    bool Validate(T item);
+             }
+
+14.5 Avoid Excessive Generic Nesting
+
+             // Hard to read
+             Dictionary&lt;string, List&lt;Tuple&lt;int, Dictionary&lt;string, object&gt;&gt;&gt;&gt; data;</pre></div></div>
+<div class="pdf-page" id="page-28"><div class="page-head">Page 28</div><div class="page-body"><pre>// Better: Create meaningful types
+class UserData { /* ... */ }
+Dictionary&lt;string, UserData&gt; data;</pre></div></div>
+<div class="pdf-page" id="page-29"><div class="page-head">Page 29</div><div class="page-body"><pre>Part VII: Generics in the .NET Ecosystem</pre></div></div>
+<div class="pdf-page" id="page-30"><div class="page-head">Page 30</div><div class="page-body"><pre>Chapter 15: Generics in Entity Framework Core
+
+15.1 DbSet&lt;T&gt;
+
+             public class AppDbContext : DbContext
+             {
+
+                    public DbSet&lt;Employee&gt; Employees { get; set; }
+                    public DbSet&lt;Department&gt; Departments { get; set; }
+             }
+
+             // DbSet&lt;T&gt; provides generic query and change tracking
+             var employees = await context.Employees
+
+                    .Where(e =&gt; e.IsActive)
+                    .ToListAsync();
+
+15.2 Generic Configuration
+
+             public abstract class BaseEntityConfiguration&lt;T&gt; : IEntityTypeConfiguration&lt;T&gt;
+                    where T : BaseEntity
+
+             {
+                    public virtual void Configure(EntityTypeBuilder&lt;T&gt; builder)
+                    {
+                            builder.HasKey(e =&gt; e.Id);
+                            builder.Property(e =&gt; e.CreatedAt).IsRequired();
+                            builder.Property(e =&gt; e.UpdatedAt).IsRequired();
+                    }
+
+             }
+
+             public class EmployeeConfiguration : BaseEntityConfiguration&lt;Employee&gt;
+             {
+
+                    public override void Configure(EntityTypeBuilder&lt;Employee&gt; builder)
+                    {
+
+                            base.Configure(builder);
+                            builder.Property(e =&gt; e.Name).HasMaxLength(100);
+                    }
+             }</pre></div></div>
+<div class="pdf-page" id="page-31"><div class="page-head">Page 31</div><div class="page-body"><pre>Chapter 16: Generics in Dependency Injection
+
+16.1 Generic Service Registration
+
+             // Register open generic
+             services.AddScoped(typeof(IRepository&lt;&gt;), typeof(Repository&lt;&gt;));
+
+             // Now any IRepository&lt;T&gt; resolves to Repository&lt;T&gt;
+             // IRepository&lt;Employee&gt; → Repository&lt;Employee&gt;
+             // IRepository&lt;Product&gt; → Repository&lt;Product&gt;
+
+16.2 Generic Decorators
+
+             public class CachingRepository&lt;T&gt; : IRepository&lt;T&gt; where T : class, IEntity
+             {
+
+                    private readonly IRepository&lt;T&gt; _inner;
+                    private readonly IMemoryCache _cache;
+
+                    public CachingRepository(IRepository&lt;T&gt; inner, IMemoryCache cache)
+                    {
+
+                            _inner = inner;
+                            _cache = cache;
+                    }
+
+                    public async Task&lt;T?&gt; GetByIdAsync(int id)
+                    {
+
+                            string key = $&quot;{typeof(T).Name}_{id}&quot;;
+                            return await _cache.GetOrCreateAsync(key,
+
+                                   entry =&gt; _inner.GetByIdAsync(id));
+                    }
+             }
+
+             // Registration with decoration (using Scrutor)
+             services.Decorate(typeof(IRepository&lt;&gt;), typeof(CachingRepository&lt;&gt;));</pre></div></div>
+<div class="pdf-page" id="page-32"><div class="page-head">Page 32</div><div class="page-body"><pre>Chapter 17: Generics in Blazor
+
+17.1 Generic Components
+
+             @typeparam TItem
+
+             &lt;ul&gt;
+                    @foreach (var item in Items)
+                    {
+                            &lt;li&gt;@ItemTemplate(item)&lt;/li&gt;
+                    }
+
+             &lt;/ul&gt;
+
+             @code {
+                    [Parameter] public IEnumerable&lt;TItem&gt; Items { get; set; } = default!;
+                    [Parameter] public RenderFragment&lt;TItem&gt; ItemTemplate { get; set; } = default!;
+
+             }
+
+Usage:
+
+             &lt;GenericList Items=&quot;employees&quot; Context=&quot;emp&quot;&gt;
+                    &lt;ItemTemplate&gt;
+                            &lt;span&gt;@emp.Name - @emp.Department&lt;/span&gt;
+                    &lt;/ItemTemplate&gt;
+
+             &lt;/GenericList&gt;
+
+17.2 Generic Component Constraints
+
+             @typeparam TEntity where TEntity : IEntity
+
+             &lt;MudTable Items=&quot;@Items&quot; Hover=&quot;true&quot;&gt;
+                    &lt;HeaderContent&gt;
+                            &lt;MudTh&gt;ID&lt;/MudTh&gt;
+                            &lt;MudTh&gt;Actions&lt;/MudTh&gt;
+                    &lt;/HeaderContent&gt;
+                    &lt;RowTemplate&gt;
+                            &lt;MudTd&gt;@context.Id&lt;/MudTd&gt; @* IEntity guarantees Id exists *@
+                            &lt;MudTd&gt;
+                                   &lt;MudIconButton Icon=&quot;@Icons.Material.Filled.Edit&quot;
+                                                            OnClick=&quot;() =&gt; Edit(context)&quot; /&gt;
+                            &lt;/MudTd&gt;
+                    &lt;/RowTemplate&gt;
+
+             &lt;/MudTable&gt;
+
+             @code {
+                    [Parameter] public IEnumerable&lt;TEntity&gt; Items { get; set; } = default!;
+                    [Parameter] public EventCallback&lt;TEntity&gt; OnEdit { get; set; }
+
+                    private async Task Edit(TEntity entity) =&gt; await OnEdit.InvokeAsync(entity);
+             }</pre></div></div>
+<div class="pdf-page" id="page-33"><div class="page-head">Page 33</div><div class="page-body"><pre>         Appendix A: Quick Reference
+
+Constraint Syntax Summary
+
+Constraint               Meaning
+where T : class          T must be a reference type
+where T : struct         T must be a non-nullable value type
+where T : new()          T must have a parameterless constructor
+where T : BaseClass      T must inherit from BaseClass
+where T : IInterface     T must implement IInterface
+where T : notnull        T must be non-nullable (C# 8+)
+where T : unmanaged      T must be an unmanaged type (C# 7.3+)
+where T : U              T must derive from type parameter U
+
+Variance Summary
+
+Keyword  Name            Direction       Safe When
+out      Covariance      Child → Parent  T is only returned
+in       Contravariance  Parent → Child  T is only accepted
+(none)   Invariance      No conversion   T is both input and output</pre></div></div>
+<div class="pdf-page" id="page-34"><div class="page-head">Page 34</div><div class="page-body"><pre>    Appendix B: Further Reading
+
+1. C# Language Specification — The official reference for generic syntax and semantics
+
+2. &quot;CLR via C#&quot; by Jeffrey Richter — Deep dive into how generics work at the runtime level
+
+3. &quot;C# in Depth&quot; by Jon Skeet — Excellent coverage of generic evolution across C# versions
+
+4.  Microsoft  Docs:  Generic                                               Classes         —
+
+https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/generics/
+
+5. Entity Framework Core Documentation — Practical examples of generics in ORM contexts
+
+This guide was written as an educational resource for .NET developers seeking to master generics.
+Understanding generics deeply will improve your ability to write reusable, type-safe, and performant code.</pre></div></div>
+</article>
+<div class="takeaways"><h3>Key takeaways</h3><ul><li>C# generics are reified at runtime, not erased — the CLR knows the exact type arguments and can generate specialised value-type code without boxing</li><li>Constraints are promises to the compiler about what T can do, which unlocks operations like CompareTo, new T(), or casting to null</li><li>Covariance (out) is safe when T only leaves the type; contravariance (in) is safe when T only enters the type; anything else must be invariant</li><li>Static fields in a generic class are per constructed type — Counter&lt;int&gt;.Count and Counter&lt;string&gt;.Count are independent slots</li><li>Open generic registrations let DI containers resolve IRepository&lt;T&gt; for any T with a single line of configuration</li></ul></div>
+<aside class="cross-refs"><h2>Cross-references</h2><div class="cross-ref-list"><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>csharp-language-features</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>dependency-injection</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>ef-core-repository-pattern</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>specification-pattern</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>blazor-generic-components</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>reflection-and-metadata</a></div></aside>
+<aside class="related"><h2>More in this category</h2><div class="related-grid"><a class="related-card" href="../../CORE/language/delegates-lambdas-expression-bodies.html"><div class="title">C# Deep Dive: Delegates, Lambdas and Expression-Bodied Members</div><div class="meta"><span class="badge">HTML</span><span>2,771 words</span></div></a><a class="related-card" href="../../CORE/language/csharp-generics-and-functional-builders.html"><div class="title">C# Deep Dive: Generics, Builders &amp; Everything In Between</div><div class="meta"><span class="badge">HTML</span><span>4,353 words</span></div></a><a class="related-card" href="../../CORE/language/csharp-events-godot-bridge.html"><div class="title">C# Events and Async Patterns for Godot Developers</div><div class="meta"><span class="badge">DOCX</span><span>1,206 words</span></div></a><a class="related-card" href="../../CORE/language/csharp-flags-enum.html"><div class="title">C# Flags Enum Guide</div><div class="meta"><span class="badge">MD</span><span>815 words</span></div></a><a class="related-card" href="../../CORE/language/expression-trees-compiled-reflection.html"><div class="title">Expression Trees &amp; Compiled Reflection — From Slow Reflection to Native Speed</div><div class="meta"><span class="badge">HTML</span><span>2,883 words</span></div></a><a class="related-card" href="../../CORE/language/csharp-generics.html"><div class="title">Generics in C#: A Comprehensive Guide</div><div class="meta"><span class="badge">MD</span><span>4,388 words</span></div></a></div></aside>
+</main>
+</div>
+<script>
+// ─── Active TOC item on scroll ────────────────────────────────────
+(function() {
+  const tocLinks = document.querySelectorAll('.toc-sidebar a[href^="#"]');
+  if (!tocLinks.length) return;
+  const headings = Array.from(document.querySelectorAll(
+    'article h1[id], article h2[id], article h3[id], article h4[id], .pdf-page[id]'
+  ));
+  if (!headings.length) return;
+  function setActive(id) {
+    tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+  }
+  let lastVisible = headings[0].id;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) lastVisible = e.target.id; });
+    setActive(lastVisible);
+  }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+  headings.forEach(h => observer.observe(h));
+  setActive(headings[0].id);
+})();
+
+// ─── Copy code buttons ────────────────────────────────────────────
+(function() {
+  document.querySelectorAll('article pre').forEach(pre => {
+    if (pre.closest('.diagram-box')) return;
+    if (pre.closest('.pdf-page')) return;
+    if (pre.parentElement && pre.parentElement.classList.contains('code-block')) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'code-block';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.type = 'button';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', () => {
+      const code = pre.querySelector('code') || pre;
+      const text = code.innerText;
+      const done = () => {
+        btn.textContent = 'Copied';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(() => {});
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+    });
+    wrap.appendChild(btn);
+  });
+})();
+
+// ─── Live filter (master + hub + category pages) ─────────────────
+(function() {
+  const search = document.getElementById('search-input');
+  if (!search) return;
+  const items = document.querySelectorAll('[data-search]');
+  function apply() {
+    const q = search.value.toLowerCase().trim();
+    items.forEach(el => {
+      const match = !q || el.dataset.search.includes(q);
+      el.style.display = match ? '' : 'none';
+    });
+    document.querySelectorAll('[data-search-parent]').forEach(parent => {
+      const visible = Array.from(parent.querySelectorAll('[data-search]'))
+        .some(el => el.style.display !== 'none');
+      parent.style.display = visible ? '' : 'none';
+    });
+  }
+  search.addEventListener('input', apply);
+})();
+</script>
+</body>
+</html>

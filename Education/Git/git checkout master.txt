@@ -1,0 +1,7 @@
+git checkout master
+git pull --ff-only origin master
+git tag [tag name]
+git tag --list "[tag name]"  -> verification
+git merge --no-ff <BranchName> -m "commit message"
+git log --oneline --graph -10  -> verification
+git push origin master

@@ -1,0 +1,368 @@
+IMAP & SMTP — Email Integration with MailKit
+IMAP & SMTP — Email Integration with MailKit
+Tutorial #25 — How GivingCare reads, sends, and auto-processes email
+1. IMAP vs SMTP — The Two Protocols
+Email integration requires two completely separate protocols. They do opposite jobs and run on different ports:
+Protocol
+Direction
+Port
+Security
+Purpose
+IMAP
+Pull (read)
+993
+Implicit SSL
+Read emails from the mail server inbox
+SMTP
+Push (send)
+587
+STARTTLS
+Send emails through the mail server
+Both require authentication (username + password). GivingCare uses
+MailKit , the most popular open-source .NET library for email, to handle both protocols.
+IMAP is like checking your physical mailbox — you go there, see what's new, and bring it inside.
+SMTP is like dropping a letter into the outgoing slot at the post office.
+Mail Server (Gmail, Outlook, etc.)
+┌─────────────────────────────────┐
+│ │
+│ IMAP (port 993, SSL) │ ← EmailReaderService reads inbox
+│ │
+├─────────────────────────────────┤
+│ │
+│ SMTP (port 587, STARTTLS) │ ← EmailSenderService sends replies
+│ │
+└────────────────┬────────────────┘
+│
+│ MailKit (.NET)
+│
+┌────────┴────────┐
+│ GivingCare App │
+└─────────────────┘
+IMAP port 993 uses implicit SSL — the connection starts encrypted from the very first byte.
+SMTP port 587 uses STARTTLS — the connection starts unencrypted, then upgrades to TLS mid-handshake.
+Don't mix them up or your connections will hang indefinitely without any error message.
+2. The Data Model — EmailAccount
+Each email account stores both IMAP (reading) and SMTP (sending) configuration in a single entity.
+This means one row in the database gives us everything we need to both read and send from that address.
+public class EmailAccount : BaseAuditableEntity
+{
+public string Name { get ; set ; }
+public string EmailAddress { get ; set ; }
+// IMAP — reading emails
+public string ? ImapServer { get ; set ; }
+public int ImapPort { get ; set ; } = 993 ;
+public bool ImapUseSsl { get ; set ; } = true ;
+// SMTP — sending emails
+public string ? SmtpServer { get ; set ; }
+public int SmtpPort { get ; set ; } = 587 ;
+public bool SmtpUseSsl { get ; set ; } = true ;
+// Authentication (shared by both protocols)
+public string ? Username { get ; set ; }
+public string ? Password { get ; set ; }
+// Monitoring configuration
+public bool MonitoringEnabled { get ; set ; }
+public int MonitoringIntervalMinutes { get ; set ; } = 5 ;
+public bool AutoCreateLeads { get ; set ; }
+// Sync tracking
+public DateTime ? LastSyncedAt { get ; set ; }
+public string ? LastSyncError { get ; set ; }
+}
+Key design decisions
+Defaults are sensible — ImapPort = 993 and SmtpPort = 587 mean most users never need to touch these fields.
+MonitoringIntervalMinutes controls how often we poll. Default 5 minutes is a good balance between freshness and server load.
+AutoCreateLeads is per-account — some mailboxes are for sales (auto-create), others are for support (don't auto-create).
+LastSyncedAt / LastSyncError give the UI something to display so admins can see if syncing is healthy.
+3. Reading Email — EmailReaderService (IMAP)
+The EmailReaderService uses MailKit's ImapClient to connect to the mail server,
+search for unread messages, and pull their metadata and body content.
+using var client = new ImapClient ();
+// 1. Connect to the IMAP server (SSL on port 993)
+await client . ConnectAsync ( account .ImapServer, account .ImapPort, account .ImapUseSsl);
+// 2. Authenticate with credentials
+await client . AuthenticateAsync ( account .Username, account .Password);
+// 3. Open the inbox in read-only mode (we won't modify flags)
+var inbox = client .Inbox;
+await inbox . OpenAsync ( FolderAccess .ReadOnly);
+// 4. Search for unread emails only
+var uids = await inbox . SearchAsync ( SearchQuery .NotSeen);
+// 5. Fetch the last 50 (envelope = subject, from, to, date, messageId)
+var items = await inbox . FetchAsync (
+uids . TakeLast ( 50 ),
+MessageSummaryItems .Envelope | MessageSummaryItems .UniqueId
+);
+SearchQuery.NotSeen reads as: "Show me all emails in this inbox that I haven't read yet."
+What each step does
+Step
+What happens
+Why
+ConnectAsync
+Opens TCP connection with SSL/TLS
+Encrypted channel to the mail server
+AuthenticateAsync
+Sends username + password
+Mail server verifies identity
+OpenAsync(ReadOnly)
+Opens INBOX folder without write access
+We only want to read, not mark as read or delete
+SearchAsync(NotSeen)
+Returns UIDs of unread messages
+Only process emails we haven't seen before
+FetchAsync(...TakeLast(50))
+Downloads metadata for the 50 most recent
+Prevents pulling thousands of emails on first sync
+What we extract from each email
+Subject — the email subject line
+From — sender name and email address
+To / Cc — recipients
+MessageId — unique identifier assigned by the sending server (critical for deduplication)
+Body — both plain text and HTML versions
+Date — when the email was sent
+4. Sending Email — EmailSenderService (SMTP)
+The EmailSenderService uses MailKit's SmtpClient to compose and send emails.
+The pattern is: build a MimeMessage , connect, authenticate, send, disconnect.
+// 1. Build the email message
+var message = new MimeMessage ();
+message .From. Add ( new MailboxAddress ( account .Name, account .EmailAddress));
+message .To. Add ( MailboxAddress . Parse ( to ));
+message .Subject = subject ;
+message .Body = new TextPart ( "html" ) { Text = body };
+// 2. Connect to the SMTP server (STARTTLS on port 587)
+using var client = new SmtpClient ();
+await client . ConnectAsync ( account .SmtpServer, account .SmtpPort, account .SmtpUseSsl);
+// 3. Authenticate
+await client . AuthenticateAsync ( account .Username, account .Password);
+// 4. Send the email
+await client . SendAsync ( message );
+// 5. Disconnect cleanly (true = send QUIT command)
+await client . DisconnectAsync ( true );
+Key details
+MailboxAddress.Parse(to) — safely parses an email address string, throwing if it's invalid.
+TextPart("html") — sends the body as HTML. Use "plain" for plain text emails.
+DisconnectAsync(true) — the true parameter means "send the QUIT command to the server before closing." This is polite protocol behavior.
+The using var ensures the TCP connection is disposed even if an exception occurs.
+5. The Processing Pipeline
+Reading and sending are just the transport layer. The real value is in the processing pipeline
+that ties everything together — polling on a schedule, deduplicating, saving to the database, and optionally
+converting emails into CRM leads.
+EmailPollingBackgroundService (runs every 1-5 min)
+│
+▼
+EmailProcessorService. SyncAllAccountsAsync ( companyDatabase )
+│
+├── Get active EmailAccounts from DB
+│
+├── For each account:
+│ │
+│ ├── EmailReaderService. FetchNewEmailsAsync () ← IMAP
+│ │
+│ ├── Deduplicate by MessageId
+│ │ (skip emails already in ReceivedEmails table)
+│ │
+│ ├── Save new emails to ReceivedEmails table
+│ │
+│ └── If AutoCreateLeads:
+│ └── EmailToLeadService. ConvertToLeadAsync ()
+│ │
+│ ├── Check if Lead exists for sender email
+│ ├── If yes → link email to existing lead
+│ └── If no → create new Lead + link email
+│
+└── Update account.LastSyncedAt
+Why a background service?
+IMAP doesn't push emails to you — you have to poll for them. The
+EmailPollingBackgroundService is a .NET BackgroundService (a hosted service)
+that runs a loop: sleep for N minutes, then call the processor. This ensures new emails are picked up
+automatically without any user action.
+6. Email-to-Lead Conversion
+When AutoCreateLeads is enabled on an email account, the processor calls
+EmailToLeadService for each new email. This service either links the email to an
+existing lead or creates a brand new one.
+// Check if a lead already exists for this sender
+var existingLead = await context . Set < Lead >()
+. FirstOrDefaultAsync ( l => l .ContactoEmail == email .FromAddress);
+if ( existingLead != null )
+{
+// Link to existing lead — don't create a duplicate
+email .LeadId = existingLead .Id;
+email .IsProcessed = true ;
+return ;
+}
+// No existing lead — create a new one
+var lead = new Lead
+{
+Codigo = $"EM- { DateTime .UtcNow: yyyyMMddHHmmss } " ,
+Nome = email .FromName ?? email .FromAddress ?? "Desconhecido" ,
+ContactoEmail = email .FromAddress,
+Status = LeadStatusConstants .Novo,
+};
+How it works
+Deduplication by email address — if a lead with the sender's email already exists, we link instead of creating a duplicate.
+Auto-code generation — the EM- prefix distinguishes email-generated leads from manually created ones. The timestamp ensures uniqueness.
+Fallback naming — FromName ?? FromAddress ?? "Desconhecido" uses the null-coalescing chain to always have a name, even if the sender's display name is empty.
+Link via LeadId — the ReceivedEmail.LeadId foreign key creates the relationship between emails and leads.
+7. Deduplication by MessageId
+Every email ever sent has a globally unique MessageId header assigned by the sending mail server
+(e.g., <abc123@mail.gmail.com> ). Since we poll repeatedly, the same unread email will
+appear in every poll until it's marked as read. We use MessageId to skip already-imported emails.
+// Get all MessageIds we've already saved for this account
+var existingMessageIds = await context . Set < ReceivedEmail >()
+. Where ( e => e .EmailAccountId == accountId )
+. Select ( e => e .MessageId)
+. ToListAsync ();
+// Filter out duplicates — only keep emails with new MessageIds
+var uniqueEmails = newEmails
+. Where ( e => ! string . IsNullOrEmpty ( e .MessageId)
+&& ! existingMessageIds . Contains ( e .MessageId))
+. ToList ();
+Always deduplicate by MessageId. Polling is inherently repetitive — without dedup,
+you'll import the same email every 5 minutes and fill your database with duplicates.
+Why not just mark emails as read?
+You could open the IMAP folder in ReadWrite mode and add the \Seen flag.
+But that has side effects — the email would also appear as "read" in the user's regular mail client
+(Gmail, Outlook, etc.), which is confusing. Opening in ReadOnly mode and deduplicating
+on our side is the non-destructive approach.
+8. Connection Testing
+When configuring a new email account in the UI, users can test both IMAP and SMTP connections before saving.
+The pattern is identical for both: create client, connect, authenticate, disconnect, and report success or failure.
+IMAP Test
+public async Task < ConnectionTestResult > TestImapAsync ( EmailAccount account )
+{
+try
+{
+using var client = new ImapClient ();
+await client . ConnectAsync ( account .ImapServer, account .ImapPort, account .ImapUseSsl);
+await client . AuthenticateAsync ( account .Username, account .Password);
+await client . DisconnectAsync ( true );
+return ConnectionTestResult . Success ( "IMAP connection successful" );
+}
+catch ( Exception ex )
+{
+return ConnectionTestResult . Fail ( ex .Message);
+}
+}
+SMTP Test
+public async Task < ConnectionTestResult > TestSmtpAsync ( EmailAccount account )
+{
+try
+{
+using var client = new SmtpClient ();
+await client . ConnectAsync ( account .SmtpServer, account .SmtpPort, account .SmtpUseSsl);
+await client . AuthenticateAsync ( account .Username, account .Password);
+await client . DisconnectAsync ( true );
+return ConnectionTestResult . Success ( "SMTP connection successful" );
+}
+catch ( Exception ex )
+{
+return ConnectionTestResult . Fail ( ex .Message);
+}
+}
+The ConnectionTestResult is a simple DTO with bool IsSuccess and string Message .
+The UI shows a green checkmark or red error based on this result. This "test before you save" pattern
+prevents broken configurations from being stored in the database.
+9. Multi-Tenant Email Polling
+GivingCare is multi-tenant — many companies share one deployment, each with their own database.
+The background service must poll email accounts across all company databases.
+EmailPollingBackgroundService (singleton, runs in background)
+│
+▼
+Loop forever:
+│
+├── Get all active companies from BaseControleContext
+│
+├── For each company:
+│ │
+│ ├── Check EmailMonitoringConfig.GlobalMonitoringEnabled
+│ │ (skip companies that disabled monitoring entirely)
+│ │
+│ └── EmailProcessorService. SyncAllAccountsAsync (companyDb)
+│ (this creates a DynamicCompanyContext for that tenant)
+│
+└── Sleep for N minutes
+(N = minimum MonitoringIntervalMinutes across all active accounts)
+Key multi-tenant considerations
+Company-level toggle — EmailMonitoringConfig.GlobalMonitoringEnabled lets an admin disable all email monitoring for their company without deleting account configurations.
+Dynamic interval — if Company A wants 5-minute polling and Company B wants 10-minute polling, the service uses the minimum (5 minutes) as its sleep interval, then checks per-account intervals internally.
+Context per tenant — the processor creates a DynamicCompanyContext for each company database, following GivingCare's standard multi-tenant pattern via IDbContextFactoryService .
+Error isolation — if one company's email sync fails, it doesn't block others. Each company's sync is wrapped in its own try/catch.
+10. Service Registration
+All email services are registered in ServiceCollectionExtensions.cs .
+Notice the lifetime choices:
+// Scoped — one instance per HTTP request / SignalR connection
+builder .Services. AddScoped < IEmailMonitoringService , EmailMonitoringService >();
+builder .Services. AddScoped < IEmailReaderService , EmailReaderService >();
+builder .Services. AddScoped < IEmailSenderService , EmailSenderService >();
+builder .Services. AddScoped < IEmailProcessorService , EmailProcessorService >();
+builder .Services. AddScoped < IEmailToLeadService , EmailToLeadService >();
+// Hosted — singleton background worker, runs for the app's entire lifetime
+builder .Services. AddHostedService < EmailPollingBackgroundService >();
+Why these lifetimes?
+Service
+Lifetime
+Reason
+EmailReaderService
+Scoped
+Uses IDbContextFactoryService (scoped) to create DB contexts
+EmailSenderService
+Scoped
+Called from Razor pages during user interactions (reply, forward)
+EmailProcessorService
+Scoped
+Orchestrates reader + dedup + lead conversion per request
+EmailToLeadService
+Scoped
+Needs DB context access for lead lookup/creation
+EmailPollingBackgroundService
+Hosted (Singleton)
+Must run continuously; creates its own scopes via IServiceScopeFactory
+The Background Service + Scoped Service Pattern
+Since EmailPollingBackgroundService is a singleton but the services it calls are scoped,
+it must create a new scope for each polling cycle:
+protected override async Task ExecuteAsync ( CancellationToken stoppingToken )
+{
+while (! stoppingToken .IsCancellationRequested)
+{
+using var scope = _scopeFactory. CreateScope ();
+var processor = scope .ServiceProvider
+. GetRequiredService < IEmailProcessorService >();
+await processor . SyncAllAccountsAsync ( companyDatabase );
+await Task . Delay ( TimeSpan . FromMinutes ( intervalMinutes ), stoppingToken );
+}
+}
+Summary — The Complete Picture
+┌──────────────────────────────────────────────────────────────────┐
+│ EMAIL INTEGRATION STACK │
+├──────────────────────────────────────────────────────────────────┤
+│ │
+│ ┌─────────────────────┐ ┌──────────────────────┐ │
+│ │ EmailReaderService │ │ EmailSenderService │ │
+│ │ (IMAP / port 993) │ │ (SMTP / port 587) │ │
+│ └──────────┬──────────┘ └──────────┬───────────┘ │
+│ │ │ │
+│ ▼ │ │
+│ ┌──────────────────────┐ │ │
+│ │ EmailProcessorService│ │ │
+│ │ - Dedup by MessageId│ │ │
+│ │ - Save to DB │ │ │
+│ │ - Auto-create Leads │ │ │
+│ └──────────┬───────────┘ │ │
+│ │ │ │
+│ ▼ ▼ │
+│ ┌──────────────────────────────────────────────┐ │
+│ │ DynamicCompanyContext (EF Core) │ │
+│ │ ReceivedEmails | Leads | EmailAccounts │ │
+│ └──────────────────────────────────────────────┘ │
+│ ▲ │
+│ │ │
+│ ┌───────────────────────┴──────────────────────┐ │
+│ │ EmailPollingBackgroundService (loop) │ │
+│ │ Polls every N minutes across all tenants │ │
+│ └──────────────────────────────────────────────┘ │
+│ │
+└──────────────────────────────────────────────────────────────────┘
+Key takeaways
+Two protocols, two services — IMAP reads (pull), SMTP sends (push). Never mix their ports or SSL modes.
+MailKit handles the protocol details — we just call ConnectAsync , AuthenticateAsync , and use the high-level API.
+Deduplication is non-negotiable — polling means seeing the same emails repeatedly. MessageId is the unique key.
+Email-to-Lead is optional per account — the AutoCreateLeads flag controls whether incoming emails auto-generate CRM leads.
+Multi-tenant polling — one background service iterates all company databases, creating scoped contexts for each.
+Test before save — always validate IMAP/SMTP credentials with a test connection before persisting account configuration.

@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CookieHandlingBlazorServerApplications</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 03-Blazor</div>
+  <h1>CookieHandlingBlazorServerApplications</h1>
+  <div class="meta">Source: <code>CookieHandlingBlazorServerApplications.docx</code> &middot; <a href="CookieHandlingBlazorServerApplications.docx">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<p>Cookie Handling in Blazor Server Applications</p>
+<p>Understanding the Prerendering Cookie Problem and Solution</p>
+<p>Executive Summary</p>
+<p>This document explains how we solved a critical authentication issue in a Blazor Server application where users couldn&#x27;t access pages directly via URL, but navigation within the app worked fine. The root cause was a mismatch in how cookies are handled during prerendering versus normal operation.</p>
+<p>The Problem</p>
+<p>Symptoms</p>
+<p>❌ Direct URL access (e.g., example.com/Dashboard) → Redirect loop to login</p>
+<p>✅ Navigation within app → Works perfectly</p>
+<p>❌ Refresh page (F5) → Redirect loop to login</p>
+<p>✅ Click menu link → Works perfectly</p>
+<p>Root Cause</p>
+<p>Cookies were being handled differently by two systems:</p>
+<p>JavaScript - Returns cookies exactly as stored</p>
+<p>ASP.NET HttpContext - Automatically URL-decodes cookies</p>
+<p>This mismatch caused decryption failures during prerendering, making the app think users weren&#x27;t authenticated.</p>
+<p>Understanding Cookie Flow</p>
+<ol>
+<li>Setting a Cookie (Login Process)</li>
+</ol>
+<p>User Login → Create Session → Serialize to JSON → Encrypt → URL Encode → Store Cookie</p>
+<p>Step-by-step transformation:</p>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Step</th>
+<th>Action</th>
+<th>Example Data</th>
+</tr></thead><tbody>
+<tr>
+<td>1</td>
+<td>User logs in</td>
+<td>Username: &quot;Admin&quot;, Company: &quot;ACME Corp&quot;</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Create session object</td>
+<td>{User: {Id: 1, Name: &quot;Admin&quot;}, Company: {Id: 1}}</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Serialize to JSON</td>
+<td>&#x27;{&quot;User&quot;:{&quot;Id&quot;:1,&quot;Name&quot;:&quot;Admin&quot;}}&#x27;</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Encrypt (AES)</td>
+<td>&quot;x7B2mK+3/4Qz==&quot; (Base64)</td>
+</tr>
+<tr>
+<td>5</td>
+<td>URL Encode</td>
+<td>&quot;x7B2mK%2B3%2F4Qz%3D%3D&quot;</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Store in cookie</td>
+<td>document.cookie = &quot;user=x7B2mK%2B3%2F4Qz%3D%3D&quot;</td>
+</tr>
+</tbody></table></div>
+<p>Why URL Encoding?</p>
+<ul>
+<li>becomes %2B</li>
+</ul>
+<p>/ becomes %2F</p>
+<p>= becomes %3D</p>
+<p>This ensures special characters don&#x27;t break the cookie storage.</p>
+<ol>
+<li>Reading a Cookie - Two Different Methods</li>
+</ol>
+<p>Method A: JavaScript (After Page Loads)</p>
+<p>getCookie(&quot;user&quot;)</p>
+<p>// Returns: &quot;x7B2mK%2B3%2F4Qz%3D%3D&quot; (still URL-encoded)</p>
+<p>When this happens:</p>
+<p>After page is fully rendered</p>
+<p>User clicks navigation links</p>
+<p>Any client-side interaction</p>
+<p>Method B: ASP.NET HttpContext (During Prerendering)</p>
+<p>HttpContext.Request.Cookies[&quot;user&quot;]</p>
+<p>// Returns: &quot;x7B2mK+3/4Qz==&quot; (automatically URL-decoded!)</p>
+<p>When this happens:</p>
+<p>Direct URL access</p>
+<p>Page refresh (F5)</p>
+<p>Initial page load</p>
+<p>The Critical Difference</p>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Source</th>
+<th>Returns</th>
+<th>URL Decoded?</th>
+</tr></thead><tbody>
+<tr>
+<td>JavaScript getCookie()</td>
+<td>&quot;x7B2mK%2B3%2F4Qz%3D%3D&quot;</td>
+<td>No</td>
+</tr>
+<tr>
+<td>HttpContext</td>
+<td>&quot;x7B2mK+3/4Qz==&quot;</td>
+<td>Yes (automatic)</td>
+</tr>
+</tbody></table></div>
+<p>Why It Broke</p>
+<p>The Decryption Method Expected URL-Encoded Input</p>
+<p>public static string Decrypt(string cipherText)</p>
+<p>{</p>
+<p>// Step 1: URL decode</p>
+<p>string base64 = HttpUtility.UrlDecode(cipherText);</p>
+<p>// Step 2: Decrypt the base64...</p>
+<p>}</p>
+<p>The Double-Decode Problem</p>
+<p>When ASP.NET already decoded the cookie:</p>
+<p>Input: &quot;x7B2mK+3/4Qz==&quot; (already decoded by ASP.NET)</p>
+<p>↓</p>
+<p>UrlDecode(): Tries to decode again</p>
+<p>↓</p>
+<p>Result: Corrupted data</p>
+<p>↓</p>
+<p>Error: &quot;Invalid Base64 string&quot;</p>
+<p>↓</p>
+<p>Authentication fails</p>
+<p>↓</p>
+<p>Redirect to login</p>
+<p>The Solution</p>
+<ol>
+<li>Add HttpContextAccessor for Prerendering Support</li>
+</ol>
+<p>// Program.cs</p>
+<p>builder.Services.AddHttpContextAccessor();</p>
+<p>builder.Services.AddScoped&lt;ISessionService, SessionService&gt;();</p>
+<ol>
+<li>Modify SessionService Constructor</li>
+</ol>
+<p>public class SessionService : ISessionService</p>
+<p>{</p>
+<p>private readonly IHttpContextAccessor _httpContextAccessor;</p>
+<p>public SessionService(</p>
+<p>IJSRuntime jsRuntime,</p>
+<p>IHttpContextAccessor httpContextAccessor) // NEW!</p>
+<p>{</p>
+<p>_httpContextAccessor = httpContextAccessor;</p>
+<p>}</p>
+<p>}</p>
+<ol>
+<li>Create Flexible Decryption Method</li>
+</ol>
+<p>private string DecryptData(string cookieValue, bool skipUrlDecode = false)</p>
+<p>{</p>
+<p>// Handle both encoded and decoded cookies</p>
+<p>string base64 = skipUrlDecode</p>
+<p>? cookieValue                          // Already decoded by ASP.NET</p>
+<p>: HttpUtility.UrlDecode(cookieValue);  // Needs decoding from JS</p>
+<p>// Continue with decryption...</p>
+<p>using (var aes = Aes.Create())</p>
+<p>{</p>
+<p>// ... decrypt base64 ...</p>
+<p>}</p>
+<p>}</p>
+<ol>
+<li>Update GetUserSessionAsync</li>
+</ol>
+<p>public async Task&lt;EmpresaUserSession&gt; GetUserSessionAsync()</p>
+<p>{</p>
+<p>// Check memory first (fastest)</p>
+<p>if (_sessionData.ContainsKey(&quot;user&quot;))</p>
+<p>return (EmpresaUserSession)_sessionData[&quot;user&quot;];</p>
+<p>// During prerendering - use HttpContext</p>
+<p>if (_httpContextAccessor?.HttpContext != null)</p>
+<p>{</p>
+<p>var cookieValue = _httpContextAccessor.HttpContext.Request.Cookies[&quot;user&quot;];</p>
+<p>if (!string.IsNullOrEmpty(cookieValue))</p>
+<p>{</p>
+<p>// HttpContext auto-decoded it, so skip URL decode</p>
+<p>var session = DecryptData(cookieValue, skipUrlDecode: true);</p>
+<p>if (session != null)</p>
+<p>{</p>
+<p>_sessionData[&quot;user&quot;] = session;</p>
+<p>return session;</p>
+<p>}</p>
+<p>}</p>
+<p>}</p>
+<p>// After rendering - use JavaScript</p>
+<p>try</p>
+<p>{</p>
+<p>var cookieValue = await GetCookieAsync(&quot;user&quot;);</p>
+<p>if (!string.IsNullOrEmpty(cookieValue))</p>
+<p>{</p>
+<p>// JS returns raw cookie, needs URL decode</p>
+<p>var session = DecryptData(cookieValue, skipUrlDecode: false);</p>
+<p>if (session != null)</p>
+<p>{</p>
+<p>_sessionData[&quot;user&quot;] = session;</p>
+<p>return session;</p>
+<p>}</p>
+<p>}</p>
+<p>}</p>
+<p>catch (InvalidOperationException ex) when (ex.Message.Contains(&quot;JavaScript interop&quot;))</p>
+<p>{</p>
+<p>// Expected during prerendering - JavaScript not available yet</p>
+<p>return null;</p>
+<p>}</p>
+<p>return null;</p>
+<p>}</p>
+<p>The Complete Flow</p>
+<p>Before Fix (Broken)</p>
+<ol>
+<li>User accesses example.com/Dashboard</li>
+</ol>
+<p>↓</p>
+<ol>
+<li>Prerendering starts (no JavaScript)</li>
+</ol>
+<p>↓</p>
+<ol>
+<li>Try to read cookie via HttpContext</li>
+</ol>
+<p>↓</p>
+<ol>
+<li>Cookie is auto-decoded: &quot;x7B2mK+3/4Qz==&quot;</li>
+</ol>
+<p>↓</p>
+<ol>
+<li>Decrypt tries to URL-decode again</li>
+</ol>
+<p>↓</p>
+<ol>
+<li>❌ ERROR: Invalid Base64</li>
+</ol>
+<p>↓</p>
+<ol>
+<li>No session found</li>
+</ol>
+<p>↓</p>
+<ol>
+<li>Redirect to /Login</li>
+</ol>
+<p>↓</p>
+<ol>
+<li>Login page checks cookie (same problem)</li>
+</ol>
+<p>↓</p>
+<ol>
+<li>Redirect loop!</li>
+</ol>
+<p>After Fix (Working)</p>
+<ol>
+<li>User accesses example.com/Dashboard</li>
+</ol>
+<p>↓</p>
+<ol>
+<li>Prerendering starts (no JavaScript)</li>
+</ol>
+<p>↓</p>
+<ol>
+<li>Try to read cookie via HttpContext</li>
+</ol>
+<p>↓</p>
+<ol>
+<li>Cookie is auto-decoded: &quot;x7B2mK+3/4Qz==&quot;</li>
+</ol>
+<p>↓</p>
+<ol>
+<li>Decrypt with skipUrlDecode=true</li>
+</ol>
+<p>↓</p>
+<ol>
+<li>✅ SUCCESS: Valid session found</li>
+</ol>
+<p>↓</p>
+<ol>
+<li>Page loads normally</li>
+</ol>
+<p>Key Concepts Explained</p>
+<p>What is Prerendering?</p>
+<p>Blazor Server can render pages in two phases:</p>
+<p>Prerendering - Server generates initial HTML before establishing WebSocket connection</p>
+<p>Interactive - After WebSocket connection, full interactivity with JavaScript</p>
+<p>What is HttpContext?</p>
+<p>Contains all information about the current HTTP request</p>
+<p>Includes headers, cookies, user info, query strings</p>
+<p>Only available server-side</p>
+<p>Available during prerendering (before JavaScript loads)</p>
+<p>What is HttpContextAccessor?</p>
+<p>A service that provides access to HttpContext</p>
+<p>Must be registered in dependency injection</p>
+<p>Allows services to access HTTP request information</p>
+<p>The Cookie Encoding Journey</p>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Stage</th>
+<th>Encoding</th>
+<th>Example</th>
+</tr></thead><tbody>
+<tr>
+<td>Original</td>
+<td>Plain text</td>
+<td>Hello+World/=</td>
+</tr>
+<tr>
+<td>URL Encoded</td>
+<td>Special chars replaced</td>
+<td>Hello%2BWorld%2F%3D</td>
+</tr>
+<tr>
+<td>In Cookie</td>
+<td>URL encoded</td>
+<td>Hello%2BWorld%2F%3D</td>
+</tr>
+<tr>
+<td>JS reads</td>
+<td>Still encoded</td>
+<td>Hello%2BWorld%2F%3D</td>
+</tr>
+<tr>
+<td>HttpContext reads</td>
+<td>Auto-decoded</td>
+<td>Hello+World/=</td>
+</tr>
+</tbody></table></div>
+<p>Best Practices Learned</p>
+<ol>
+<li>Always Consider Prerendering</li>
+</ol>
+<p>When building Blazor Server apps, always test:</p>
+<p>Direct URL access</p>
+<p>Page refresh</p>
+<p>In-app navigation</p>
+<ol>
+<li>Handle Both Cookie Sources</li>
+</ol>
+<p>// Good practice: Check both sources</p>
+<p>if (IsPrerendering)</p>
+<p>ReadFromHttpContext();</p>
+<p>else</p>
+<p>ReadFromJavaScript();</p>
+<ol>
+<li>Centralize Session Management</li>
+</ol>
+<p>Keep all session/cookie logic in one service for easier maintenance.</p>
+<ol>
+<li>Log the Source</li>
+</ol>
+<p>_logger.LogDebug(&quot;Reading cookie from: {Source}&quot;,</p>
+<p>_httpContextAccessor != null ? &quot;HttpContext&quot; : &quot;JavaScript&quot;);</p>
+<p>Troubleshooting Guide</p>
+<p>Symptom: Redirect Loop</p>
+<p>Check: Is cookie being read correctly during prerendering? Solution: Ensure HttpContextAccessor is registered and used</p>
+<p>Symptom: &quot;Invalid Base64&quot; Errors</p>
+<p>Check: Is cookie being double-decoded? Solution: Use skipUrlDecode parameter based on source</p>
+<p>Symptom: Works in Development, Not Production</p>
+<p>Check: HTTPS settings and cookie security flags Solution: Ensure cookie settings match environment</p>
+<p>Symptom: Session Lost on Refresh</p>
+<p>Check: Is session only stored in memory? Solution: Ensure cookie persistence is working</p>
+<p>Summary</p>
+<p>The core issue was that ASP.NET automatically URL-decodes cookies when reading them via HttpContext, but JavaScript returns them exactly as stored. Our decryption method expected URL-encoded input, so when it received already-decoded data from HttpContext, it would fail.</p>
+<p>The solution was to:</p>
+<p>Add HttpContextAccessor to read cookies during prerendering</p>
+<p>Create a flexible decryption method that can handle both encoded and decoded input</p>
+<p>Detect the source of the cookie and apply the appropriate decryption strategy</p>
+<p>This ensures authentication works correctly whether users:</p>
+<p>Navigate within the app (JavaScript)</p>
+<p>Access pages directly via URL (HttpContext)</p>
+<p>Refresh pages (HttpContext then JavaScript)</p>
+<p>Appendix: Related Code Files</p>
+<p>Services/Session/SessionService.cs - Main session management</p>
+<p>Data/Encrypter.cs - Encryption/decryption logic (now integrated into SessionService)</p>
+<p>Pages/_Host.cshtml - JavaScript cookie functions</p>
+<p>Shared/AuthenticatedComponentBase.cs - Base class for authenticated pages</p>
+<p>Program.cs - Service registration</p>
+<p>Document Version: 1.0 Last Updated: September 2025 Author: Development Team</p>
+</div>
+</body>
+</html>

@@ -1,0 +1,475 @@
+Cookie Handling in Blazor Server Applications
+
+Understanding the Prerendering Cookie Problem and Solution
+
+Executive Summary
+
+This document explains how we solved a critical authentication issue in a Blazor Server application where users couldn't access pages directly via URL, but navigation within the app worked fine. The root cause was a mismatch in how cookies are handled during prerendering versus normal operation.
+
+The Problem
+
+Symptoms
+
+❌ Direct URL access (e.g., example.com/Dashboard) → Redirect loop to login
+
+✅ Navigation within app → Works perfectly
+
+❌ Refresh page (F5) → Redirect loop to login
+
+✅ Click menu link → Works perfectly
+
+Root Cause
+
+Cookies were being handled differently by two systems:
+
+JavaScript - Returns cookies exactly as stored
+
+ASP.NET HttpContext - Automatically URL-decodes cookies
+
+This mismatch caused decryption failures during prerendering, making the app think users weren't authenticated.
+
+Understanding Cookie Flow
+
+1. Setting a Cookie (Login Process)
+
+User Login → Create Session → Serialize to JSON → Encrypt → URL Encode → Store Cookie
+
+Step-by-step transformation:
+
+| Step | Action | Example Data |
+| --- | --- | --- |
+| 1 | User logs in | Username: "Admin", Company: "ACME Corp" |
+| 2 | Create session object | {User: {Id: 1, Name: "Admin"}, Company: {Id: 1}} |
+| 3 | Serialize to JSON | '{"User":{"Id":1,"Name":"Admin"}}' |
+| 4 | Encrypt (AES) | "x7B2mK+3/4Qz==" (Base64) |
+| 5 | URL Encode | "x7B2mK%2B3%2F4Qz%3D%3D" |
+| 6 | Store in cookie | document.cookie = "user=x7B2mK%2B3%2F4Qz%3D%3D" |
+
+Why URL Encoding?
+
++ becomes %2B
+
+/ becomes %2F
+
+= becomes %3D
+
+This ensures special characters don't break the cookie storage.
+
+2. Reading a Cookie - Two Different Methods
+
+Method A: JavaScript (After Page Loads)
+
+getCookie("user")
+
+// Returns: "x7B2mK%2B3%2F4Qz%3D%3D" (still URL-encoded)
+
+When this happens:
+
+After page is fully rendered
+
+User clicks navigation links
+
+Any client-side interaction
+
+Method B: ASP.NET HttpContext (During Prerendering)
+
+HttpContext.Request.Cookies["user"]
+
+// Returns: "x7B2mK+3/4Qz==" (automatically URL-decoded!)
+
+When this happens:
+
+Direct URL access
+
+Page refresh (F5)
+
+Initial page load
+
+The Critical Difference
+
+| Source | Returns | URL Decoded? |
+| --- | --- | --- |
+| JavaScript getCookie() | "x7B2mK%2B3%2F4Qz%3D%3D" | No |
+| HttpContext | "x7B2mK+3/4Qz==" | Yes (automatic) |
+
+Why It Broke
+
+The Decryption Method Expected URL-Encoded Input
+
+public static string Decrypt(string cipherText)
+
+{
+
+// Step 1: URL decode
+
+string base64 = HttpUtility.UrlDecode(cipherText);
+
+// Step 2: Decrypt the base64...
+
+}
+
+The Double-Decode Problem
+
+When ASP.NET already decoded the cookie:
+
+Input: "x7B2mK+3/4Qz==" (already decoded by ASP.NET)
+
+↓
+
+UrlDecode(): Tries to decode again
+
+↓
+
+Result: Corrupted data
+
+↓
+
+Error: "Invalid Base64 string"
+
+↓
+
+Authentication fails
+
+↓
+
+Redirect to login
+
+The Solution
+
+1. Add HttpContextAccessor for Prerendering Support
+
+// Program.cs
+
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddScoped<ISessionService, SessionService>();
+
+2. Modify SessionService Constructor
+
+public class SessionService : ISessionService
+
+{
+
+private readonly IHttpContextAccessor _httpContextAccessor;
+
+public SessionService(
+
+IJSRuntime jsRuntime,
+
+IHttpContextAccessor httpContextAccessor) // NEW!
+
+{
+
+_httpContextAccessor = httpContextAccessor;
+
+}
+
+}
+
+3. Create Flexible Decryption Method
+
+private string DecryptData(string cookieValue, bool skipUrlDecode = false)
+
+{
+
+// Handle both encoded and decoded cookies
+
+string base64 = skipUrlDecode
+
+? cookieValue                          // Already decoded by ASP.NET
+
+: HttpUtility.UrlDecode(cookieValue);  // Needs decoding from JS
+
+// Continue with decryption...
+
+using (var aes = Aes.Create())
+
+{
+
+// ... decrypt base64 ...
+
+}
+
+}
+
+4. Update GetUserSessionAsync
+
+public async Task<EmpresaUserSession> GetUserSessionAsync()
+
+{
+
+// Check memory first (fastest)
+
+if (_sessionData.ContainsKey("user"))
+
+return (EmpresaUserSession)_sessionData["user"];
+
+// During prerendering - use HttpContext
+
+if (_httpContextAccessor?.HttpContext != null)
+
+{
+
+var cookieValue = _httpContextAccessor.HttpContext.Request.Cookies["user"];
+
+if (!string.IsNullOrEmpty(cookieValue))
+
+{
+
+// HttpContext auto-decoded it, so skip URL decode
+
+var session = DecryptData(cookieValue, skipUrlDecode: true);
+
+if (session != null)
+
+{
+
+_sessionData["user"] = session;
+
+return session;
+
+}
+
+}
+
+}
+
+// After rendering - use JavaScript
+
+try
+
+{
+
+var cookieValue = await GetCookieAsync("user");
+
+if (!string.IsNullOrEmpty(cookieValue))
+
+{
+
+// JS returns raw cookie, needs URL decode
+
+var session = DecryptData(cookieValue, skipUrlDecode: false);
+
+if (session != null)
+
+{
+
+_sessionData["user"] = session;
+
+return session;
+
+}
+
+}
+
+}
+
+catch (InvalidOperationException ex) when (ex.Message.Contains("JavaScript interop"))
+
+{
+
+// Expected during prerendering - JavaScript not available yet
+
+return null;
+
+}
+
+return null;
+
+}
+
+The Complete Flow
+
+Before Fix (Broken)
+
+1. User accesses example.com/Dashboard
+
+↓
+
+2. Prerendering starts (no JavaScript)
+
+↓
+
+3. Try to read cookie via HttpContext
+
+↓
+
+4. Cookie is auto-decoded: "x7B2mK+3/4Qz=="
+
+↓
+
+5. Decrypt tries to URL-decode again
+
+↓
+
+6. ❌ ERROR: Invalid Base64
+
+↓
+
+7. No session found
+
+↓
+
+8. Redirect to /Login
+
+↓
+
+9. Login page checks cookie (same problem)
+
+↓
+
+10. Redirect loop!
+
+After Fix (Working)
+
+1. User accesses example.com/Dashboard
+
+↓
+
+2. Prerendering starts (no JavaScript)
+
+↓
+
+3. Try to read cookie via HttpContext
+
+↓
+
+4. Cookie is auto-decoded: "x7B2mK+3/4Qz=="
+
+↓
+
+5. Decrypt with skipUrlDecode=true
+
+↓
+
+6. ✅ SUCCESS: Valid session found
+
+↓
+
+7. Page loads normally
+
+Key Concepts Explained
+
+What is Prerendering?
+
+Blazor Server can render pages in two phases:
+
+Prerendering - Server generates initial HTML before establishing WebSocket connection
+
+Interactive - After WebSocket connection, full interactivity with JavaScript
+
+What is HttpContext?
+
+Contains all information about the current HTTP request
+
+Includes headers, cookies, user info, query strings
+
+Only available server-side
+
+Available during prerendering (before JavaScript loads)
+
+What is HttpContextAccessor?
+
+A service that provides access to HttpContext
+
+Must be registered in dependency injection
+
+Allows services to access HTTP request information
+
+The Cookie Encoding Journey
+
+| Stage | Encoding | Example |
+| --- | --- | --- |
+| Original | Plain text | Hello+World/= |
+| URL Encoded | Special chars replaced | Hello%2BWorld%2F%3D |
+| In Cookie | URL encoded | Hello%2BWorld%2F%3D |
+| JS reads | Still encoded | Hello%2BWorld%2F%3D |
+| HttpContext reads | Auto-decoded | Hello+World/= |
+
+Best Practices Learned
+
+1. Always Consider Prerendering
+
+When building Blazor Server apps, always test:
+
+Direct URL access
+
+Page refresh
+
+In-app navigation
+
+2. Handle Both Cookie Sources
+
+// Good practice: Check both sources
+
+if (IsPrerendering)
+
+ReadFromHttpContext();
+
+else
+
+ReadFromJavaScript();
+
+3. Centralize Session Management
+
+Keep all session/cookie logic in one service for easier maintenance.
+
+4. Log the Source
+
+_logger.LogDebug("Reading cookie from: {Source}",
+
+_httpContextAccessor != null ? "HttpContext" : "JavaScript");
+
+Troubleshooting Guide
+
+Symptom: Redirect Loop
+
+Check: Is cookie being read correctly during prerendering? Solution: Ensure HttpContextAccessor is registered and used
+
+Symptom: "Invalid Base64" Errors
+
+Check: Is cookie being double-decoded? Solution: Use skipUrlDecode parameter based on source
+
+Symptom: Works in Development, Not Production
+
+Check: HTTPS settings and cookie security flags Solution: Ensure cookie settings match environment
+
+Symptom: Session Lost on Refresh
+
+Check: Is session only stored in memory? Solution: Ensure cookie persistence is working
+
+Summary
+
+The core issue was that ASP.NET automatically URL-decodes cookies when reading them via HttpContext, but JavaScript returns them exactly as stored. Our decryption method expected URL-encoded input, so when it received already-decoded data from HttpContext, it would fail.
+
+The solution was to:
+
+Add HttpContextAccessor to read cookies during prerendering
+
+Create a flexible decryption method that can handle both encoded and decoded input
+
+Detect the source of the cookie and apply the appropriate decryption strategy
+
+This ensures authentication works correctly whether users:
+
+Navigate within the app (JavaScript)
+
+Access pages directly via URL (HttpContext)
+
+Refresh pages (HttpContext then JavaScript)
+
+Appendix: Related Code Files
+
+Services/Session/SessionService.cs - Main session management
+
+Data/Encrypter.cs - Encryption/decryption logic (now integrated into SessionService)
+
+Pages/_Host.cshtml - JavaScript cookie functions
+
+Shared/AuthenticatedComponentBase.cs - Base class for authenticated pages
+
+Program.cs - Service registration
+
+Document Version: 1.0
+Last Updated: September 2025
+Author: Development Team

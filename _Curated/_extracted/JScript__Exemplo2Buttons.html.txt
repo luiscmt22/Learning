@@ -1,0 +1,29 @@
+Catálogo de Botões Padrão
+Catálogo de Botões Padrão
+Ações Primárias
+Adicionar
+Guardar
+Editar
+Eliminar
+Clonar
+Ações de Arquivo
+Download
+Exportar PDF
+Importar
+Ações de Navegação
+Voltar
+Atualizar
+Sincronizar
+Login
+Ações Secundárias
+Detalhes Lista
+Cancelar
+Concluir
+Reabrir
+Ações Terciárias
+Listar (Check)
+Listar (UL)
+Fechar
+Expandir
+Diminuir
+Ações de Sistema

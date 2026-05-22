@@ -1,0 +1,274 @@
+SignalR Real-Time Chat System — Architecture & Patterns
+SignalR Real-Time Chat System
+Architecture, patterns, and implementation in GivingCare 3.0
+1. Architecture Overview
+The chat system is built on four layers, each with a clear responsibility:
+┌─────────────────────────────────────────────────────────┐
+│ UI Components (ChatBadge, ChatDrawer, ChatWindow) │ ← Razor, thin
+├─────────────────────────────────────────────────────────┤
+│ GlobalChatService (client-side hub wrapper) │ ← Scoped, events
+├─────────────────────────────────────────────────────────┤
+│ ChatHub (SignalR Hub) │ ← Real-time relay
+├─────────────────────────────────────────────────────────┤
+│ ChatService (business logic + persistence) │ ← ServiceResult
+├─────────────────────────────────────────────────────────┤
+│ BaseControleContext (EF Core → SQL Server) │ ← ChatMessages
+└─────────────────────────────────────────────────────────┘
+Think of it like a postal system: ChatService is the post office (stores and retrieves letters),
+ChatHub is the delivery truck (carries messages in real-time),
+GlobalChatService is your mailbox (receives deliveries at your door),
+and the UI components are you reading the letter.
+Layer
+File
+Responsibility
+Entity
+Models/Chat/ChatMessage.cs
+Database model — inherits BaseEntity
+Service
+Services/Chat/ChatService.cs
+CRUD, validation, company checks
+Hub
+Services/Chat/Hubs/ChatHub.cs
+SignalR connection lifecycle, message relay
+Client wrapper
+Services/Chat/GlobalChatService.cs
+Hub connection management, C# events
+UI
+Pages/Chat/*.razor
+Render messages, handle user input
+2. SignalR Hub Design
+What is a Hub?
+A SignalR Hub is a server-side class that acts as a router for real-time messages .
+Clients connect to it via WebSockets (or fallback to Long Polling), and can call methods on the hub
+as if they were local function calls.
+Connection Lifecycle
+Client connects → OnConnectedAsync()
+├── Store connectionId in ConcurrentDictionary
+├── If first device → broadcast "UserOnline"
+└── Ready to send/receive messages
+Client disconnects → OnDisconnectedAsync()
+├── Remove connectionId from dictionary
+├── If last device → broadcast "UserOffline"
+└── Cleanup complete
+Multi-Device Support
+A single user can be logged in from multiple devices (phone + laptop). The hub tracks this
+using a ConcurrentDictionary<int, HashSet<string>> — one user ID maps to
+multiple connection IDs:
+private static readonly ConcurrentDictionary < int , HashSet < string >> _onlineUsers = new ();
+// On connect: add connection to user's set
+var connections = _onlineUsers. GetOrAdd (userId, _ => new HashSet < string >());
+lock (connections) { connections. Add (Context.ConnectionId); }
+// Only broadcast "online" when the FIRST device connects
+if (connections.Count == 1 )
+await Clients.Others. SendAsync ( "UserOnline" , userId);
+The lock is necessary because HashSet is not thread-safe.
+ConcurrentDictionary handles key-level concurrency, but the values (HashSets) need
+their own protection since multiple threads could modify the same set simultaneously.
+3. Service Layer — ChatService
+The ServiceResult Pattern
+Every service method returns ServiceResult<T> instead of throwing exceptions or
+returning null. This makes error handling explicit and consistent:
+public async Task < ServiceResult < ChatMessageDto >> SendMessageAsync ( int fromUserId , SendMessageDto dto )
+{
+// Guard clauses — validate and exit early
+if (fromUserId <= 0 )
+return ServiceResult < ChatMessageDto >. Failure ( "ID de utilizador inválido" );
+if (fromUserId == dto.ToUserId)
+return ServiceResult < ChatMessageDto >. Failure ( "Não pode enviar mensagem para si próprio" );
+// Company validation — users must share a company
+if (! await ShareCompanyAsync (context, fromUserId, dto.ToUserId))
+return ServiceResult < ChatMessageDto >. Failure ( "Utilizadores não partilham a mesma empresa" );
+// Happy path — unindented, clean
+var message = new ChatMessage { ... };
+context.ChatMessages. Add (message);
+await context. SaveChangesAsync ();
+return ServiceResult < ChatMessageDto >. SuccessResult (messageDto);
+}
+"Send a message from this user. If the ID is invalid, fail. If they're messaging themselves, fail.
+If they don't share a company, fail. Otherwise, save it and return success."
+Company Validation
+Users can only chat with other users who share at least one company. This is enforced in the
+service layer via UserCompanies table:
+private async Task < bool > ShareCompanyAsync ( BaseControleContext context , int userId1 , int userId2 )
+{
+var user1Companies = await context.UserCompanies
+. Where (uc => uc.UserId == userId1)
+. Select (uc => uc.CompanyId)
+. ToListAsync ();
+return await context.UserCompanies
+. AnyAsync (uc => uc.UserId == userId2 && user1Companies. Contains (uc.CompanyId));
+}
+4. Real-Time Events Flow
+Sending a Message
+User A types message → clicks Send
+│
+▼
+ChatWindow calls GlobalChatService.SendMessageAsync(dto)
+│
+▼
+GlobalChatService sends "SendMessage" to ChatHub via SignalR
+│
+▼
+ChatHub.SendMessage() runs on server:
+├── Calls ChatService.SendMessageAsync() → saves to DB
+├── Looks up User B's connections in _onlineUsers
+├── Sends "ReceiveMessage" to User B's connections
+└── Sends "MessageSent" back to User A (confirmation)
+│
+▼
+GlobalChatService on User B fires OnMessageReceived event
+│
+▼
+ChatWindow adds message to _messages list → StateHasChanged()
+Read Receipts
+User B opens conversation with User A
+│
+▼
+ChatWindow calls GlobalChatService.MarkAsReadAsync(fromUserId: A)
+│
+▼
+ChatHub.MarkAsRead() → ChatService.MarkMessagesAsReadAsync()
+├── Updates IsRead=true, ReadAt=now for all unread messages from A
+└── Sends "MessagesRead" to User A's connections
+│
+▼
+User A's ChatWindow updates: Done icon → DoneAll icon (blue)
+Typing Indicators
+// ChatWindow: debounced typing (2 second timeout)
+private async Task HandleKeyUp ( KeyboardEventArgs e )
+{
+// Send "typing = true" on first keystroke
+if (!_isTypingSent)
+{
+_isTypingSent = true ;
+await GlobalChatService. SendTypingAsync (OtherUser.UserId, true );
+}
+// Reset the 2-second timer — after 2s of no typing, send "typing = false"
+_typingDebounceTimer?. Dispose ();
+_typingDebounceTimer = new Timer ( async _ => await StopTyping (),
+null , TimeSpan . FromSeconds ( 2 ), Timeout .InfiniteTimeSpan);
+}
+5. Feature Flag Gating
+The chat module is controlled by a per-company feature flag, so different companies can
+enable/disable it independently:
+// 1. Register the key in FeatureKeys.cs
+public const string ChatModule = "Chat" ;
+// 2. In MainLayout: load the flag state
+_chatModuleEnabled = FeatureKeys . IsEffectivelyEnabled (features, FeatureKeys .ChatModule);
+// 3. Conditionally render
+@ if (_chatModuleEnabled)
+{
+< ChatBadge UserId= "@userSession.User.Id" />
+}
+The chat icon in the navbar and the chat drawer only render when
+_chatModuleEnabled is true. No wasted resources for companies that don't use chat.
+Administrators toggle it via Configurações > Módulos (Developer role only).
+6. GlobalChatService Pattern
+This is the client-side hub wrapper — a scoped service that manages the
+SignalR connection and exposes C# events that Razor components subscribe to.
+Why not call the Hub directly from Razor?
+Separation of concerns — Razor components stay thin (no hub connection logic)
+Single connection — Multiple components share one hub connection
+Reconnection — Automatic reconnect with exponential backoff
+Testability — The interface IGlobalChatService can be mocked
+Event-Based Communication
+// Interface exposes events that components subscribe to
+public interface IGlobalChatService : IAsyncDisposable
+{
+event Action < ChatMessageDto >? OnMessageReceived ;
+event Action < ChatMessageDto >? OnMessageSent ;
+event Action < int >? OnMessagesRead ;
+event Action < int >? OnUserOnline ;
+event Action < int >? OnUserOffline ;
+event Action < TypingIndicatorDto >? OnUserTyping ;
+event Action < bool >? OnConnectionStatusChanged ;
+// ...
+}
+// Inside the service, hub messages map to events:
+_hubConnection. On < ChatMessageDto >( "ReceiveMessage" , message =>
+{
+OnMessageReceived?. Invoke (message); // Fire event → all subscribers react
+});
+Authentication Headers
+Since Blazor Server apps use SignalR for their own circuit, the chat hub connection needs
+custom headers to identify the user. The service reads from ISessionService :
+var userSession = await _sessionService. GetUserSessionAsync ();
+headers. Add ( "X-User-Id" , userSession.User.Id. ToString ());
+headers. Add ( "X-Company-Id" , userSession.Company.Id. ToString ());
+7. UI Components
+ChatBadge — The Navbar Icon
+A small component that shows the unread message count as a badge on the chat icon.
+It subscribes to OnMessageReceived to increment the count in real-time.
+ChatDrawer — The Side Panel
+A fixed right-side slide-out panel (380px wide, full-width on mobile).
+Has two views:
+User List — shows all users in shared companies, with online dots,
+last message preview, and unread badges
+Chat Window — the actual conversation view (rendered as a child component)
+ChatWindow — The Conversation
+Renders message bubbles (sent = primary right, received = surface left),
+with read receipts, typing indicators, and pagination.
+InvokeAsync is mandatory — All SignalR event handlers run on a different thread
+than the Blazor render thread. Always wrap UI updates in InvokeAsync(() => { ... StateHasChanged(); }) .
+Without this, you'll get random rendering errors or state corruption.
+Event Subscription Pattern
+// Subscribe in OnInitializedAsync (or OnAfterRenderAsync for lazy init)
+GlobalChatService.OnMessageReceived += HandleMessageReceived ;
+// Always unsubscribe in DisposeAsync to prevent memory leaks
+public async ValueTask DisposeAsync ()
+{
+GlobalChatService.OnMessageReceived -= HandleMessageReceived ;
+}
+// Handler must use InvokeAsync for thread safety
+private async void HandleMessageReceived ( ChatMessageDto message )
+{
+await InvokeAsync (() =>
+{
+_messages. Add (message);
+StateHasChanged ();
+});
+}
+8. Background Cleanup
+The ChatCleanupService is a BackgroundService that runs every 12 hours
+and deletes messages older than 30 days. It follows the exact same pattern as
+NotificationCleanupService :
+protected override async Task ExecuteAsync ( CancellationToken stoppingToken )
+{
+while (!stoppingToken.IsCancellationRequested)
+{
+using var scope = _serviceProvider. CreateScope ();
+var chatService = scope.ServiceProvider. GetRequiredService < IChatService >();
+await chatService. DeleteOldMessagesAsync ( 30 );
+await Task . Delay (_period, stoppingToken);
+}
+}
+Background services are singletons but scoped services (like IChatService )
+must be resolved from a new scope. Always use _serviceProvider.CreateScope() inside the loop —
+never inject scoped services directly into a BackgroundService constructor.
+9. Database Design
+ChatMessage Entity
+Column Type Purpose
+Id int (PK) From BaseEntity
+FromUserId int (FK) Sender
+ToUserId int (FK) Recipient
+Message nvarchar(2000) Message content
+SentAt datetime When sent (UTC)
+ReadAt datetime? When read (null = unread)
+IsRead bit Fast filter for unread queries
+IsDeleted bit Soft delete flag
+Indexes
+// Fast unread message lookup (badge count, stats)
+IX_ChatMessages_ToUser_IsRead_FromUser → (ToUserId, IsRead, FromUserId)
+// Conversation pagination (message list)
+IX_ChatMessages_Conversation → (FromUserId, ToUserId, SentAt)
+"Find all unread messages sent to me, grouped by who sent them" — that's exactly what
+the first index covers. The second index helps when loading a conversation ordered by time.
+10. Key Takeaways
+Layer separation — Business logic lives in ChatService , never in Razor or the Hub
+ServiceResult pattern — All operations return success/failure, no exceptions for control flow
+Feature flags — Module can be toggled per-company without code changes
+Thread safety — ConcurrentDictionary + locks for shared state, InvokeAsync for UI updates
+Multi-device — One user can connect from multiple devices; online status only changes on first connect / last disconnect
+Event-driven UI — Components subscribe to events, not poll for changes
+Proper disposal — Every subscriber unsubscribes in DisposeAsync to prevent memory leaks
+Company isolation — Users can only chat with users who share at least one company

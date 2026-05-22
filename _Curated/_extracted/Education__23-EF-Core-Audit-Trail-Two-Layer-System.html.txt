@@ -1,0 +1,707 @@
+EF Core Audit Trail — Two-Layer System
+EF Core Audit Trail — Two-Layer System
+Tutorial #23 — Who Changed What, When, and Why?
+1. Why Audit?
+Every serious business application needs to answer a deceptively simple question: "Who changed what, when, and why?"
+This question comes up constantly — from compliance auditors, from managers debugging a bad data entry, from developers
+tracing a production bug, and from security teams investigating suspicious activity.
+Audit trails serve three primary purposes:
+Compliance — Regulators and certifications (GDPR, ISO 27001, SOC 2) require you to prove who accessed or modified sensitive data and when.
+Debugging — When a record has wrong data, the audit trail tells you exactly when the change happened and who made it. No more guessing.
+Accountability — Users behave more carefully when they know their actions are recorded. And when something goes wrong, you know exactly who to talk to.
+But not all audit needs are the same. Sometimes you just need to know "when was this record last touched?" Other times you need
+a full operation log: "User Maria moved Lead 'Acme Corp' from stage 'Contacto' to 'Proposta' at 14:30 on Tuesday."
+These are fundamentally different questions, and GivingCare addresses them with two distinct layers.
+2. The Two-Layer Architecture
+GivingCare's audit system is split into two complementary layers, each solving a different problem.
+Think of them as different lenses through which you can view system activity.
+Layer 1: Entity Audit Fields (BaseAuditableEntity)
+├── CreatedAt, CreatedByUserId
+├── ModifiedAt, ModifiedByUserId
+├── DeletedAt, DeletedByUserId (soft-delete)
+└── Purpose: "When was this record last touched, and by whom?"
+Layer 2: Operation Audit Logs
+├── System Level : AuditLog → BaseControleContext (login, logout, password change)
+├── Domain Level : CrmActivityLog → Company DB (Lead created, Opportunity state changed)
+└── Purpose: "What meaningful actions did users perform over time?"
+Layer 1 is like a "Last edited by" stamp on a document — it tells you the most recent person who touched it and when.
+Layer 2 is like a full revision history — who did what, when, and what they changed. Every action is a separate entry you can scroll through.
+Layer 1 lives on the entities themselves — every row in the database carries its own audit stamp.
+Layer 2 lives in separate log tables — one for system-wide events, another for domain-specific business actions.
+Together, they give you both the quick glance ("who last modified this?") and the deep dive ("show me everything that happened to this lead").
+3. Layer 1: Base Entity Abstractions
+The foundation of entity-level auditing is a set of interfaces and abstract base classes.
+Every entity that needs auditing inherits from these, getting the audit fields "for free" through the inheritance chain.
+The Interfaces: IAuditable and ISoftDeletable
+First, two interfaces define the contracts — what properties an auditable or soft-deletable entity must have:
+namespace GivingCare.Models ;
+/// <summary>
+/// Interface for entities that track creation and modification audit information.
+/// </summary>
+public interface IAuditable
+{
+DateTime CreatedAt { get ; set ; }
+int ? CreatedByUserId { get ; set ; }
+DateTime ? ModifiedAt { get ; set ; }
+int ? ModifiedByUserId { get ; set ; }
+}
+namespace GivingCare.Models ;
+/// <summary>
+/// Interface for entities that support soft deletion.
+/// </summary>
+public interface ISoftDeletable
+{
+bool IsDeleted { get ; set ; }
+DateTime ? DeletedAt { get ; set ; }
+int ? DeletedByUserId { get ; set ; }
+}
+Why interfaces? Because they let you write generic code that operates on any auditable entity.
+An EF Core interceptor (or a service method) can check if (entity is IAuditable auditable) and act on it,
+regardless of whether it's an Employee , a Lead , or a Document .
+The Inheritance Chain
+Now the abstract classes that implement these interfaces, forming a three-level hierarchy:
+using System.ComponentModel.DataAnnotations;
+namespace GivingCare.Models ;
+/// <summary>
+/// Base class for all entities with an integer primary key.
+/// </summary>
+public abstract class BaseEntity
+{
+[ Key ]
+public int Id { get ; set ; }
+}
+namespace GivingCare.Models ;
+/// <summary>
+/// Base class for entities that track creation and modification audit information.
+/// </summary>
+public abstract class BaseAuditableEntity : BaseEntity , IAuditable
+{
+public DateTime CreatedAt { get ; set ; } = DateTime . UtcNow ;
+public int ? CreatedByUserId { get ; set ; }
+public DateTime ? ModifiedAt { get ; set ; }
+public int ? ModifiedByUserId { get ; set ; }
+}
+namespace GivingCare.Models ;
+/// <summary>
+/// Base class for entities that support soft deletion with full audit trail.
+/// </summary>
+public abstract class BaseSoftDeletableEntity : BaseAuditableEntity , ISoftDeletable
+{
+public bool IsDeleted { get ; set ; }
+public DateTime ? DeletedAt { get ; set ; }
+public int ? DeletedByUserId { get ; set ; }
+}
+Visualizing the inheritance chain:
+BaseEntity // Just has Id
+└── BaseAuditableEntity // + CreatedAt/By, ModifiedAt/By
+└── BaseSoftDeletableEntity // + IsDeleted, DeletedAt/By
+Which base class should your entity inherit from?
+Base Class
+Use When
+Example Entities
+BaseEntity
+Lookup tables, configuration records — no audit needed
+AuditLog , Country , District
+BaseAuditableEntity
+Business entities you want to track creation/modification
+CrmActivityLog , FormTemplate , Schedule
+BaseSoftDeletableEntity
+Entities that should never truly disappear — "deleted" means hidden
+Employee , Lead , Document , Ticket
+Notice that CreatedAt has a default value of DateTime.UtcNow . This means the moment you
+new up an entity, the clock starts ticking. If you forget to set it explicitly in your service code,
+it still gets a reasonable default. But ModifiedAt and DeletedAt are nullable — they start as
+null , meaning "never modified" and "never deleted," which makes perfect semantic sense.
+4. Manual Population in Services
+Here is a critical design decision in GivingCare: audit fields are set manually in service code ,
+not automatically via EF Core interceptors. Every service method that creates, updates, or deletes an entity
+is responsible for setting the appropriate audit fields.
+GivingCare does NOT use EF Core interceptors for automatic auditing. All audit fields are set
+MANUALLY in service code. This is intentional — explicit is better than magic. When you read a service
+method, you can see exactly what audit fields are being set without hunting through interceptor pipelines.
+Create Pattern
+// From EntityService.cs — creating a new entity
+entity . CreatedAt = DateTime . UtcNow ;
+entity . CreatedByUserId = userId ;
+await context . SaveChangesAsync ();
+Update Pattern
+// From EntityService.cs — modifying an existing entity
+existing . ModifiedAt = DateTime . UtcNow ;
+existing . ModifiedByUserId = userId ;
+await context . SaveChangesAsync ();
+Soft Delete Pattern
+// From CrmEntityServiceBase.cs — soft-deleting an entity
+softDeletable . IsDeleted = true ;
+softDeletable . DeletedAt = DateTime . UtcNow ;
+softDeletable . DeletedByUserId = userId ;
+await context . SaveChangesAsync ();
+The Trade-Off
+Manual audit field population is a deliberate trade-off:
+Advantage
+Disadvantage
+Explicit — you can see exactly what's happening in each method
+Repetitive — the same 2-3 lines in every create/update method
+Predictable — no hidden behavior, no surprises
+Forgettable — if a developer skips the lines, no audit trail
+Flexible — you can decide per-method whether to update audit fields
+Inconsistent — different services may use DateTime.UtcNow vs DateTime.Now
+Easy to debug — no interceptor chain to trace through
+Scales poorly — more entities = more places to remember
+In practice, GivingCare mitigates the repetition risk by centralizing common patterns in base service classes.
+For example, CrmEntityServiceBase has generic CreateAsync and DeleteAsync
+methods that handle audit fields once — all CRM entity services inherit these methods.
+5. The Alternative: SaveChanges Interceptor
+GivingCare chose manual population, but EF Core offers a powerful alternative: the SaveChangesInterceptor .
+This hooks into the EF pipeline and automatically sets audit fields on every SaveChanges call.
+Let's look at what this would look like — for educational purposes.
+How an Interceptor Works
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+public class AuditInterceptor : SaveChangesInterceptor
+{
+public override ValueTask < InterceptionResult < int >> SavingChangesAsync (
+DbContextEventData eventData ,
+InterceptionResult < int > result ,
+CancellationToken ct )
+{
+var context = eventData . Context !;
+// Scan all tracked entities that implement IAuditable
+foreach ( var entry in context . ChangeTracker . Entries < IAuditable >())
+{
+switch ( entry . State )
+{
+case EntityState . Added :
+entry . Entity . CreatedAt = DateTime . UtcNow ;
+break ;
+case EntityState . Modified :
+entry . Entity . ModifiedAt = DateTime . UtcNow ;
+break ;
+}
+}
+// Handle soft-deletable entities too
+foreach ( var entry in context . ChangeTracker . Entries < ISoftDeletable >())
+{
+if ( entry . State == EntityState . Modified &&
+entry . Entity . IsDeleted &&
+entry . Property ( "IsDeleted" ). IsModified )
+{
+entry . Entity . DeletedAt = DateTime . UtcNow ;
+}
+}
+return base . SavingChangesAsync ( eventData , result , ct );
+}
+}
+How Interceptors Hook Into the EF Pipeline
+Your Code EF Core Pipeline Database
+───────── ──────────────── ────────
+┌──────────────────┐
+context.SaveChangesAsync() ──► │ Change Tracker │
+│ detects Added, │
+│ Modified, Deleted │
+└────────┬─────────┘
+│
+┌────────▼─────────┐
+│ AuditInterceptor │ ◄── Your interceptor runs HERE
+│ SavingChangesAsync│ BEFORE the SQL is sent
+│ sets CreatedAt, │
+│ ModifiedAt, etc. │
+└────────┬─────────┘
+│
+┌────────▼─────────┐
+│ Generate SQL │
+│ INSERT/UPDATE │──────► SQL Server
+└──────────────────┘
+Registration
+You register an interceptor when configuring your DbContext :
+// In your DbContext's OnConfiguring, or in DI registration:
+optionsBuilder . AddInterceptors ( new AuditInterceptor ());
+Interceptor Pros and Cons
+Pro
+Con
+Automatic — impossible to forget
+Hard to pass userId (interceptor doesn't know who the user is)
+Centralized — one place for all audit logic
+Less control — fires on every SaveChanges , even internal ops
+Consistent — same behavior everywhere
+"Magic" — behavior is hidden from the call site
+DRY — no repetitive code in services
+Harder to debug — interceptor chain is invisible in the service
+The userId problem is the biggest challenge with interceptors. The interceptor runs deep inside
+EF Core's pipeline — it has no access to the HTTP context, the session, or the current user. Common workarounds
+include injecting IHttpContextAccessor or passing user info through the DbContext itself,
+but both add complexity. GivingCare's manual approach sidesteps this entirely: the service already knows the
+userId because it's passed as a parameter.
+6. Layer 2: System Audit — AuditService
+Layer 2 is about logging operations , not just touching fields on records. The first half of Layer 2
+handles system-level events : logins, logouts, failed login attempts, and password changes.
+These are cross-company events stored in the central BaseControleContext database.
+The AuditLog Model
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+namespace GivingCare.Models ;
+[ Table ( "AuditLogs" )]
+public partial class AuditLog : BaseEntity
+{
+[ Column ( "UserId" )]
+public int ? UserId { get ; set ; }
+[ Column ( "Timestamp" , TypeName = "datetime" )]
+public DateTime ? Timestamp { get ; set ; }
+[ Column ( "Action" )]
+public string ? Action { get ; set ; }
+}
+Notice that AuditLog inherits from BaseEntity , not BaseAuditableEntity .
+It would be circular to audit the audit log — this is a terminal entity that simply records facts.
+The AuditService
+namespace GivingCare.Services.Audit ;
+public interface IAuditService
+{
+Task LogAsync ( int userId , string action );
+Task LogLoginAsync ( int userId , string ipAddress = null );
+Task LogLogoutAsync ( int userId );
+Task LogPasswordChangeAsync ( int userId );
+Task LogFailedLoginAsync ( string username , string ipAddress = null );
+}
+public class AuditService : IAuditService
+{
+private readonly IDbContextFactoryService _contextFactory ;
+private readonly ILogger < AuditService > _logger ;
+public AuditService ( IDbContextFactoryService contextFactory , ILogger < AuditService > logger )
+{
+_contextFactory = contextFactory ;
+_logger = logger ;
+}
+public async Task LogAsync ( int userId , string action )
+{
+try
+{
+await using var context = _contextFactory . CreateBaseControleContext ();
+context . AuditLogs . Add ( new AuditLog
+{
+UserId = userId ,
+Timestamp = DateTime . Now ,
+Action = action
+});
+await context . SaveChangesAsync ();
+}
+catch ( Exception ex )
+{
+_logger . LogError ( ex , $"Error logging audit for user {userId}: {action}" );
+}
+}
+public Task LogLoginAsync ( int userId , string ipAddress = null )
+{
+var message = ipAddress != null
+? $"LOGIN from {ipAddress}"
+: "LOGIN" ;
+return LogAsync ( userId , message );
+}
+public Task LogLogoutAsync ( int userId )
+=> LogAsync ( userId , "LOGOUT" );
+public Task LogPasswordChangeAsync ( int userId )
+=> LogAsync ( userId , "PASSWORD_CHANGED" );
+public async Task LogFailedLoginAsync ( string username , string ipAddress = null )
+{
+var message = ipAddress != null
+? $"FAILED_LOGIN: {username} from {ipAddress}"
+: $"FAILED_LOGIN: {username}" ;
+await LogAsync ( 0 , message );
+}
+}
+Key design observations:
+Fire-and-forget safety — The try/catch ensures that a logging failure never crashes the calling operation. If the audit log can't be written, the actual business action still succeeds.
+BaseControleContext — System audit logs go to the central auth database, not a company-specific one. This means you can see all login/logout events across all companies in one place.
+UserId = 0 for failed logins — When login fails, we don't have a valid user ID, so we log with 0 and include the attempted username in the action string instead.
+Specialized methods — LogLoginAsync , LogLogoutAsync , LogPasswordChangeAsync , and LogFailedLoginAsync are thin wrappers that enforce consistent action strings. This prevents one developer writing "Login" and another writing "USER_LOGIN".
+7. Layer 2: Domain Audit — CrmAuditService
+The second half of Layer 2 handles domain-level events : business actions within a specific company.
+"Lead created," "Opportunity moved to Proposta stage," "Contact added to lead." These are stored in the
+company-specific database via DynamicCompanyContext .
+The CrmActivityLog Model
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+namespace GivingCare.Models.CRM ;
+[ Table ( "CrmActivityLogs" )]
+public class CrmActivityLog : BaseAuditableEntity
+{
+[ Required , MaxLength ( 50 )]
+public string EntityType { get ; set ; } = string . Empty ; // "Lead", "Opportunity"
+public int EntityId { get ; set ; }
+[ Required , MaxLength ( 100 )]
+public string Action { get ; set ; } = string . Empty ;
+[ MaxLength ( 500 )]
+public string ? Description { get ; set ; }
+[ MaxLength ( 100 )]
+public string ? OldValue { get ; set ; }
+[ MaxLength ( 100 )]
+public string ? NewValue { get ; set ; }
+public int ? UserId { get ; set ; }
+[ MaxLength ( 200 )]
+public string ? UserName { get ; set ; }
+// Constant strings prevent typos in entity type references
+public static class EntityTypes
+{
+public const string Lead = "Lead" ;
+public const string Opportunity = "Opportunity" ;
+}
+// Constant strings prevent typos in action references
+public static class Actions
+{
+public const string Created = "Criado" ;
+public const string Updated = "Atualizado" ;
+public const string StatusChanged = "Estado Alterado" ;
+public const string StageMoved = "Etapa Alterada" ;
+public const string Converted = "Convertido" ;
+public const string Won = "Ganha" ;
+public const string Lost = "Perdida" ;
+public const string Cancelled = "Cancelada" ;
+public const string NoteAdded = "Nota Adicionada" ;
+public const string ContactAdded = "Contacto Adicionado" ;
+}
+}
+A CrmActivityLog entry reads as: "At this time ( CreatedAt ), this user
+( UserName ) performed this action ( Action ) on this entity
+( EntityType + EntityId ), changing it from OldValue to
+NewValue ." For example: "At 2026-03-17 14:30, Maria performed 'Etapa Alterada' on Lead #42,
+changing it from 'Contacto' to 'Proposta'."
+Notice the EntityTypes and Actions nested classes. These are const string
+values that act as a lightweight enum. By using constants instead of raw strings, the compiler catches typos
+at build time: CrmActivityLog.Actions.Created is safe, while "Criado" could be
+mistyped as "criado" or "Creado" without anyone noticing.
+The CrmAuditService
+namespace GivingCare.Services.CRM ;
+public interface ICrmAuditService
+{
+Task LogActivityAsync (
+string entityType , int entityId , string action ,
+string ? description , string ? oldValue , string ? newValue ,
+int ? userId , string ? userName , string companyDatabase );
+Task < ServiceResult < List < CrmActivityLog >>> GetActivitiesAsync (
+string entityType , int entityId , string companyDatabase );
+}
+public class CrmAuditService : ICrmAuditService
+{
+private readonly IDbContextFactoryService _contextFactory ;
+private readonly ILogger < CrmAuditService > _logger ;
+public CrmAuditService (
+IDbContextFactoryService contextFactory ,
+ILogger < CrmAuditService > logger )
+{
+_contextFactory = contextFactory ;
+_logger = logger ;
+}
+public async Task LogActivityAsync (
+string entityType , int entityId , string action ,
+string ? description , string ? oldValue , string ? newValue ,
+int ? userId , string ? userName , string companyDatabase )
+{
+try
+{
+await using var context = _contextFactory . CreateCompanyContext ( companyDatabase );
+var log = new CrmActivityLog
+{
+EntityType = entityType ,
+EntityId = entityId ,
+Action = action ,
+Description = description ,
+OldValue = oldValue ,
+NewValue = newValue ,
+UserId = userId ,
+UserName = userName
+};
+context . Set < CrmActivityLog >(). Add ( log );
+await context . SaveChangesAsync ();
+}
+catch ( Exception ex )
+{
+_logger . LogError ( ex , "Error logging CRM activity for {EntityType} {EntityId}" ,
+entityType , entityId );
+}
+}
+public async Task < ServiceResult < List < CrmActivityLog >>> GetActivitiesAsync (
+string entityType , int entityId , string companyDatabase )
+{
+try
+{
+await using var context = _contextFactory . CreateCompanyContext ( companyDatabase );
+var activities = await context . Set < CrmActivityLog >()
+. AsNoTracking ()
+. Where ( a => a . EntityType == entityType && a . EntityId == entityId )
+. OrderByDescending ( a => a . CreatedAt )
+. Take ( 100 )
+. ToListAsync ();
+return ServiceResult < List < CrmActivityLog >>. SuccessResult ( activities );
+}
+catch ( Exception ex )
+{
+_logger . LogError ( ex , "Error getting CRM activities for {EntityType} {EntityId}" ,
+entityType , entityId );
+return ServiceResult < List < CrmActivityLog >>. Failure ( $"Erro: {ex.Message}" );
+}
+}
+}
+Key differences from the system-level AuditService :
+Company context — Uses CreateCompanyContext(companyDatabase) instead of CreateBaseControleContext() . Each tenant has its own activity logs.
+Rich data — Captures entity type, entity ID, old/new values, description, and the user who performed the action. Far more detailed than the simple system audit.
+ServiceResult pattern — GetActivitiesAsync returns a ServiceResult<T> , following the codebase convention for all service-to-UI communication.
+Take(100) safety — Limits results to 100 entries to prevent loading thousands of log entries for a heavily-used entity.
+AsNoTracking() — Since we're only reading logs (never modifying them from this query), we skip EF's change tracking for better performance.
+How Services Call CrmAuditService
+When a CRM service performs a significant business action, it calls LogActivityAsync
+as part of the operation. Here's the typical pattern:
+// Inside LeadService — when a lead's stage changes
+await _auditService . LogActivityAsync (
+CrmActivityLog . EntityTypes . Lead ,
+lead . Id ,
+CrmActivityLog . Actions . StageMoved ,
+description : $"Etapa alterada de '{oldStage}' para '{newStage}'" ,
+oldValue : oldStage ,
+newValue : newStage ,
+userId : currentUserId ,
+userName : currentUserName ,
+companyDatabase : companyDatabase
+);
+8. UI — Audit Trail Components
+The domain audit logs are displayed in the UI using MudBlazor's MudTimeline component.
+GivingCare has two audit trail components — LeadAuditTrail.razor and
+OpportunityAuditTrail.razor — that share the same pattern.
+LeadAuditTrail.razor
+@using GivingCare.Models.CRM
+@using GivingCare.Services.CRM
+@inject ICrmAuditService AuditService
+@if (_loading)
+{
+< MudProgressCircular Size="Size.Small" Indeterminate="true" />
+}
+else if (!_activities.Any())
+{
+< MudText Typo="Typo.body2" Color="Color.Secondary">
+Sem atividade registada.
+</ MudText >
+}
+else
+{
+< MudTimeline TimelinePosition="TimelinePosition.Start">
+@foreach (var activity in _activities)
+{
+< MudTimelineItem Color="@GetActivityColor(activity.Action)" Size="Size.Small">
+<ItemContent>
+<div class="d-flex justify-space-between align-center">
+< MudText Typo="Typo.body2">
+<strong>@activity.Action</strong>
+</ MudText >
+< MudText Typo="Typo.caption" Color="Color.Secondary">
+@activity.CreatedAt.ToString( "dd/MM/yyyy HH:mm" )
+</ MudText >
+</div>
+@if (!string.IsNullOrEmpty(activity.Description))
+{
+< MudText Typo="Typo.body2">@activity.Description</ MudText >
+}
+@if (!string.IsNullOrEmpty(activity.OldValue)
+|| !string.IsNullOrEmpty(activity.NewValue))
+{
+< MudText Typo="Typo.caption">
+@activity.OldValue → @activity.NewValue
+</ MudText >
+}
+@if (!string.IsNullOrEmpty(activity.UserName))
+{
+< MudText Typo="Typo.caption" Color="Color.Secondary">
+por @activity.UserName
+</ MudText >
+}
+</ItemContent>
+</ MudTimelineItem >
+}
+</ MudTimeline >
+}
+The Code-Behind
+@code {
+[ Parameter ] public int LeadId { get ; set ; }
+[ Parameter ] public string CompanyDatabase { get ; set ; } = string . Empty ;
+private List < CrmActivityLog > _activities = new ();
+private bool _loading = true ;
+protected override async Task OnParametersSetAsync ()
+{
+if ( LeadId > 0 && ! string . IsNullOrEmpty ( CompanyDatabase ))
+{
+var result = await AuditService . GetActivitiesAsync (
+CrmActivityLog . EntityTypes . Lead ,
+LeadId ,
+CompanyDatabase );
+if ( result . Success && result . Data != null )
+_activities = result . Data ;
+_loading = false ;
+}
+}
+private static Color GetActivityColor ( string action ) => action switch
+{
+CrmActivityLog . Actions . Created => Color . Success ,
+CrmActivityLog . Actions . StatusChanged => Color . Info ,
+CrmActivityLog . Actions . Converted => Color . Primary ,
+CrmActivityLog . Actions . Won => Color . Success ,
+CrmActivityLog . Actions . Lost => Color . Error ,
+CrmActivityLog . Actions . Cancelled => Color . Warning ,
+_ => Color . Default
+};
+}
+The OpportunityAuditTrail.razor component is structurally identical — it just passes
+CrmActivityLog.EntityTypes.Opportunity and OpportunityId instead. This is the beauty
+of the EntityType + EntityId design: one service and one table serve all
+entity types, and the UI components are simple wrappers that filter by type.
+The GetActivityColor switch expression maps action types to MudBlazor color constants,
+giving users immediate visual cues: green for creation/wins, red for losses, orange for cancellations.
+This is a thin UI concern — the component makes no business decisions, it only maps data to display.
+9. Two Databases, Two Purposes
+The two-layer system maps directly to GivingCare's multi-tenant database architecture. Here's the complete picture:
+Layer
+Model
+Database
+Scope
+Example
+System Audit
+AuditLog
+BaseControle (auth)
+Cross-company
+"User X logged in at 14:30"
+Domain Audit
+CrmActivityLog
+Company DB (per-tenant)
+Per-tenant
+"Lead 'Acme Corp' stage changed from Contacto to Proposta"
+Entity Fields
+IAuditable props
+Company DB (per-tenant)
+Per-record
+"Article modified at 2026-03-17 by user 5"
+BaseControle Database (central, shared by all companies)
+┌─────────────────────────────────────────────┐
+│ AuditLogs │
+│ ├── UserId: 12 │
+│ ├── Timestamp: 2026-03-17 14:30:00 │
+│ └── Action: "LOGIN from 192.168.1.100" │
+│ │
+│ ├── UserId: 12 │
+│ ├── Timestamp: 2026-03-17 17:45:00 │
+│ └── Action: "LOGOUT" │
+│ │
+│ ├── UserId: 0 │
+│ ├── Timestamp: 2026-03-17 09:15:00 │
+│ └── Action: "FAILED_LOGIN: admin@..." │
+└─────────────────────────────────────────────┘
+Company_AcmeCorp Database (tenant-specific)
+┌─────────────────────────────────────────────┐
+│ CrmActivityLogs │
+│ ├── EntityType: "Lead", EntityId: 42 │
+│ ├── Action: "Etapa Alterada" │
+│ ├── OldValue: "Contacto" │
+│ ├── NewValue: "Proposta" │
+│ ├── UserName: "Maria Silva" │
+│ └── CreatedAt: 2026-03-17 14:35:00 │
+│ │
+│ (+ every entity has IAuditable fields) │
+│ Leads table row #42: │
+│ ├── ...business fields... │
+│ ├── CreatedAt: 2026-03-10 09:00:00 │
+│ ├── CreatedByUserId: 12 │
+│ ├── ModifiedAt: 2026-03-17 14:35:00 │
+│ └── ModifiedByUserId: 12 │
+└─────────────────────────────────────────────┘
+This separation is not arbitrary. System-level audit events (logins, password changes) are authentication
+concerns — they happen before a company is even selected. They belong in the central database. Domain-level
+audit events (lead stage changes, opportunity wins) are business concerns — they're specific to a
+company's data and must stay in that company's database for both logical isolation and tenant data sovereignty.
+10. Best Practices
+If you change state, log it. If you just read data, don't. The audit trail should tell a story, not generate noise.
+Always Set Audit Fields in the Service Layer
+Razor components should never set CreatedAt , ModifiedByUserId , or any other
+audit field. The service layer owns all business logic, and audit is business logic. The Razor page passes
+userId and companyDatabase — the service does the rest.
+// CORRECT: Service sets audit fields
+public async Task < ServiceResult > CreateEntityAsync ( Entity entity , int userId , string companyDb )
+{
+entity . CreatedAt = DateTime . UtcNow ;
+entity . CreatedByUserId = userId ;
+// ...save...
+}
+// WRONG: Razor component sets audit fields
+// entity.CreatedAt = DateTime.UtcNow; // Don't do this in .razor!
+// await MyService.CreateEntityAsync(entity, companyDb);
+Log Domain-Meaningful Actions
+Don't just log "record updated." Log what changed and why it matters.
+Compare these two audit entries:
+Poor Audit Entry
+Good Audit Entry
+Action: "Atualizado"
+Action: "Etapa Alterada"
+Description: null
+Description: "Etapa alterada de 'Contacto' para 'Proposta'"
+OldValue: null
+OldValue: "Contacto"
+NewValue: null
+NewValue: "Proposta"
+The good entry tells a complete story. A manager reading the audit trail can immediately understand what happened
+without needing to query the database or ask the developer.
+Include Old/New Values for State Changes
+Whenever you log a state transition, always include both the previous and new values. The OldValue
+and NewValue fields on CrmActivityLog exist precisely for this purpose.
+Without them, you know that something changed, but not from what to what .
+Use UtcNow for Timestamps
+Always use DateTime.UtcNow for audit timestamps. Store UTC in the database; convert to local
+time only for display. The UI components already do this — notice how LeadAuditTrail.razor formats
+with activity.CreatedAt.ToString("dd/MM/yyyy HH:mm") , which respects the application's configured culture.
+// CORRECT: UTC in storage
+entity . CreatedAt = DateTime . UtcNow ;
+// AVOID: Local time in storage (causes timezone bugs)
+entity . CreatedAt = DateTime . Now ; // Depends on server timezone!
+Don't Audit Reads
+Auditing every SELECT query would generate astronomical volumes of data and drown the meaningful
+audit entries in noise. Only audit writes and state changes :
+Audit : Create, Update, Delete, State transitions (stage changes, status changes), Login/Logout, Password changes
+Don't audit : List pages, detail views, search queries, report generation, data exports
+Protect the Audit Trail
+Audit logs should be append-only. Notice that neither AuditService nor CrmAuditService
+exposes an UpdateAsync or DeleteAsync method. Once an audit entry is written, it is
+permanent. If you need to "correct" an audit entry, you write a new corrective entry — you never modify the original.
+Never Let Audit Failures Break Business Logic
+Both AuditService and CrmAuditService wrap their logging calls in try/catch .
+If the audit database is temporarily unavailable, the actual business operation (creating a lead, changing a stage)
+still succeeds. The error is logged to ILogger for investigation, but the user's workflow is never
+interrupted by a logging failure.
+Summary: The Complete Audit Picture
+User performs an action (e.g., moves Lead to new stage)
+│
+▼
+┌─────────────────────────────────┐
+│ LeadService.MoveStageAsync() │
+│ │
+│ // Layer 1: Entity fields │
+│ lead.ModifiedAt = UtcNow; │
+│ lead.ModifiedByUserId = uid; │
+│ │
+│ // Layer 2: Domain audit log │
+│ _auditService.LogActivityAsync │
+│ EntityType: "Lead" │
+│ Action: "Etapa Alterada" │
+│ OldValue → NewValue │
+│ │
+│ context.SaveChangesAsync(); │
+└─────────────────────────────────┘
+│
+├──► Company DB : Lead row updated with ModifiedAt/By
+└──► Company DB : CrmActivityLogs gets new entry
+User logs in
+│
+▼
+┌─────────────────────────────────┐
+│ AuthService.LoginAsync() │
+│ │
+│ _auditService.LogLoginAsync() │
+└─────────────────────────────────┘
+│
+└──► BaseControle DB : AuditLogs gets "LOGIN from 192.168.x.x"
+The two-layer audit system gives GivingCare both breadth and depth. Layer 1 (entity fields) provides a quick,
+always-available "last modified" stamp on every record. Layer 2 (operation logs) provides a rich, searchable
+history of meaningful business actions. System audits go to the central database for cross-company visibility;
+domain audits go to each company's database for tenant isolation. Together, they answer the full spectrum of
+"who changed what, when, and why?" questions.

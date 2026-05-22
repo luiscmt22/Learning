@@ -1,0 +1,166 @@
+Named Tuples — Value Semantics, Zero-Allocation, Destructuring
+Named Tuples in C#
+Tutorial #32 — Value semantics, zero-allocation, and free destructuring
+1. The Problem: Anonymous Types Can't Leave Home
+Since C# 3, we've had anonymous types — those objects you create with new { ... } inside LINQ queries:
+var categories = examples
+. GroupBy (e => e.Category)
+. Select (g => new { Name = g.Key, Examples = g. ToList () })
+. ToList ();
+// Type: List<'a> — 'a is a compiler-generated anonymous class
+They're convenient — until you want to return one from a method . You quickly hit a wall:
+// ❌ Can't do this with anonymous types
+public List <{ string Name, int Age }> GetPeople () { ... }
+The type has no name you can write down. It only exists inside the method that created it. If you want to return it, you're forced into ugly workarounds — List<object> , dynamic , or creating a throwaway class just for the return value. All of them lose type safety or clutter the codebase.
+Anonymous types are prisoners of the method they were born in. If your data needs to leave the method, you need a real, writable type.
+2. Named Tuples — The Solution
+C# 7 introduced named tuples . They look almost identical to anonymous types, but they have a writable type , so they can cross method boundaries freely.
+Syntax comparison
+// Anonymous type — curly braces, property assignment
+var a = new { Name = "Alice" , Age = 30 };
+// Named tuple — parentheses, colon syntax
+var b = ( Name : "Alice" , Age : 30 );
+Notice the swap: new { X = ..., Y = ... } becomes (X: ..., Y: ...) . Curly braces with = turn into parentheses with : .
+And now you can return them
+// ✅ This works perfectly
+public List <( string Name, int Age)> GetPeople ()
+{
+return people
+. Select (p => ( Name : p.FullName, Age : p.Years))
+. ToList ();
+}
+// At the call site — access by name, fully type-safe
+foreach ( var person in GetPeople ())
+{
+Console . WriteLine ( $"{person.Name} is {person.Age}" );
+}
+3. The Real-World Example
+Here's a practical example — finding the top N customers by total spending:
+public List <( int CustomerId, decimal TotalSpent)> FindTopCustomers (
+List < Order > orders , int topCount )
+{
+var topCustomers = orders
+. Where (order => order.OrderStatus == OrderStatus .Completed)
+. GroupBy (order => order.CustomerId)
+. Select (group => (
+CustomerId : group.Key,
+TotalSpent : group. Sum (order => order.Total)
+))
+. OrderByDescending (customer => customer.TotalSpent)
+. Take ( topCount )
+. ToList ();
+return topCustomers;
+}
+Look at what this gives you:
+The return type is List<(int CustomerId, decimal TotalSpent)> — self-documenting, fully typed
+No throwaway CustomerSummary class needed just to carry two fields
+Callers get IntelliSense on .CustomerId and .TotalSpent
+Inside the LINQ chain, later stages can reference customer.TotalSpent by name
+Anonymous types are like Post-it notes — perfect for scribbling something down at your desk, but you can't mail them. Named tuples are envelopes — you can write on them, seal them, and send them across methods.
+4. Value Semantics — Copies, Not References
+"Value semantics" means: when you assign or pass a value, you get an independent copy , not a shared reference. Change the copy, and the original stays intact.
+Reference semantics (class) — mutation leaks
+public class CustomerClass
+{
+public int CustomerId;
+public decimal TotalSpent;
+}
+var a = new CustomerClass { CustomerId = 1 , TotalSpent = 100 };
+var b = a; // b points to the SAME object as a
+b.TotalSpent = 999 ;
+Console . WriteLine (a.TotalSpent); // 999 — a was mutated through b!
+Value semantics (tuple) — safe
+var a = ( CustomerId : 1 , TotalSpent : 100m );
+var b = a; // b is a fresh COPY
+b.TotalSpent = 999 ;
+Console . WriteLine (a.TotalSpent); // 100 — a is untouched
+In the FindTopCustomers example, this means every (CustomerId, TotalSpent) pair in the list is an independent snapshot . Nobody can accidentally mutate one customer's total and corrupt another's. Safer by default.
+"Value semantics" = the variable holds the value itself , not a pointer to it. Copy the variable → copy the value. Change the copy → original unchanged.
+5. Zero-Allocation — Stack vs Heap
+.NET stores data in two very different places:
+Heap
+Stack
+Classes live here
+Structs, tuples, primitives live here (when they're locals)
+Allocation costs CPU
+Allocation is free (just moves a pointer)
+Garbage Collector tracks and frees them
+Auto-freed when the method returns (stack unwinds)
+Long-lived, shared across methods
+Short-lived, scoped to one method call
+What this means in practice
+A class-based version of the customer summary creates heap garbage on every iteration:
+. Select (group => new Customer { ... }) // ← heap allocation per group, GC pressure
+A tuple version doesn't:
+. Select (group => ( CustomerId : ..., TotalSpent : ...)) // ← lives on the stack
+In the FindTopCustomers example, the tuples end up inside .ToList() , which stores them in an array on the heap . So the tuples aren't truly zero-allocation there — they live inside the list's backing array. The big win shows up in hot loops that don't persist the result .
+Where zero-allocation really shines
+foreach ( var group in orders. GroupBy (o => o.CustomerId))
+{
+var customer = ( Id : group.Key, Total : group. Sum (o => o.Total));
+if (customer.Total > 1000 )
+Console . WriteLine (customer.Id);
+// ← tuple lives on the stack, vanishes at end of iteration, zero GC pressure
+}
+Using a class there would create garbage to be collected every iteration. In a hot path processing millions of records, that's the difference between snappy and sluggish.
+6. Free Destructuring
+"Destructuring" = unpacking multiple values out of a container in one line. Tuples get this for free.
+var topCustomers = FindTopCustomers (orders, 10 );
+foreach ( var customer in topCustomers)
+{
+// Option A: access by name
+Console . WriteLine ( $"{customer.CustomerId}: {customer.TotalSpent}" );
+// Option B: destructure into two separate variables
+var (id, total) = customer;
+Console . WriteLine ( $"{id}: {total}" );
+}
+Or even right in the foreach itself — my favorite syntax:
+foreach ( var (id, total) in topCustomers)
+{
+Console . WriteLine ( $"{id}: {total}" );
+}
+Destructuring your own classes
+Destructuring isn't just for tuples. Any class can opt in by implementing a Deconstruct method:
+public class Customer
+{
+public int Id { get ; set ; }
+public decimal Total { get ; set ; }
+public void Deconstruct ( out int id , out decimal total )
+{
+id = Id;
+total = Total;
+}
+}
+// Now this works on your class too:
+var (id, total) = someCustomer;
+Destructuring is unboxing a multi-item delivery. Instead of var box = GetBox(); var apple = box.Apple; var banana = box.Banana; , you get var (apple, banana) = GetBox(); — one line, two variables.
+record types in C# 9+ get Deconstruct generated automatically for their positional parameters, which is a big part of why records feel so tuple-like but with more power (methods, inheritance, equality, etc.).
+7. Under the Hood
+Named tuples are a compile-time illusion over System.ValueTuple<T1, T2, ...> — a struct , not a class. The names you give ( CustomerId , TotalSpent ) are just metadata attributes; at runtime, the CLR only sees ValueTuple<int, decimal> with fields called Item1 and Item2 .
+You can actually access the raw fields if you want:
+var t = ( CustomerId : 1 , TotalSpent : 100m );
+Console . WriteLine (t.CustomerId); // 1 — friendly name
+Console . WriteLine (t.Item1); // 1 — same field, raw name
+Because the names are compile-time metadata, two tuples with the same types but different names are still the same type at runtime. (int Id, string Name) and (int Age, string City) are both ValueTuple<int, string> under the hood — they're assignable to each other and the names may be lost across assembly boundaries in some edge cases.
+8. When to Use What
+Tuples are a sweet spot, but they're not the answer for everything. Here's a mental model:
+You need...
+Use...
+Tiny throwaway grouping inside one method
+new { ... } — anonymous type
+Same, but the data needs to cross a method boundary
+(int Id, string Name) — named tuple
+3+ fields, reused across the codebase, some logic
+record
+Full OO — mutation, inheritance, rich behavior
+class
+Tuples are for lightweight grouping . If you find yourself with more than 3–4 fields, or wanting methods on the type, you've outgrown tuples and want a record . If you want mutation and inheritance, go all the way to class .
+The FindTopCustomers example hits exactly the sweet spot for named tuples: two fields, crosses a method boundary, purely data, no behavior needed. Perfect fit.
+9. Key Takeaways
+Named tuples = anonymous types that can cross method boundaries
+Syntax swap : new { X = ..., Y = ... } → (X: ..., Y: ...)
+Value semantics : copies are independent, mutation doesn't leak — safer by default
+Stack-allocated : zero GC pressure in hot loops that don't persist the result
+Free destructuring : var (id, total) = customer; just works
+Under the hood : it's all ValueTuple<T1, T2, ...> ; names are compile-time metadata
+Sweet spot : 2–3 fields, pure data, crossing a method boundary — ideal. More than that? Use a record .

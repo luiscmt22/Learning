@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Reset & Tenant Migration — How It All Works</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --surface: #16213e;
+            --surface2: #0f3460;
+            --accent: #e94560;
+            --accent2: #533483;
+            --text: #eee;
+            --text-muted: #aab;
+            --success: #4ecca3;
+            --warning: #f0a500;
+            --code-bg: #0d1117;
+            --border: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+
+        h2 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin: 2.5rem 0 1rem 0;
+            padding-bottom: 0.3rem;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        h3 {
+            color: var(--success);
+            font-size: 1.2rem;
+            margin: 1.8rem 0 0.8rem 0;
+        }
+
+        h4 {
+            color: var(--warning);
+            font-size: 1.05rem;
+            margin: 1.2rem 0 0.5rem 0;
+        }
+
+        p { margin-bottom: 1rem; }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.2rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        code {
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9rem;
+        }
+
+        p code, li code {
+            background: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .keyword { color: #569cd6; }
+        .type { color: #4ec9b0; }
+        .string { color: #ce9178; }
+        .comment { color: #6a9955; }
+        .method { color: #dcdcaa; }
+        .number { color: #b5cea8; }
+        .param { color: #9cdcfe; }
+
+        .callout {
+            border-radius: 8px;
+            padding: 1.2rem 1.5rem;
+            margin: 1.5rem 0;
+            border-left: 4px solid;
+        }
+
+        .callout-metaphor {
+            background: rgba(83, 52, 131, 0.2);
+            border-color: var(--accent2);
+        }
+        .callout-metaphor::before {
+            content: "Metaphor";
+            display: block;
+            font-weight: bold;
+            color: var(--accent2);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-english {
+            background: rgba(78, 204, 163, 0.1);
+            border-color: var(--success);
+        }
+        .callout-english::before {
+            content: "Read It Like English";
+            display: block;
+            font-weight: bold;
+            color: var(--success);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-warning {
+            background: rgba(240, 165, 0, 0.1);
+            border-color: var(--warning);
+        }
+        .callout-warning::before {
+            content: "Common Confusion";
+            display: block;
+            font-weight: bold;
+            color: var(--warning);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-rule {
+            background: rgba(233, 69, 96, 0.1);
+            border-color: var(--accent);
+        }
+        .callout-rule::before {
+            content: "Golden Rule";
+            display: block;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        ul, ol {
+            margin: 0.5rem 0 1rem 1.5rem;
+        }
+
+        li { margin-bottom: 0.3rem; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 0.6rem 1rem;
+            text-align: left;
+        }
+
+        th {
+            background: var(--surface2);
+            color: var(--success);
+        }
+
+        td { background: var(--surface); }
+
+        .diagram {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'Cascadia Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            white-space: pre;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Database Reset & Tenant Migration</h1>
+<p class="subtitle">How GivingCare 3.0 creates, seeds, and resets its databases</p>
+
+<!-- ================================================= -->
+<h2>1. The Two-Database Architecture</h2>
+
+<p>GivingCare uses a <strong>multi-tenant</strong> architecture with two types of databases:</p>
+
+<div class="diagram">
+SQL Server Instance
+├── AuthDatabase          (1 per deployment)
+│   ├── Users
+│   ├── Companies
+│   ├── SystemRoles
+│   ├── SystemPermissions
+│   ├── UserSystemRoles
+│   ├── Notifications
+│   ├── ChatMessages
+│   ├── Geography (Countries, Districts, Counties)
+│   └── AuditLogs
+│
+├── DefaultCompany        (1 per company)
+│   ├── Employees
+│   ├── Departments
+│   ├── Contracts
+│   ├── Attendance
+│   ├── Jobs, Teams
+│   ├── Documents, Articles
+│   ├── CRM (Leads, Opportunities)
+│   └── ... everything company-specific
+│
+└── TestCompany           (another company DB)
+    └── ... same schema, different data
+</div>
+
+<div class="callout callout-metaphor">
+Think of it like an apartment building. <strong>AuthDatabase</strong> is the building's lobby &mdash; it knows
+who lives there, which apartments exist, and who has keys. Each <strong>Company database</strong> is an
+individual apartment &mdash; same layout (schema), but completely separate furniture (data).
+</div>
+
+<table>
+    <tr>
+        <th>Database</th>
+        <th>EF Context</th>
+        <th>Purpose</th>
+    </tr>
+    <tr>
+        <td><code>AuthDatabase</code></td>
+        <td><code>BaseControleContext</code></td>
+        <td>Authentication, authorization, shared data</td>
+    </tr>
+    <tr>
+        <td><code>DefaultCompany</code></td>
+        <td><code>DynamicCompanyContext</code></td>
+        <td>Company-specific HR, CRM, operations data</td>
+    </tr>
+    <tr>
+        <td><code>TestCompany</code></td>
+        <td><code>DynamicCompanyContext</code></td>
+        <td>Same context class, different connection string</td>
+    </tr>
+</table>
+
+<div class="callout callout-warning">
+The database name <code>AuthDatabase</code> is configured in <code>appsettings.json</code> under
+<code>Client:Database:AuthDatabase</code>. The code default in <code>ClientOptions.cs</code> says
+<code>"BaseControle"</code>, but the config overrides it. Always check <code>appsettings.json</code>
+for the actual runtime value &mdash; the code default is just a fallback.
+</div>
+
+<!-- ================================================= -->
+<h2>2. How Migrations Work in EF Core</h2>
+
+<h3>What is a Migration?</h3>
+<p>A migration is a C# class that describes a <strong>change to the database schema</strong>. It has two methods:</p>
+
+<pre><code><span class="keyword">public partial class</span> <span class="type">InitialCreate</span> : <span class="type">Migration</span>
+{
+    <span class="keyword">protected override void</span> <span class="method">Up</span>(<span class="type">MigrationBuilder</span> <span class="param">migrationBuilder</span>)
+    {
+        <span class="comment">// What to do when APPLYING this migration</span>
+        migrationBuilder.<span class="method">CreateTable</span>(name: <span class="string">"Users"</span>, ...);
+        migrationBuilder.<span class="method">InsertData</span>(table: <span class="string">"SystemRoles"</span>, ...);  <span class="comment">// Seed data!</span>
+    }
+
+    <span class="keyword">protected override void</span> <span class="method">Down</span>(<span class="type">MigrationBuilder</span> <span class="param">migrationBuilder</span>)
+    {
+        <span class="comment">// What to do when REVERTING this migration</span>
+        migrationBuilder.<span class="method">DropTable</span>(name: <span class="string">"Users"</span>);
+    }
+}</code></pre>
+
+<div class="callout callout-english">
+"A migration says: <em>here's what the database looked like before, and here's what it should look like after</em>.
+EF Core figures out the diff and generates the SQL."
+</div>
+
+<h3>Where do migrations live?</h3>
+
+<div class="diagram">
+Migrations/
+├── Auth/                                    (for BaseControleContext)
+│   ├── 20260306124854_InitialCreate.cs      ← creates all auth tables + seeds
+│   ├── 20260309174807_AddUserSessionTimeout.cs
+│   └── BaseControleContextModelSnapshot.cs  ← current state of the model
+│
+└── Company/                                 (for DynamicCompanyContext)
+    ├── 20260306125048_InitialCreate.cs      ← creates all company tables + seeds
+    ├── 20260309174859_SeedProcessTemplateAndTasks.cs
+    └── DynamicCompanyContextModelSnapshot.cs
+</div>
+
+<h3>What does <code>MigrateAsync()</code> actually do?</h3>
+
+<p>When you call <code>context.Database.MigrateAsync()</code>, EF Core does these steps:</p>
+
+<ol>
+    <li><strong>Creates the database</strong> if it doesn't exist (like <code>CREATE DATABASE</code>)</li>
+    <li><strong>Creates <code>__EFMigrationsHistory</code></strong> table if it doesn't exist &mdash; this tracks which migrations have been applied</li>
+    <li><strong>Compares</strong> the migrations in your code against <code>__EFMigrationsHistory</code></li>
+    <li><strong>Applies pending migrations</strong> in chronological order (by the timestamp prefix)</li>
+    <li><strong>Runs <code>HasData()</code> seed configurations</strong> that are part of those migrations</li>
+</ol>
+
+<div class="callout callout-rule">
+<code>MigrateAsync()</code> is <strong>idempotent</strong> &mdash; running it twice does nothing harmful.
+If all migrations are already applied, it simply does nothing. This is why it's safe to call on every startup.
+</div>
+
+<h3>How EF Core tracks migration state</h3>
+
+<p>After applying a migration, EF Core inserts a row into <code>__EFMigrationsHistory</code>:</p>
+
+<pre><code><span class="comment">-- What EF does internally after applying a migration:</span>
+<span class="keyword">INSERT INTO</span> __EFMigrationsHistory (MigrationId, ProductVersion)
+<span class="keyword">VALUES</span> (<span class="string">'20260306124854_InitialCreate'</span>, <span class="string">'8.0.11'</span>);</code></pre>
+
+<p>Next time <code>MigrateAsync()</code> runs, it sees this row and skips <code>InitialCreate</code>.
+If you <strong>drop the database</strong>, this table is gone too, so EF Core will re-apply everything from scratch.</p>
+
+<!-- ================================================= -->
+<h2>3. The TenantMigrator</h2>
+
+<h3>Where it lives</h3>
+<p><code>Tools/TenantMigrator.cs</code> &mdash; a static utility class with three methods:</p>
+
+<pre><code><span class="keyword">public static class</span> <span class="type">TenantMigrator</span>
+{
+    <span class="comment">// Migrate the auth database only</span>
+    <span class="keyword">public static async</span> <span class="type">Task</span> <span class="method">MigrateAuthDatabaseAsync</span>(<span class="type">IConfiguration</span> <span class="param">configuration</span>)
+    {
+        <span class="keyword">await using var</span> <span class="param">context</span> = <span class="keyword">new</span> <span class="type">BaseControleContext</span>(configuration);
+        <span class="keyword">var</span> <span class="param">dbName</span> = context.Database.<span class="method">GetDbConnection</span>().Database;
+        Console.<span class="method">WriteLine</span>(<span class="string">$"Provisioning auth database: {dbName}"</span>);
+        <span class="keyword">await</span> context.Database.<span class="method">MigrateAsync</span>();
+        Console.<span class="method">WriteLine</span>(<span class="string">$"Auth database '{dbName}' is ready."</span>);
+    }
+
+    <span class="comment">// Migrate one company database by key</span>
+    <span class="keyword">public static async</span> <span class="type">Task</span> <span class="method">MigrateTenantAsync</span>(<span class="type">IConfiguration</span> <span class="param">configuration</span>, <span class="keyword">string</span> <span class="param">companyKey</span>)
+    {
+        <span class="keyword">await using var</span> <span class="param">context</span> = <span class="keyword">new</span> <span class="type">DynamicCompanyContext</span>(configuration, companyKey);
+        <span class="keyword">var</span> <span class="param">dbName</span> = context.Database.<span class="method">GetDbConnection</span>().Database;
+        Console.<span class="method">WriteLine</span>(<span class="string">$"Provisioning tenant database: {dbName} (key: {companyKey})"</span>);
+        <span class="keyword">await</span> context.Database.<span class="method">MigrateAsync</span>();
+        Console.<span class="method">WriteLine</span>(<span class="string">$"Tenant '{companyKey}' is ready."</span>);
+    }
+
+    <span class="comment">// Migrate ALL company databases (no auth)</span>
+    <span class="keyword">public static async</span> <span class="type">Task</span> <span class="method">MigrateTenantsAsync</span>(<span class="type">IConfiguration</span> <span class="param">configuration</span>)
+    {
+        <span class="keyword">var</span> <span class="param">companies</span> = configuration
+            .<span class="method">GetSection</span>(<span class="string">"Client:Database:Companies"</span>).<span class="method">GetChildren</span>();
+        <span class="keyword">foreach</span> (<span class="keyword">var</span> <span class="param">company</span> <span class="keyword">in</span> companies)
+            <span class="keyword">await</span> <span class="method">MigrateTenantAsync</span>(configuration, company.Key);
+    }
+
+    <span class="comment">// Migrate EVERYTHING: auth first, then all companies</span>
+    <span class="keyword">public static async</span> <span class="type">Task</span> <span class="method">MigrateAllAsync</span>(<span class="type">IConfiguration</span> <span class="param">configuration</span>)
+    {
+        <span class="keyword">await</span> <span class="method">MigrateAuthDatabaseAsync</span>(configuration);
+        <span class="keyword">await</span> <span class="method">MigrateTenantsAsync</span>(configuration);
+    }
+}</code></pre>
+
+<div class="callout callout-english">
+"Migrate all tenants: first create the lobby (AuthDatabase with users, roles, and the company registry),
+then create each apartment (company database with employees, documents, etc.)."
+</div>
+
+<h3>How it gets called</h3>
+
+<p>At the very end of <code>Program.cs</code>, three flags are checked:</p>
+
+<pre><code><span class="comment">// Database migration commands (run and exit)</span>
+<span class="keyword">if</span> (args.<span class="method">Contains</span>(<span class="string">"--migrate-all"</span>))
+{
+    <span class="keyword">await</span> <span class="type">TenantMigrator</span>.<span class="method">MigrateAllAsync</span>(app.Configuration);
+    <span class="keyword">return</span>;
+}
+<span class="keyword">if</span> (args.<span class="method">Contains</span>(<span class="string">"--migrate-auth"</span>))
+{
+    <span class="keyword">await</span> <span class="type">TenantMigrator</span>.<span class="method">MigrateAuthDatabaseAsync</span>(app.Configuration);
+    <span class="keyword">return</span>;
+}
+<span class="keyword">if</span> (args.<span class="method">Contains</span>(<span class="string">"--migrate-tenants"</span>))
+{
+    <span class="keyword">await</span> <span class="type">TenantMigrator</span>.<span class="method">MigrateTenantsAsync</span>(app.Configuration);
+    <span class="keyword">return</span>;
+}
+
+app.<span class="method">Run</span>();</code></pre>
+
+<table>
+    <tr>
+        <th>Command</th>
+        <th>What it migrates</th>
+        <th>When to use</th>
+    </tr>
+    <tr>
+        <td><code>dotnet run -- --migrate-all</code></td>
+        <td>Auth + all company DBs</td>
+        <td>Fresh install, full reset</td>
+    </tr>
+    <tr>
+        <td><code>dotnet run -- --migrate-auth</code></td>
+        <td>Auth database only</td>
+        <td>Auth schema changed, or auth DB was dropped</td>
+    </tr>
+    <tr>
+        <td><code>dotnet run -- --migrate-tenants</code></td>
+        <td>All company databases</td>
+        <td>Company schema changed, tenants already exist</td>
+    </tr>
+</table>
+
+<p>The key detail: <code>args</code> comes from the command line. When you run:</p>
+
+<pre><code>dotnet run -- --migrate-auth</code></pre>
+
+<p>The <code>--</code> separator tells <code>dotnet</code>: "everything after this is for <em>my app</em>, not for dotnet itself."
+So <code>--migrate-auth</code> ends up in the <code>args</code> array that <code>WebApplication.CreateBuilder(args)</code> receives.</p>
+
+<div class="callout callout-warning">
+Without the <code>--</code> separator, <code>dotnet run</code> would try to interpret <code>--migrate-auth</code>
+as its own flag and fail with an error. The double dash is a Unix convention that means
+"end of options for this command."
+</div>
+
+<h3>Order matters (when using --migrate-all)</h3>
+
+<div class="diagram">
+dotnet run -- --migrate-all
+│
+├── 1. MigrateAuthDatabaseAsync()
+│   └── Creates AuthDatabase
+│       ├── Tables: Users, Companies, SystemRoles, SystemPermissions, ...
+│       └── Seeds: SuperAdmin (agile/1234), 4 roles, 100+ permissions,
+│                  Master Company, Geography (countries/districts/counties)
+│
+├── 2. MigrateTenantAsync("DefaultCompany")
+│   └── Creates DefaultCompany database
+│       ├── Tables: Employees, Departments, Contracts, Jobs, ...
+│       └── Seeds: 13 doc types, 13 series, 18 state configs,
+│                  56+ employee permissions, equipment statuses, ...
+│
+├── 3. MigrateTenantAsync("TestCompany")
+│   └── Creates TestCompany database
+│       └── Same schema and seeds as DefaultCompany
+│
+└── return; (exits without starting web server)
+</div>
+
+<p>But you can run them independently. If you already have company databases and only
+need to recreate the auth database:</p>
+
+<div class="diagram">
+dotnet run -- --migrate-auth
+│
+└── 1. MigrateAuthDatabaseAsync()
+    └── Creates/updates AuthDatabase only
+        └── return;
+</div>
+
+<div class="callout callout-rule">
+Auth must be migrated <strong>before</strong> company databases. The auth database contains the
+<code>Companies</code> table that registers which company databases exist. Without it,
+the app can't resolve company connections at login time.
+</div>
+
+<!-- ================================================= -->
+<h2>4. Seed Data &mdash; HasData() in OnModelCreating</h2>
+
+<h3>How seeding works</h3>
+
+<p>EF Core has a built-in seeding mechanism via <code>HasData()</code> in <code>OnModelCreating</code>.
+When you add a migration, EF compares the seed data in your code against what was seeded in
+previous migrations and generates <code>InsertData</code> calls for new entries:</p>
+
+<pre><code><span class="comment">// In BaseControleContext.OnModelCreating:</span>
+<span class="keyword">private void</span> <span class="method">SeedSuperAdmin</span>(<span class="type">ModelBuilder</span> <span class="param">modelBuilder</span>)
+{
+    <span class="keyword">var</span> <span class="param">passwordService</span> = <span class="keyword">new</span> <span class="type">PasswordService</span>(<span class="keyword">null</span>);
+
+    <span class="keyword">var</span> <span class="param">superAdmin</span> = <span class="keyword">new</span> <span class="type">User</span>
+    {
+        Id = <span class="number">1</span>,                <span class="comment">// Fixed ID -- required for HasData</span>
+        Name = <span class="string">"agile"</span>,
+        Username = <span class="string">"agile"</span>,
+        Email = <span class="string">"luis@agileincloud.com"</span>,
+        PasswordBcrypt = passwordService.<span class="method">HashBCrypt</span>(<span class="string">"1234"</span>),
+        IsActive = <span class="keyword">true</span>,
+        ChangePassword = <span class="keyword">true</span>,  <span class="comment">// Forces password change on first login</span>
+    };
+
+    modelBuilder.<span class="method">Entity</span>&lt;<span class="type">User</span>&gt;().<span class="method">HasData</span>(superAdmin);
+}</code></pre>
+
+<div class="callout callout-warning">
+<code>HasData()</code> requires <strong>explicit primary key values</strong> (like <code>Id = 1</code>).
+This is because EF needs to track which rows are "seed data" vs "user data" across migrations.
+If you omit the ID, you get a compile error.
+</div>
+
+<h3>What gets seeded in each database</h3>
+
+<table>
+    <tr>
+        <th>Database</th>
+        <th>Seed Data</th>
+    </tr>
+    <tr>
+        <td><code>AuthDatabase</code></td>
+        <td>
+            SuperAdmin user (<code>agile</code> / <code>1234</code>, must change password)<br>
+            4 SystemRoles (SuperAdmin, Admin, Manager, User)<br>
+            100+ SystemPermissions (organized by module)<br>
+            Master Company (linked to DefaultCompany DB)<br>
+            SuperAdmin &rarr; Company link<br>
+            SuperAdmin &rarr; SuperAdmin role assignment<br>
+            Geography (countries, districts, counties &mdash; via configurations)
+        </td>
+    </tr>
+    <tr>
+        <td><code>DefaultCompany</code></td>
+        <td>
+            13 document types, 13 document series<br>
+            18 state configs<br>
+            56+ employee permissions<br>
+            Equipment statuses, article types, VAT rates<br>
+            Leave types, 2 warehouses<br>
+            Process template with pipeline stage
+        </td>
+    </tr>
+</table>
+
+<!-- ================================================= -->
+<h2>5. The Reset Script</h2>
+
+<h3>When do you need it?</h3>
+
+<p>When you want to <strong>start completely fresh</strong> &mdash; wipe everything and let migrations
+recreate from scratch with clean seed data. Common scenarios:</p>
+
+<ul>
+    <li>Accidentally corrupted data (deleted companies, broke relationships)</li>
+    <li>Schema got out of sync with migrations</li>
+    <li>Want a clean dev/test environment</li>
+</ul>
+
+<h3>The script</h3>
+
+<pre><code><span class="comment">-- Scripts/ResetDatabases.sql</span>
+<span class="comment">-- Run against [master] database in SSMS or sqlcmd</span>
+
+<span class="keyword">USE</span> [master];
+<span class="keyword">GO</span>
+
+<span class="comment">-- Drop AuthDatabase (auth/control database)</span>
+<span class="keyword">IF</span> DB_ID(<span class="string">'AuthDatabase'</span>) <span class="keyword">IS NOT NULL</span>
+<span class="keyword">BEGIN</span>
+    <span class="keyword">ALTER DATABASE</span> [AuthDatabase] <span class="keyword">SET</span> SINGLE_USER <span class="keyword">WITH ROLLBACK IMMEDIATE</span>;
+    <span class="keyword">DROP DATABASE</span> [AuthDatabase];
+<span class="keyword">END</span>
+<span class="keyword">GO</span>
+
+<span class="comment">-- Drop DefaultCompany</span>
+<span class="keyword">IF</span> DB_ID(<span class="string">'DefaultCompany'</span>) <span class="keyword">IS NOT NULL</span>
+<span class="keyword">BEGIN</span>
+    <span class="keyword">ALTER DATABASE</span> [DefaultCompany] <span class="keyword">SET</span> SINGLE_USER <span class="keyword">WITH ROLLBACK IMMEDIATE</span>;
+    <span class="keyword">DROP DATABASE</span> [DefaultCompany];
+<span class="keyword">END</span>
+<span class="keyword">GO</span></code></pre>
+
+<h4>Why <code>SET SINGLE_USER WITH ROLLBACK IMMEDIATE</code>?</h4>
+
+<p>SQL Server won't let you drop a database that has active connections. This command:</p>
+<ol>
+    <li><strong>SINGLE_USER</strong> &mdash; kicks everyone out except the current connection</li>
+    <li><strong>ROLLBACK IMMEDIATE</strong> &mdash; rolls back any in-progress transactions instead of waiting for them to finish</li>
+</ol>
+
+<p>Without this, you'd get: <em>"Cannot drop database because it is currently in use."</em></p>
+
+<h4>Why <code>IF DB_ID(...) IS NOT NULL</code>?</h4>
+
+<p>Makes the script safe to run even if the database doesn't exist yet.
+<code>DB_ID('AuthDatabase')</code> returns <code>NULL</code> if no database by that name exists,
+so the <code>DROP</code> is skipped. This makes the script idempotent.</p>
+
+<!-- ================================================= -->
+<h2>6. The Complete Reset Workflow</h2>
+
+<div class="diagram">
+Step 1: Run SQL reset script (SSMS or sqlcmd)
+  └── Drops AuthDatabase, DefaultCompany, TestCompany
+      └── All tables, data, and __EFMigrationsHistory gone
+
+Step 2: Run migration command
+  $ dotnet run -- --migrate-all       (or --migrate-auth for auth only)
+  │
+  ├── "Provisioning auth database: AuthDatabase"
+  │   └── MigrateAsync() creates DB from scratch
+  │       ├── Applies 20260306_InitialCreate (tables + seeds)
+  │       └── Applies 20260309_AddUserSessionTimeout
+  │
+  ├── "Provisioning tenant database: DefaultCompany"
+  │   └── MigrateAsync() creates DB from scratch
+  │       ├── Applies 20260306_InitialCreate (tables + seeds)
+  │       └── Applies 20260309_SeedProcessTemplateAndTasks
+  │
+  └── "Provisioning tenant database: TestCompany"
+      └── Same as DefaultCompany
+
+Step 3: Start the app normally
+  $ dotnet run
+  └── Login: agile / 1234 (forced password change)
+</div>
+
+<div class="callout callout-rule">
+The migration command uses <code>return;</code> after migrating &mdash; it exits without starting
+the web server. This is intentional: migration is a <strong>setup step</strong>, not part of normal
+app operation. Run the app separately with a plain <code>dotnet run</code>.
+</div>
+
+<!-- ================================================= -->
+<h2>7. How the Contexts Know Which Database to Connect To</h2>
+
+<h3>BaseControleContext (auth)</h3>
+
+<p>Reads <code>Client:Database:AuthDatabase</code> from config to find the database name,
+then builds a connection string:</p>
+
+<pre><code><span class="keyword">protected override void</span> <span class="method">OnConfiguring</span>(<span class="type">DbContextOptionsBuilder</span> <span class="param">optionsBuilder</span>)
+{
+    <span class="keyword">if</span> (!optionsBuilder.IsConfigured && _configuration != <span class="keyword">null</span>)
+    {
+        <span class="keyword">var</span> <span class="param">connectionString</span> = <span class="method">BuildConnectionString</span>(_configuration, <span class="string">"AuthDatabase"</span>);
+        optionsBuilder.<span class="method">UseSqlServer</span>(connectionString);
+    }
+}
+
+<span class="keyword">private static string</span> <span class="method">BuildConnectionString</span>(<span class="type">IConfiguration</span> <span class="param">config</span>, <span class="keyword">string</span> <span class="param">databaseKey</span>)
+{
+    <span class="keyword">var</span> <span class="param">server</span>   = config[<span class="string">"Client:Database:Server"</span>];
+    <span class="keyword">var</span> <span class="param">database</span> = config[<span class="string">$"Client:Database:{databaseKey}"</span>];  <span class="comment">// "AuthDatabase"</span>
+    <span class="keyword">var</span> <span class="param">username</span> = config[<span class="string">"Client:Database:Username"</span>];
+    <span class="keyword">var</span> <span class="param">password</span> = config[<span class="string">"Client:Database:Password"</span>];
+
+    <span class="keyword">return</span> <span class="string">$"Server={server};Database={database};User Id={username};..."</span>;
+}</code></pre>
+
+<h3>DynamicCompanyContext (company)</h3>
+
+<p>Takes a <code>companyKey</code> parameter and looks up the database name from the
+<code>Client:Database:Companies:{key}:Database</code> config path:</p>
+
+<pre><code><span class="comment">// From appsettings.json:</span>
+<span class="string">"Companies"</span>: {
+    <span class="string">"DefaultCompany"</span>: { <span class="string">"Database"</span>: <span class="string">"DefaultCompany"</span> },
+    <span class="string">"TestCompany"</span>:    { <span class="string">"Database"</span>: <span class="string">"TestCompany"</span> }
+}
+
+<span class="comment">// The key "DefaultCompany" maps to database name "DefaultCompany"</span>
+<span class="comment">// But you could have: "Inersel": { "Database": "InerselProduction" }</span></code></pre>
+
+<div class="callout callout-metaphor">
+The <code>companyKey</code> is like a door number in the building. The config file is the
+building directory that tells you which apartment name goes with which door.
+Usually they match (door "DefaultCompany" &rarr; apartment "DefaultCompany"),
+but they don't have to.
+</div>
+
+<!-- ================================================= -->
+<h2>8. Design-Time vs Runtime Contexts</h2>
+
+<h3>The problem</h3>
+<p>When you run <code>dotnet ef migrations add</code>, there's no running app &mdash; no DI container,
+no <code>IConfiguration</code> injected. EF Core needs to create a context somehow to compare your
+model against the database. That's what <strong>Design-Time Factories</strong> are for:</p>
+
+<pre><code><span class="comment">// Models/Contexts/DesignTimeContextFactories.cs</span>
+
+<span class="keyword">public class</span> <span class="type">BaseControleContextFactory</span>
+    : <span class="type">IDesignTimeDbContextFactory</span>&lt;<span class="type">BaseControleContext</span>&gt;
+{
+    <span class="keyword">public</span> <span class="type">BaseControleContext</span> <span class="method">CreateDbContext</span>(<span class="keyword">string</span>[] <span class="param">args</span>)
+    {
+        <span class="comment">// Manually build configuration (no DI available)</span>
+        <span class="keyword">var</span> <span class="param">configuration</span> = <span class="keyword">new</span> <span class="type">ConfigurationBuilder</span>()
+            .<span class="method">SetBasePath</span>(<span class="type">Directory</span>.<span class="method">GetCurrentDirectory</span>())
+            .<span class="method">AddJsonFile</span>(<span class="string">"appsettings.json"</span>)
+            .<span class="method">Build</span>();
+
+        <span class="keyword">return new</span> <span class="type">BaseControleContext</span>(configuration);
+    }
+}</code></pre>
+
+<table>
+    <tr>
+        <th>Scenario</th>
+        <th>How context is created</th>
+    </tr>
+    <tr>
+        <td><code>dotnet ef migrations add</code></td>
+        <td>Design-time factory (<code>IDesignTimeDbContextFactory</code>)</td>
+    </tr>
+    <tr>
+        <td><code>dotnet run -- --migrate-tenants</code></td>
+        <td><code>new BaseControleContext(configuration)</code> in TenantMigrator</td>
+    </tr>
+    <tr>
+        <td>Normal app runtime</td>
+        <td><code>DbContextFactoryService.CreateBaseControleContext()</code> (via DI)</td>
+    </tr>
+</table>
+
+<!-- ================================================= -->
+<h2>9. Adding a New Company Database</h2>
+
+<p>To add a new tenant (e.g., "Inersel"), just add it to <code>appsettings.json</code>:</p>
+
+<pre><code><span class="string">"Companies"</span>: {
+    <span class="string">"DefaultCompany"</span>: { <span class="string">"Database"</span>: <span class="string">"DefaultCompany"</span> },
+    <span class="string">"TestCompany"</span>:    { <span class="string">"Database"</span>: <span class="string">"TestCompany"</span> },
+    <span class="string">"Inersel"</span>:        { <span class="string">"Database"</span>: <span class="string">"InerselDB"</span> }     <span class="comment">// NEW</span>
+}</code></pre>
+
+<p>Then either:</p>
+<ul>
+    <li>Run <code>dotnet run -- --migrate-tenants</code> to provision all (including the new one)</li>
+    <li>Or call <code>TenantMigrator.MigrateTenantAsync(config, "Inersel")</code> programmatically</li>
+</ul>
+
+<p>You also need to register the company in the <strong>AuthDatabase</strong> <code>Companies</code> table
+so users can be linked to it. The seed data only creates "Master Company" &mdash; additional companies
+are added through the admin UI (Configuracoes > Empresas).</p>
+
+<!-- ================================================= -->
+<h2>10. Key Takeaways</h2>
+
+<ul>
+    <li><strong>Two databases, two contexts</strong> &mdash; AuthDatabase (shared) and Company databases (per-tenant), each with separate migration histories</li>
+    <li><strong><code>MigrateAsync()</code> is safe</strong> &mdash; it creates the DB if missing, applies only pending migrations, and is idempotent</li>
+    <li><strong><code>--migrate-tenants</code> exits after migrating</strong> &mdash; it doesn't start the web server; run <code>dotnet run</code> separately</li>
+    <li><strong>Auth must migrate first</strong> &mdash; company databases depend on the auth database existing</li>
+    <li><strong>Seed data uses <code>HasData()</code></strong> &mdash; it's part of migrations, so dropping the DB and re-migrating restores all seed data</li>
+    <li><strong>The reset script drops databases</strong> &mdash; this forces EF to recreate everything from the first migration</li>
+    <li><strong>Check <code>appsettings.json</code> for actual names</strong> &mdash; code defaults can differ from runtime config</li>
+</ul>
+
+</body>
+</html>

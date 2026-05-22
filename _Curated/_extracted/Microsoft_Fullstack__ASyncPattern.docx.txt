@@ -1,0 +1,312 @@
+Exemplo Microsoft
+
+using System;
+
+using System.Collections.Generic;
+
+using System.Threading.Tasks;
+
+public class Product
+
+{
+
+public string Name { get; set; }
+
+public Product(string name)
+
+{
+
+Name = name;
+
+}
+
+}
+
+public class Review
+
+{
+
+public string Content { get; set; }
+
+public Review(string content)
+
+{
+
+Content = content;
+
+}
+
+}
+
+public class Program
+
+{
+
+// Asynchronous method to fetch product data
+
+public async Task<List<Product>> FetchProductsAsync()
+
+{
+
+await Task.Delay(2000); // Simulating a 2-second delay for fetching products
+
+return new List<Product>
+
+{
+
+new Product("Eco Bag"),
+
+new Product("Reusable Straw")
+
+};
+
+}
+
+// Asynchronous method to fetch review data
+
+public async Task<List<Review>> FetchReviewsAsync()
+
+{
+
+await Task.Delay(3000); // Simulating a 3-second delay for fetching reviews
+
+return new List<Review>
+
+{
+
+new Review("Great product!"),
+
+new Review("Good value for the money."),
+
+};
+
+}
+
+// Asynchronous method to display both products and reviews
+
+public async Task FetchDataAsync()
+
+{
+
+// Start fetching products and reviews concurrently
+
+Task<List<Product>> productsTask = FetchProductsAsync();
+
+Task<List<Review>> reviewsTask = FetchReviewsAsync();
+
+// Wait for both tasks to complete
+
+await Task.WhenAll(productsTask, reviewsTask);
+
+// Get the results
+
+List<Product> products = await productsTask;
+
+List<Review> reviews = await reviewsTask;
+
+// Display the results
+
+Console.WriteLine("Products:");
+
+foreach (Product product in products)
+
+{
+
+Console.WriteLine(product.Name);
+
+}
+
+// Display fetched reviews
+
+Console.WriteLine("\nReviews:");
+
+foreach (Review review in reviews)
+
+{
+
+Console.WriteLine(review.Content);
+
+}
+
+}
+
+// Main entry point
+
+public static async Task Main(string[] args)
+
+{
+
+// Calling the asynchronous method to fetch and display products and reviews
+
+Program program = new Program();
+
+await program.FetchDataAsync();
+
+}
+
+}
+
+🔄 These two lines:
+
+Task<List<Product>> productsTask = FetchProductsAsync();
+
+Task<List<Review>> reviewsTask = FetchReviewsAsync();
+
+📌 What they do:
+They start both asynchronous operations at the same time, but don’t wait for them yet. These methods immediately return a Task that represents the future result of each operation. The actual work (e.g., simulated delays) is already happening in the background.
+
+💡 Think of this like placing two food delivery orders at the same time — you haven’t opened the door yet, but both deliveries are on their way.
+
+🕒 Then:
+
+await Task.WhenAll(productsTask, reviewsTask);
+
+📌 What it does:
+It tells your program:
+"Wait here until both deliveries arrive."
+But importantly: since you started both orders earlier, the timer on both has already been running in parallel.
+
+⏱️ This is way faster than doing:
+
+List<Product> products = await FetchProductsAsync();
+
+List<Review> reviews = await FetchReviewsAsync();
+
+which would first wait 2 seconds for products, then wait another 3 seconds for reviews = 5 seconds total.
+
+With Task.WhenAll, it's just 3 seconds total, since both tasks are running in parallel.
+
+✅ After both are done:
+
+List<Product> products = await productsTask;
+
+List<Review> reviews = await reviewsTask;
+
+📌 What it does:
+You're now extracting the results (they're already ready at this point). Technically, you could have just used productsTask.Result, but awaiting it is better practice to avoid exceptions being swallowed.
+
+🔁 Summary
+
+| Line | What it does |
+| --- | --- |
+| Task<List<...>> = Fetch...Async(); | Starts async operation (non-blocking). |
+| await Task.WhenAll(...) | Waits until both are finished. |
+| await productsTask | Retrieves the result. Safe even if already completed. |
+
+🧠 TL;DR
+
+You're kicking off two tasks at the same time, then awaiting both with Task.WhenAll, and only then extracting their results. This pattern is how you do real concurrency in C# async — efficient and clean.
+
+If anything's still fuzzy, let me know and I’ll drill into that part further.
+
+
+🧮 Synchronous Example:
+
+int a = Sum();  // This runs Sum()
+
+int b = Sum();  // This runs Sum() again — new call, new result
+
+✅ In this case, each call to Sum() actually runs the method again. So yeah, it's executed twice.
+
+⚡ Asynchronous Example:
+
+Task<List<Product>> productsTask = FetchProductsAsync(); // starts running it ONCE
+
+await Task.WhenAll(productsTask);                         // just waits, doesn’t run it again
+
+List<Product> products = await productsTask;              // gets the result of that same run
+
+✅ Here:
+
+FetchProductsAsync() is called once.
+
+productsTask is a reference to that ongoing or completed task.
+
+await productsTask does not call it again — it just waits (if needed) and then unwraps the result.
+
+🧠 Rule of Thumb:
+
+| Line | Triggers execution? |
+| --- | --- |
+| FetchProductsAsync() | ✅ Yes – each call starts a new task |
+| await existingTask | ❌ No – just waits for that one to finish and gets its result |
+
+So if you write:
+
+var task1 = FetchProductsAsync();
+
+var task2 = FetchProductsAsync();
+
+You’ve actually started two independent tasks, both running the method from scratch.
+But if you do:
+
+var task = FetchProductsAsync();
+
+await task;
+
+await task;
+
+The second await just gets the same result again — no second call.
+
+🔥 Bottom Line:
+
+Yes — await task doesn’t re-run the method. Only the actual method call (FetchProductsAsync()) creates a new execution.
+
+Exemplo do Gepeto
+
+public async Task DoWorkAsync()
+
+{
+
+// Moment 1: Start the task
+
+Task<int> dataTask = GetDataAsync();
+
+// Meanwhile, do other work in parallel
+
+DoOtherWork();
+
+await Task.Delay(5000); // simulate 5 seconds of unrelated work
+
+// Moment 15: Await the result when actually needed
+
+int result = await dataTask;
+
+Console.WriteLine($"Data result: {result}");
+
+}
+
+private async Task<int> GetDataAsync()
+
+{
+
+await Task.Delay(10000); // simulate long fetch
+
+return 42;
+
+}
+
+
+How it works:
+
+At “moment 1” → GetDataAsync() starts running immediately because we assigned it to dataTask.
+
+The returned Task<int> represents a promise of the future result.
+
+The code keeps running without blocking.
+
+At “moment 15” → we await dataTask to get the actual result, and if it’s already completed, the await resumes immediately.
+
+Benefits:
+
+Overlaps the long-running task with other work.
+
+Reduces idle waiting time.
+
+Keeps code clean and non-blocking.
+
+Pitfalls to watch for:
+
+If you forget to await the task at some point, you may swallow exceptions silently (unless you handle them from the task itself).
+
+If the task’s result is needed sooner than expected, you could still end up waiting the full duration.

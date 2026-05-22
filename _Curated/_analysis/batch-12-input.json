@@ -1,0 +1,65 @@
+[
+  {
+    "src_rel": "JScript/Manual de Processos-Design.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\JScript\\Manual de Processos-Design.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\JScript__Manual de Processos-Design.pdf.txt",
+    "word_count": 3805,
+    "category_legacy": "12-JavaScript"
+  },
+  {
+    "src_rel": "Education/Basics/Blazor_Guide_For_Dummies.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Basics\\Blazor_Guide_For_Dummies.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Basics__Blazor_Guide_For_Dummies.pdf.txt",
+    "word_count": 2975,
+    "category_legacy": "01-Basics"
+  },
+  {
+    "src_rel": "Education/Stock/PT/SistemaServiçoStockDocumentaçãoFormal.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Stock\\PT\\SistemaServiçoStockDocumentaçãoFormal.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Stock__PT__SistemaServiçoStockDocumentaçãoFormal.docx.txt",
+    "word_count": 2288,
+    "category_legacy": "17-Domain-Examples-Stock"
+  },
+  {
+    "src_rel": "Education/32-Named-Tuples-Value-Semantics.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\32-Named-Tuples-Value-Semantics.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__32-Named-Tuples-Value-Semantics.html.txt",
+    "word_count": 1602,
+    "category_legacy": "04-CSharp-Language"
+  },
+  {
+    "src_rel": "Education/Educational_ML/training-flow-visualization.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Educational_ML\\training-flow-visualization.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Educational_ML__training-flow-visualization.html.txt",
+    "word_count": 1271,
+    "category_legacy": "18-Machine-Learning"
+  },
+  {
+    "src_rel": "Education/15-Notification-Recipient-Resolver-Pipeline.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\15-Notification-Recipient-Resolver-Pipeline.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__15-Notification-Recipient-Resolver-Pipeline.md.txt",
+    "word_count": 918,
+    "category_legacy": "09-Realtime-SignalR"
+  },
+  {
+    "src_rel": "Education/Educational_ML/Backpropagation.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Educational_ML\\Backpropagation.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Educational_ML__Backpropagation.md.txt",
+    "word_count": 520,
+    "category_legacy": "18-Machine-Learning"
+  }
+]

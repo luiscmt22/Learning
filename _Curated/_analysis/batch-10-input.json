@@ -1,0 +1,74 @@
+[
+  {
+    "src_rel": "Education/Basics/CSharp_Generics_Guide.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Basics\\CSharp_Generics_Guide.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Basics__CSharp_Generics_Guide.pdf.txt",
+    "word_count": 4009,
+    "category_legacy": "01-Basics"
+  },
+  {
+    "src_rel": "JScript/JS_Select2&CustomMethods.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\JScript\\JS_Select2&CustomMethods.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\JScript__JS_Select2&CustomMethods.pdf.txt",
+    "word_count": 3194,
+    "category_legacy": "12-JavaScript"
+  },
+  {
+    "src_rel": "Education/27-Base-Entity-Abstractions-Soft-Delete.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\27-Base-Entity-Abstractions-Soft-Delete.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__27-Base-Entity-Abstractions-Soft-Delete.html.txt",
+    "word_count": 2370,
+    "category_legacy": "07-Database-EF-SQL"
+  },
+  {
+    "src_rel": "Adding-New-Category.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Adding-New-Category.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Adding-New-Category.html.txt",
+    "word_count": 1663,
+    "category_legacy": "03-Blazor"
+  },
+  {
+    "src_rel": "Education/10-Web-Fundamentals.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\10-Web-Fundamentals.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__10-Web-Fundamentals.md.txt",
+    "word_count": 1327,
+    "category_legacy": "11-Web-Fundamentals"
+  },
+  {
+    "src_rel": "Education/08-Agnostic-Schedule-Conflict-Detection.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\08-Agnostic-Schedule-Conflict-Detection.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__08-Agnostic-Schedule-Conflict-Detection.md.txt",
+    "word_count": 1111,
+    "category_legacy": "05-Scheduling"
+  },
+  {
+    "src_rel": "Education/01-Understanding-Clean-Architecture.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\01-Understanding-Clean-Architecture.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__01-Understanding-Clean-Architecture.md.txt",
+    "word_count": 526,
+    "category_legacy": "02-Architecture-and-Patterns"
+  },
+  {
+    "src_rel": "Identity/IdentityRoadmap.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Identity\\IdentityRoadmap.pdf",
+    "src_ext": ".pdf",
+    "has_text": false,
+    "text_abs": null,
+    "word_count": 0,
+    "category_legacy": "06-Auth-and-Identity"
+  }
+]

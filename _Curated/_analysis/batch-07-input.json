@@ -1,0 +1,74 @@
+[
+  {
+    "src_rel": "Education/21-Background-Services-Smart-Scheduling.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\21-Background-Services-Smart-Scheduling.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__21-Background-Services-Smart-Scheduling.html.txt",
+    "word_count": 4482,
+    "category_legacy": "08-Concurrency-and-Async"
+  },
+  {
+    "src_rel": "Education/20-IMemoryCache-Dual-Caching-Strategy.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\20-IMemoryCache-Dual-Caching-Strategy.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__20-IMemoryCache-Dual-Caching-Strategy.html.txt",
+    "word_count": 3403,
+    "category_legacy": "08-Concurrency-and-Async"
+  },
+  {
+    "src_rel": "Education/25-IMAP-SMTP-Email-Integration.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\25-IMAP-SMTP-Email-Integration.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__25-IMAP-SMTP-Email-Integration.html.txt",
+    "word_count": 2542,
+    "category_legacy": "10-Integrations"
+  },
+  {
+    "src_rel": "Education/Stock/PT/SistemaServiçoStockInfoGráfico.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Stock\\PT\\SistemaServiçoStockInfoGráfico.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Stock__PT__SistemaServiçoStockInfoGráfico.pdf.txt",
+    "word_count": 1711,
+    "category_legacy": "17-Domain-Examples-Stock"
+  },
+  {
+    "src_rel": "Education/FactoryFloor/ENG/FactoryFloorProductionSystemFormalDocumentation.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\FactoryFloor\\ENG\\FactoryFloorProductionSystemFormalDocumentation.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__FactoryFloor__ENG__FactoryFloorProductionSystemFormalDocumentation.docx.txt",
+    "word_count": 1429,
+    "category_legacy": "16-Domain-Examples-FactoryFloor"
+  },
+  {
+    "src_rel": "Education/07-Facial-Recognition-Architecture.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\07-Facial-Recognition-Architecture.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__07-Facial-Recognition-Architecture.md.txt",
+    "word_count": 1199,
+    "category_legacy": "10-Integrations"
+  },
+  {
+    "src_rel": "Education/ForDummies/07-Facial-Recognition-Architecture-ForDummies.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\ForDummies\\07-Facial-Recognition-Architecture-ForDummies.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__ForDummies__07-Facial-Recognition-Architecture-ForDummies.md.txt",
+    "word_count": 540,
+    "category_legacy": "19-For-Dummies"
+  },
+  {
+    "src_rel": "Education/Educational_ML/backprop-visualization.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Educational_ML\\backprop-visualization.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Educational_ML__backprop-visualization.html.txt",
+    "word_count": 37,
+    "category_legacy": "18-Machine-Learning"
+  }
+]

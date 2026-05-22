@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strategy Pattern — Pluggable Algorithms</title>
+    <style>
+        :root{--bg:#1a1a2e;--surface:#16213e;--surface2:#0f3460;--accent:#e94560;--accent2:#533483;--text:#eee;--text-muted:#aab;--success:#4ecca3;--warning:#f0a500;--code-bg:#0d1117;--border:#333}*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;padding:2rem;max-width:900px;margin:0 auto}h1{text-align:center;font-size:2.2rem;margin-bottom:.5rem;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}.subtitle{text-align:center;color:var(--text-muted);margin-bottom:3rem;font-size:1.1rem}h2{color:var(--accent);font-size:1.6rem;margin:2.5rem 0 1rem 0;padding-bottom:.3rem;border-bottom:2px solid var(--accent)}h3{color:var(--success);font-size:1.2rem;margin:1.8rem 0 .8rem 0}h4{color:var(--warning);font-size:1.05rem;margin:1.2rem 0 .5rem 0}p{margin-bottom:1rem}pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1.2rem;overflow-x:auto;margin:1rem 0;font-size:.9rem;line-height:1.5}code{font-family:'Cascadia Code','Fira Code','Consolas',monospace;font-size:.9rem}p code,li code{background:var(--code-bg);padding:.15rem .4rem;border-radius:4px;border:1px solid var(--border)}.keyword{color:#569cd6}.type{color:#4ec9b0}.string{color:#ce9178}.comment{color:#6a9955}.method{color:#dcdcaa}.number{color:#b5cea8}.param{color:#9cdcfe}.callout{border-radius:8px;padding:1.2rem 1.5rem;margin:1.5rem 0;border-left:4px solid}.callout-metaphor{background:rgba(83,52,131,.2);border-color:var(--accent2)}.callout-metaphor::before{content:"Metaphor";display:block;font-weight:bold;color:var(--accent2);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}.callout-english{background:rgba(78,204,163,.1);border-color:var(--success)}.callout-english::before{content:"Read It Like English";display:block;font-weight:bold;color:var(--success);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}.callout-warning{background:rgba(240,165,0,.1);border-color:var(--warning)}.callout-warning::before{content:"Common Confusion";display:block;font-weight:bold;color:var(--warning);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}.callout-rule{background:rgba(233,69,96,.1);border-color:var(--accent)}.callout-rule::before{content:"Golden Rule";display:block;font-weight:bold;color:var(--accent);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}ul,ol{margin:.5rem 0 1rem 1.5rem}li{margin-bottom:.3rem}table{width:100%;border-collapse:collapse;margin:1rem 0}th,td{border:1px solid var(--border);padding:.6rem 1rem;text-align:left}th{background:var(--surface2);color:var(--success)}td{background:var(--surface)}.diagram{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1.5rem;margin:1.5rem 0;font-family:'Cascadia Code',monospace;font-size:.85rem;line-height:1.6;white-space:pre;overflow-x:auto}
+    </style>
+</head>
+<body>
+
+<h1>Strategy Pattern — Pluggable Algorithms</h1>
+<p class="subtitle">Tutorial #31 — Same interface, different algorithm, chosen at runtime</p>
+
+<!-- ============================================================ -->
+<h2>1. The Problem: if/else Algorithm Selection</h2>
+
+<p>Imagine you need to detect scheduling conflicts. Employees have conflicts with job schedules and day schedules. Equipment has conflicts with equipment schedules. The naive approach stuffs all of this into one massive method:</p>
+
+<pre><code><span class="keyword">public async</span> Task&lt;<span class="type">List</span>&lt;<span class="type">Conflict</span>&gt;&gt; <span class="method">DetectConflicts</span>(
+    <span class="keyword">string</span> <span class="param">entityType</span>, <span class="keyword">int</span> <span class="param">entityId</span>, <span class="type">DateTime</span> <span class="param">date</span>, <span class="keyword">string</span> <span class="param">db</span>)
+{
+    <span class="keyword">if</span> (<span class="param">entityType</span> == <span class="string">"Employee"</span>)
+    {
+        <span class="comment">// 100 lines of employee conflict logic...</span>
+        <span class="comment">// Query JobSchedule table</span>
+        <span class="comment">// Query EmployeeDaySchedule table</span>
+        <span class="comment">// Check feature flags for Jobs and Scheduling modules</span>
+        <span class="comment">// Check approved leaves</span>
+        <span class="comment">// Calculate cross-midnight overlaps</span>
+    }
+    <span class="keyword">else if</span> (<span class="param">entityType</span> == <span class="string">"Equipment"</span>)
+    {
+        <span class="comment">// 100 lines of equipment conflict logic...</span>
+        <span class="comment">// Query JobEquipmentSchedule table</span>
+        <span class="comment">// Different overlap rules (no leave checks)</span>
+    }
+    <span class="keyword">else if</span> (<span class="param">entityType</span> == <span class="string">"Vehicle"</span>)  <span class="comment">// future</span>
+    {
+        <span class="comment">// ...yet another 100 lines</span>
+    }
+}</code></pre>
+
+<h3>Why This Is Bad</h3>
+
+<ul>
+    <li><strong>Violates the Open/Closed Principle</strong> — every new entity type means modifying this method, risking bugs in existing logic</li>
+    <li><strong>Massive method</strong> — 300+ lines with completely unrelated algorithms interleaved</li>
+    <li><strong>Impossible to test in isolation</strong> — you cannot test employee conflict logic without also having equipment logic in scope</li>
+    <li><strong>Dependency chaos</strong> — the method needs every dependency for every entity type, even when only one is used</li>
+</ul>
+
+<div class="callout callout-rule">
+    If you find yourself writing <code>if (type == X) do algorithm A, else if (type == Y) do algorithm B</code>, you need the Strategy Pattern. Each algorithm should be its own class.
+</div>
+
+<!-- ============================================================ -->
+<h2>2. The Strategy Pattern — Classic GoF</h2>
+
+<p>The Strategy Pattern extracts each algorithm into its own class, all implementing the same interface. A "router" (context/detector) picks the right one at runtime based on a key.</p>
+
+<div class="diagram">
+         <span style="color:#4ec9b0">IScheduleConflictStrategy</span> (interface)
+         ├── EntityType: <span style="color:#569cd6">string</span>
+         ├── <span style="color:#dcdcaa">GetScheduleConflictsAsync</span>()
+         ├── <span style="color:#dcdcaa">GetDetailedConflictsAsync</span>()
+         ├── <span style="color:#dcdcaa">WouldCreateConflictAsync</span>()
+         ├── <span style="color:#dcdcaa">HasTimeOverlapAsync</span>()
+         └── <span style="color:#dcdcaa">CalculateDailyHoursAsync</span>()
+                    ▲
+          ┌────────┴─────────────┐
+<span style="color:#4ec9b0">EmployeeScheduleConflict</span>     <span style="color:#4ec9b0">EquipmentScheduleConflict</span>
+<span style="color:#4ec9b0">Strategy</span>                     <span style="color:#4ec9b0">Strategy</span>
+EntityType = <span style="color:#ce9178">"Employee"</span>      EntityType = <span style="color:#ce9178">"Equipment"</span>
+
+Queries:                     Queries:
+  - JobSchedule                - JobEquipmentSchedule
+  - EmployeeDaySchedule
+  - LeaveRequest
+Checks feature flags         No feature flags needed
+  (Jobs + Scheduling)
+</div>
+
+<p>The caller never knows which concrete strategy runs. It just says <em>"detect conflicts for this entity type"</em> and the right algorithm executes.</p>
+
+<div class="callout callout-metaphor">
+    A strategy is like a USB port — the laptop (context) doesn't care what's plugged in (keyboard, mouse, printer). It just calls the same interface. Plug in a new device? Works instantly without changing the laptop.
+</div>
+
+<!-- ============================================================ -->
+<h2>3. The Interface — IScheduleConflictStrategy</h2>
+
+<p>This is the contract that every conflict detection algorithm must implement. It lives at <code>Services/Core/Scheduling/ConflictDetection/IScheduleConflictStrategy.cs</code>:</p>
+
+<pre><code><span class="comment">/// Strategy interface for entity-specific conflict detection.</span>
+<span class="comment">/// Each entity type (Employee, Equipment) has its own strategy.</span>
+<span class="comment">/// Follows OCP - add new entities by creating new strategies without modifying existing code.</span>
+<span class="comment">/// Follows DIP - detector depends on this abstraction, not concrete implementations.</span>
+<span class="keyword">public interface</span> <span class="type">IScheduleConflictStrategy</span>
+{
+    <span class="comment">/// The entity type this strategy handles (e.g., "Employee", "Equipment")</span>
+    <span class="keyword">string</span> EntityType { <span class="keyword">get</span>; }
+
+    <span class="comment">/// Detects scheduling conflicts for an entity on a specific date</span>
+    <span class="type">Task</span>&lt;<span class="type">List</span>&lt;<span class="type">ScheduleConflict</span>&gt;&gt; <span class="method">GetScheduleConflictsAsync</span>(
+        <span class="keyword">int</span> <span class="param">entityId</span>,
+        <span class="type">DateTime</span> <span class="param">date</span>,
+        <span class="keyword">string</span> <span class="param">companyDatabase</span>);
+
+    <span class="comment">/// Gets detailed conflict analysis including time overlaps and daily hours</span>
+    <span class="type">Task</span>&lt;<span class="type">DetailedConflictInfo</span>&gt; <span class="method">GetDetailedConflictsAsync</span>(
+        <span class="keyword">int</span> <span class="param">entityId</span>,
+        <span class="type">DateTime</span> <span class="param">scheduleDate</span>,
+        <span class="type">DateTime</span> <span class="param">endDate</span>,
+        <span class="type">TimeSpan</span> <span class="param">startTime</span>,
+        <span class="type">TimeSpan</span> <span class="param">endTime</span>,
+        <span class="keyword">int</span>? <span class="param">excludeScheduleId</span>,
+        <span class="keyword">string</span> <span class="param">companyDatabase</span>,
+        <span class="type">ConflictSourceType</span>? <span class="param">excludeSourceType</span> = <span class="keyword">null</span>);
+
+    <span class="comment">/// Checks if adding a new schedule would create a conflict</span>
+    <span class="type">Task</span>&lt;<span class="keyword">bool</span>&gt; <span class="method">WouldCreateConflictAsync</span>(
+        <span class="keyword">int</span> <span class="param">entityId</span>,
+        <span class="type">DateTime</span> <span class="param">date</span>,
+        <span class="keyword">int</span>? <span class="param">excludeJobId</span>,
+        <span class="keyword">string</span> <span class="param">companyDatabase</span>);
+
+    <span class="comment">/// Advanced time-based overlap detection for cross-midnight shifts</span>
+    <span class="type">Task</span>&lt;<span class="keyword">bool</span>&gt; <span class="method">HasTimeOverlapAsync</span>(
+        <span class="keyword">int</span> <span class="param">entityId</span>,
+        <span class="type">DateTime</span> <span class="param">startDate</span>,
+        <span class="type">TimeSpan</span> <span class="param">startTime</span>,
+        <span class="type">DateTime</span> <span class="param">endDate</span>,
+        <span class="type">TimeSpan</span> <span class="param">endTime</span>,
+        <span class="keyword">int</span>? <span class="param">excludeJobId</span>,
+        <span class="keyword">string</span> <span class="param">companyDatabase</span>);
+
+    <span class="comment">/// Calculates total hours an entity is scheduled for on a specific date</span>
+    <span class="type">Task</span>&lt;<span class="keyword">decimal</span>&gt; <span class="method">CalculateDailyHoursAsync</span>(
+        <span class="keyword">int</span> <span class="param">entityId</span>,
+        <span class="type">DateTime</span> <span class="param">date</span>,
+        <span class="keyword">string</span> <span class="param">companyDatabase</span>,
+        <span class="keyword">int</span>? <span class="param">excludeScheduleId</span> = <span class="keyword">null</span>,
+        <span class="type">ConflictSourceType</span>? <span class="param">excludeSourceType</span> = <span class="keyword">null</span>);
+}</code></pre>
+
+<p>Key design decisions in this interface:</p>
+<ul>
+    <li><code>EntityType</code> property — each strategy self-declares which entity it handles. The router uses this to find the right strategy.</li>
+    <li><code>companyDatabase</code> parameter on every method — supports GivingCare's multi-tenant architecture</li>
+    <li><code>excludeScheduleId</code> + <code>ConflictSourceType</code> — prevents false positives when editing an existing schedule (don't detect conflicts against yourself)</li>
+    <li>5 methods covering different levels of detail — from a simple "would this conflict?" boolean to a fully detailed analysis</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2>4. Two Implementations — Same Interface, Different Algorithms</h2>
+
+<h3>EmployeeScheduleConflictStrategy</h3>
+
+<p>The employee strategy is the more complex one. It must query two separate schedule tables and check feature flags to know which modules are active:</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">EmployeeScheduleConflictStrategy</span> : <span class="type">IScheduleConflictStrategy</span>
+{
+    <span class="keyword">private readonly</span> <span class="type">IDbContextFactoryService</span> <span class="param">_contextFactory</span>;
+    <span class="keyword">private readonly</span> <span class="type">ICompanyFeatureFlagService</span> <span class="param">_featureFlagService</span>;
+    <span class="keyword">private readonly</span> <span class="type">ILogger</span>&lt;<span class="type">EmployeeScheduleConflictStrategy</span>&gt; <span class="param">_logger</span>;
+
+    <span class="keyword">public string</span> EntityType => <span class="type">ConflictEntityTypes</span>.Employee;  <span class="comment">// "Employee"</span>
+
+    <span class="keyword">public async</span> <span class="type">Task</span>&lt;<span class="type">List</span>&lt;<span class="type">ScheduleConflict</span>&gt;&gt; <span class="method">GetScheduleConflictsAsync</span>(
+        <span class="keyword">int</span> <span class="param">entityId</span>, <span class="type">DateTime</span> <span class="param">date</span>, <span class="keyword">string</span> <span class="param">companyDatabase</span>)
+    {
+        <span class="keyword">await using var</span> <span class="param">context</span> = <span class="param">_contextFactory</span>.<span class="method">CreateCompanyContext</span>(<span class="param">companyDatabase</span>);
+        <span class="keyword">var</span> <span class="param">conflicts</span> = <span class="keyword">new</span> <span class="type">List</span>&lt;<span class="type">ScheduleConflict</span>&gt;();
+
+        <span class="comment">// Check which modules are enabled for this company</span>
+        <span class="keyword">var</span> <span class="param">jobsEnabled</span> = <span class="keyword">await</span> <span class="param">_featureFlagService</span>
+            .<span class="method">IsFeatureEnabledAsync</span>(<span class="param">companyDatabase</span>, <span class="type">FeatureKeys</span>.JobsModule);
+        <span class="keyword">var</span> <span class="param">schedulingEnabled</span> = <span class="keyword">await</span> <span class="param">_featureFlagService</span>
+            .<span class="method">IsFeatureEnabledAsync</span>(<span class="param">companyDatabase</span>, <span class="type">FeatureKeys</span>.SchedulingModule);
+
+        <span class="keyword">var</span> <span class="param">allEntries</span> = <span class="keyword">new</span> <span class="type">List</span>&lt;...&gt;();
+
+        <span class="comment">// Source 1: JobSchedule table (if Jobs module is enabled)</span>
+        <span class="keyword">if</span> (<span class="param">jobsEnabled</span>)
+        {
+            <span class="keyword">var</span> <span class="param">jobSchedules</span> = <span class="keyword">await</span> <span class="param">context</span>.Set&lt;<span class="type">JobSchedule</span>&gt;()
+                .<span class="method">Include</span>(s => s.Job)
+                .<span class="method">Where</span>(s => s.EmployeeId == <span class="param">entityId</span> && s.ScheduleDate.Date == <span class="param">date</span>.Date)
+                .<span class="method">ToListAsync</span>();
+            <span class="comment">// Add to allEntries...</span>
+        }
+
+        <span class="comment">// Source 2: EmployeeDaySchedule table (if Scheduling module is enabled)</span>
+        <span class="keyword">if</span> (<span class="param">schedulingEnabled</span>)
+        {
+            <span class="keyword">var</span> <span class="param">daySchedules</span> = <span class="keyword">await</span> <span class="param">context</span>.Set&lt;<span class="type">EmployeeDaySchedule</span>&gt;()
+                .<span class="method">Include</span>(eds => eds.EmployeeSchedule)
+                    .<span class="method">ThenInclude</span>(es => es.Schedule)
+                .<span class="method">Where</span>(eds => eds.EmployeeId == <span class="param">entityId</span> && eds.ScheduleDate.Date == <span class="param">date</span>.Date)
+                .<span class="method">ToListAsync</span>();
+            <span class="comment">// Add to allEntries...</span>
+        }
+
+        <span class="comment">// Detect conflicts across both sources</span>
+        <span class="keyword">if</span> (<span class="param">allEntries</span>.Count > <span class="number">1</span>) { <span class="comment">/* build conflict list */</span> }
+
+        <span class="keyword">return</span> <span class="param">conflicts</span>;
+    }
+
+    <span class="comment">// Also checks approved LeaveRequests (blocking conflicts)</span>
+    <span class="comment">// Also calculates cross-midnight shift overlaps</span>
+    <span class="comment">// ... 450+ lines of employee-specific logic</span>
+}</code></pre>
+
+<p>Key things about the employee strategy:</p>
+<ul>
+    <li>Queries <strong>two tables</strong>: <code>JobSchedule</code> and <code>EmployeeDaySchedule</code></li>
+    <li>Gated by <strong>feature flags</strong> — only queries tables for enabled modules</li>
+    <li>Checks <strong>approved leaves</strong> — employees can have leave conflicts, equipment cannot</li>
+    <li>Needs <code>ICompanyFeatureFlagService</code> as a dependency</li>
+</ul>
+
+<h3>EquipmentScheduleConflictStrategy</h3>
+
+<p>The equipment strategy is simpler. It only queries one table and has no feature flags or leave checks:</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">EquipmentScheduleConflictStrategy</span> : <span class="type">IScheduleConflictStrategy</span>
+{
+    <span class="keyword">private readonly</span> <span class="type">IDbContextFactoryService</span> <span class="param">_contextFactory</span>;
+    <span class="keyword">private readonly</span> <span class="type">ILogger</span>&lt;<span class="type">EquipmentScheduleConflictStrategy</span>&gt; <span class="param">_logger</span>;
+
+    <span class="keyword">public string</span> EntityType => <span class="type">ConflictEntityTypes</span>.Equipment;  <span class="comment">// "Equipment"</span>
+
+    <span class="keyword">public async</span> <span class="type">Task</span>&lt;<span class="type">List</span>&lt;<span class="type">ScheduleConflict</span>&gt;&gt; <span class="method">GetScheduleConflictsAsync</span>(
+        <span class="keyword">int</span> <span class="param">entityId</span>, <span class="type">DateTime</span> <span class="param">date</span>, <span class="keyword">string</span> <span class="param">companyDatabase</span>)
+    {
+        <span class="keyword">await using var</span> <span class="param">context</span> = <span class="param">_contextFactory</span>.<span class="method">CreateCompanyContext</span>(<span class="param">companyDatabase</span>);
+
+        <span class="comment">// Only one source: JobEquipmentSchedule</span>
+        <span class="keyword">var</span> <span class="param">equipmentSchedules</span> = <span class="keyword">await</span> <span class="param">context</span>.Set&lt;<span class="type">JobEquipmentSchedule</span>&gt;()
+            .<span class="method">Include</span>(s => s.Job)
+            .<span class="method">Where</span>(s => s.EquipmentId == <span class="param">entityId</span> && s.ScheduleDate.Date == <span class="param">date</span>.Date)
+            .<span class="method">ToListAsync</span>();
+
+        <span class="keyword">var</span> <span class="param">conflicts</span> = <span class="keyword">new</span> <span class="type">List</span>&lt;<span class="type">ScheduleConflict</span>&gt;();
+
+        <span class="keyword">if</span> (<span class="param">equipmentSchedules</span>.Count > <span class="number">1</span>)
+        {
+            <span class="keyword">foreach</span> (<span class="keyword">var</span> <span class="param">schedule</span> <span class="keyword">in</span> <span class="param">equipmentSchedules</span>)
+            {
+                <span class="param">conflicts</span>.<span class="method">Add</span>(<span class="keyword">new</span> <span class="type">ScheduleConflict</span>
+                {
+                    ScheduleId = <span class="param">schedule</span>.Id,
+                    JobId = <span class="param">schedule</span>.JobId,
+                    JobCode = <span class="param">schedule</span>.Job?.Code ?? <span class="keyword">string</span>.Empty,
+                    JobName = <span class="param">schedule</span>.Job?.Name ?? <span class="keyword">string</span>.Empty,
+                    ScheduleDate = <span class="param">schedule</span>.ScheduleDate,
+                    CheckInTime = <span class="param">schedule</span>.CheckInTime,
+                    CheckOutTime = <span class="param">schedule</span>.CheckOutTime,
+                    ConflictType = <span class="string">"DoubleBooking"</span>
+                });
+            }
+        }
+
+        <span class="keyword">return</span> <span class="param">conflicts</span>;
+    }
+
+    <span class="comment">// No feature flags needed</span>
+    <span class="comment">// No leave checking (equipment doesn't take holidays)</span>
+    <span class="comment">// ... ~300 lines of equipment-specific logic</span>
+}</code></pre>
+
+<p>Notice how each strategy has <strong>different dependencies</strong>. The employee strategy needs <code>ICompanyFeatureFlagService</code>; the equipment strategy doesn't. This is a major benefit — each algorithm class only injects what it actually needs.</p>
+
+<!-- ============================================================ -->
+<h2>5. The Router — ScheduleConflictDetector</h2>
+
+<p>The <code>ScheduleConflictDetector</code> is the facade that callers interact with. It receives ALL registered strategies via DI and routes to the correct one based on <code>entityType</code>. This is the actual production code from <code>Services/Core/Scheduling/ConflictDetection/ScheduleConflictDetector.cs</code>:</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">ScheduleConflictDetector</span> : <span class="type">IScheduleConflictDetector</span>
+{
+    <span class="keyword">private readonly</span> <span class="type">IEnumerable</span>&lt;<span class="type">IScheduleConflictStrategy</span>&gt; <span class="param">_strategies</span>;
+    <span class="keyword">private readonly</span> <span class="type">ILogger</span>&lt;<span class="type">ScheduleConflictDetector</span>&gt; <span class="param">_logger</span>;
+
+    <span class="keyword">public</span> <span class="method">ScheduleConflictDetector</span>(
+        <span class="type">IEnumerable</span>&lt;<span class="type">IScheduleConflictStrategy</span>&gt; <span class="param">strategies</span>,
+        <span class="type">ILogger</span>&lt;<span class="type">ScheduleConflictDetector</span>&gt; <span class="param">logger</span>)
+    {
+        <span class="param">_strategies</span> = <span class="param">strategies</span>;
+        <span class="param">_logger</span> = <span class="param">logger</span>;
+    }
+
+    <span class="keyword">public async</span> <span class="type">Task</span>&lt;<span class="type">List</span>&lt;<span class="type">ScheduleConflict</span>&gt;&gt; <span class="method">GetScheduleConflictsAsync</span>(
+        <span class="keyword">string</span> <span class="param">entityType</span>, <span class="keyword">int</span> <span class="param">entityId</span>,
+        <span class="type">DateTime</span> <span class="param">date</span>, <span class="keyword">string</span> <span class="param">companyDatabase</span>)
+    {
+        <span class="keyword">var</span> <span class="param">strategy</span> = <span class="method">GetStrategy</span>(<span class="param">entityType</span>);
+        <span class="keyword">return await</span> <span class="param">strategy</span>.<span class="method">GetScheduleConflictsAsync</span>(<span class="param">entityId</span>, <span class="param">date</span>, <span class="param">companyDatabase</span>);
+    }
+
+    <span class="keyword">public async</span> <span class="type">Task</span>&lt;<span class="type">DetailedConflictInfo</span>&gt; <span class="method">GetDetailedConflictsAsync</span>(
+        <span class="keyword">string</span> <span class="param">entityType</span>, <span class="keyword">int</span> <span class="param">entityId</span>,
+        <span class="type">DateTime</span> <span class="param">scheduleDate</span>, <span class="type">DateTime</span> <span class="param">endDate</span>,
+        <span class="type">TimeSpan</span> <span class="param">startTime</span>, <span class="type">TimeSpan</span> <span class="param">endTime</span>,
+        <span class="keyword">int</span>? <span class="param">excludeScheduleId</span>, <span class="keyword">string</span> <span class="param">companyDatabase</span>,
+        <span class="type">ConflictSourceType</span>? <span class="param">excludeSourceType</span> = <span class="keyword">null</span>)
+    {
+        <span class="keyword">var</span> <span class="param">strategy</span> = <span class="method">GetStrategy</span>(<span class="param">entityType</span>);
+        <span class="keyword">return await</span> <span class="param">strategy</span>.<span class="method">GetDetailedConflictsAsync</span>(
+            <span class="param">entityId</span>, <span class="param">scheduleDate</span>, <span class="param">endDate</span>,
+            <span class="param">startTime</span>, <span class="param">endTime</span>, <span class="param">excludeScheduleId</span>,
+            <span class="param">companyDatabase</span>, <span class="param">excludeSourceType</span>);
+    }
+
+    <span class="keyword">public async</span> <span class="type">Task</span>&lt;<span class="keyword">bool</span>&gt; <span class="method">WouldCreateConflictAsync</span>(
+        <span class="keyword">string</span> <span class="param">entityType</span>, <span class="keyword">int</span> <span class="param">entityId</span>,
+        <span class="type">DateTime</span> <span class="param">date</span>, <span class="keyword">int</span>? <span class="param">excludeJobId</span>, <span class="keyword">string</span> <span class="param">companyDatabase</span>)
+    {
+        <span class="keyword">var</span> <span class="param">strategy</span> = <span class="method">GetStrategy</span>(<span class="param">entityType</span>);
+        <span class="keyword">return await</span> <span class="param">strategy</span>.<span class="method">WouldCreateConflictAsync</span>(
+            <span class="param">entityId</span>, <span class="param">date</span>, <span class="param">excludeJobId</span>, <span class="param">companyDatabase</span>);
+    }
+
+    <span class="keyword">public async</span> <span class="type">Task</span>&lt;<span class="keyword">bool</span>&gt; <span class="method">HasTimeOverlapAsync</span>(
+        <span class="keyword">string</span> <span class="param">entityType</span>, <span class="keyword">int</span> <span class="param">entityId</span>,
+        <span class="type">DateTime</span> <span class="param">startDate</span>, <span class="type">TimeSpan</span> <span class="param">startTime</span>,
+        <span class="type">DateTime</span> <span class="param">endDate</span>, <span class="type">TimeSpan</span> <span class="param">endTime</span>,
+        <span class="keyword">int</span>? <span class="param">excludeJobId</span>, <span class="keyword">string</span> <span class="param">companyDatabase</span>)
+    {
+        <span class="keyword">var</span> <span class="param">strategy</span> = <span class="method">GetStrategy</span>(<span class="param">entityType</span>);
+        <span class="keyword">return await</span> <span class="param">strategy</span>.<span class="method">HasTimeOverlapAsync</span>(
+            <span class="param">entityId</span>, <span class="param">startDate</span>, <span class="param">startTime</span>,
+            <span class="param">endDate</span>, <span class="param">endTime</span>, <span class="param">excludeJobId</span>, <span class="param">companyDatabase</span>);
+    }
+
+    <span class="keyword">public async</span> <span class="type">Task</span>&lt;<span class="keyword">decimal</span>&gt; <span class="method">CalculateDailyHoursAsync</span>(
+        <span class="keyword">string</span> <span class="param">entityType</span>, <span class="keyword">int</span> <span class="param">entityId</span>,
+        <span class="type">DateTime</span> <span class="param">date</span>, <span class="keyword">string</span> <span class="param">companyDatabase</span>,
+        <span class="keyword">int</span>? <span class="param">excludeScheduleId</span> = <span class="keyword">null</span>,
+        <span class="type">ConflictSourceType</span>? <span class="param">excludeSourceType</span> = <span class="keyword">null</span>)
+    {
+        <span class="keyword">var</span> <span class="param">strategy</span> = <span class="method">GetStrategy</span>(<span class="param">entityType</span>);
+        <span class="keyword">return await</span> <span class="param">strategy</span>.<span class="method">CalculateDailyHoursAsync</span>(
+            <span class="param">entityId</span>, <span class="param">date</span>, <span class="param">companyDatabase</span>,
+            <span class="param">excludeScheduleId</span>, <span class="param">excludeSourceType</span>);
+    }
+
+    <span class="comment">/// Gets the appropriate strategy for the entity type.</span>
+    <span class="comment">/// Throws if no strategy is registered for the type.</span>
+    <span class="keyword">private</span> <span class="type">IScheduleConflictStrategy</span> <span class="method">GetStrategy</span>(<span class="keyword">string</span> <span class="param">entityType</span>)
+    {
+        <span class="keyword">var</span> <span class="param">strategy</span> = <span class="param">_strategies</span>.<span class="method">FirstOrDefault</span>(s =>
+            s.EntityType.<span class="method">Equals</span>(<span class="param">entityType</span>, <span class="type">StringComparison</span>.OrdinalIgnoreCase));
+
+        <span class="keyword">if</span> (<span class="param">strategy</span> == <span class="keyword">null</span>)
+        {
+            <span class="param">_logger</span>.<span class="method">LogError</span>(
+                <span class="string">"No conflict detection strategy registered for entity type: {EntityType}"</span>,
+                <span class="param">entityType</span>);
+            <span class="keyword">throw new</span> <span class="type">ArgumentException</span>(
+                <span class="string">$"No conflict detection strategy registered for entity type: {<span class="param">entityType</span>}"</span>);
+        }
+
+        <span class="keyword">return</span> <span class="param">strategy</span>;
+    }
+}</code></pre>
+
+<div class="callout callout-english">
+    <code>GetStrategy(entityType)</code> reads as: "Find the strategy that handles this entity type and give it to me. If none exists, throw an error."
+</div>
+
+<p>Notice the pattern in every public method — it's always the same two lines:</p>
+<ol>
+    <li><code>var strategy = GetStrategy(entityType);</code> — pick the right algorithm</li>
+    <li><code>return await strategy.SomeMethodAsync(...);</code> — delegate to it</li>
+</ol>
+
+<p>The detector itself contains <strong>zero business logic</strong>. It is purely a routing mechanism. All the real work happens inside the strategies.</p>
+
+<!-- ============================================================ -->
+<h2>6. DI Registration — The Magic Glue</h2>
+
+<p>In <code>Extensions/ServiceCollectionExtensions.cs</code>, the strategies are registered like this:</p>
+
+<pre><code><span class="comment">// Register each strategy as an implementation of the interface</span>
+builder.Services.<span class="method">AddScoped</span>&lt;<span class="type">IScheduleConflictStrategy</span>, <span class="type">EmployeeScheduleConflictStrategy</span>&gt;();
+builder.Services.<span class="method">AddScoped</span>&lt;<span class="type">IScheduleConflictStrategy</span>, <span class="type">EquipmentScheduleConflictStrategy</span>&gt;();
+
+<span class="comment">// Register the detector (router)</span>
+builder.Services.<span class="method">AddScoped</span>&lt;<span class="type">IScheduleConflictDetector</span>, <span class="type">ScheduleConflictDetector</span>&gt;();</code></pre>
+
+<h3>How Does This Work?</h3>
+
+<p>When you register <strong>multiple implementations</strong> of the same interface, .NET DI collects them all. If a constructor asks for <code>IEnumerable&lt;IScheduleConflictStrategy&gt;</code>, it receives a collection containing every registered implementation.</p>
+
+<div class="diagram">
+DI Container:
+  IScheduleConflictStrategy #1 --> EmployeeScheduleConflictStrategy
+  IScheduleConflictStrategy #2 --> EquipmentScheduleConflictStrategy
+
+ScheduleConflictDetector constructor asks for:
+  IEnumerable&lt;IScheduleConflictStrategy&gt;
+
+DI delivers:
+  [ EmployeeScheduleConflictStrategy, EquipmentScheduleConflictStrategy ]
+
+GetStrategy("Employee") --> scans the list --> returns #1
+GetStrategy("Equipment") --> scans the list --> returns #2
+GetStrategy("Vehicle")  --> scans the list --> null --> THROWS
+</div>
+
+<p>This is the key insight: <strong>DI becomes the strategy registry</strong>. You don't need to maintain a manual dictionary or factory method. Just register new strategies, and the detector discovers them automatically.</p>
+
+<!-- ============================================================ -->
+<h2>7. Other Strategy Patterns in GivingCare</h2>
+
+<p>The conflict detector isn't the only place GivingCare uses the Strategy Pattern. The attendance export system uses it twice:</p>
+
+<h3>IExportGenerator — Different Format, Same Data</h3>
+
+<p>Three generators, one interface. Each produces a different file format from the same <code>ReportData</code>:</p>
+
+<pre><code><span class="keyword">public interface</span> <span class="type">IExportGenerator</span>
+{
+    <span class="type">ExportFormat</span> Format { <span class="keyword">get</span>; }        <span class="comment">// The key: Excel, Csv, or Pdf</span>
+    <span class="keyword">string</span> ContentType { <span class="keyword">get</span>; }         <span class="comment">// MIME type for HTTP response</span>
+    <span class="keyword">string</span> FileExtension { <span class="keyword">get</span>; }       <span class="comment">// .xlsx, .csv, or .pdf</span>
+    <span class="keyword">byte</span>[] <span class="method">Generate</span>(<span class="type">ReportData</span> <span class="param">data</span>, <span class="type">ExportOptions</span> <span class="param">options</span>);
+}</code></pre>
+
+<pre><code><span class="keyword">public class</span> <span class="type">PdfExportGenerator</span> : <span class="type">IExportGenerator</span>
+{
+    <span class="keyword">public</span> <span class="type">ExportFormat</span> Format => <span class="type">ExportFormat</span>.Pdf;
+    <span class="keyword">public string</span> ContentType => <span class="string">"application/pdf"</span>;
+    <span class="keyword">public string</span> FileExtension => <span class="string">".pdf"</span>;
+    <span class="comment">// Uses QuestPDF library for PDF generation</span>
+}
+
+<span class="keyword">public class</span> <span class="type">ExcelExportGenerator</span> : <span class="type">IExportGenerator</span>
+{
+    <span class="keyword">public</span> <span class="type">ExportFormat</span> Format => <span class="type">ExportFormat</span>.Excel;
+    <span class="keyword">public string</span> ContentType => <span class="string">"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"</span>;
+    <span class="keyword">public string</span> FileExtension => <span class="string">".xlsx"</span>;
+    <span class="comment">// Uses ClosedXML library for Excel generation</span>
+}
+
+<span class="keyword">public class</span> <span class="type">CsvExportGenerator</span> : <span class="type">IExportGenerator</span>
+{
+    <span class="keyword">public</span> <span class="type">ExportFormat</span> Format => <span class="type">ExportFormat</span>.Csv;
+    <span class="keyword">public string</span> ContentType => <span class="string">"text/csv"</span>;
+    <span class="keyword">public string</span> FileExtension => <span class="string">".csv"</span>;
+    <span class="comment">// Uses StringBuilder + pt-PT culture for CSV</span>
+}</code></pre>
+
+<h3>IReportBuilder — Different Report, Same Pipeline</h3>
+
+<p>Six builders, one interface. Each gathers data for a different type of attendance report:</p>
+
+<pre><code><span class="keyword">public interface</span> <span class="type">IReportBuilder</span>
+{
+    <span class="type">ReportType</span> ReportType { <span class="keyword">get</span>; }       <span class="comment">// The key: AttendanceSummary, LeaveMap, etc.</span>
+    <span class="type">Task</span>&lt;<span class="type">ReportData</span>&gt; <span class="method">BuildAsync</span>(<span class="type">ReportBuildContext</span> <span class="param">context</span>);
+}</code></pre>
+
+<table>
+    <tr><th>Builder</th><th>ReportType Key</th><th>What It Builds</th></tr>
+    <tr><td><code>AttendanceSummaryBuilder</code></td><td>AttendanceSummary</td><td>Overall attendance rates, daily breakdown, employee breakdown</td></tr>
+    <tr><td><code>EmployeeDetailsBuilder</code></td><td>EmployeeDetails</td><td>Individual attendance records with check-in/out times</td></tr>
+    <tr><td><code>JobReportBuilder</code></td><td>JobReport</td><td>Per-job hours and employee breakdown</td></tr>
+    <tr><td><code>LeaveMapBuilder</code></td><td>LeaveMap</td><td>Leave calendar with type counts</td></tr>
+    <tr><td><code>ScheduledVsActualBuilder</code></td><td>ScheduledVsActual</td><td>Planned hours vs. actual worked hours variance</td></tr>
+    <tr><td><code>TrendsBuilder</code></td><td>Trends</td><td>Daily/weekly/monthly attendance trend lines</td></tr>
+</table>
+
+<h3>The Export Service — Using Two Strategies Together</h3>
+
+<p>The <code>AttendanceExportService</code> combines both strategies in a single pipeline. It selects one builder (by report type) and one generator (by format):</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">AttendanceExportService</span> : <span class="type">IAttendanceExportService</span>
+{
+    <span class="keyword">private readonly</span> <span class="type">IEnumerable</span>&lt;<span class="type">IReportBuilder</span>&gt; <span class="param">_builders</span>;
+    <span class="keyword">private readonly</span> <span class="type">IEnumerable</span>&lt;<span class="type">IExportGenerator</span>&gt; <span class="param">_generators</span>;
+
+    <span class="keyword">public async</span> <span class="type">Task</span>&lt;<span class="type">ExportResult</span>&gt; <span class="method">GenerateReportAsync</span>(
+        <span class="type">ExportRequest</span> <span class="param">request</span>, <span class="keyword">string</span> <span class="param">companyDatabase</span>)
+    {
+        <span class="comment">// Strategy #1: Pick the right report builder</span>
+        <span class="keyword">var</span> <span class="param">builder</span> = <span class="param">_builders</span>.<span class="method">FirstOrDefault</span>(b => b.ReportType == <span class="param">request</span>.ReportType);
+        <span class="keyword">if</span> (<span class="param">builder</span> == <span class="keyword">null</span>)
+            <span class="keyword">return</span> <span class="type">ExportResult</span>.<span class="method">Failure</span>(<span class="string">$"Tipo de relatorio nao suportado: {request.ReportType}"</span>);
+
+        <span class="comment">// Strategy #2: Pick the right format generator</span>
+        <span class="keyword">var</span> <span class="param">generator</span> = <span class="param">_generators</span>.<span class="method">FirstOrDefault</span>(g => g.Format == <span class="param">request</span>.Format);
+        <span class="keyword">if</span> (<span class="param">generator</span> == <span class="keyword">null</span>)
+            <span class="keyword">return</span> <span class="type">ExportResult</span>.<span class="method">Failure</span>(<span class="string">$"Formato nao suportado: {request.Format}"</span>);
+
+        <span class="comment">// Build the data (strategy #1)</span>
+        <span class="keyword">var</span> <span class="param">reportData</span> = <span class="keyword">await</span> <span class="param">builder</span>.<span class="method">BuildAsync</span>(<span class="param">context</span>);
+
+        <span class="comment">// Generate the file (strategy #2)</span>
+        <span class="keyword">var</span> <span class="param">bytes</span> = <span class="param">generator</span>.<span class="method">Generate</span>(<span class="param">reportData</span>, <span class="param">request</span>.Options);
+
+        <span class="keyword">return</span> <span class="type">ExportResult</span>.<span class="method">Ok</span>(<span class="param">fileName</span>, <span class="param">bytes</span>, <span class="param">generator</span>.ContentType);
+    }
+}</code></pre>
+
+<p>This gives you a <strong>matrix of combinations</strong>: 6 report types x 3 formats = 18 possible exports, all from composing two simple strategy selections. No if/else chain in sight.</p>
+
+<h3>Honorable Mention: ICheckInValidator / ICheckOutValidator</h3>
+
+<p>These use a related pattern (Chain of Responsibility, covered in Tutorial #29). The key difference: validators ALL run in sequence, while strategies select ONE. More on this distinction in Section 8.</p>
+
+<!-- ============================================================ -->
+<h2>8. Strategy vs Chain of Responsibility</h2>
+
+<p>Both patterns use interfaces and DI injection of multiple implementations. But they serve fundamentally different purposes:</p>
+
+<table>
+    <tr>
+        <th>Aspect</th>
+        <th>Strategy</th>
+        <th>Chain of Responsibility</th>
+    </tr>
+    <tr>
+        <td><strong>Selection</strong></td>
+        <td>ONE strategy chosen by type/key</td>
+        <td>ALL validators run in sequence</td>
+    </tr>
+    <tr>
+        <td><strong>Purpose</strong></td>
+        <td>Different algorithm per context</td>
+        <td>Multiple independent checks</td>
+    </tr>
+    <tr>
+        <td><strong>Termination</strong></td>
+        <td>Selected strategy runs completely</td>
+        <td>First failure stops the chain</td>
+    </tr>
+    <tr>
+        <td><strong>DI Injection</strong></td>
+        <td><code>IEnumerable&lt;T&gt;</code> — pick one via key</td>
+        <td><code>IEnumerable&lt;T&gt;</code> — iterate all</td>
+    </tr>
+    <tr>
+        <td><strong>GivingCare Example</strong></td>
+        <td>ConflictDetector picks Employee OR Equipment</td>
+        <td>CheckIn runs ALL 4 validators</td>
+    </tr>
+    <tr>
+        <td><strong>Router Code</strong></td>
+        <td><code>_strategies.FirstOrDefault(s => s.Key == type)</code></td>
+        <td><code>foreach (var v in _validators) v.Validate()</code></td>
+    </tr>
+</table>
+
+<div class="callout callout-warning">
+    The Strategy Pattern is about SELECTING one algorithm at runtime. Chain of Responsibility is about running MULTIPLE handlers in sequence. They look similar (both use interfaces + DI) but serve different purposes.
+</div>
+
+<div class="diagram">
+<strong>Strategy Pattern (pick ONE):</strong>
+
+  "Employee" ─── GetStrategy() ───> EmployeeScheduleConflictStrategy  ✓ RUNS
+                                    EquipmentScheduleConflictStrategy  ✗ skipped
+
+
+<strong>Chain of Responsibility (run ALL):</strong>
+
+  CheckIn Request ──> ActiveCheckInValidator    ✓ pass
+                  ──> ScheduleSourceValidator   ✓ pass
+                  ──> TimeWindowValidator       ✓ pass
+                  ──> GeolocationValidator      ✗ FAIL --> STOP
+</div>
+
+<!-- ============================================================ -->
+<h2>9. Adding a New Strategy — Step by Step</h2>
+
+<p>Let's say you need to add vehicle scheduling conflict detection. Here's exactly what you do:</p>
+
+<h3>Step 1: Create the Strategy Class</h3>
+
+<pre><code><span class="keyword">namespace</span> GivingCare.Services.Core.Scheduling.ConflictDetection.Strategies;
+
+<span class="keyword">public class</span> <span class="type">VehicleScheduleConflictStrategy</span> : <span class="type">IScheduleConflictStrategy</span>
+{
+    <span class="keyword">private readonly</span> <span class="type">IDbContextFactoryService</span> <span class="param">_contextFactory</span>;
+    <span class="keyword">private readonly</span> <span class="type">ILogger</span>&lt;<span class="type">VehicleScheduleConflictStrategy</span>&gt; <span class="param">_logger</span>;
+
+    <span class="keyword">public string</span> EntityType => <span class="string">"Vehicle"</span>;  <span class="comment">// Step 2: Self-declare the entity type</span>
+
+    <span class="keyword">public</span> <span class="method">VehicleScheduleConflictStrategy</span>(
+        <span class="type">IDbContextFactoryService</span> <span class="param">contextFactory</span>,
+        <span class="type">ILogger</span>&lt;<span class="type">VehicleScheduleConflictStrategy</span>&gt; <span class="param">logger</span>)
+    {
+        <span class="param">_contextFactory</span> = <span class="param">contextFactory</span>;
+        <span class="param">_logger</span> = <span class="param">logger</span>;
+    }
+
+    <span class="comment">// Step 3: Implement all 5 interface methods with vehicle-specific logic</span>
+
+    <span class="keyword">public async</span> <span class="type">Task</span>&lt;<span class="type">List</span>&lt;<span class="type">ScheduleConflict</span>&gt;&gt; <span class="method">GetScheduleConflictsAsync</span>(
+        <span class="keyword">int</span> <span class="param">entityId</span>, <span class="type">DateTime</span> <span class="param">date</span>, <span class="keyword">string</span> <span class="param">companyDatabase</span>)
+    {
+        <span class="keyword">await using var</span> <span class="param">context</span> = <span class="param">_contextFactory</span>.<span class="method">CreateCompanyContext</span>(<span class="param">companyDatabase</span>);
+
+        <span class="comment">// Query VehicleSchedule table (vehicle-specific logic)</span>
+        <span class="keyword">var</span> <span class="param">vehicleSchedules</span> = <span class="keyword">await</span> <span class="param">context</span>.Set&lt;<span class="type">VehicleSchedule</span>&gt;()
+            .<span class="method">Include</span>(s => s.Job)
+            .<span class="method">Where</span>(s => s.VehicleId == <span class="param">entityId</span> && s.ScheduleDate.Date == <span class="param">date</span>.Date)
+            .<span class="method">ToListAsync</span>();
+
+        <span class="comment">// Vehicle-specific: check fuel range, maintenance windows, driver assignments...</span>
+
+        <span class="keyword">return</span> <span class="param">conflicts</span>;
+    }
+
+    <span class="comment">// ... implement remaining 4 methods ...</span>
+}</code></pre>
+
+<h3>Step 4: Register in DI</h3>
+
+<pre><code><span class="comment">// In Extensions/ServiceCollectionExtensions.cs — add ONE line:</span>
+builder.Services.<span class="method">AddScoped</span>&lt;<span class="type">IScheduleConflictStrategy</span>, <span class="type">VehicleScheduleConflictStrategy</span>&gt;();</code></pre>
+
+<h3>Step 5: Done</h3>
+
+<p>That's it. The <code>ScheduleConflictDetector</code> automatically discovers the new strategy because DI adds it to the <code>IEnumerable&lt;IScheduleConflictStrategy&gt;</code> collection. No changes needed to the detector, no changes to existing strategies, no changes to any other file.</p>
+
+<div class="diagram">
+<strong>Before (2 strategies):</strong>
+  DI: [ EmployeeStrategy, EquipmentStrategy ]
+  GetStrategy("Vehicle") --> null --> THROWS
+
+<strong>After (3 strategies, ONE line of DI registration):</strong>
+  DI: [ EmployeeStrategy, EquipmentStrategy, VehicleStrategy ]
+  GetStrategy("Vehicle") --> VehicleStrategy --> works!
+</div>
+
+<p>This is the Open/Closed Principle in action: the system is <strong>open for extension</strong> (add new strategies) but <strong>closed for modification</strong> (existing code doesn't change).</p>
+
+<!-- ============================================================ -->
+<h2>10. Strategy Pattern Beyond Conflict Detection</h2>
+
+<p>The Strategy Pattern appears anywhere you have "same interface, different implementation chosen at runtime." Here are common applications:</p>
+
+<table>
+    <tr><th>Domain</th><th>Interface</th><th>Strategies</th><th>Selection Key</th></tr>
+    <tr>
+        <td>Payment Processing</td>
+        <td><code>IPaymentProcessor</code></td>
+        <td>CreditCard, PayPal, BankTransfer, MBWay</td>
+        <td>PaymentMethod enum</td>
+    </tr>
+    <tr>
+        <td>Notification Delivery</td>
+        <td><code>INotificationSender</code></td>
+        <td>EmailSender, SmsSender, PushSender</td>
+        <td>NotificationChannel enum</td>
+    </tr>
+    <tr>
+        <td>Export Formats</td>
+        <td><code>IExportGenerator</code></td>
+        <td>PdfGenerator, ExcelGenerator, CsvGenerator</td>
+        <td>ExportFormat enum</td>
+    </tr>
+    <tr>
+        <td>Pricing Rules</td>
+        <td><code>IPricingStrategy</code></td>
+        <td>StandardPricing, VolumePricing, PromoPricing</td>
+        <td>CustomerType or DiscountCode</td>
+    </tr>
+    <tr>
+        <td>Report Building</td>
+        <td><code>IReportBuilder</code></td>
+        <td>SummaryBuilder, DetailsBuilder, TrendsBuilder</td>
+        <td>ReportType enum</td>
+    </tr>
+    <tr>
+        <td>Conflict Detection</td>
+        <td><code>IScheduleConflictStrategy</code></td>
+        <td>EmployeeStrategy, EquipmentStrategy</td>
+        <td>EntityType string</td>
+    </tr>
+</table>
+
+<h3>The Pattern Template</h3>
+
+<p>Every strategy implementation follows this shape:</p>
+
+<pre><code><span class="comment">// 1. The interface with a key property</span>
+<span class="keyword">public interface</span> <span class="type">IMyStrategy</span>
+{
+    <span class="keyword">string</span> Key { <span class="keyword">get</span>; }
+    <span class="type">Task</span>&lt;<span class="type">Result</span>&gt; <span class="method">ExecuteAsync</span>(<span class="type">Input</span> <span class="param">input</span>);
+}
+
+<span class="comment">// 2. Concrete implementations</span>
+<span class="keyword">public class</span> <span class="type">StrategyA</span> : <span class="type">IMyStrategy</span> { <span class="keyword">public string</span> Key => <span class="string">"A"</span>; ... }
+<span class="keyword">public class</span> <span class="type">StrategyB</span> : <span class="type">IMyStrategy</span> { <span class="keyword">public string</span> Key => <span class="string">"B"</span>; ... }
+
+<span class="comment">// 3. The router/context</span>
+<span class="keyword">public class</span> <span class="type">StrategyRouter</span>
+{
+    <span class="keyword">private readonly</span> <span class="type">IEnumerable</span>&lt;<span class="type">IMyStrategy</span>&gt; <span class="param">_strategies</span>;
+
+    <span class="keyword">public async</span> <span class="type">Task</span>&lt;<span class="type">Result</span>&gt; <span class="method">ExecuteAsync</span>(<span class="keyword">string</span> <span class="param">key</span>, <span class="type">Input</span> <span class="param">input</span>)
+    {
+        <span class="keyword">var</span> <span class="param">strategy</span> = <span class="param">_strategies</span>.<span class="method">FirstOrDefault</span>(s => s.Key == <span class="param">key</span>)
+            ?? <span class="keyword">throw new</span> <span class="type">ArgumentException</span>(<span class="string">$"No strategy for {key}"</span>);
+        <span class="keyword">return await</span> <span class="param">strategy</span>.<span class="method">ExecuteAsync</span>(<span class="param">input</span>);
+    }
+}
+
+<span class="comment">// 4. DI registration</span>
+builder.Services.<span class="method">AddScoped</span>&lt;<span class="type">IMyStrategy</span>, <span class="type">StrategyA</span>&gt;();
+builder.Services.<span class="method">AddScoped</span>&lt;<span class="type">IMyStrategy</span>, <span class="type">StrategyB</span>&gt;();
+builder.Services.<span class="method">AddScoped</span>&lt;<span class="type">StrategyRouter</span>&gt;();</code></pre>
+
+<h3>The Decision Flowchart</h3>
+
+<div class="diagram">
+Do you have multiple algorithms/behaviors for the same operation?
+  │
+  ├── YES: Are they selected ONE-at-a-time based on a key?
+  │         │
+  │         ├── YES ──> <span style="color:#4ecca3">Strategy Pattern</span>
+  │         │           (ConflictDetector, ExportGenerator, ReportBuilder)
+  │         │
+  │         └── NO: Do ALL run in sequence?
+  │                  │
+  │                  ├── YES ──> <span style="color:#f0a500">Chain of Responsibility</span>
+  │                  │           (CheckInValidators, CheckOutValidators)
+  │                  │
+  │                  └── NO ──> Consider other patterns
+  │
+  └── NO ──> You probably don't need a pattern here
+</div>
+
+<p>The key insight: when you have <strong>"same interface, different implementation chosen at runtime"</strong>, reach for the Strategy Pattern. It keeps each algorithm isolated, testable, and independently deployable — and adding new ones never touches existing code.</p>
+
+</body>
+</html>

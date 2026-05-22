@@ -1,0 +1,430 @@
+[
+  {
+    "src_rel": "Education/generics-builders-deep-dive.html",
+    "title": "C# Deep Dive: Generics, Builders & Everything In Between",
+    "doc_type": "core-concept",
+    "topic_family": "language",
+    "domain": null,
+    "topic_slug": "csharp-generics-and-functional-builders",
+    "complexity": "advanced",
+    "one_line_summary": "A nine-part walkthrough that builds up from generic type parameters to a full functional builder pattern, weaving together constraints, recursive generics, interface masking, extension methods, delegates as data, and Aggregate.",
+    "executive_summary": "This deep dive teaches the C# generics machinery by progressively assembling a Functional Builder pattern. It starts from the simplest Box<T> idea, then layers on constraints (where T : new()), recursive generics for fluent chaining (class Child : Parent<Child>), interface return types as 'masks' that enforce method ordering, extension methods, delegates stored in lists, and finally LINQ's Aggregate as the assembly line that runs every stored action against a fresh instance. The payoff is understanding why FunctionalBuilder<TSubject, TSelf> is the way it is, and being able to read every line of it.",
+    "key_concepts": [
+      "generic type parameters",
+      "where T : new() constraint",
+      "recursive generics (CRTP/F-bounded polymorphism)",
+      "interface as method-ordering mask",
+      "extension methods",
+      "delegates as data",
+      "LINQ Aggregate as fold"
+    ],
+    "prerequisites": [
+      "C# classes and interfaces",
+      "lambdas and Func/Action delegates",
+      "basic LINQ familiarity"
+    ],
+    "builds_toward": [
+      "fluent builder pattern",
+      "expression trees",
+      "DSL design in C#"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": null,
+    "suggested_metaphor": "Generics are a shipping label with a blank field, constraints are the fine print under the blank, recursive generics are a relay race where the parent always hands the baton back to the right team, interfaces are masks that hide every face except the one you want the caller to see, and Aggregate is the factory assembly line that walks a blank chassis past every station until a finished car rolls out the other end.",
+    "suggested_intro_hook": "If you have ever stared at where TSelf : FunctionalBuilder<TSubject, TSelf> and felt like you were reading a C# tongue-twister, this is the doc that finally makes you hear the music in it. Every weird angle bracket is doing a job, and once you see the jobs, the whole thing reads like prose.",
+    "what_it_teaches": "How to read and write advanced generic signatures in C#, when each constraint earns its keep, how to keep fluent builder chains type-safe across inheritance, how interfaces can be used as 'view restrictions' to enforce a call order, how extension methods let you grow a sealed class from outside, how to store behavior in lists for later replay, and how Aggregate compresses a foreach loop with an accumulator into a single line.",
+    "key_takeaways": [
+      "T is a placeholder filled in at use-site, and constraints are the contract that lets the compiler trust you",
+      "Recursive generics exist purely so a parent class can return the child's type for fluent chaining",
+      "Returning an interface lets you hide methods and force a step order on the caller",
+      "Builders that store Func<T,T> in a list are just recipe books; nothing runs until Build() reads the book",
+      "Aggregate is a one-line foreach that walks a list and carries an accumulator"
+    ],
+    "cross_references": [
+      "csharp-fluent-builder-pattern",
+      "csharp-extension-methods",
+      "linq-fundamentals",
+      "csharp-delegates-and-lambdas"
+    ],
+    "quality_notes": "Excellent pedagogical structure: each part introduces one concept with a metaphor, then connects it to the running FunctionalBuilder example. Includes a practice exercise section with answers and a quick reference card at the end. One of the best teaching docs in the library.",
+    "reading_difficulty_minutes": 25,
+    "is_part_of_series": false,
+    "series_name": null
+  },
+  {
+    "src_rel": "JScript/Document 1.docx",
+    "title": "jQuery, Select2 and AG Grid Custom Editors/Filters - Method Breakdown",
+    "doc_type": "core-concept",
+    "topic_family": "frontend",
+    "domain": null,
+    "topic_slug": "jquery-select2-aggrid-custom-editor",
+    "complexity": "intermediate",
+    "one_line_summary": "A line-by-line breakdown of a jQuery + Select2 initialization function, an AG Grid CustomSelectEditor and a CustomTextFilter, explaining what each piece does and flagging the focus/event-handling pitfalls.",
+    "executive_summary": "This document walks through three pieces of legacy frontend code in painful detail: an initializeSelect2() helper that defensively sets up Select2 dropdowns with Portuguese localization, an AG Grid CustomSelectEditor that wires Select2 into editable grid cells, and a CustomTextFilter that recreates AG Grid's text filter with Portuguese labels and an enhanced array-column filter. Beyond the explanations, the doc calls out four bugs in the editor (global selectors causing focus to jump between Select2 instances, overly broad event.stopPropagation, dropdownParent: document.body issues, opening Select2 before init), making it half tutorial and half code review.",
+    "key_concepts": [
+      "jQuery document.ready",
+      "Select2 plugin initialization",
+      "AG Grid custom cell editors",
+      "AG Grid custom filters",
+      "DOM event delegation pitfalls",
+      "global vs scoped selectors",
+      "filter state save/restore (getModel/setModel)"
+    ],
+    "prerequisites": [
+      "JavaScript fundamentals",
+      "jQuery basics",
+      "AG Grid basic usage"
+    ],
+    "builds_toward": [
+      "writing reusable AG Grid editors",
+      "migrating jQuery widgets to vanilla JS",
+      "Blazor JS interop for grids"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": false,
+    "tutorial_structure": null,
+    "suggested_metaphor": "Reading this doc is like watching a mechanic with a paint marker circle every loose bolt on a working car. The car drives, but you would not want to take it onto the highway: a global $('.select2-search__field').focus() is the one bolt that will fly off and hit somebody.",
+    "suggested_intro_hook": "Ever wonder why your fancy AG Grid Select2 editor steals focus from a totally different cell halfway across the screen? It is almost always the same one-line bug, and this doc shows you the exact line.",
+    "what_it_teaches": "How a real Select2 + AG Grid integration is wired up method-by-method, why each AG Grid lifecycle hook (init, getGui, afterGuiAttached, getValue, destroy, isPopup) exists, and how to build a custom filter with state restoration. Equally importantly, it teaches what NOT to do: global jQuery selectors inside per-instance code, blanket stopPropagation, and racing the Select2 init.",
+    "key_takeaways": [
+      "Always namespace your jQuery selectors to the current instance, never use document-wide selectors inside per-cell editors",
+      "AG Grid custom editors must implement init/getGui/getValue/destroy and return true from isPopup() for popup-style editors",
+      "Custom filters need getModel/setModel so AG Grid can save and restore filter state",
+      "Defensive checks like if ($.fn.select2 === undefined) keep pages from crashing when a CDN dependency fails to load"
+    ],
+    "cross_references": [
+      "javascript-dom-fundamentals",
+      "ag-grid-custom-components",
+      "blazor-js-interop",
+      "jquery-best-practices"
+    ],
+    "quality_notes": "Surprisingly thorough. Reads like a code review notebook with both the 'what does this do' and 'this is broken because' commentary inline. The Portuguese localization context makes it clearly tied to a real legacy project. No diagrams, just pasted snippets.",
+    "reading_difficulty_minutes": 18,
+    "is_part_of_series": false,
+    "series_name": null
+  },
+  {
+    "src_rel": "Education/11-SignalR-Real-Time-Communication.md",
+    "title": "SignalR Real-Time Communication in Blazor Server",
+    "doc_type": "core-concept",
+    "topic_family": "realtime",
+    "domain": null,
+    "topic_slug": "signalr-blazor-server-fundamentals",
+    "complexity": "intermediate",
+    "one_line_summary": "End-to-end SignalR walkthrough for Blazor Server: build the Hub, build the IHubContext-based service, register everything in Program.cs, connect from a Razor component, and use Groups to scope notifications to companies and teams.",
+    "executive_summary": "This doc is a complete recipe for adding SignalR real-time updates to a Blazor Server app. It covers the full loop: Hub class with OnConnectedAsync/OnDisconnectedAsync and JoinGroup/LeaveGroup methods, a HubService that uses IHubContext to push messages without holding a connection, Program.cs registration, and a fully wired Blazor component with HubConnectionBuilder, automatic reconnect, group rejoin on Reconnected, message handlers registered before StartAsync, and IAsyncDisposable cleanup. The most valuable part is the bug-hunting section: 'wrong event name' is named the #1 cause of 'SignalR not working,' along with the group-name mismatch trap (Team_null_1) and the rule that StateHasChanged on a parent does NOT re-init child components.",
+    "key_concepts": [
+      "SignalR Hub vs HubService (IHubContext<T>)",
+      "Groups for scoped broadcast",
+      "automatic reconnect with timed retries",
+      "rejoining groups after Reconnected",
+      "InvokeAsync(StateHasChanged) from SignalR callbacks",
+      "registering handlers before StartAsync",
+      "child component RefreshAsync pattern"
+    ],
+    "prerequisites": [
+      "Blazor Server lifecycle",
+      "dependency injection in ASP.NET Core",
+      "async/await fundamentals"
+    ],
+    "builds_toward": [
+      "scaling SignalR with a backplane",
+      "real-time dashboards",
+      "presence systems"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": null,
+    "suggested_metaphor": "A SignalR Hub is a CB radio in the middle of the warehouse. Groups are channels: every connection that joins 'Company_1' hears the foreman's announcements, while only people who joined 'Team_5_1' hear the shift leader. The Hub does not remember which channels you were on after a reconnect, so the very first thing your component must do when the radio crackles back to life is shout out 'Joining Channel 1 again!' or your dashboard will silently go deaf.",
+    "suggested_intro_hook": "You add SignalR, you push the message, and... nothing happens on the dashboard. You stare at the code, you stare at the network tab, you stare at the dog. Nine times out of ten, the bug is one of three things, and this doc names all three.",
+    "what_it_teaches": "How to wire SignalR end-to-end in Blazor Server, how to use Groups to target broadcasts at exactly the right audience (company vs team vs single user), and how to avoid the five classic SignalR bugs: wrong event name on the .On() handler, missing rejoin after reconnect, missing InvokeAsync wrap on StateHasChanged, registering handlers after StartAsync, and not telling child components to refresh.",
+    "key_takeaways": [
+      "Hubs receive client calls, HubServices push messages from server-side code via IHubContext<T>",
+      "Group names are strings - any mismatch (e.g. Team_null_1) silently routes messages into the void",
+      "SignalR forgets your group memberships on disconnect; rejoin them in the Reconnected handler",
+      "Always wrap StateHasChanged in InvokeAsync inside SignalR callbacks to marshal back to the UI thread",
+      "Initialize SignalR in OnAfterRenderAsync, not OnInitializedAsync, so NavigationManager is ready"
+    ],
+    "cross_references": [
+      "blazor-server-lifecycle",
+      "signalr-notification-system",
+      "factory-floor-system",
+      "attendance-tracking-system",
+      "iasyncdisposable-pattern"
+    ],
+    "quality_notes": "Production-grade reference doc. Includes ASCII diagrams of the message flow, a 'common issues' table that maps symptoms to fixes, and explicit WRONG vs CORRECT code blocks. Ties to real implementation files (AttendanceHub) at the end. Numbered prefix '11-' suggests it is part of a larger Education series.",
+    "reading_difficulty_minutes": 22,
+    "is_part_of_series": true,
+    "series_name": "Education numbered series"
+  },
+  {
+    "src_rel": "Education/FactoryFloor/PT/SistemaProduçãoChãoFábricaDocumentaçãoFormal.docx",
+    "title": "Sistema de Produção de Chão de Fábrica - Documentação Técnica (PT)",
+    "doc_type": "applied-implementation",
+    "topic_family": null,
+    "domain": "factory-floor",
+    "topic_slug": "factory-floor-system-pt",
+    "complexity": "intermediate",
+    "one_line_summary": "Portuguese-language formal technical documentation for the Factory Floor MES system, covering its layered architecture, Factory_New.razor and MaterialConsumptionModal components, the FactoryFloorService and its Primavera ERP integration.",
+    "executive_summary": "This is the formal Portuguese-language technical doc for the BioBraga Factory Floor system - a real-time MES (Manufacturing Execution System) built on Blazor Server, MudBlazor, EF Core, and integrated with the Primavera ERP. It documents the layered architecture (Presentation -> Service -> Data Access), the Factory_New.razor and MaterialConsumptionModal.razor components with their lifecycle methods, the IFactoryFloorService interface and its key operations (StartProductionAsync, PauseProductionAsync, EndProductionAsync, RegisterProductionAsync), the proportional material consumption algorithm with historical average suggestion, the multi-step transactional flow that updates order quantities, registers material consumption, and generates ENTSTOCK/SAIDASTOCK/DESP stock movement documents, plus PIN-based worker authentication and the 1.5s debounce on quantity-change material loading.",
+    "key_concepts": [
+      "MES (Manufacturing Execution System)",
+      "Blazor Server + MudBlazor",
+      "IDbContextFactory transaction management",
+      "Primavera ERP integration",
+      "proportional material consumption with historical average",
+      "PIN-based worker authentication",
+      "stock movement document types (ENTSTOCK/SAIDASTOCK/DESP)"
+    ],
+    "prerequisites": [
+      "Blazor Server",
+      "EF Core transactions",
+      "manufacturing domain vocabulary"
+    ],
+    "builds_toward": [
+      "extending the system with new machine types",
+      "reconciling stock with the ERP",
+      "auditing production runs"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": {
+      "why_it_exists": "A real factory needs to know in real time which production orders are running on which machines, how much material was actually consumed (versus planned), and how much waste was generated - and every one of those facts has to flow back into the Primavera ERP so inventory and accounting stay consistent. Without this system, the floor relied on paper logs and the ERP saw stale data; with it, the worker scans a PIN, reports actual quantities, and the system writes the order update, the material consumption, the stock movements, and the ERP push in a single transaction.",
+      "what_it_does": "Provides a touch-friendly Blazor UI (Factory_New.razor) where workers see all active production orders filtered by their machine, then via PIN authentication can Start, Pause or End an order. Pause/End opens the MaterialConsumptionModal which loads materials proportionally to the reported quantity, shows historical-average suggestions and live variance, validates stock availability, and on submit walks a multi-step progress UI (update order, register consumption, generate stock entry, generate stock exit, push to Primavera, finalize). Includes today's production stats and machine filtering via URL parameters for bookmarkability.",
+      "how_it_works": "Layered: Razor components inject IFactoryFloorService, which uses IDbContextFactory<BioBragaContext> to open scoped DB contexts and IPrimaveraRepository for ERP calls. The material algorithm is perUnit = totalPlanned / orderQuantity, then proportionalQty = perUnit * quantityProduced rounded to 6 decimals, with an optional historical-average suggestion when QuantidadeMedia is non-zero. RegisterProductionAsync wraps everything in BeginTransactionAsync: it bumps QuantidadeFeita/QuantidadeFalta on the order, increments QuantidadeConsumida and NumeroProducoes on each gastoFase, generates CrmDocumento headers and lines for ENTSTOCK/SAIDASTOCK/DESP, then commits or rolls back. Material loading uses CancellationTokenSource debouncing (1.5s) so users can retype the produced quantity without hammering the DB. PIN auth hashes via Utils.Hash and rejects inactive workers."
+    },
+    "suggested_metaphor": "The Factory Floor system is the invisible accountant standing next to every machine on the shop floor. The worker says 'I made 47 units and used this much glue,' the accountant whispers 'that is 8% over the plan, here is what your last 12 batches averaged,' then quietly walks the paperwork over to the ERP filing cabinet so nobody has to retype anything later.",
+    "suggested_intro_hook": "What does it actually take to turn 'the worker pressed the green button' into a row in the ERP that finance trusts? It takes a PIN screen, a debounced material loader, a five-step transaction, and the patience to roll all of it back if Primavera coughs.",
+    "what_it_teaches": "How a real MES module is layered in Blazor Server, how to compose a transactional service that touches local DB and an external ERP without leaving inconsistent state, and how to design a UX that surfaces variance against historical averages so the worker (not just the manager) becomes a quality sensor.",
+    "key_takeaways": [
+      "IDbContextFactory plus an existingContext parameter lets the same service method participate in a caller-owned transaction or open its own",
+      "Debouncing material loads via CancellationTokenSource is what keeps the UI usable when the user is still typing the quantity",
+      "Proportional + historical-average suggestion gives workers a sanity-check before they confirm consumption",
+      "Stock movement creation must be inside the same transaction as the order update or the ERP and DB will drift",
+      "URL-parameter machine selection makes the floor view bookmarkable without server roundtrips for filtering"
+    ],
+    "cross_references": [
+      "factory-floor-system",
+      "ef-core-transactions",
+      "primavera-erp-integration",
+      "blazor-cascading-parameters",
+      "pin-based-authentication"
+    ],
+    "quality_notes": "Formal documentation style in Portuguese (PT-PT). Well structured with sections for architecture, components, services, data models, integration, security, performance, deployment. Code snippets are realistic and the transaction flow is described concretely. This is the PT counterpart to the FactoryFloor English docs - same domain, separate page so the Portuguese version is also browsable.",
+    "reading_difficulty_minutes": 14,
+    "is_part_of_series": false,
+    "series_name": null
+  },
+  {
+    "src_rel": "Education/ForDummies/08-Design-Patterns-For-Dummies.md",
+    "title": "Design Patterns & SOLID Principles - For Dummies (Schedule Conflict Detector)",
+    "doc_type": "applied-implementation",
+    "topic_family": null,
+    "domain": "scheduling",
+    "topic_slug": "schedule-conflict-detector-patterns",
+    "complexity": "beginner",
+    "one_line_summary": "Walks through how the schedule conflict detector was refactored using Interface, Strategy, DI with IEnumerable<T>, and Facade patterns, mapping each step to its SOLID principle - starting from the real problem of needing the same conflict logic for Employees, Equipment and (later) Vehicles.",
+    "executive_summary": "This doc tells the story of a real refactor: the team had a scheduling conflict detector that only handled Employees, then Equipment was added, and Vehicles were on the horizon. Instead of copy-pasting, they built an IScheduleEntry interface for the row shape, an IScheduleConflictStrategy interface for the per-entity-type query, registered both Employee and Equipment strategies in DI as IEnumerable<T>, and put a ScheduleConflictDetector facade in front so callers just say HasTimeOverlapAsync('Employee', 123, ...). Each step is tied to a SOLID letter (ISP, OCP, DIP, SRP), and the payoff section shows that adding Vehicles is now 'create class, register, done, no existing code changes.'",
+    "key_concepts": [
+      "Strategy pattern",
+      "Facade pattern",
+      "Adapter via shared interface",
+      "Interface Segregation Principle",
+      "Open/Closed Principle",
+      "Dependency Inversion Principle",
+      "IEnumerable<T> DI to collect all implementations"
+    ],
+    "prerequisites": [
+      "interfaces in C#",
+      "ASP.NET Core dependency injection",
+      "the basic problem of code duplication"
+    ],
+    "builds_toward": [
+      "plugin architectures",
+      "rules engines",
+      "extensible domain models"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": {
+      "why_it_exists": "The scheduling system originally only handled Employees, but the same 'does this overlap with anything I am already booked for' logic was needed for Equipment, and Vehicles were coming next. Without a refactor, every entity type meant another full copy of EmployeeConflictService, with bugs to fix in N places and features to add in N places. The doc is the team's record of how they made the third entity type cheap.",
+      "what_it_does": "Lets any caller ask 'does Entity X with id Y have a scheduling conflict in this time window?' without knowing or caring what type X is. Internally it routes the question to the right per-type query strategy and uses a shared row interface so the overlap math works against either JobSchedules or JobEquipmentSchedules with the same code path.",
+      "how_it_works": "Both JobSchedule and JobEquipmentSchedule implement IScheduleEntry (ActualStartDateTime, ActualEndDateTime, OverlapsWith). For each entity type there is a class that implements IScheduleConflictStrategy with EntityType property and HasConflictAsync method that queries the right table. All strategies are registered in DI as IScheduleConflictStrategy, so injecting IEnumerable<IScheduleConflictStrategy> gives you the full collection. The ScheduleConflictDetector facade does .First(s => s.EntityType == requestedType) and delegates. Adding Vehicle means: implement IScheduleEntry on JobVehicleSchedule, write VehicleScheduleConflictStrategy, register it - existing files untouched."
+    },
+    "suggested_metaphor": "Picture a customs office at an airport with one window for citizens, one for residents, and one for tourists. Each clerk (strategy) only knows how to look up their own kind of traveler in their own database. The information desk (facade) just asks 'what kind are you?' and points you at the right window. Adding a new visa class means hiring one new clerk - the desk and the other windows do not need to change at all.",
+    "suggested_intro_hook": "If your first instinct when adding Equipment scheduling was 'I will just copy EmployeeConflictService and rename it,' read this. There is a version of you six months from now whose job is much easier if you spend forty minutes on patterns today.",
+    "what_it_teaches": "How to recognize when to introduce Strategy + Facade + DI collection, how the SOLID letters map onto each step of the refactor (not as theory, but as the named justification for each decision), and what the actual payoff looks like when you add the third entity type.",
+    "key_takeaways": [
+      "If you find yourself about to copy-paste a service to support a new entity type, that is the moment Strategy pays off",
+      "Injecting IEnumerable<IInterface> in .NET DI gives you every registered implementation as a collection - no service locator needed",
+      "A Facade keeps callers ignorant of the strategy lookup, which is itself the SRP win",
+      "OCP is real: 'open for extension, closed for modification' is exactly what 'no existing files change' looks like in practice",
+      "ISP means the shared interface should only carry what the cross-cutting code actually needs - not the full entity"
+    ],
+    "cross_references": [
+      "strategy-pattern",
+      "facade-pattern",
+      "solid-principles",
+      "dependency-injection-fundamentals",
+      "scheduling-system"
+    ],
+    "quality_notes": "Best-in-class teaching doc: starts from a real problem the user had, walks through patterns one at a time, ties each to a SOLID letter, includes a complete-picture diagram, summary tables, and a concrete 'what changes when you add Vehicles' section. Beginner-friendly but the lessons stick. Numbered prefix '08-' suggests ForDummies series.",
+    "reading_difficulty_minutes": 12,
+    "is_part_of_series": true,
+    "series_name": "ForDummies series"
+  },
+  {
+    "src_rel": "Education/ForDummies/14-SignalR-Notification-System-ForDummies.md",
+    "title": "SignalR Notification System For Dummies",
+    "doc_type": "applied-implementation",
+    "topic_family": null,
+    "domain": "notification-system",
+    "topic_slug": "signalr-notification-system-fordummies",
+    "complexity": "beginner",
+    "one_line_summary": "Beginner walkthrough of the multi-target notification system: how to address messages by Group, Department, Job/Project or Role, how SignalR groups auto-join on connect, why offline users still get the message, and what the EnvioGlobal sender UI looks like.",
+    "executive_summary": "Part 2 of the SignalR ForDummies pair. Introduces the notification system as a 'shopping mall PA system' with multiple targeting tabs (Grupos, Departamentos, Obras, Funcoes), explains the address-resolution chain (target -> employees -> users), walks through how every connected user is auto-joined to several SignalR groups (User_*, All, Company_*, Dept_*, Job_*, Role_*), explains the offline 'voicemail' fallback where notifications are persisted in the database for later, and walks through the four-step EnvioGlobal sender UI. Designed for someone who has never used SignalR before.",
+    "key_concepts": [
+      "multi-target notification routing",
+      "SignalR groups as walkie-talkie channels",
+      "address resolution: target -> employees -> users",
+      "offline persistence (voicemail pattern)",
+      "auto-join groups on connect",
+      "Blazor UI vs REST controller dual-entry"
+    ],
+    "prerequisites": [
+      "basic web app concepts",
+      "vague awareness of real-time messaging"
+    ],
+    "builds_toward": [
+      "signalr-blazor-server-fundamentals",
+      "notification system technical doc",
+      "cross-app integrations via REST"
+    ],
+    "has_code_examples": false,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": {
+      "why_it_exists": "The team needed to push notifications to many different audiences - not just user groups, but everyone in a department, everyone working on a project, everyone with a particular job title - and they needed both Blazor pages and external systems (mobile, integrations, background jobs) to be able to fire those notifications. They also could not afford to lose messages just because the recipient was offline at the moment of sending.",
+      "what_it_does": "Lets a sender pick a target type (Grupo, Departamento, Obra, Funcao), pick the specific targets, type a title and message, and send. The system resolves each target to a deduplicated list of users, delivers via SignalR to whoever is online right now, and persists the rest so offline users see them on next login. Both Blazor (INotificationService) and REST (POST /api/notification/send-to-department) entry points exist.",
+      "how_it_works": "When a user connects, the system auto-joins their connection to several SignalR groups: their personal User_* group, the global All group, their Company_* group, their Dept_*_* group, every Job_*_* group they belong to, and their Role_*_* group. To deliver a message, the sender names a target type and ID; the system queries the company DB for the matching employees, then queries the central DB to find which users those employees correspond to, dedupes, and pushes via the relevant group. Online users receive instantly via the existing connection; offline users get a database row that surfaces on next login - the 'voicemail' fallback."
+    },
+    "suggested_metaphor": "The notification system is the mall PA system. Every shopper walks in carrying a walkie-talkie tuned to several channels at once: their personal channel, the all-shoppers channel, their store's channel, and any event channels they signed up for. When the manager wants to call the IT department to a meeting, she does not need every shopper's name - she just keys the IT channel and only the IT walkie-talkies crackle. And if your walkie-talkie is off, the message lands in your locker so you find it on your way out.",
+    "suggested_intro_hook": "How does 'send to IT Department' actually become 'Maria's phone buzzes'? The trip from a label on a tab to a buzzing notification involves two databases, a deduper, and the world's politest voicemail.",
+    "what_it_teaches": "The mental model of a multi-target SignalR notification system without any code: how groups become channels, how targeting types translate to user lists, why offline users do not lose messages, and when to call the in-process service versus the REST controller.",
+    "key_takeaways": [
+      "SignalR groups are addressable channels - join one and you hear everything broadcast on it",
+      "Multi-target notification works by resolving each target tab into a deduplicated user list before broadcasting",
+      "Offline does not mean lost: notifications persist to the DB and surface on next login",
+      "The same notification engine should expose both an in-process service (for Blazor) and a REST controller (for mobile/integrations)",
+      "Auto-joining a user to multiple groups on connect is what makes targeting cheap at send time"
+    ],
+    "cross_references": [
+      "signalr-blazor-server-fundamentals",
+      "notification-system-technical",
+      "signalr-real-time-communication-fordummies",
+      "rest-api-controllers"
+    ],
+    "quality_notes": "Pure conceptual / mental model doc - no code, lots of diagrams and analogies. Reads like Part 2 of the SignalR ForDummies primer (explicitly references Part 1 about restaurant buzzers). Good as the on-ramp to the technical version.",
+    "reading_difficulty_minutes": 8,
+    "is_part_of_series": true,
+    "series_name": "ForDummies series"
+  },
+  {
+    "src_rel": "Education/03-Adapter-Pattern-Explained.md",
+    "title": "Adapter Pattern Explained (Decoupling Modules from Host Models)",
+    "doc_type": "core-concept",
+    "topic_family": "patterns",
+    "domain": null,
+    "topic_slug": "adapter-pattern-module-decoupling",
+    "complexity": "intermediate",
+    "one_line_summary": "Explains how the Adapter pattern lets a module define its own DTOs and adapter interface so it never imports the host application's models, with a planned refactor of the Jobs module away from CrmFuncionario.",
+    "executive_summary": "A short, planning-stage doc explaining how the Adapter pattern would let the Jobs module be reusable across applications. Today the module imports CrmFuncionario directly from HRModule; the proposed structure has Jobs define its own IEmployeeAdapter interface and EmployeeInfo DTO, and the host application provides an HRModuleEmployeeAdapter that translates CrmFuncionario into EmployeeInfo. The doc shows before/after code, lists the benefits (portability, independence, testability, flexibility), proposes a folder layout, and explicitly notes this is deferred until core schema refactoring is stable.",
+    "key_concepts": [
+      "Adapter pattern",
+      "module portability",
+      "DTO translation layer",
+      "interface segregation across module boundaries",
+      "host vs module data models"
+    ],
+    "prerequisites": [
+      "interfaces and DTOs in C#",
+      "modular architecture basics",
+      "dependency injection"
+    ],
+    "builds_toward": [
+      "module-as-NuGet-package",
+      "hexagonal architecture",
+      "anti-corruption layers in DDD"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": null,
+    "suggested_metaphor": "The Adapter pattern is the power-plug travel adapter in your suitcase. Your laptop knows nothing about UK three-pin sockets or European two-pin sockets - it just expects 'a plug.' The travel adapter is the host country's job, not the laptop's. Today the Jobs module is a laptop with a hard-soldered British plug; the refactor turns it into a laptop that ships with a universal pin-shape and lets each country (HRModule, OtherApp, etc.) supply its own little brick.",
+    "suggested_intro_hook": "Why can you not just pick up your Jobs module and drop it into a different app? Because it is dragging CrmFuncionario along like a suitcase you forgot to unpack - and CrmFuncionario only exists in this one application's basement.",
+    "what_it_teaches": "How the Adapter pattern decouples a reusable module from the host's concrete data models, why each module should own its own interfaces and DTOs, and what the resulting folder layout looks like (Module + HostApp.Adapters as separate projects).",
+    "key_takeaways": [
+      "A reusable module must own its own interfaces and DTOs - never import host models directly",
+      "The host application is responsible for providing concrete adapters that translate its models to the module's DTOs",
+      "Adapters introduce a small per-call cost; do not use them when the module is tightly bound to the app or when performance is critical",
+      "This is the refactor that lets a module become a NuGet package shippable across apps"
+    ],
+    "cross_references": [
+      "hexagonal-architecture",
+      "anti-corruption-layer",
+      "dependency-inversion-principle",
+      "modular-architecture"
+    ],
+    "quality_notes": "Short and clear, but explicitly marked as 'Future implementation - concepts documented for planning.' More of a design memo than a tutorial. The before/after code blocks make the intent crystal clear. Numbered prefix '03-' suggests Education series.",
+    "reading_difficulty_minutes": 5,
+    "is_part_of_series": true,
+    "series_name": "Education numbered series"
+  },
+  {
+    "src_rel": "Identity/IdentityProjectKnowledge.pdf",
+    "title": "Identity Project Knowledge",
+    "doc_type": "applied-implementation",
+    "topic_family": null,
+    "domain": "identity-project",
+    "topic_slug": "identity-project-knowledge",
+    "complexity": "unknown",
+    "one_line_summary": "Knowledge dump for the Identity project - presumed to cover the project's authentication and role-based authorization design, but the PDF has no extractable text so contents are inferred from the filename only.",
+    "executive_summary": "This is the Identity project knowledge PDF in the Identity folder. The file has no extractable text (likely a scanned document, image-only PDF, or a PDF where extraction failed), so contents could not be analyzed directly. Based on the file path and filename, it almost certainly documents the Identity project's authentication, role/permission model, user management, and integration points. A second pass with OCR or a manual review would be needed to confirm.",
+    "key_concepts": [
+      "ASP.NET Core Identity (presumed)",
+      "role-based authorization (presumed)",
+      "user management (presumed)"
+    ],
+    "prerequisites": [
+      "ASP.NET Core authentication basics"
+    ],
+    "builds_toward": [
+      "identity-project-role-management",
+      "claims-based-authorization"
+    ],
+    "has_code_examples": false,
+    "has_diagrams_or_visuals": false,
+    "tutorial_structure": {
+      "why_it_exists": "Inferred only: the Identity project is the central authentication/authorization service for the broader application family, and this PDF appears to be its knowledge dump or design reference. Without extractable text we cannot verify, but the location in the Identity folder strongly suggests this is the project's primary documentation artifact.",
+      "what_it_does": "Inferred: documents how users authenticate, how roles and permissions are organized, and how other applications consume the Identity service. Specific mechanisms (cookie auth, JWT, OAuth, ASP.NET Core Identity, custom implementation) are unknown until the PDF can be re-extracted.",
+      "how_it_works": "Unknown - the PDF text could not be extracted. To unblock analysis, run the file through an OCR pass (e.g. Tesseract) or open it manually and copy the text into a companion .md file."
+    },
+    "suggested_metaphor": "The Identity project is the front desk of a building with many tenants - every visitor must check in here before any tenant office will speak to them, and every tenant trusts the badge the front desk hands out. This PDF is presumably the front desk's procedure manual, but the cover is glued shut and we cannot read the pages.",
+    "suggested_intro_hook": "Every system in your stack eventually has to answer 'who are you and what are you allowed to do?' The Identity project is where that question lives - if only we could read the file.",
+    "what_it_teaches": "Unknown until the PDF is re-extracted. Likely teaches the architecture and operational details of the central Identity service.",
+    "key_takeaways": [
+      "Cannot extract content - file requires OCR or manual transcription",
+      "Filename and folder strongly indicate it covers the central Identity service",
+      "This record is a placeholder so the document is still surfaced in the curated index"
+    ],
+    "cross_references": [
+      "aspnet-core-identity",
+      "role-based-authorization",
+      "claims-based-authorization",
+      "identity-project-overview"
+    ],
+    "quality_notes": "PDF has no extractable text (has_text=false, word_count=0). Likely a scanned document or image-only PDF. Analysis is inferred from filename and folder location only. Recommend running OCR or manually re-extracting before relying on this entry.",
+    "reading_difficulty_minutes": null,
+    "is_part_of_series": false,
+    "series_name": null
+  }
+]

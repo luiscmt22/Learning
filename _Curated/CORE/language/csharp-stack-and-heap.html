@@ -1,0 +1,2348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Stack and Heap in C# — Understanding Memory Management in .NET</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #07090f;
+  --bg-1: #0c111c;
+  --bg-2: #11182a;
+  --bg-3: #1a2238;
+  --bg-4: #232e4a;
+  --border: #1e2840;
+  --border-2: #2a3551;
+  --border-3: #3a4870;
+  --text: #e9eef8;
+  --text-dim: #94a3bf;
+  --text-mut: #5f6b86;
+  --accent: #6aa6ff;
+  --accent-strong: #3b82f6;
+  --accent-2: #b86aff;
+  --accent-3: #f472b6;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+  --info: #38bdf8;
+  --code-bg: #0a1020;
+  --code-border: #1a2340;
+  --shadow: 0 8px 32px rgba(0,0,0,0.55);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.35);
+  --shadow-glow: 0 0 0 1px rgba(106,166,255,0.18), 0 12px 40px rgba(106,166,255,0.10);
+}
+
+/* Doc-type theming */
+[data-doc-type="core-concept"] {
+  --doc-accent: #6aa6ff;
+  --doc-accent-rgb: 106,166,255;
+  --doc-eyebrow: "Concept";
+}
+[data-doc-type="applied-implementation"] {
+  --doc-accent: #b86aff;
+  --doc-accent-rgb: 184,106,255;
+  --doc-eyebrow: "Implementation";
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font: 16px/1.7 -apple-system, "Inter", \'Segoe UI\', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+::selection { background: rgba(106,166,255,0.30); }
+
+/* ═══ Top bar ═══════════════════════════════════════════════════════ */
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(7,9,15,0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 28px;
+  display: flex; align-items: center; gap: 16px;
+}
+.topbar .crumbs {
+  flex: 1; font-size: 13px; color: var(--text-dim);
+  display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden;
+}
+.topbar .crumbs span.sep { color: var(--text-mut); }
+.topbar .crumbs .current {
+  color: var(--text); font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.topbar .crumbs a { color: var(--text-dim); text-decoration: none; }
+.topbar .crumbs a:hover { color: var(--accent); }
+.topbar .actions { display: flex; gap: 6px; flex-shrink: 0; }
+.topbar .action {
+  font-size: 13px; padding: 6px 14px; border-radius: 8px;
+  color: var(--text-dim); text-decoration: none;
+  border: 1px solid transparent; transition: all .15s;
+}
+.topbar .action:hover {
+  color: var(--text); background: var(--bg-2); border-color: var(--border);
+  text-decoration: none;
+}
+
+/* ═══ Document layout ═══════════════════════════════════════════════ */
+.layout {
+  display: grid; grid-template-columns: 280px 1fr;
+  max-width: 1380px; margin: 0 auto; align-items: start;
+}
+.layout.no-toc { grid-template-columns: 1fr; max-width: 940px; }
+
+.toc-sidebar {
+  position: sticky; top: 70px;
+  align-self: start;
+  max-height: calc(100vh - 90px);
+  overflow-y: auto;
+  padding: 40px 8px 40px 28px;
+  border-right: 1px solid var(--border);
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+.toc-sidebar::-webkit-scrollbar { width: 6px; }
+.toc-sidebar::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
+.toc-sidebar h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px; padding-left: 14px; font-weight: 600;
+}
+.toc-sidebar ol { list-style: none; margin: 0; padding: 0; }
+.toc-sidebar li { margin: 0; }
+.toc-sidebar a {
+  display: block;
+  padding: 5px 14px;
+  border-left: 2px solid transparent;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 13px;
+  line-height: 1.5;
+  transition: all .15s;
+  word-break: break-word;
+}
+.toc-sidebar a:hover {
+  color: var(--text); border-left-color: var(--border-2); text-decoration: none;
+}
+.toc-sidebar a.active {
+  color: var(--doc-accent, var(--accent));
+  border-left-color: var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.07);
+}
+.toc-sidebar .lvl-3 a { padding-left: 28px; font-size: 12.5px; }
+.toc-sidebar .lvl-4 a, .toc-sidebar .lvl-5 a, .toc-sidebar .lvl-6 a {
+  padding-left: 42px; font-size: 12px;
+}
+
+.content { padding: 40px 64px 120px; min-width: 0; }
+
+/* ═══ Hero (per-doc) ════════════════════════════════════════════════ */
+.doc-hero {
+  position: relative;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 32px;
+  margin-bottom: 36px;
+}
+.doc-hero::before {
+  content: ''; position: absolute;
+  top: -40px; left: -64px; right: -64px; height: 220px;
+  background: radial-gradient(ellipse 60% 100% at 0% 0%, rgba(var(--doc-accent-rgb, 106,166,255),0.10), transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+.doc-hero > * { position: relative; z-index: 1; }
+.doc-hero .eyebrow {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  color: var(--doc-accent, var(--accent)); font-weight: 600;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.doc-hero .eyebrow .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--doc-accent, var(--accent));
+  box-shadow: 0 0 8px var(--doc-accent, var(--accent));
+}
+.doc-hero h1 {
+  font-size: 40px; line-height: 1.1;
+  margin: 12px 0 16px;
+  font-weight: 700; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.doc-hero .one-liner {
+  font-size: 18px; line-height: 1.55;
+  color: var(--text-dim);
+  margin: 0 0 20px;
+  max-width: 70ch;
+}
+.doc-hero .meta-row {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  font-size: 12.5px;
+}
+.meta-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--bg-2); border: 1px solid var(--border);
+  padding: 5px 12px; border-radius: 14px;
+  font-size: 12px; color: var(--text-dim);
+}
+.meta-pill .num { color: var(--text); font-weight: 600; font-feature-settings: "tnum"; }
+.meta-pill.fmt-md   { color: #6aa6ff; border-color: rgba(106,166,255,0.30); background: rgba(106,166,255,0.06); }
+.meta-pill.fmt-pdf  { color: #f87171; border-color: rgba(248,113,113,0.30); background: rgba(248,113,113,0.06); }
+.meta-pill.fmt-docx { color: #38bdf8; border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.fmt-html { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.fmt-htm  { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.complexity-beginner    { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.06); }
+.meta-pill.complexity-intermediate { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.complexity-advanced     { color: #fb923c; border-color: rgba(251,146,60,0.30); background: rgba(251,146,60,0.06); }
+.meta-pill.complexity-unknown      { color: var(--text-mut); }
+.meta-pill.source code { background: transparent; padding: 0; border: 0; font-size: 11px; color: var(--text-dim); }
+
+/* ═══ Curation panels ═══════════════════════════════════════════════ */
+
+.curation {
+  margin-bottom: 36px;
+}
+
+.intro-hook {
+  font-size: 18px;
+  line-height: 1.65;
+  color: var(--text);
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  padding: 8px 0 8px 20px;
+  margin: 0 0 28px;
+  font-style: italic;
+  font-weight: 350;
+}
+
+.exec-summary {
+  background: linear-gradient(135deg, rgba(var(--doc-accent-rgb, 106,166,255),0.07), rgba(var(--doc-accent-rgb, 106,166,255),0.02));
+  border: 1px solid rgba(var(--doc-accent-rgb, 106,166,255),0.20);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 0 0 24px;
+}
+.exec-summary h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent, var(--accent));
+  font-weight: 600;
+}
+.exec-summary p {
+  margin: 0; font-size: 15px; line-height: 1.65; color: var(--text);
+}
+
+.metaphor-callout {
+  display: flex; gap: 14px; align-items: flex-start;
+  background: rgba(184,106,255,0.06);
+  border: 1px solid rgba(184,106,255,0.25);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 0 0 24px;
+}
+.metaphor-callout .icon {
+  font-size: 22px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 4px rgba(184,106,255,0.4));
+}
+.metaphor-callout .body {
+  flex: 1; font-size: 14.5px; line-height: 1.6;
+  color: var(--text);
+}
+.metaphor-callout .body .label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--accent-2); font-weight: 700;
+  display: block; margin-bottom: 4px;
+}
+
+.tutorial-structure {
+  display: grid; grid-template-columns: 1fr; gap: 14px;
+  margin: 0 0 28px;
+}
+.tutorial-section {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--doc-accent);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+}
+.tutorial-section h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent);
+  font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.tutorial-section h3 .num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--doc-accent); color: var(--bg);
+  font-size: 10px; font-weight: 700;
+}
+.tutorial-section p {
+  margin: 0; font-size: 14.5px; line-height: 1.65; color: var(--text);
+}
+
+.context-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin: 0 0 28px;
+}
+.context-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.context-card h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut);
+  font-weight: 600;
+}
+.context-card ul {
+  margin: 0; padding: 0; list-style: none;
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.context-card li {
+  background: var(--bg-3);
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--text-dim);
+  border: 1px solid var(--border-2);
+}
+.context-card.prereqs li { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.05); }
+.context-card.builds li { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.05); }
+.context-card.concepts li { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.05); }
+
+.takeaways {
+  background: linear-gradient(135deg, rgba(74,222,128,0.05), rgba(74,222,128,0.01));
+  border: 1px solid rgba(74,222,128,0.20);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin: 36px 0 0;
+}
+.takeaways h3 {
+  margin: 0 0 10px;
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--ok); font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.takeaways h3::before {
+  content: '✓';
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(74,222,128,0.18);
+  font-size: 12px; font-weight: 700;
+}
+.takeaways ul { margin: 0; padding-left: 22px; }
+.takeaways li {
+  font-size: 14.5px; line-height: 1.6; color: var(--text);
+  margin: 6px 0;
+}
+
+/* ═══ Article body ══════════════════════════════════════════════════ */
+article { font-size: 16px; line-height: 1.78; color: var(--text); max-width: 78ch; }
+article > * + * { margin-top: 1.0em; }
+article p { margin: 0; }
+article h1, article h2, article h3, article h4 {
+  font-weight: 650; letter-spacing: -0.01em; color: var(--text);
+  scroll-margin-top: 90px; position: relative;
+}
+article h1 { font-size: 28px; margin-top: 56px; }
+article h2 {
+  font-size: 24px; margin-top: 56px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+article h3 { font-size: 19px; margin-top: 36px; }
+article h4 { font-size: 16.5px; margin-top: 24px; color: var(--text-dim); }
+article h2::before, article h3::before {
+  content: '#'; position: absolute; left: -28px;
+  color: var(--text-mut); font-weight: 400;
+  opacity: 0; transition: opacity .15s;
+}
+article h2:hover::before, article h3:hover::before { opacity: 1; }
+
+article ul, article ol { padding-left: 1.5em; margin: 0; }
+article li { margin: .35em 0; }
+article li > p { margin: 0; }
+
+article hr {
+  border: 0; height: 1px; background: var(--border); margin: 36px 0;
+}
+
+article blockquote {
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.05);
+  padding: 14px 18px;
+  margin: 22px 0;
+  border-radius: 0 8px 8px 0;
+  color: var(--text-dim);
+}
+article blockquote p { margin: 0; }
+
+article pre {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-size: 13.5px;
+  line-height: 1.65;
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+article pre::-webkit-scrollbar { height: 7px; }
+article pre::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+article code, article pre {
+  font-family: "JetBrains Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+  font-feature-settings: "calt" 1;
+}
+article code.il {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  padding: 1px 7px; border-radius: 5px;
+  font-size: 0.88em;
+  color: var(--accent);
+}
+.code-block { position: relative; }
+.code-block .copy-btn {
+  position: absolute; top: 8px; right: 8px;
+  background: var(--bg-3); border: 1px solid var(--border);
+  color: var(--text-dim); padding: 4px 11px; border-radius: 5px;
+  font-size: 11px; font-family: inherit; cursor: pointer;
+  opacity: 0; transition: all .15s;
+}
+.code-block:hover .copy-btn { opacity: 1; }
+.code-block .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+.code-block .copy-btn.copied { color: var(--ok); border-color: var(--ok); }
+
+article pre .kw   { color: #c084fc; font-weight: 500; }
+article pre .type { color: #67e8f9; }
+article pre .str  { color: #fcd34d; }
+article pre .num  { color: #fb923c; }
+article pre .cmt  { color: #6b7d99; font-style: italic; }
+
+article .tbl-wrap {
+  overflow-x: auto; margin: 22px 0;
+  border-radius: 10px; border: 1px solid var(--border);
+}
+article table { border-collapse: collapse; width: 100%; font-size: 14px; }
+article th {
+  background: var(--bg-3); padding: 11px 14px; text-align: left;
+  font-weight: 600; color: var(--text);
+  border-bottom: 1px solid var(--border-2);
+}
+article td {
+  padding: 11px 14px; border-top: 1px solid var(--border); vertical-align: top;
+}
+article tr:nth-child(even) td { background: rgba(255,255,255,0.013); }
+
+article .diagram-box {
+  background: linear-gradient(135deg, #1c2540 0%, #0e1424 100%);
+  border: 1px solid var(--border-2);
+  border-radius: 12px;
+  padding: 22px 26px;
+  margin: 24px 0;
+  box-shadow: var(--shadow);
+}
+article .diagram-box pre {
+  background: transparent; border: 0; padding: 0;
+  color: #e8edf5; font-size: 13px; line-height: 1.55;
+}
+
+article .img-ref {
+  display: inline-block;
+  background: var(--bg-2); color: var(--text-mut);
+  padding: 1px 8px; border-radius: 4px;
+  font-size: 11px; font-style: normal;
+  border: 1px dashed var(--border-2);
+}
+
+/* ═══ Duplicate banners ═════════════════════════════════════════════ */
+.dup-banner {
+  background: linear-gradient(135deg, rgba(251,191,36,0.10), rgba(251,191,36,0.04));
+  border: 1px solid rgba(251,191,36,0.35);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 18px;
+  font-size: 14px; line-height: 1.55;
+  display: flex; gap: 14px; align-items: flex-start;
+}
+.dup-banner + .dup-banner { margin-top: 0; }
+.dup-banner .icon { font-size: 22px; line-height: 1.2; flex-shrink: 0; }
+.dup-banner .body { flex: 1; min-width: 0; }
+.dup-banner h4 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--warn); text-transform: uppercase; letter-spacing: 1px; }
+.dup-banner p { margin: 0; color: var(--text-dim); }
+.dup-banner ul { margin: 6px 0 0; padding-left: 22px; color: var(--text-dim); }
+.dup-banner ul li { margin: 3px 0; word-break: break-word; }
+.dup-banner code {
+  background: var(--bg-3); padding: 2px 7px; border-radius: 5px;
+  font-size: 0.92em; color: var(--text);
+}
+.dup-banner.exact {
+  border-color: rgba(248,113,113,0.40);
+  background: linear-gradient(135deg, rgba(248,113,113,0.10), rgba(248,113,113,0.04));
+}
+.dup-banner.exact h4 { color: var(--bad); }
+.dup-banner.near {
+  border-color: rgba(56,189,248,0.40);
+  background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(56,189,248,0.04));
+}
+.dup-banner.near h4 { color: var(--info); }
+.banner-stack { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+
+/* ═══ PDF page cards ════════════════════════════════════════════════ */
+.pdf-page {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin: 24px 0;
+  overflow: hidden;
+  scroll-margin-top: 90px;
+}
+.pdf-page .page-head {
+  background: var(--bg-3);
+  padding: 9px 20px;
+  font-size: 11px; font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 1.4px;
+  border-bottom: 1px solid var(--border);
+}
+.pdf-page .page-body { padding: 18px 24px 22px; }
+.pdf-page pre {
+  margin: 0; background: transparent; border: 0; padding: 0;
+  white-space: pre-wrap; word-wrap: break-word;
+  color: var(--text); font-size: 13px; line-height: 1.6;
+}
+
+.empty-note {
+  background: var(--bg-2);
+  border: 1px dashed var(--border-2);
+  border-radius: 10px;
+  padding: 18px 22px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* ═══ Cross-references + related ════════════════════════════════════ */
+.cross-refs {
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.cross-refs h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.cross-ref-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.cross-ref-list a {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: all .15s;
+}
+.cross-ref-list a:hover {
+  color: var(--text);
+  border-color: var(--doc-accent, var(--accent));
+  background: var(--bg-3);
+  text-decoration: none;
+}
+.cross-ref-list a .arrow { color: var(--doc-accent, var(--accent)); margin-right: 6px; }
+
+.related {
+  margin-top: 48px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.related h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 18px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.related-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+.related-card {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+}
+.related-card:hover {
+  border-color: var(--doc-accent, var(--accent));
+  transform: translateY(-1px);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+}
+.related-card .title {
+  font-weight: 600; font-size: 13.5px; line-height: 1.35;
+  color: var(--text);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.related-card .meta {
+  font-size: 11px; color: var(--text-mut); margin-top: 6px;
+  display: flex; gap: 8px; align-items: center;
+}
+.related-card .meta .badge {
+  padding: 1px 6px; border-radius: 3px;
+  background: var(--bg-3); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* ═══ Master index page ═════════════════════════════════════════════ */
+
+.index-hero {
+  text-align: center;
+  padding: 80px 24px 56px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.index-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 30% 0%, rgba(106,166,255,0.13), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 70% 30%, rgba(184,106,255,0.10), transparent 70%);
+  pointer-events: none;
+}
+.index-hero > * { position: relative; z-index: 1; }
+.index-hero .eyebrow {
+  color: var(--accent); font-size: 12px;
+  text-transform: uppercase; letter-spacing: 1.8px; font-weight: 600;
+}
+.index-hero h1 {
+  font-size: 56px; margin: 16px 0 12px;
+  font-weight: 750; letter-spacing: -0.025em;
+  background: linear-gradient(135deg, #6aa6ff 0%, #b86aff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.index-hero .tagline {
+  color: var(--text-dim); font-size: 18px;
+  max-width: 720px; margin: 14px auto 0; line-height: 1.6;
+}
+.search-row {
+  display: flex; gap: 12px;
+  max-width: 720px; margin: 36px auto 0;
+}
+.search-row input {
+  flex: 1;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 15px;
+  padding: 14px 22px;
+  border-radius: 14px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color .15s, box-shadow .15s;
+}
+.search-row input::placeholder { color: var(--text-mut); }
+.search-row input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(106,166,255,0.13);
+}
+
+.summary-stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  max-width: 1080px; margin: 36px auto 56px; padding: 0 24px;
+}
+.stat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  text-align: center;
+  transition: border-color .15s;
+}
+.stat-card:hover { border-color: var(--border-2); }
+.stat-card .num {
+  font-size: 32px; font-weight: 700; color: var(--accent);
+  font-feature-settings: "tnum"; line-height: 1.1;
+}
+.stat-card .lbl {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--text-mut); margin-top: 6px;
+}
+
+.split-view {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  max-width: 1320px; margin: 0 auto; padding: 0 24px 60px;
+}
+@media (max-width: 980px) {
+  .split-view { grid-template-columns: 1fr; }
+}
+
+.hub-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 32px 36px;
+  position: relative;
+  overflow: hidden;
+  transition: all .2s;
+}
+.hub-card.core::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 0% 0%, rgba(106,166,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card.applications::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 100% 0%, rgba(184,106,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card > * { position: relative; z-index: 1; }
+.hub-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.hub-card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 700;
+}
+.hub-card.core .label { color: var(--accent); }
+.hub-card.applications .label { color: var(--accent-2); }
+.hub-card h2 {
+  font-size: 32px; line-height: 1.15;
+  margin: 8px 0 12px;
+  font-weight: 700; letter-spacing: -0.02em;
+  color: var(--text);
+}
+.hub-card .desc {
+  font-size: 15px; line-height: 1.6; color: var(--text-dim);
+  margin: 0 0 24px;
+}
+.hub-card .stats {
+  display: flex; gap: 18px; margin-bottom: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-card .stats .num { color: var(--text); font-weight: 600; }
+.hub-card .cta {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 10px;
+  font-size: 13.5px; font-weight: 600;
+  text-decoration: none;
+}
+.hub-card.core .cta {
+  background: rgba(106,166,255,0.12);
+  color: var(--accent);
+  border: 1px solid rgba(106,166,255,0.30);
+}
+.hub-card.applications .cta {
+  background: rgba(184,106,255,0.12);
+  color: var(--accent-2);
+  border: 1px solid rgba(184,106,255,0.30);
+}
+.hub-card .cta:hover { text-decoration: none; transform: translateX(2px); }
+.hub-card .quick {
+  margin-top: 24px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.hub-card .quick h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut); font-weight: 600;
+}
+.hub-card .quick ul { list-style: none; margin: 0; padding: 0; }
+.hub-card .quick li { padding: 4px 0; font-size: 13px; }
+.hub-card .quick li a { color: var(--text-dim); text-decoration: none; }
+.hub-card .quick li a:hover { color: var(--text); }
+
+/* ═══ Hub page (CORE / APPLICATIONS landing) ════════════════════════ */
+
+.hub-hero {
+  padding: 64px 32px 36px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1240px; margin: 0 auto;
+}
+.hub-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 600;
+}
+.hub-hero h1 {
+  font-size: 48px; margin: 12px 0 14px;
+  font-weight: 750; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.hub-hero p {
+  color: var(--text-dim); font-size: 17px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.hub-hero .stats {
+  display: flex; gap: 22px; margin-top: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-hero .stats .num { color: var(--text); font-weight: 600; }
+
+.cat-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 18px;
+  max-width: 1280px; margin: 28px auto; padding: 0 32px 80px;
+}
+.cat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 24px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.cat-card:hover {
+  border-color: var(--border-3);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+}
+.cat-card .head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 12px;
+}
+.cat-card .head .icon {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 18px;
+  color: var(--accent);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.cat-card.app .head .icon { color: var(--accent-2); }
+.cat-card .title {
+  font-size: 18px; font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  flex: 1;
+}
+.cat-card .head .count {
+  font-size: 12px; color: var(--text-mut);
+  flex-shrink: 0;
+}
+.cat-card .tagline {
+  font-size: 13px; color: var(--accent);
+  font-weight: 500;
+  margin: 0;
+}
+.cat-card.app .tagline { color: var(--accent-2); }
+.cat-card .desc {
+  font-size: 13.5px; color: var(--text-dim);
+  line-height: 1.55;
+  margin: 4px 0 0;
+}
+
+/* ═══ Category landing (per family/domain) ══════════════════════════ */
+
+.cat-hero {
+  padding: 56px 32px 32px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1180px; margin: 0 auto;
+}
+.cat-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px; font-weight: 600;
+}
+.cat-hero h1 {
+  font-size: 42px; margin: 10px 0 14px;
+  font-weight: 700; letter-spacing: -0.02em;
+}
+.cat-hero p {
+  color: var(--text-dim); font-size: 16px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.cat-hero .stats {
+  display: flex; gap: 20px; margin-top: 22px;
+  font-size: 13px; color: var(--text-mut);
+}
+.cat-hero .stats .num { color: var(--text); font-weight: 600; }
+.cat-hero .search-row {
+  max-width: 520px; margin: 24px 0 0;
+}
+.cat-hero .search-row input { padding: 12px 18px; font-size: 14px; }
+
+.doc-cards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 14px;
+  max-width: 1180px; margin: 36px auto 96px;
+  padding: 0 32px;
+}
+.doc-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 22px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .18s;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.doc-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.doc-card.app:hover { border-color: var(--accent-2); }
+.doc-card .head {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+}
+.doc-card .title {
+  font-size: 16px; font-weight: 650; line-height: 1.3;
+  color: var(--text); flex: 1;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  letter-spacing: -0.01em;
+}
+.doc-card .badges { display: flex; gap: 4px; flex-shrink: 0; }
+.doc-card .badge {
+  font-size: 9px; padding: 2px 7px; border-radius: 3px;
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px;
+  background: var(--bg-3); color: var(--text-mut);
+}
+.doc-card .badge.dup { background: rgba(248,113,113,0.18); color: var(--bad); }
+.doc-card .badge.fmt-md { background: rgba(106,166,255,0.18); color: #6aa6ff; }
+.doc-card .badge.fmt-pdf { background: rgba(248,113,113,0.18); color: #f87171; }
+.doc-card .badge.fmt-docx { background: rgba(56,189,248,0.18); color: #38bdf8; }
+.doc-card .badge.fmt-html { background: rgba(251,191,36,0.18); color: #fbbf24; }
+.doc-card .one-liner {
+  font-size: 13.5px; color: var(--text-dim); line-height: 1.55;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  flex: 1;
+}
+.doc-card .meta {
+  display: flex; gap: 14px; font-size: 11px; color: var(--text-mut);
+  border-top: 1px solid var(--border); padding-top: 12px;
+  margin-top: auto;
+}
+.doc-card .meta .num { color: var(--text-dim); font-weight: 600; font-feature-settings: "tnum"; }
+
+/* ═══ Mobile ════════════════════════════════════════════════════════ */
+@media (max-width: 980px) {
+  .layout { grid-template-columns: 1fr; }
+  .toc-sidebar { display: none; }
+  .content { padding: 28px 24px 80px; }
+  .doc-hero h1 { font-size: 30px; }
+  .doc-hero .one-liner { font-size: 16px; }
+  .topbar { padding: 10px 18px; }
+  .index-hero h1 { font-size: 38px; }
+  .index-hero { padding: 56px 20px 36px; }
+  .hub-hero h1 { font-size: 34px; }
+  .hub-hero { padding: 40px 20px 24px; }
+  .cat-hero h1 { font-size: 32px; }
+  .cat-hero { padding: 36px 20px 24px; }
+  .doc-cards, .cat-grid { padding: 0 20px 60px; }
+  .split-view { padding: 0 20px 40px; }
+}
+</style>
+</head>
+<body data-doc-type="core-concept">
+<nav class="topbar">
+<div class="crumbs"><a href="../../00-Index.html">Learning</a><span class="sep">›</span><a href="../_Hub.html">CORE</a><span class="sep">›</span><a href="_Category.html">C# Language</a><span class="sep">›</span><span class="current">Stack and Heap in C# — Understanding Memory Management in .NET</span></div>
+<div class="actions"><a class="action" href="csharp-stack-and-heap.pdf" download>↓ Download</a><a class="action" href="../../00-Index.html">All docs</a></div>
+</nav>
+<div class="layout">
+<aside class="toc-sidebar"><h3>On this page</h3><ol><li class="lvl-2"><a href="#page-1">Page 1</a></li><li class="lvl-2"><a href="#page-2">Page 2</a></li><li class="lvl-2"><a href="#page-3">Page 3</a></li><li class="lvl-2"><a href="#page-4">Page 4</a></li><li class="lvl-2"><a href="#page-5">Page 5</a></li><li class="lvl-2"><a href="#page-6">Page 6</a></li><li class="lvl-2"><a href="#page-7">Page 7</a></li><li class="lvl-2"><a href="#page-8">Page 8</a></li><li class="lvl-2"><a href="#page-9">Page 9</a></li><li class="lvl-2"><a href="#page-10">Page 10</a></li><li class="lvl-2"><a href="#page-11">Page 11</a></li><li class="lvl-2"><a href="#page-12">Page 12</a></li><li class="lvl-2"><a href="#page-13">Page 13</a></li><li class="lvl-2"><a href="#page-14">Page 14</a></li><li class="lvl-2"><a href="#page-15">Page 15</a></li><li class="lvl-2"><a href="#page-16">Page 16</a></li><li class="lvl-2"><a href="#page-17">Page 17</a></li><li class="lvl-2"><a href="#page-18">Page 18</a></li><li class="lvl-2"><a href="#page-19">Page 19</a></li><li class="lvl-2"><a href="#page-20">Page 20</a></li><li class="lvl-2"><a href="#page-21">Page 21</a></li><li class="lvl-2"><a href="#page-22">Page 22</a></li><li class="lvl-2"><a href="#page-23">Page 23</a></li><li class="lvl-2"><a href="#page-24">Page 24</a></li><li class="lvl-2"><a href="#page-25">Page 25</a></li><li class="lvl-2"><a href="#page-26">Page 26</a></li><li class="lvl-2"><a href="#page-27">Page 27</a></li><li class="lvl-2"><a href="#page-28">Page 28</a></li><li class="lvl-2"><a href="#page-29">Page 29</a></li><li class="lvl-2"><a href="#page-30">Page 30</a></li><li class="lvl-2"><a href="#page-31">Page 31</a></li></ol></aside>
+<main class="content">
+
+<header class="doc-hero">
+  <div class="eyebrow"><span class="dot"></span>Concept · C# Language</div>
+  <h1>Stack and Heap in C# — Understanding Memory Management in .NET</h1>
+  <p class="one-liner">A comprehensive tour of .NET memory management covering stack vs heap, value vs reference types, boxing, garbage collection, leaks, and performance optimization techniques.</p>
+  <div class="meta-row">
+    <span class="meta-pill fmt-pdf">PDF</span>
+    <span class="meta-pill complexity-intermediate">Intermediate</span>
+    <span class="meta-pill"><span class="num">5,234</span> words</span>
+    <span class="meta-pill"><span class="num">26</span> min read</span>
+    <span class="meta-pill source">Source: <code>Education/Basics/CSharp_Stack_and_Heap_Guide.pdf</code></span>
+  </div>
+</header>
+
+<div class="curation"><p class="intro-hook">Your C# code has never had a memory leak... or has it? The garbage collector protects you from forgetting to call free(), but it can&#x27;t save you from an event handler that silently keeps a 100MB object alive for the rest of the app&#x27;s life. Understanding what lives where is the difference between &#x27;my app works&#x27; and &#x27;my app works at scale&#x27;.</p>
+<div class="exec-summary"><h3>Executive summary</h3><p>This guide walks from the history of manual memory management through the CLR&#x27;s managed model, explaining why value types usually live on the stack while reference types live on the managed heap and references themselves are 8 bytes regardless of object size. It then dives into GC generations, the mark-sweep-compact algorithm, boxing/unboxing costs, stack allocation with stackalloc, and subtle cases like strings, captured closures, and struct fields inside classes. The second half is practical: identifying memory leaks (events, static caches, captured variables, Blazor circuits), reducing allocations with ArrayPool and Span&lt;T&gt;, avoiding the Large Object Heap, and using IDisposable correctly. The key insight is that managed memory isn&#x27;t free — understanding where data lives lets you write code that cooperates with the GC instead of fighting it.</p></div>
+<div class="metaphor-callout"><div class="icon">💡</div><div class="body"><span class="label">Metaphor</span>Think of the stack as your kitchen counter and the heap as your garage. The counter is tiny but you can grab things instantly, and whenever you finish a recipe you wipe it clean without thinking. The garage is huge, but finding something takes a walk, and someone has to occasionally come through and sweep up the boxes nobody&#x27;s using anymore — that someone is the garbage collector.</div></div>
+<div class="context-row"><div class="context-card prereqs"><h4>You should know first</h4><ul><li>basic C# syntax</li><li>classes and structs</li><li>method calls and variables</li></ul></div><div class="context-card concepts"><h4>Key concepts covered</h4><ul><li>stack vs managed heap</li><li>value types vs reference types</li><li>generational garbage collection</li><li>boxing and unboxing</li><li>stackalloc and Span&lt;T&gt;</li><li>Large Object Heap (LOH)</li><li>IDisposable pattern</li></ul></div><div class="context-card builds"><h4>Opens the door to</h4><ul><li>performance profiling</li><li>high-performance .NET</li><li>unsafe code and pointers</li><li>async state machines</li></ul></div></div></div>
+<article>
+<div class="pdf-page" id="page-1"><div class="page-head">Page 1</div><div class="page-body"><pre>          Stack and Heap in C#
+
+              Understanding Memory Management in .NET
+
+From Fundamentals to Performance Optimization</pre></div></div>
+<div class="pdf-page" id="page-2"><div class="page-head">Page 2</div><div class="page-body"><pre>Part I: Foundations of Memory</pre></div></div>
+<div class="pdf-page" id="page-3"><div class="page-head">Page 3</div><div class="page-body"><pre>Chapter 1: A Brief History of Memory Management
+
+1.1 The Early Days: Manual Memory Management
+
+In the beginning, programmers had complete control over memory—and complete responsibility for it.
+Languages like C and C++ required developers to explicitly allocate memory when needed and free it
+when done. This was done through functions like malloc() and free() in C, or the new and delete
+operators in C++.
+
+// C-style memory management                     // Allocate
+int* numbers = (int*)malloc(100 * sizeof(int));
+// ... use the memory ...
+free(numbers); // Must remember to free!
+
+             // C++ style
+             Employee* emp = new Employee(); // Allocate
+             // ... use the object ...
+             delete emp; // Must remember to delete!
+
+This approach was powerful but dangerous. Forget to free memory? You have a memory leak—your
+application slowly consumes more and more RAM until it crashes or the system grinds to a halt. Free
+memory twice? You have a double-free bug—undefined behavior that could corrupt data or crash your
+program. Use memory after freeing it? A use-after-free vulnerability—a security nightmare that attackers
+love to exploit.
+
+1.2 The Revolution: Garbage Collection
+
+The idea of automatic memory management—garbage collection—emerged in the 1950s with John
+McCarthy&#x27;s Lisp language. Instead of requiring programmers to track every allocation and deallocation, the
+runtime would automatically identify and reclaim memory that was no longer in use.
+
+For decades, garbage collection was considered too slow for &quot;serious&quot; applications. Real programmers
+managed their own memory, or so the thinking went. But as software grew more complex and developer
+time became more expensive than CPU cycles, the calculus changed.
+
+In 2002, Microsoft released the .NET Framework with the Common Language Runtime (CLR)—a
+managed execution environment with sophisticated garbage collection. C# was designed from the ground
+up to work with this managed memory model. Developers could focus on solving business problems
+instead of hunting memory bugs.
+
+1.3 The Trade-Off
+
+Managed memory isn&#x27;t free. The garbage collector needs CPU time to run. Memory might not be
+reclaimed instantly. But for most applications, this trade-off is overwhelmingly positive: fewer bugs, faster
+development, and more reliable software.
+
+However, understanding how memory management works remains crucial. Misusing memory in .NET
+won&#x27;t cause crashes like in C++, but it can cause performance problems, memory bloat, and subtle bugs.
+The developers who understand the stack and heap write better, faster code.</pre></div></div>
+<div class="pdf-page" id="page-4"><div class="page-head">Page 4</div><div class="page-body"><pre>Chapter 2: The Two Memory Regions
+
+2.1 What Is Memory, Really?
+
+When your .NET application runs, the operating system allocates a chunk of memory for it. This memory is
+a contiguous block of bytes that the application can use to store data. But not all parts of this memory are
+used the same way.
+
+The CLR divides application memory into several regions, but two are particularly important for
+understanding how your code behaves: the Stack and the Heap (specifically, the managed heap).
+
+2.2 The Stack: Fast, Ordered, Automatic
+
+The stack is a region of memory that operates on a simple principle: Last In, First Out (LIFO). Think of it
+like a stack of plates—you can only add or remove plates from the top.
+
+Characteristic    Stack
+Structure         Linear, contiguous
+Access pattern    LIFO (Last In, First Out)
+Allocation speed  Extremely fast (just move a pointer)
+Deallocation      Automatic when scope exits
+Size              Limited (typically 1MB per thread)
+What it stores    Value types, references, method call info
+Thread safety     Each thread has its own stack
+
+When you call a method, a stack frame is pushed onto the stack. This frame contains the method&#x27;s
+parameters, local variables (if they&#x27;re value types or references), and the return address (where to
+continue execution after the method completes). When the method returns, its stack frame is popped
+off—instantly freeing all that memory.
+
+2.3 The Heap: Flexible, Dynamic, Managed
+
+The heap (specifically, the managed heap in .NET) is a larger, more flexible region of memory. Unlike the
+stack&#x27;s strict ordering, objects on the heap can be allocated and deallocated in any order.
+
+Characteristic    Managed Heap
+Structure         Non-contiguous, dynamic
+Access pattern    Random access via references
+Allocation speed  Slower (requires finding space, tracking)
+Deallocation      Garbage collector (non-deterministic)
+Size              Limited only by available system memory</pre></div></div>
+<div class="pdf-page" id="page-5"><div class="page-head">Page 5</div><div class="page-body"><pre>What it stores  Reference type instances (objects)
+Thread safety   Shared across all threads
+
+When you create an object with new, the CLR allocates space on the managed heap. The object lives
+there until the garbage collector determines it&#x27;s no longer reachable—meaning no part of your code can
+access it anymore. Then, at some point, the GC reclaims that memory.
+
+2.4 The Mental Model
+
+Here&#x27;s a simple way to think about it:
+
+      • Stack = Your desk. Small, fast to access, automatically cleared when you leave for the day.
+      • Heap = A warehouse. Huge, takes longer to find things, requires someone to clean up periodically.</pre></div></div>
+<div class="pdf-page" id="page-6"><div class="page-head">Page 6</div><div class="page-body"><pre>Chapter 3: Value Types vs Reference Types
+
+3.1 The Fundamental Distinction
+
+Every type in C# falls into one of two categories: value types or reference types. This distinction
+determines where and how data is stored in memory.
+
+Value Types
+
+Value types directly contain their data. When you declare a value type variable, the memory for the actual
+data is allocated right there—typically on the stack (with some exceptions we&#x27;ll discuss).
+
+Value types include:
+
+• Numeric types: int, long, float, double, decimal
+• bool, char
+• struct (including DateTime, Guid, TimeSpan)
+• enum
+• Tuples (ValueTuple)
+
+        int x = 42;       // 42 is stored directly in x&#x27;s memory location
+
+        int y = x;        // y gets its own copy of 42
+
+        y = 100;          // Changing y doesn&#x27;t affect x
+
+        Console.WriteLine(x); // Still 42
+
+Reference Types
+
+Reference types store a reference (essentially a memory address) that points to the actual data on the
+heap. The variable itself holds only this reference, not the data.
+
+Reference types include:
+
+• class
+• interface
+• delegate
+• string (special case, immutable)
+• Arrays (even arrays of value types)
+• object
+
+        Employee emp1 = new Employee { Name = &quot;Alice&quot; };
+
+        Employee emp2 = emp1; // emp2 gets a copy of the REFERENCE, not the object
+
+        emp2.Name = &quot;Bob&quot;;  // Changes the object both variables point to
+
+        Console.WriteLine(emp1.Name); // &quot;Bob&quot; - emp1 sees the change!
+
+3.2 Memory Layout Visualized
+
+Let&#x27;s visualize what happens in memory with this code:
+
+        void ProcessData()                              // Value type
+        {                                               // Value type
+
+               int count = 5;                            // Reference type
+               double price = 19.99;                    // Reference type (array)
+               Employee employee = new Employee();
+               int[] numbers = new int[3];
+        }
+
+Stack:</pre></div></div>
+<div class="pdf-page" id="page-7"><div class="page-head">Page 7</div><div class="page-body"><pre>       sssssssssssssssssssssssssssssss
+
+       s count: 5                 s ← int (4 bytes)
+
+       sssssssssssssssssssssssssssssss
+
+       s price: 19.99             s ← double (8 bytes)
+
+       sssssssssssssssssssssssssssssss
+
+       s employee: 0x7FFA2B10     s ← Reference (points to heap)
+
+       sssssssssssssssssssssssssssssss
+
+       s numbers: 0x7FFA3C20      s ← Reference (points to heap)
+
+       sssssssssssssssssssssssssssssss
+
+Heap:
+
+       Address 0x7FFA2B10:
+
+       sssssssssssssssssssssssssssssss
+
+       s Employee object          s
+
+       s - Name: null             s
+
+       s - Id: 0                  s
+
+       s - ... other fields       s
+
+       sssssssssssssssssssssssssssssss
+
+       Address 0x7FFA3C20:
+
+       sssssssssssssssssssssssssssssss
+
+       s int[] array (length: 3)  s
+
+       s - [0]: 0                 s
+
+       s - [1]: 0                 s
+
+       s - [2]: 0                 s
+
+       sssssssssssssssssssssssssssssss
+
+3.3 The Size Question
+
+A reference in 64-bit .NET is always 8 bytes, regardless of how large the object it points to is. This is
+important for understanding memory layout:
+
+             // On the stack: just an 8-byte reference
+             string hugeText = new string(&#x27;x&#x27;, 1_000_000);
+
+             // The actual 1MB+ of character data is on the heap
+             // Only the 8-byte reference is on the stack</pre></div></div>
+<div class="pdf-page" id="page-8"><div class="page-head">Page 8</div><div class="page-body"><pre>Part II: Deep Dive into Memory Mechanics</pre></div></div>
+<div class="pdf-page" id="page-9"><div class="page-head">Page 9</div><div class="page-body"><pre>Chapter 4: Stack Mechanics
+
+4.1 The Stack Pointer
+
+The stack&#x27;s efficiency comes from its simplicity. The CPU maintains a stack pointer—a register that
+always points to the top of the stack. Allocation is just decrementing this pointer; deallocation is just
+incrementing it.
+
+// Conceptual view of stack operations
+
+void Method()      // Stack pointer moves down, space for &#x27;a&#x27;
+{                  // Stack pointer moves down again, space for &#x27;b&#x27;
+
+       int a = 1;
+       int b = 2;
+
+       // When Method returns:
+       // Stack pointer moves back up, reclaiming all space instantly
+}
+
+4.2 Stack Frames in Detail
+
+Each method call creates a stack frame containing:
+
+      • Return address: Where to continue after the method returns
+      • Parameters: Copies of value types or copies of references
+      • Local variables: Value types and references declared in the method
+      • Saved registers: CPU state that needs to be restored
+
+int Calculate(int x, int y)
+{
+
+       int sum = x + y;
+       int product = x * y;
+       return sum + product;
+}
+
+// Stack frame for Calculate:
+
+// ssssssssssssssssssssssssss
+
+// s Return address           s
+
+// s x (parameter): copy s
+
+// s y (parameter): copy s
+
+// s sum (local): value       s
+
+// s product (local): value s
+
+// ssssssssssssssssssssssssss
+
+4.3 Stack Overflow
+
+The stack has a fixed size (typically 1MB on Windows for .NET applications). If you exceed this—usually
+through deep or infinite recursion—you get a StackOverflowException.
+
+             void InfiniteRecursion()
+             {
+
+                    InfiniteRecursion(); // Each call adds a stack frame
+                    // Eventually: StackOverflowException!
+             }
+
+// Also dangerous: very deep recursion              // Exponential stack usage
+int Fibonacci(int n)
+{
+
+       if (n &lt;= 1) return n;
+       return Fibonacci(n - 1) + Fibonacci(n - 2);</pre></div></div>
+<div class="pdf-page" id="page-10"><div class="page-head">Page 10</div><div class="page-body"><pre>             }
+
+    Important: Unlike most exceptions, StackOverflowException cannot be caught. The stack is
+    corrupted; there&#x27;s no safe way to continue. Your application will terminate.
+
+4.4 Stack Allocation with stackalloc
+
+C# provides stackalloc to allocate arrays on the stack instead of the heap. This can improve performance
+for small, short-lived arrays by avoiding heap allocation and garbage collection.
+
+             // Traditional heap allocation
+             byte[] buffer = new byte[256]; // Goes on heap, GC must clean up
+
+             // Stack allocation (C# 7.2+)
+             Span&lt;byte&gt; buffer = stackalloc byte[256]; // Goes on stack, auto-cleaned
+
+             // Use case: high-performance parsing
+             public int ParseInt(ReadOnlySpan&lt;char&gt; input)
+             {
+
+                    Span&lt;char&gt; normalized = stackalloc char[input.Length];
+                    // Process without any heap allocation
+             }
+
+    Tip: Use stackalloc for small, fixed-size buffers in performance-critical code. But be careful—too
+    large an allocation can cause stack overflow. Generally keep stackalloc allocations under a few KB.</pre></div></div>
+<div class="pdf-page" id="page-11"><div class="page-head">Page 11</div><div class="page-body"><pre>Chapter 5: Heap Mechanics and the Garbage Collector
+
+5.1 The Managed Heap Structure
+
+The .NET managed heap is divided into segments, primarily organized by object lifetime:
+
+• Generation 0 (Gen0): Newly allocated objects. Small, frequently collected.
+• Generation 1 (Gen1): Objects that survived one GC. Buffer between Gen0 and Gen2.
+• Generation 2 (Gen2): Long-lived objects. Largest generation, least frequently collected.
+• Large Object Heap (LOH): Objects ≥ 85,000 bytes. Collected with Gen2.
+
+Managed Heap Layout:
+
+ssssssssssssssssssssssssssssssssssssssssssssssssssss
+
+s                     Generation 0                s
+
+s (New objects - most die here)                   s
+
+ssssssssssssssssssssssssssssssssssssssssssssssssssss
+
+s                     Generation 1                s
+
+s (Survived one collection)                       s
+
+ssssssssssssssssssssssssssssssssssssssssssssssssssss
+
+s                     Generation 2                s
+
+s (Long-lived objects)                            s
+
+ssssssssssssssssssssssssssssssssssssssssssssssssssss
+
+s  Large Object Heap                              s
+
+s (Objects ≥ 85KB)                                s
+
+ssssssssssssssssssssssssssssssssssssssssssssssssssss
+
+5.2 The Generational Hypothesis
+
+The GC&#x27;s design is based on empirical observation: most objects die young. In typical applications,
+80-90% of objects become unreachable almost immediately after creation.
+
+// Example: Most objects here are extremely short-lived
+
+foreach (var line in File.ReadLines(&quot;data.txt&quot;))
+
+{
+
+   var parts = line.Split(&#x27;,&#x27;);     // New string array - dies immediately
+
+   var trimmed = parts[0].Trim(); // New string - dies immediately
+
+   var upper = trimmed.ToUpper(); // New string - dies immediately
+
+   ProcessValue(upper);
+
+   // All those intermediate objects are garbage before next iteration
+
+}
+
+By focusing most collection effort on Gen0 (where most garbage is), the GC achieves efficiency. Gen0
+collections are very fast—often sub-millisecond. Gen2 collections are slower but happen less often.
+
+5.3 How Garbage Collection Works
+
+The GC uses a mark-and-sweep algorithm with compaction:
+
+Phase 1: Mark
+
+Starting from &quot;roots&quot; (local variables, static fields, CPU registers), the GC traces all references, marking
+each reachable object as &quot;alive.&quot; Any object not marked is considered garbage.
+
+Phase 2: Sweep
+
+The GC reclaims memory from unmarked (dead) objects.
+
+Phase 3: Compact</pre></div></div>
+<div class="pdf-page" id="page-12"><div class="page-head">Page 12</div><div class="page-body"><pre>Surviving objects are moved together, eliminating fragmentation. References are updated to point to new
+locations.
+
+Before Compaction:     After Compaction:
+
+sssssssssssssssssssss            sssssssssssssssssssss
+
+sAs sBs sCs →                    sAsBsCs                  s
+sssssssssssssssssssss
+                                 sssssssssssssssssssss
+
+↑             ↑                  ↑
+
+Dead Dead                        Free space (contiguous)
+
+5.4 GC Modes
+
+Mode                Description                              Best For
+Workstation
+Server              Single GC thread, optimized for responsiveness Desktop apps, UI apps
+Concurrent
+Background          One GC thread per CPU, optimized for throughput Web servers, services
+
+                    GC runs alongside app threads (Gen2)     Low-latency requirements
+
+                    Enhanced concurrent, less blocking       Default in modern .NET</pre></div></div>
+<div class="pdf-page" id="page-13"><div class="page-head">Page 13</div><div class="page-body"><pre>Chapter 6: Boxing and Unboxing
+
+6.1 What Is Boxing?
+
+Boxing is the process of converting a value type to a reference type. The CLR allocates an object on the
+heap, copies the value into it, and returns a reference to that object.
+
+int number = 42;        // Value type, on stack
+object boxed = number;  // Boxing! New object on heap containing 42
+
+// What actually happens:
+// 1. CLR allocates space on heap for an object
+// 2. Copies the value 42 into the heap object
+// 3. Returns reference to that object
+// 4. &#x27;boxed&#x27; variable holds this reference
+
+6.2 What Is Unboxing?
+
+Unboxing is the reverse: extracting the value type from a boxed object. This requires an explicit cast and
+type checking.
+
+             object boxed = 42;
+             int number = (int)boxed; // Unboxing: extract the int
+
+             // What actually happens:
+             // 1. CLR checks that &#x27;boxed&#x27; actually contains an int
+             // 2. Copies the value from heap to stack
+             // 3. If type doesn&#x27;t match: InvalidCastException
+
+6.3 The Performance Cost
+
+Boxing and unboxing are expensive operations:
+
+      • Memory allocation: Every box creates a new heap object
+      • Memory copy: Data must be copied to/from the heap
+      • GC pressure: Boxed objects eventually need garbage collection
+
+             // Hidden boxing - ArrayList stores objects
+             ArrayList list = new ArrayList();
+             for (int i = 0; i &lt; 1000000; i++)
+             {
+
+                    list.Add(i); // Boxing on every iteration!
+             }
+             // Result: 1 million heap allocations, massive GC pressure
+
+             // No boxing - List&lt;T&gt; stores int directly
+             List&lt;int&gt; genericList = new List&lt;int&gt;();
+             for (int i = 0; i &lt; 1000000; i++)
+             {
+
+                    genericList.Add(i); // No boxing!
+             }
+             // Result: One array allocation, values stored directly
+
+6.4 Common Boxing Traps
+
+String Interpolation and Formatting
+
+             int count = 42;
+             string message = $&quot;Count: {count}&quot;; // Boxing in older C# versions!</pre></div></div>
+<div class="pdf-page" id="page-14"><div class="page-head">Page 14</div><div class="page-body"><pre>             // Avoid boxing with explicit ToString():
+             string message = $&quot;Count: {count.ToString()}&quot;; // No boxing
+
+             // Modern .NET 6+ often optimizes this automatically
+
+Interface Calls on Structs
+
+             public struct Point : IFormattable
+             {
+
+                    public int X, Y;
+                    public string ToString(string format, IFormatProvider provider) =&gt; $&quot;{X},{Y}&quot;;
+             }
+
+             Point p = new Point { X = 1, Y = 2 };
+             IFormattable f = p; // Boxing! Point is copied to heap
+             string s = f.ToString(&quot;&quot;, null);
+
+             // Avoid: Call method directly on struct
+             string s = p.ToString(&quot;&quot;, null); // No boxing
+
+LINQ with Value Types
+
+             int[] numbers = { 1, 2, 3, 4, 5 };
+
+             // Some LINQ operations may cause boxing
+             var result = numbers.Cast&lt;object&gt;().ToList(); // Boxing every int!
+
+             // Generic LINQ avoids boxing
+             var result = numbers.Select(n =&gt; n * 2).ToList(); // No boxing</pre></div></div>
+<div class="pdf-page" id="page-15"><div class="page-head">Page 15</div><div class="page-body"><pre>Chapter 7: Special Cases and Nuances
+
+7.1 Strings: Reference Type, Value Semantics
+
+Strings are reference types stored on the heap, but they behave like value types because they&#x27;re
+immutable. Once created, a string cannot be changed. &quot;Modifying&quot; a string always creates a new one.
+
+string s1 = &quot;Hello&quot;;    // Both reference same string object
+string s2 = s1;         // Creates NEW string; s1 unchanged
+s2 = s2 + &quot; World&quot;;
+
+Console.WriteLine(s1);  // &quot;Hello&quot;
+Console.WriteLine(s2);  // &quot;Hello World&quot;
+
+// Each concatenation creates a new string
+string result = &quot;&quot;;
+for (int i = 0; i &lt; 1000; i++)
+{
+
+       result += i.ToString(); // 1000 string allocations!
+}
+
+// Use StringBuilder instead
+var sb = new StringBuilder();
+for (int i = 0; i &lt; 1000; i++)
+{
+
+       sb.Append(i); // Mutates internal buffer
+}
+string result = sb.ToString(); // Single string allocation
+
+7.2 String Interning
+
+The CLR maintains a string intern pool—a table of unique string values. Literal strings are automatically
+interned, meaning identical literals share the same memory.
+
+             string a = &quot;Hello&quot;;
+             string b = &quot;Hello&quot;;
+             Console.WriteLine(ReferenceEquals(a, b)); // True! Same object
+
+             string c = &quot;Hel&quot; + &quot;lo&quot;; // Compiler concatenates at compile time
+             Console.WriteLine(ReferenceEquals(a, c)); // True! Same object
+
+             string d = &quot;Hel&quot;;
+             string e = d + &quot;lo&quot;; // Runtime concatenation
+             Console.WriteLine(ReferenceEquals(a, e)); // False! Different object
+
+             // Manual interning
+             string f = string.Intern(e);
+             Console.WriteLine(ReferenceEquals(a, f)); // True! Now interned
+
+7.3 Value Types on the Heap
+
+Value types don&#x27;t always live on the stack. They&#x27;re stored on the heap when:
+
+      • They&#x27;re fields of a reference type (class)
+      • They&#x27;re elements of an array
+      • They&#x27;re boxed
+      • They&#x27;re captured by a closure (lambda/delegate)
+
+             public class Employee
+             {</pre></div></div>
+<div class="pdf-page" id="page-16"><div class="page-head">Page 16</div><div class="page-body"><pre>   public int Id;         // int is on heap (part of Employee object)
+
+   public DateTime Hired; // DateTime is on heap (part of Employee object)
+
+}
+
+int[] numbers = new int[100]; // The ints are on the heap (inside array)
+
+// Closure capture
+int counter = 0;
+Action increment = () =&gt; counter++; // &#x27;counter&#x27; moved to heap!
+
+7.4 Structs: Choosing Wisely
+
+Use struct instead of class when:
+
+      • The type represents a single value (like int or DateTime)
+      • Instance size is small (Microsoft suggests ≤16 bytes)
+      • It&#x27;s immutable or has no reason to be mutable
+      • It won&#x27;t be boxed frequently
+
+             // Good struct: small, represents a value
+             public readonly struct Point
+             {
+
+                    public readonly int X;
+                    public readonly int Y;
+
+       public Point(int x, int y) =&gt; (X, Y) = (x, y);
+}
+
+// Bad struct: too large, mutable
+
+public struct BadExample
+
+{
+
+   public string Name;    // 8 bytes (reference)
+
+   public string Address; // 8 bytes (reference)
+
+   public DateTime Created; // 8 bytes
+
+   public decimal Amount; // 16 bytes
+
+   // Total: 40+ bytes - too big, copying is expensive
+
+}</pre></div></div>
+<div class="pdf-page" id="page-17"><div class="page-head">Page 17</div><div class="page-body"><pre>Part III: Practical Application</pre></div></div>
+<div class="pdf-page" id="page-18"><div class="page-head">Page 18</div><div class="page-body"><pre>Chapter 8: Memory Leaks in .NET
+
+8.1 Wait, .NET Has Memory Leaks?
+
+The garbage collector prevents traditional memory leaks (forgetting to free memory), but .NET applications
+can still have logical memory leaks—situations where objects are kept alive longer than necessary
+because something still references them.
+
+8.2 Common Leak Patterns
+
+Event Handler Leaks
+
+             public class Publisher
+             {
+
+                    public event EventHandler DataChanged;
+             }
+
+public class Subscriber                                     // Subscriber now referenced by Publisher
+{
+
+       public Subscriber(Publisher pub)
+       {
+
+              pub.DataChanged += OnDataChanged;
+       }
+
+private void OnDataChanged(object sender, EventArgs e) { }
+
+       // If Publisher lives longer than Subscriber, and we forget to unsubscribe:
+       // Subscriber cannot be garbage collected!
+}
+
+// Fix: Implement IDisposable and unsubscribe
+public class Subscriber : IDisposable
+{
+
+       private Publisher _publisher;
+
+public Subscriber(Publisher pub)
+{
+
+       _publisher = pub;
+       _publisher.DataChanged += OnDataChanged;
+}
+
+       public void Dispose()
+       {
+
+              _publisher.DataChanged -= OnDataChanged; // Allow GC
+       }
+}
+
+Static Collections
+
+             public static class Cache
+             {
+
+                    private static Dictionary&lt;string, object&gt; _cache = new();
+
+public static void Add(string key, object value)
+{
+
+       _cache[key] = value; // Object now rooted forever!
+}
+
+       // If you never remove items, they live for application lifetime
+}
+
+// Fix: Use weak references or implement expiration</pre></div></div>
+<div class="pdf-page" id="page-19"><div class="page-head">Page 19</div><div class="page-body"><pre>             public static class BetterCache
+             {
+
+                    private static ConditionalWeakTable&lt;string, object&gt; _cache = new();
+                    // Objects can be GC&#x27;d when no other references exist
+             }
+
+Captured Variables in Long-Lived Delegates
+
+             public class Service
+             {
+
+                    private Timer _timer;
+
+                    public void Start()
+                    {
+
+                            var largeData = LoadLargeData(); // 100MB of data
+
+                            _timer = new Timer(_ =&gt;
+                            {
+
+                                   // Lambda captures &#x27;largeData&#x27; - it can never be GC&#x27;d!
+                                   Console.WriteLine(largeData.Length);
+                            }, null, 0, 1000);
+                    }
+             }
+
+             // Fix: Only capture what you need
+             public void Start()
+             {
+
+                    var largeData = LoadLargeData();
+                    var length = largeData.Length; // Capture only the length
+
+                    _timer = new Timer(_ =&gt;
+                    {
+
+                            Console.WriteLine(length); // largeData can now be GC&#x27;d
+                    }, null, 0, 1000);
+             }
+
+8.3 Blazor-Specific Considerations
+
+In Blazor Server applications, each circuit (user connection) maintains state on the server. This creates
+unique memory management challenges:
+
+             // Problem: Services scoped to circuit can accumulate data
+             public class UserSessionService : IDisposable
+             {
+
+                    private List&lt;ActivityLog&gt; _activityLog = new();
+
+                    public void LogActivity(string action)
+                    {
+
+                            _activityLog.Add(new ActivityLog(action, DateTime.Now));
+                            // List grows unbounded during session!
+                    }
+
+                    public void Dispose()
+                    {
+
+                            _activityLog.Clear(); // Clean up on circuit disposal
+                    }
+             }
+
+             // Problem: Components that don&#x27;t unsubscribe from services
+             @implements IDisposable
+
+             @code {
+                    [Inject] private INotificationService Notifications { get; set; }</pre></div></div>
+<div class="pdf-page" id="page-20"><div class="page-head">Page 20</div><div class="page-body"><pre>       protected override void OnInitialized()
+       {
+
+              Notifications.OnNotification += HandleNotification;
+       }
+
+       public void Dispose()
+       {
+
+              Notifications.OnNotification -= HandleNotification; // Essential!
+       }
+}</pre></div></div>
+<div class="pdf-page" id="page-21"><div class="page-head">Page 21</div><div class="page-body"><pre>Chapter 9: Performance Optimization Strategies
+
+9.1 Reduce Allocations
+
+The fastest allocation is the one you don&#x27;t make. Every allocation is work for the GC later.
+
+Object Pooling
+
+             // Without pooling: new object every request
+             public async Task HandleRequest()
+             {
+
+                    var buffer = new byte[4096]; // Allocation
+                    await ProcessAsync(buffer);
+                    // buffer becomes garbage
+             }
+
+             // With pooling: reuse objects
+             private static readonly ArrayPool&lt;byte&gt; Pool = ArrayPool&lt;byte&gt;.Shared;
+
+             public async Task HandleRequest()
+             {
+
+                    byte[] buffer = Pool.Rent(4096); // Get from pool
+                    try
+                    {
+
+                            await ProcessAsync(buffer);
+                    }
+                    finally
+                    {
+
+                            Pool.Return(buffer); // Return to pool for reuse
+                    }
+             }
+
+Span&lt;T&gt; and Memory&lt;T&gt;
+
+             // Substring creates new string (allocation)
+             string input = &quot;Hello, World!&quot;;
+             string hello = input.Substring(0, 5); // New string allocated
+
+             // Span creates a view (no allocation)
+             ReadOnlySpan&lt;char&gt; helloSpan = input.AsSpan(0, 5); // Just a pointer + length
+
+             // Parsing without allocations
+             public static int ParseFirstInt(ReadOnlySpan&lt;char&gt; input)
+             {
+
+                    int commaIndex = input.IndexOf(&#x27;,&#x27;);
+                    var firstPart = input.Slice(0, commaIndex); // No allocation
+                    return int.Parse(firstPart); // Span overload, no allocation
+             }
+
+9.2 Right-Size Your Data Structures
+
+             // List resizing causes allocations and copies
+             var list = new List&lt;int&gt;();
+             for (int i = 0; i &lt; 10000; i++)
+             {
+
+                    list.Add(i); // Multiple internal array resizes
+             }
+
+             // Pre-size when you know the count
+             var list = new List&lt;int&gt;(10000); // One allocation
+             for (int i = 0; i &lt; 10000; i++)
+             {</pre></div></div>
+<div class="pdf-page" id="page-22"><div class="page-head">Page 22</div><div class="page-body"><pre>                    list.Add(i); // No resizing needed
+             }
+
+             // Use appropriate collection types
+             Dictionary&lt;string, int&gt; dict = new(expectedCount); // Pre-size
+             HashSet&lt;int&gt; set = new(collection); // Initialize from existing
+
+9.3 Avoid Large Object Heap When Possible
+
+Objects ≥85,000 bytes go to the LOH, which is collected less frequently and not compacted by default.
+This can lead to fragmentation.
+
+             // This array goes to LOH (85,000+ bytes)
+             var largeArray = new byte[100_000];
+
+             // Alternative: Use ArrayPool for temporary large arrays
+             var pooledArray = ArrayPool&lt;byte&gt;.Shared.Rent(100_000);
+             try
+             {
+
+                    // Use the array
+             }
+             finally
+             {
+
+                    ArrayPool&lt;byte&gt;.Shared.Return(pooledArray);
+             }
+
+             // Alternative: Stream processing instead of loading all at once
+             await foreach (var chunk in ReadChunksAsync(file))
+             {
+
+                    await ProcessChunkAsync(chunk); // Never hold entire file
+             }
+
+9.4 Struct Optimization
+
+             // Pass large structs by reference to avoid copying
+             public readonly struct LargeStruct
+             {
+
+                    public readonly long A, B, C, D; // 32 bytes
+             }
+
+             // Copying: 32 bytes copied on each call
+             void ProcessCopy(LargeStruct data) { }
+
+             // Reference: Only 8 bytes (pointer) passed
+             void ProcessRef(in LargeStruct data) { } // &#x27;in&#x27; = readonly reference
+
+             // Return large structs by reference
+             private LargeStruct _cached;
+             public ref readonly LargeStruct GetCached() =&gt; ref _cached;</pre></div></div>
+<div class="pdf-page" id="page-23"><div class="page-head">Page 23</div><div class="page-body"><pre>Chapter 10: Debugging Memory Issues
+
+10.1 Key Diagnostic Tools
+
+Tool                            Purpose
+Visual Studio Diagnostic Tools  Real-time memory usage and snapshots
+dotMemory (JetBrains)           Detailed memory profiling and leak detection
+PerfView                        Free Microsoft tool for GC and allocation analysis
+dotnet-counters                 CLI tool for real-time metrics
+dotnet-dump                     Capture and analyze memory dumps
+dotnet-gcdump                   Capture GC heap snapshots
+
+10.2 Reading GC Metrics
+
+             // Monitor GC in code
+             public static void LogGCStats()
+             {
+
+                    for (int gen = 0; gen &lt;= 2; gen++)
+                    {
+
+                            Console.WriteLine($&quot;Gen{gen} collections: {GC.CollectionCount(gen)}&quot;);
+                    }
+
+                    var info = GC.GetGCMemoryInfo();
+                    Console.WriteLine($&quot;Heap size: {info.HeapSizeBytes / 1024 / 1024} MB&quot;);
+                    Console.WriteLine($&quot;Fragmentation: {info.FragmentedBytes / 1024} KB&quot;);
+             }
+
+             // CLI monitoring
+             // dotnet-counters monitor -p &lt;pid&gt; --counters System.Runtime
+
+10.3 Investigating Memory Growth
+
+When investigating memory issues, follow this process:
+
+      1. Establish baseline: What&#x27;s normal memory usage?
+      2. Reproduce the issue: What actions cause growth?
+      3. Take snapshots: Before and after the action
+      4. Compare: What objects are accumulating?
+      5. Trace roots: Why can&#x27;t they be collected?
+
+             // Force GC before taking measurements (diagnostic only!)
+             GC.Collect();
+             GC.WaitForPendingFinalizers();
+             GC.Collect();
+
+             long before = GC.GetTotalMemory(true);
+
+             // ... perform operation ...
+
+             long after = GC.GetTotalMemory(true);
+             Console.WriteLine($&quot;Memory delta: {(after - before) / 1024} KB&quot;);</pre></div></div>
+<div class="pdf-page" id="page-24"><div class="page-head">Page 24</div><div class="page-body"><pre>Part IV: Advanced Topics</pre></div></div>
+<div class="pdf-page" id="page-25"><div class="page-head">Page 25</div><div class="page-body"><pre>Chapter 11: IDisposable and Finalizers
+
+11.1 Unmanaged Resources
+
+The GC manages memory, but some resources—file handles, database connections, network
+sockets—exist outside the managed heap. These unmanaged resources must be explicitly released.
+
+             // Without proper disposal
+             void ProcessFile()
+             {
+
+                    var reader = new StreamReader(&quot;data.txt&quot;);
+                    string content = reader.ReadToEnd();
+                    // File handle is STILL OPEN!
+                    // Other processes can&#x27;t access the file
+             }
+
+             // With proper disposal
+             void ProcessFile()
+             {
+
+                    using var reader = new StreamReader(&quot;data.txt&quot;);
+                    string content = reader.ReadToEnd();
+             } // Automatically calls Dispose(), releases file handle
+
+11.2 The Dispose Pattern
+
+public class ResourceHolder : IDisposable
+{
+
+       private IntPtr _unmanagedHandle;
+       private Stream _managedStream;
+       private bool _disposed = false;
+
+public void Dispose()              // No need for finalizer
+{
+
+       Dispose(true);
+       GC.SuppressFinalize(this);
+}
+
+protected virtual void Dispose(bool disposing)
+{
+
+       if (_disposed) return;
+
+if (disposing)
+{
+
+       // Free managed resources
+       _managedStream?.Dispose();
+}
+
+// Free unmanaged resources
+if (_unmanagedHandle != IntPtr.Zero)
+{
+
+       CloseHandle(_unmanagedHandle);
+       _unmanagedHandle = IntPtr.Zero;
+}
+
+       _disposed = true;
+}
+
+       ~ResourceHolder() // Finalizer - safety net
+       {
+
+              Dispose(false);
+       }
+}</pre></div></div>
+<div class="pdf-page" id="page-26"><div class="page-head">Page 26</div><div class="page-body"><pre>11.3 Finalizers: The Safety Net
+
+Finalizers (~ClassName) are called by the GC before an object is collected. They&#x27;re a safety net for when
+Dispose() wasn&#x27;t called, but they have significant costs:
+
+      • Objects with finalizers survive an extra GC generation
+      • Finalizer thread is single-threaded (bottleneck)
+      • Order of finalization is undefined
+      • Exceptions in finalizers can crash the application
+
+    Best Practice: Always call Dispose() explicitly (preferably via &#x27;using&#x27;). Only implement finalizers if
+    your class directly holds unmanaged resources. Most classes just hold other IDisposable objects
+    and don&#x27;t need finalizers.</pre></div></div>
+<div class="pdf-page" id="page-27"><div class="page-head">Page 27</div><div class="page-body"><pre>Chapter 12: Span, Memory, and Modern Memory APIs
+
+12.1 The Span&lt;T&gt; Revolution
+
+Span&lt;T&gt; is a stack-only type that provides a type-safe, memory-safe view into any contiguous memory
+region. It&#x27;s the foundation of modern high-performance .NET code.
+
+             // Span over an array
+             int[] array = { 1, 2, 3, 4, 5 };
+             Span&lt;int&gt; span = array;
+
+             // Span over stack memory
+             Span&lt;int&gt; stackSpan = stackalloc int[10];
+
+             // Span over part of an array (slicing)
+             Span&lt;int&gt; middle = array.AsSpan(1, 3); // { 2, 3, 4 }
+
+             // All operations are bounds-checked and safe
+             span[0] = 100; // Modifies original array
+             // span[10] = 0; // Throws IndexOutOfRangeException
+
+12.2 ReadOnlySpan&lt;T&gt;
+
+ReadOnlySpan&lt;T&gt; is the immutable version, commonly used for strings:
+
+// Zero-allocation string operations          // No new string!
+string text = &quot;Hello, World!&quot;;                // No new string!
+ReadOnlySpan&lt;char&gt; span = text.AsSpan();
+ReadOnlySpan&lt;char&gt; hello = span.Slice(0, 5);
+ReadOnlySpan&lt;char&gt; world = span.Slice(7, 5);
+
+// Efficient parsing
+public static bool TryParseCoordinate(ReadOnlySpan&lt;char&gt; input,
+
+       out double lat, out double lon)
+{
+
+       int comma = input.IndexOf(&#x27;,&#x27;);
+       if (comma &lt; 0) { lat = lon = 0; return false; }
+
+       return double.TryParse(input.Slice(0, comma), out lat) &amp;&amp;
+                   double.TryParse(input.Slice(comma + 1), out lon);
+
+}
+
+12.3 Memory&lt;T&gt; for Async Operations
+
+Span&lt;T&gt; is stack-only—it can&#x27;t be used in async methods or stored in fields. Memory&lt;T&gt; is the
+heap-friendly equivalent.
+
+// Span can&#x27;t be used in async methods      // Compiler error!
+async Task ProcessAsync(Span&lt;byte&gt; data)
+{
+
+       await Task.Delay(1);
+}
+
+// Memory&lt;T&gt; works with async
+async Task ProcessAsync(Memory&lt;byte&gt; data)
+{
+
+       await Task.Delay(1);
+
+// Get a Span when you need to work with the data
+Span&lt;byte&gt; span = data.Span;
+ProcessSync(span);</pre></div></div>
+<div class="pdf-page" id="page-28"><div class="page-head">Page 28</div><div class="page-body"><pre>             }
+
+             // Common pattern: IMemoryOwner&lt;T&gt; for pooled buffers
+             using IMemoryOwner&lt;byte&gt; owner = MemoryPool&lt;byte&gt;.Shared.Rent(1024);
+             Memory&lt;byte&gt; memory = owner.Memory;
+             await ProcessAsync(memory);
+
+12.4 Practical Example: Zero-Copy CSV Parsing
+
+             public static IEnumerable&lt;(ReadOnlyMemory&lt;char&gt; Name, int Value)&gt;
+                    ParseCsv(ReadOnlyMemory&lt;char&gt; csv)
+
+             {
+                    var remaining = csv;
+
+                    while (!remaining.IsEmpty)
+                    {
+
+                            int newline = remaining.Span.IndexOf(&#x27;\n&#x27;);
+                            var line = newline &lt; 0 ? remaining : remaining.Slice(0, newline);
+
+                            int comma = line.Span.IndexOf(&#x27;,&#x27;);
+                            if (comma &gt; 0)
+                            {
+
+                                   var name = line.Slice(0, comma);
+                                   if (int.TryParse(line.Slice(comma + 1).Span, out int value))
+                                   {
+
+                                          yield return (name, value);
+                                   }
+                            }
+
+                            remaining = newline &lt; 0
+                                   ? ReadOnlyMemory&lt;char&gt;.Empty
+                                   : remaining.Slice(newline + 1);
+
+                    }
+             }
+
+             // Usage: Zero heap allocations during parsing!
+             var csv = File.ReadAllText(&quot;data.csv&quot;).AsMemory();
+             foreach (var (name, value) in ParseCsv(csv))
+             {
+
+                    // name is a view into the original string
+             }</pre></div></div>
+<div class="pdf-page" id="page-29"><div class="page-head">Page 29</div><div class="page-body"><pre>Chapter 13: Records, ref structs, and Modern C#
+
+13.1 Records: Immutable Reference Types
+
+Records (C# 9+) are reference types designed for immutable data. They provide value-based equality
+while remaining on the heap.
+
+             public record Person(string Name, int Age);
+
+             // Record behavior:
+             var p1 = new Person(&quot;Alice&quot;, 30);
+             var p2 = new Person(&quot;Alice&quot;, 30);
+             Console.WriteLine(p1 == p2); // True (value equality, unlike classes)
+
+             // Non-destructive mutation (creates new instance)
+             var p3 = p1 with { Age = 31 }; // New object on heap
+
+             // Still a reference type
+             Person p4 = p1;
+             Console.WriteLine(ReferenceEquals(p1, p4)); // True (same object)
+
+13.2 Record Structs: Value Type Records
+
+             public readonly record struct Point(int X, int Y);
+
+             // Combines struct benefits with record syntax:
+             // - Stack allocation (when local)
+             // - Value equality
+             // - Readonly (immutable)
+             // - Deconstruction
+
+             var p1 = new Point(1, 2);
+             var p2 = new Point(1, 2);
+             Console.WriteLine(p1 == p2); // True
+
+             var (x, y) = p1; // Deconstruction
+
+13.3 ref struct: Stack-Only Types
+
+ref structs are guaranteed to live only on the stack. This makes them suitable for high-performance
+scenarios where heap allocation must be avoided.
+
+             public ref struct StackOnlyBuffer
+             {
+
+                    private Span&lt;byte&gt; _buffer; // Can hold Span&lt;T&gt;!
+
+                    public StackOnlyBuffer(Span&lt;byte&gt; buffer)
+                    {
+
+                            _buffer = buffer;
+                    }
+             }
+
+             // Restrictions on ref structs:
+             // - Cannot be boxed (no object, no interfaces)
+             // - Cannot be fields in classes or non-ref structs
+             // - Cannot be used in async methods
+             // - Cannot be captured by lambdas
+             // - Cannot be elements of arrays
+
+             // Span&lt;T&gt; itself is a ref struct!
+             Span&lt;int&gt; span = stackalloc int[10]; // Must stay on stack</pre></div></div>
+<div class="pdf-page" id="page-30"><div class="page-head">Page 30</div><div class="page-body"><pre>        Appendix A: Quick Reference
+
+Stack vs Heap Summary
+
+Aspect           Stack                          Heap
+
+Access Speed     Very fast                      Slower
+
+Allocation       Automatic (push)               GC managed (new)
+
+Deallocation     Automatic (pop)                Garbage collector
+
+Size Limit       ~1MB per thread                System memory
+
+What Lives Here  Value types*, references       Objects, arrays
+
+Thread Safety    Thread-private                 Shared
+
+Fragmentation    None (LIFO)                    Possible
+
+*When declared as local variables or parameters, not as class fields
+
+Type Categories
+
+Category         Examples                                             Default Location
+Value Types      int, double, bool, struct, enum                      Stack (if local)
+Reference Types  class, interface, delegate, string, array            Heap (always)
+ref struct       Span&lt;T&gt;, ReadOnlySpan&lt;T&gt;                             Stack (enforced)
+
+GC Generation Triggers
+
+Generation       Triggers                                             Typical Frequency
+Gen0
+Gen1             When Gen0 budget exceeded                            Very frequent (ms)
+Gen2
+Full GC          When Gen1 budget exceeded                            Less frequent
+
+                 When Gen2 budget exceeded, LOH allocationInfrequent (seconds)
+
+                 Memory pressure, GC.Collect()                        Rare</pre></div></div>
+<div class="pdf-page" id="page-31"><div class="page-head">Page 31</div><div class="page-body"><pre>    Appendix B: Further Reading
+
+1. &quot;Pro .NET Memory Management&quot; by Konrad Kokosa — The definitive deep dive into .NET memory
+
+2. &quot;Writing High-Performance .NET Code&quot; by Ben Watson — Practical optimization techniques
+
+3. &quot;CLR via C#&quot; by Jeffrey Richter — Foundational understanding of the runtime
+
+4.  Microsoft  Docs:  Memory                                          Management           —
+
+https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/
+
+5. Adam Sitnik&#x27;s Blog — In-depth performance analysis posts
+
+6. .NET Blog: Performance — Updates on runtime improvements
+
+This guide was written to help .NET developers understand the memory model that underpins their
+applications. While the garbage collector handles most complexity, understanding these concepts leads to
+better architectural decisions, more efficient code, and easier debugging of memory-related issues.</pre></div></div>
+</article>
+<div class="takeaways"><h3>Key takeaways</h3><ul><li>Value types live on the stack by default but move to the heap when they&#x27;re fields of a class, array elements, boxed, or captured by a closure</li><li>A reference is always 8 bytes on 64-bit; the object it points to can be anywhere from 16 bytes to gigabytes on the heap</li><li>The GC is generational because most objects die young — Gen0 collections are cheap, Gen2 collections hurt</li><li>Boxing is a silent performance killer: ArrayList.Add(int) allocates on every call, List&lt;int&gt;.Add(int) does not</li><li>.NET memory leaks are almost always event handlers, static collections, long-lived delegates with captured state, or un-disposed Blazor subscriptions</li><li>Reaching for ArrayPool, Span&lt;T&gt;, stackalloc, and pre-sized collections is how you drop allocation counts in hot paths</li></ul></div>
+<aside class="cross-refs"><h2>Cross-references</h2><div class="cross-ref-list"><a href="../../CORE/language/csharp-generics.html"><span class="arrow">→</span>Generics in C#: A Comprehensive Guide</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>csharp-span-and-memory</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>dotnet-performance-profiling</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>idisposable-pattern</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>blazor-component-lifecycle</a></div></aside>
+<aside class="related"><h2>More in this category</h2><div class="related-grid"><a class="related-card" href="../../CORE/language/delegates-lambdas-expression-bodies.html"><div class="title">C# Deep Dive: Delegates, Lambdas and Expression-Bodied Members</div><div class="meta"><span class="badge">HTML</span><span>2,771 words</span></div></a><a class="related-card" href="../../CORE/language/csharp-generics-and-functional-builders.html"><div class="title">C# Deep Dive: Generics, Builders &amp; Everything In Between</div><div class="meta"><span class="badge">HTML</span><span>4,353 words</span></div></a><a class="related-card" href="../../CORE/language/csharp-events-godot-bridge.html"><div class="title">C# Events and Async Patterns for Godot Developers</div><div class="meta"><span class="badge">DOCX</span><span>1,206 words</span></div></a><a class="related-card" href="../../CORE/language/csharp-flags-enum.html"><div class="title">C# Flags Enum Guide</div><div class="meta"><span class="badge">MD</span><span>815 words</span></div></a><a class="related-card" href="../../CORE/language/expression-trees-compiled-reflection.html"><div class="title">Expression Trees &amp; Compiled Reflection — From Slow Reflection to Native Speed</div><div class="meta"><span class="badge">HTML</span><span>2,883 words</span></div></a><a class="related-card" href="../../CORE/language/csharp-generics.html"><div class="title">Generics in C#: A Comprehensive Guide</div><div class="meta"><span class="badge">MD</span><span>4,388 words</span></div></a></div></aside>
+</main>
+</div>
+<script>
+// ─── Active TOC item on scroll ────────────────────────────────────
+(function() {
+  const tocLinks = document.querySelectorAll('.toc-sidebar a[href^="#"]');
+  if (!tocLinks.length) return;
+  const headings = Array.from(document.querySelectorAll(
+    'article h1[id], article h2[id], article h3[id], article h4[id], .pdf-page[id]'
+  ));
+  if (!headings.length) return;
+  function setActive(id) {
+    tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+  }
+  let lastVisible = headings[0].id;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) lastVisible = e.target.id; });
+    setActive(lastVisible);
+  }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+  headings.forEach(h => observer.observe(h));
+  setActive(headings[0].id);
+})();
+
+// ─── Copy code buttons ────────────────────────────────────────────
+(function() {
+  document.querySelectorAll('article pre').forEach(pre => {
+    if (pre.closest('.diagram-box')) return;
+    if (pre.closest('.pdf-page')) return;
+    if (pre.parentElement && pre.parentElement.classList.contains('code-block')) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'code-block';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.type = 'button';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', () => {
+      const code = pre.querySelector('code') || pre;
+      const text = code.innerText;
+      const done = () => {
+        btn.textContent = 'Copied';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(() => {});
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+    });
+    wrap.appendChild(btn);
+  });
+})();
+
+// ─── Live filter (master + hub + category pages) ─────────────────
+(function() {
+  const search = document.getElementById('search-input');
+  if (!search) return;
+  const items = document.querySelectorAll('[data-search]');
+  function apply() {
+    const q = search.value.toLowerCase().trim();
+    items.forEach(el => {
+      const match = !q || el.dataset.search.includes(q);
+      el.style.display = match ? '' : 'none';
+    });
+    document.querySelectorAll('[data-search-parent]').forEach(parent => {
+      const visible = Array.from(parent.querySelectorAll('[data-search]'))
+        .some(el => el.style.display !== 'none');
+      parent.style.display = visible ? '' : 'none';
+    });
+  }
+  search.addEventListener('input', apply);
+})();
+</script>
+</body>
+</html>

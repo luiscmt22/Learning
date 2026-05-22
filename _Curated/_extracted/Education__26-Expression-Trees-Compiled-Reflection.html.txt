@@ -1,0 +1,379 @@
+Expression Trees & Compiled Reflection — From Slow Reflection to Native Speed
+Expression Trees & Compiled Reflection
+Tutorial #26 — From Slow Reflection to Native Speed at Runtime
+1. The Problem: Reflection Is Slow
+Sometimes you need to read or write a property whose name you don't know at compile time.
+Maybe a config file says "CodeProperty": "Codigo" and your service needs to read
+entity.Codigo without hard-coding that property name.
+The classic .NET answer is reflection — use PropertyInfo.GetValue()
+and PropertyInfo.SetValue() . It works. But it's roughly 100x slower
+than direct property access, because every call has to:
+Look up metadata at runtime
+Validate types and access permissions
+Box value types into object
+Invoke the getter/setter through an indirect dispatch
+If you're doing this once, who cares. If you're doing it in a loop over thousands of entities,
+it becomes a bottleneck. Here's the performance ladder:
+Performance Ladder (approximate, per-call)
+──────────────────────────────────────────
+Direct access: article.Code ~1 nanosecond
+Compiled expression: getter(article) ~3 nanoseconds
+PropertyInfo.GetValue: prop.GetValue(obj) ~300 nanoseconds
+──────────────────────────────────────────
+Compiled expressions are ~100x faster than raw reflection
+and nearly identical to direct access.
+The solution: build a compiled delegate at runtime, cache it, and reuse it forever .
+You pay the compilation cost once (microseconds), then every subsequent call is at native speed.
+Reflection is like reading a recipe every time you cook. Compiled expressions are like memorizing
+the recipe — the first read takes effort, but after that you cook from memory at full speed.
+2. What IS an Expression Tree?
+An expression tree is code represented as data — a tree of nodes that describe
+what the code does, without actually executing it. Each node represents an operation: a parameter,
+a type cast, a property access, an assignment, a method call.
+Because it's data, you can:
+Inspect it — walk the tree to see what it does
+Modify it — rewrite nodes to change behavior
+Translate it — EF Core reads expression trees and generates SQL
+Compile it — JIT-compile the tree into a native delegate
+All expression tree types live in the System.Linq.Expressions namespace.
+Visualizing an Expression Tree
+Let's draw the tree for the lambda (object obj) => ((Article)obj).Code :
+Lambda Func<object, object>
+└── Convert (to object) ← box the result back to object
+└── Property Access (.Code) ← read the Code property
+└── Convert (to Article) ← cast the input to Article
+└── Parameter (obj: object) ← the input parameter
+Read it bottom-up: take a parameter obj , cast it to Article ,
+access the .Code property, cast the result to object , and wrap
+the whole thing in a lambda that can be compiled into a Func<object, object> .
+That's the entire idea. Each level is a node. The tree describes the code. .Compile()
+turns the tree into executable machine code.
+3. Building a Getter Expression — Step by Step
+Here's the CreateGetter method from ReflectionCache . We'll walk
+through every line:
+private static Func < object , object ?>? CreateGetter (( Type type , string propertyName ) key )
+{
+// Step 1: Find the property via reflection (just once!)
+var property = key . type . GetProperty (
+key . propertyName ,
+BindingFlags .Public | BindingFlags .Instance);
+if ( property == null || ! property .CanRead) return null ;
+// Step 2: Create a parameter node: (object obj)
+var param = Expression . Parameter ( typeof ( object ), "obj" );
+// Step 3: Cast object to the entity type: (Article)obj
+var castToEntity = Expression . Convert ( param , key . type );
+// Step 4: Access the property: ((Article)obj).Code
+var propertyAccess = Expression . Property ( castToEntity , property );
+// Step 5: Cast result back to object: (object)((Article)obj).Code
+var castToObject = Expression . Convert ( propertyAccess , typeof ( object ));
+// Step 6: Compile the tree into a callable delegate
+return Expression . Lambda < Func < object , object ?>>( castToObject , param )
+. Compile ();
+}
+What Each Expression Node Does
+Step
+Expression Method
+What It Creates
+1
+GetProperty()
+Standard reflection lookup — happens once, not per call
+2
+Expression.Parameter()
+Declares the input parameter: obj of type object
+3
+Expression.Convert()
+Type cast node — unboxes object to Article
+4
+Expression.Property()
+Property access node — reads .Code from the cast entity
+5
+Expression.Convert()
+Another cast — boxes the property value back to object
+6
+Expression.Lambda().Compile()
+Wraps the tree into a lambda shape and JIT-compiles it to native code
+Expression.Lambda<Func<object, object?>>(castToObject, param).Compile()
+reads as: "Build a function that takes an object and returns an object? ,
+with this body, then compile it to native code."
+After .Compile() , the result is a Func<object, object?> — a normal
+delegate you can call like any other function. It runs at the same speed as if you'd written
+return (object)((Article)obj).Code; by hand.
+4. Building a Setter Expression
+A setter needs two parameters (the object and the value to set) and uses
+Expression.Assign to write the property:
+private static Action < object , object ?>? CreateSetter (( Type type , string propertyName ) key )
+{
+var property = key . type . GetProperty (
+key . propertyName ,
+BindingFlags .Public | BindingFlags .Instance);
+if ( property == null || ! property .CanWrite) return null ;
+// Two parameters: the object and the value
+var objParam = Expression . Parameter ( typeof ( object ), "obj" );
+var valueParam = Expression . Parameter ( typeof ( object ), "value" );
+// Cast object to entity type
+var castToEntity = Expression . Convert ( objParam , key . type );
+// Access the property on the cast entity
+var propertyAccess = Expression . Property ( castToEntity , property );
+// Cast the incoming value to the property's actual type
+var castValue = Expression . Convert ( valueParam , property .PropertyType);
+// Assign: ((Article)obj).Code = (string)value
+var assign = Expression . Assign ( propertyAccess , castValue );
+return Expression . Lambda < Action < object , object ?>>(
+assign , objParam , valueParam ). Compile ();
+}
+Setter Tree Visualization
+Lambda Action<object, object?>
+└── Assign
+├── Property Access (.Code) ← left side of assignment
+│ └── Convert (to Article)
+│ └── Parameter (obj: object)
+└── Convert (to string) ← right side, cast value to property type
+└── Parameter (value: object)
+Note the extra pieces compared to the getter: a second parameter ( value ),
+Expression.Assign for the write operation, and a Convert that casts
+the incoming object to the property's actual type (e.g., string ,
+int , decimal ).
+5. Caching — The Key to Performance
+The .Compile() call is the expensive part — it invokes the JIT compiler to generate
+native machine code. This takes microseconds . But it only needs to happen
+once per (Type, PropertyName) pair . After that, every call to the resulting
+delegate is nanoseconds .
+We use ConcurrentDictionary (thread-safe, lock-free reads) to cache the compiled delegates:
+private static readonly ConcurrentDictionary <( Type , string ), Func < object , object ?>> Getters = new ();
+private static readonly ConcurrentDictionary <( Type , string ), Action < object , object ?>> Setters = new ();
+public static T ? GetValue < T >( object entity , string propertyName )
+{
+var key = ( entity . GetType (), propertyName );
+// GetOrAdd: compile once, reuse forever
+var getter = Getters . GetOrAdd ( key , CreateGetter );
+return ( T ) getter ( entity );
+}
+The Flow Over Time
+First call: GetValue<string>(article, "Code")
+─────────────────────────────────────────────────
+1. key = (Article, "Code")
+2. Getters has no entry → calls CreateGetter()
+3. CreateGetter builds expression tree → .Compile() → native delegate
+4. Stores delegate in Getters[(Article, "Code")]
+5. Calls delegate(article) → returns "ART001"
+Time: ~50 microseconds (compilation cost)
+Second call: GetValue<string>(article2, "Code")
+─────────────────────────────────────────────────
+1. key = (Article, "Code")
+2. Getters already has entry → returns cached delegate
+3. Calls delegate(article2) → returns "ART002"
+Time: ~3 nanoseconds (just a function call)
+Compile once, cache forever. The Expression.Compile() call is the expensive part.
+The resulting delegate is as fast as hand-written code. Never compile inside a loop — always
+cache with GetOrAdd .
+6. Real-World Usage: Config-Driven Article Field Mapping
+In our codebase, the category system has 20+ entity types (articles, entities, leads, etc.).
+Instead of writing 20 separate services with hard-coded property access, one generic service
+uses configuration objects that specify property names as strings.
+ReflectionCache makes this fast.
+// Read a property by name (from configuration)
+var code = ReflectionCache . GetValue < string >( entity , config .CodeProperty);
+var description = ReflectionCache . GetValue < string >( entity , config .DescriptionProperty);
+// Write a property by name
+ReflectionCache . SetValue ( entity , config .CodeProperty, newCode );
+Why This Pattern Matters
+Without ReflectionCache , you'd need one of these unpleasant options:
+Approach
+Downside
+20 separate service classes
+Massive code duplication, maintenance nightmare
+Giant switch statement
+Fragile, every new type requires code changes
+Raw PropertyInfo.GetValue()
+Works, but 100x slower — bad in loops over thousands of rows
+Compiled expressions via ReflectionCache
+One generic service, config-driven, native speed
+The config object says which property to access. The compiled expression says how
+to access it — at native speed. The generic service doesn't know or care about the specific entity type.
+7. Expression Trees in EF Core (LINQ Translation)
+Expression trees aren't just for compiled reflection. EF Core uses them as its primary
+mechanism for translating LINQ to SQL . When you write .Where(x => x.Name == "test") ,
+the compiler doesn't compile that lambda to IL — it builds an expression tree that EF Core walks
+and converts to a SQL WHERE clause.
+In our codebase, CrmEntityServiceBase uses expression trees for dynamic sorting:
+// Base class declares an abstract expression
+protected abstract Expression < Func < TEntity , object >> GetSortExpression ( string sortBy );
+// LeadService provides concrete implementations:
+protected override Expression < Func < Lead , object >> GetSortExpression ( string sortBy ) => sortBy switch
+{
+"Nome" => l => l .Nome,
+"Codigo" => l => l .Codigo,
+"Status" => l => l .Status,
+_ => l => l .CreatedAt
+};
+// Used in the base class:
+var sortExpr = GetSortExpression ( sortBy );
+var query = ascending
+? query . OrderBy ( sortExpr )
+: query . OrderByDescending ( sortExpr );
+The critical difference: these expressions are not compiled by us . They are
+passed to EF Core, which reads the expression tree and translates it to SQL
+ORDER BY Nome , ORDER BY Codigo , etc. The expressions never execute
+in .NET — they're instructions for the database.
+8. Two Kinds of Expressions in .NET
+This is the single most important distinction to understand:
+Type
+Purpose
+Who Compiles?
+Example
+Expression<Func<T, R>>
+Data (inspectable tree)
+EF Core translates to SQL
+.Where(x => x.Name == "test")
+Func<T, R>
+Code (already compiled)
+.NET JIT (already done)
+getter = expr.Compile()
+Expression<Func<T, R>> is NOT the same as Func<T, R> .
+The Expression version is data that can be inspected (by EF Core to generate SQL).
+The Func version is already machine code and can only be executed. If you pass a
+Func to EF Core's .Where() , it will pull the entire table into memory
+and filter in C# — catastrophic for performance.
+The Key Insight
+Expression<Func<>> can be compiled (turned into a Func )
+OR translated (turned into SQL). Func<> is already compiled and
+can only be executed .
+Expression<Func<T, R>>
+(data — a tree of nodes)
+/ \
+/ \
+.Compile() EF Core reads it
+| |
+Func<T, R> SQL Query
+(native delegate) (ORDER BY, WHERE, etc.)
+can only execute runs on the database
+9. The Full ReflectionCache Class
+Here's the complete implementation with all public methods:
+using System.Collections.Concurrent;
+using System.Linq.Expressions;
+using System.Reflection;
+public static class ReflectionCache
+{
+// ── Cached compiled delegates ──────────────────────────────
+private static readonly ConcurrentDictionary <( Type , string ), Func < object , object ?>>
+Getters = new ();
+private static readonly ConcurrentDictionary <( Type , string ), Action < object , object ?>>
+Setters = new ();
+private static readonly ConcurrentDictionary <( Type , string ), bool >
+PropertyExists = new ();
+// ── Public API ─────────────────────────────────────────────
+/// <summary>Get a property value by name, with type casting.</summary>
+public static T ? GetValue < T >( object entity , string propertyName )
+{
+var key = ( entity . GetType (), propertyName );
+var getter = Getters . GetOrAdd ( key , CreateGetter );
+if ( getter == null ) return default ;
+var result = getter ( entity );
+return result is T typed ? typed : default ;
+}
+/// <summary>Get a property value as object (no casting).</summary>
+public static object ? GetValue ( object entity , string propertyName )
+{
+var key = ( entity . GetType (), propertyName );
+var getter = Getters . GetOrAdd ( key , CreateGetter );
+return getter ?.Invoke( entity );
+}
+/// <summary>Set a property value by name.</summary>
+public static void SetValue ( object entity , string propertyName , object ? value )
+{
+var key = ( entity . GetType (), propertyName );
+var setter = Setters . GetOrAdd ( key , CreateSetter );
+setter ?.Invoke( entity , value );
+}
+/// <summary>Check if a type has a given property.</summary>
+public static bool HasProperty ( Type type , string propertyName )
+{
+return PropertyExists . GetOrAdd (
+( type , propertyName ),
+k => k .Item1. GetProperty ( k .Item2,
+BindingFlags .Public | BindingFlags .Instance) != null );
+}
+/// <summary>Clear all caches (useful for hot-reload or testing).</summary>
+public static void ClearCache ()
+{
+Getters . Clear ();
+Setters . Clear ();
+PropertyExists . Clear ();
+}
+// ── Private Expression Builders ─────────────────────────────
+private static Func < object , object ?>? CreateGetter (( Type type , string propertyName ) key )
+{
+var property = key . type . GetProperty (
+key . propertyName ,
+BindingFlags .Public | BindingFlags .Instance);
+if ( property == null || ! property .CanRead) return null ;
+var param = Expression . Parameter ( typeof ( object ), "obj" );
+var castToEntity = Expression . Convert ( param , key . type );
+var propertyAccess = Expression . Property ( castToEntity , property );
+var castToObject = Expression . Convert ( propertyAccess , typeof ( object ));
+return Expression . Lambda < Func < object , object ?>>(
+castToObject , param ). Compile ();
+}
+private static Action < object , object ?>? CreateSetter (( Type type , string propertyName ) key )
+{
+var property = key . type . GetProperty (
+key . propertyName ,
+BindingFlags .Public | BindingFlags .Instance);
+if ( property == null || ! property .CanWrite) return null ;
+var objParam = Expression . Parameter ( typeof ( object ), "obj" );
+var valueParam = Expression . Parameter ( typeof ( object ), "value" );
+var castToEntity = Expression . Convert ( objParam , key . type );
+var propertyAccess = Expression . Property ( castToEntity , property );
+var castValue = Expression . Convert ( valueParam , property .PropertyType);
+var assign = Expression . Assign ( propertyAccess , castValue );
+return Expression . Lambda < Action < object , object ?>>(
+assign , objParam , valueParam ). Compile ();
+}
+}
+Design Decisions Explained
+Static class — no instance state needed; the caches are static and thread-safe
+Tuple key (Type, string) — value-type key means no heap allocations for lookups
+GetOrAdd — atomic: if two threads race for the same key, at most one extra compilation happens (harmless)
+Null returns — if the property doesn't exist, we return null instead of throwing
+ClearCache() — useful for unit testing or hot-reload scenarios where types may change
+10. When to Use Expression Trees
+Use Case
+Approach
+Known properties at compile time
+Direct access (no expressions needed)
+Config-driven property mapping
+ReflectionCache (compiled expressions)
+Dynamic sorting in EF Core
+Expression<Func<T, object>>
+Dynamic filtering in EF Core
+Build expression trees programmatically
+One-off reflection
+PropertyInfo (not worth compiling)
+Decision Flowchart
+Do you know the property name at compile time?
+├── YES → Use direct access: entity.Code
+└── NO → Will you access this property many times?
+├── YES → Use ReflectionCache (compiled expression)
+└── NO → Is this for EF Core (LINQ query)?
+├── YES → Use Expression<Func<T, R>>
+└── NO → Use PropertyInfo.GetValue() (one-off is fine)
+Summary of the Three Layers
+Layer 1: COMPILE TIME (fastest — no overhead)
+──────────────────────────────────────────────
+var code = article.Code;
+You know the property. The compiler generates direct access.
+Layer 2: RUNTIME + COMPILED EXPRESSION (near-native speed)
+──────────────────────────────────────────────
+var code = ReflectionCache.GetValue<string>(article, "Code");
+You don't know the property at compile time.
+But you compile a delegate once and cache it.
+Layer 3: RUNTIME REFLECTION (slowest — 100x overhead)
+──────────────────────────────────────────────
+var code = prop.GetValue(article);
+You look up metadata and invoke through reflection every time.
+Compile once, cache forever. If you find yourself calling PropertyInfo.GetValue()
+or SetValue() inside a loop, that's a signal to switch to compiled expressions.
+The one-time compilation cost pays for itself after just a few calls.
+Think of the three layers like navigation: Layer 1 is knowing the way by heart (you live there).
+Layer 2 is memorizing the route from a map (one-time study, then you drive from memory).
+Layer 3 is stopping to read the map at every intersection (slow, but works for a place you'll visit once).

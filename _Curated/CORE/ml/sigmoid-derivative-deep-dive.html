@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sigmoid Derivative Visualized</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            margin: 0;
+            padding: 20px;
+        }
+        h1, h2 { text-align: center; color: #00d9ff; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        .chart-container {
+            background: #16213e;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+        .chart-box {
+            text-align: center;
+        }
+        .chart-box h3 { color: #00d9ff; margin-bottom: 10px; }
+        canvas { background: #0f3460; border-radius: 10px; }
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .slider-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        input[type="range"] {
+            width: 400px;
+            height: 20px;
+            cursor: pointer;
+        }
+        .value-display {
+            background: #0f3460;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-size: 18px;
+            min-width: 200px;
+        }
+        .highlight { color: #00ffcc; font-weight: bold; }
+        .explanation {
+            background: #0f3460;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            line-height: 1.8;
+        }
+        .formula {
+            background: #1a1a2e;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 16px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .neuron-demo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        .neuron-box {
+            background: #16213e;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            min-width: 250px;
+        }
+        .neuron-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin: 15px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .sensitive { background: linear-gradient(135deg, #4ade80, #22c55e); }
+        .saturated { background: linear-gradient(135deg, #f87171, #ef4444); }
+        .arrow {
+            font-size: 40px;
+            color: #64748b;
+        }
+        .status {
+            font-size: 14px;
+            margin-top: 10px;
+            padding: 8px;
+            border-radius: 5px;
+        }
+        .status.good { background: #166534; color: #4ade80; }
+        .status.bad { background: #7f1d1d; color: #f87171; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #334155;
+        }
+        th { background: #1e3a5f; color: #00d9ff; }
+        tr:nth-child(even) { background: #1a1a2e; }
+    </style>
+</head>
+<body>
+<div style="background:rgba(7,9,15,0.94);border-bottom:1px solid #1f2940;padding:12px 24px;font:13px/1.4 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;position:fixed;top:0;left:0;right:0;z-index:99999;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);display:flex;align-items:center;gap:10px;color:#94a3bf;box-sizing:border-box;min-height:48px;"><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;">Learning</a><span style="color:#5f6b86;">›</span><a href="../_Hub.html" style="color:#94a3bf;text-decoration:none;">CORE</a><span style="color:#5f6b86;">›</span><a href="_Category.html" style="color:#94a3bf;text-decoration:none;">Machine Learning</a><span style="color:#5f6b86;">›</span><span style="color:#e9eef8;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">Sigmoid Derivative Visualized</span><a href="sigmoid-derivative-deep-dive.html" download style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">↓ Download</a><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">All docs</a></div><div style="height:48px;"></div><div style="background:linear-gradient(135deg,#0a0e1a 0%,#11182a 100%);border:1px solid #1f2940;border-radius:14px;padding:24px 28px;margin:20px;font:15px/1.7 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;color:#e9eef8;box-shadow:0 12px 40px rgba(0,0,0,0.35);"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.6px;color:#6aa6ff;font-weight:600;margin-bottom:8px;">▸ Curated · Concept · Ml</div><div style="font-size:24px;font-weight:700;color:#e9eef8;margin-bottom:10px;letter-spacing:-0.02em;line-height:1.2;">Sigmoid Derivative Visualized</div><div style="font-size:16px;color:#94a3bf;margin-bottom:18px;line-height:1.5;">A short interactive explainer of why multiplying the raw error by output * (1 - output) is the secret sauce that makes neural networks learn efficiently and generalize well.</div><div style="font-style:italic;border-left:3px solid #6aa6ff;padding:6px 0 6px 16px;margin:14px 0;color:#e9eef8;">Why do neural networks sometimes refuse to learn even when the error is huge? The answer isn&#x27;t a bad algorithm — it&#x27;s that the neurons you most want to change are the ones least able to change. And a single multiplication, output * (1 - output), is what prevents your training run from wasting its time on them.</div><div style="background:rgba(106,166,255,0.06);border:1px solid rgba(106,166,255,0.20);border-radius:10px;padding:14px 18px;margin:14px 0;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#6aa6ff;margin-bottom:6px;font-weight:600;">Executive summary</div><div style="font-size:14px;color:#e9eef8;line-height:1.6;">This mini-page focuses on one crucial concept from neural network training: the sigmoid derivative. It explains that the sigmoid function squashes any input into 0-1, but the real magic is the derivative = output * (1 - output) — a number between 0 and 0.25 that tells backpropagation &#x27;how sensitive this neuron currently is&#x27;. When output is 0.5 the derivative is 0.25 (peak learning); when output is 0.9 or 0.1 the derivative is 0.09 (the neuron is near saturation and barely moves). It shows an example of predicting &#x27;Dog&#x27; at 0.9 when the truth is 0.0: with the derivative the scaled error is -0.081 instead of -0.9, which prevents wasted updates and helps the network learn smoother decision boundaries.</div></div><div style="background:rgba(184,106,255,0.06);border:1px solid rgba(184,106,255,0.25);border-radius:10px;padding:14px 18px;margin:14px 0;display:flex;gap:12px;"><div style="font-size:20px;flex-shrink:0;">💡</div><div style="flex:1;font-size:14px;color:#e9eef8;line-height:1.6;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#b86aff;margin-bottom:4px;font-weight:700;">Metaphor</div>The sigmoid derivative is like trying to steer a car that&#x27;s already glued to the kerb. If you&#x27;re in the middle of the lane (output 0.5), even a small nudge on the wheel changes where the car goes — that&#x27;s maximum learning. If you&#x27;ve already slammed against the left kerb (output 0.05) or the right kerb (output 0.95), turning the wheel harder won&#x27;t help — the car is physically stuck. The derivative multiplier is the network saying &#x27;I know you want me to move, but I literally can&#x27;t right now — don&#x27;t bother spending energy here.&#x27;</div></div><div style="margin-top:14px;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#5f6b86;margin-bottom:8px;font-weight:600;">Key concepts</div><div><span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">sigmoid function</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">derivative as sensitivity</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">saturation zones</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">vanishing gradient</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">scaled error</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">smoother decision boundaries</span></div></div><div style="margin-top:18px;padding-top:14px;border-top:1px solid #1f2940;font-size:11px;color:#5f6b86;">↑ Curated overlay added by render_curated.py · the original document follows below</div></div>
+    <div class="container">
+        <h1>Why Sigmoid Derivative Matters</h1>
+
+        <div class="explanation">
+            <p>The sigmoid function squashes any input into a value between 0 and 1. But here's the key insight:</p>
+            <p><span class="highlight">The slope (derivative) tells us how "sensitive" the neuron is to changes.</span></p>
+            <p>When we backpropagate errors, we multiply by this derivative. Why? Because it answers: <em>"If I nudge the input a little, how much does the output actually change?"</em></p>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-box">
+                <h3>Sigmoid Function</h3>
+                <canvas id="sigmoidChart" width="400" height="300"></canvas>
+                <p>Output = 1 / (1 + e<sup>-x</sup>)</p>
+            </div>
+            <div class="chart-box">
+                <h3>Sigmoid Derivative</h3>
+                <canvas id="derivativeChart" width="400" height="300"></canvas>
+                <p>Derivative = output × (1 - output)</p>
+            </div>
+        </div>
+
+        <h2>Interactive Explorer</h2>
+        <p style="text-align: center;">Drag the slider to see how the derivative changes at different output values:</p>
+
+        <div class="slider-container">
+            <span>Output: 0</span>
+            <input type="range" id="outputSlider" min="0" max="100" value="50">
+            <span>1</span>
+        </div>
+
+        <div class="neuron-demo">
+            <div class="neuron-box">
+                <h3>Neuron Output</h3>
+                <div class="neuron-circle" id="neuronCircle">
+                    <span id="outputValue">0.50</span>
+                </div>
+                <div class="status" id="sensitivityStatus">Sensitive</div>
+            </div>
+
+            <div class="arrow">→</div>
+
+            <div class="value-display">
+                <div>Derivative: <span class="highlight" id="derivativeValue">0.250</span></div>
+                <div style="margin-top: 10px; font-size: 14px;">
+                    Error multiplier: <span id="multiplierPercent">25%</span>
+                </div>
+            </div>
+
+            <div class="arrow">→</div>
+
+            <div class="neuron-box">
+                <h3>Learning Speed</h3>
+                <div style="font-size: 48px; margin: 15px 0;" id="learningEmoji">🚀</div>
+                <div id="learningText">Fast learning!</div>
+            </div>
+        </div>
+
+        <div class="explanation">
+            <h2>The Math in Plain English</h2>
+
+            <div class="formula">
+                error_to_backpropagate = raw_error × output × (1 - output)
+            </div>
+
+            <p><strong>Example:</strong> The network predicted 0.9 for "Dog" but expected 0.0 (wrong animal).</p>
+
+            <table>
+                <tr>
+                    <th>Scenario</th>
+                    <th>Output</th>
+                    <th>Raw Error</th>
+                    <th>Derivative</th>
+                    <th>Scaled Error</th>
+                    <th>Learning</th>
+                </tr>
+                <tr>
+                    <td>Without derivative</td>
+                    <td>0.9</td>
+                    <td>-0.9</td>
+                    <td>—</td>
+                    <td><strong>-0.900</strong></td>
+                    <td>Big change 💥</td>
+                </tr>
+                <tr>
+                    <td>With derivative</td>
+                    <td>0.9</td>
+                    <td>-0.9</td>
+                    <td>0.9 × 0.1 = 0.09</td>
+                    <td><strong>-0.081</strong></td>
+                    <td>Small change 🎯</td>
+                </tr>
+            </table>
+
+            <p><span class="highlight">Why is the small change better?</span></p>
+            <p>When output is 0.9, the neuron is in the "flat" part of the sigmoid curve. Even a large weight change barely moves the output! The derivative tells us: <em>"Don't waste effort here — this neuron can barely change anyway."</em></p>
+        </div>
+
+        <div class="explanation">
+            <h2>The Three Zones</h2>
+
+            <div class="neuron-demo">
+                <div class="neuron-box">
+                    <div class="neuron-circle saturated">0.05</div>
+                    <div class="status bad">Saturated LOW</div>
+                    <p>Derivative ≈ 0.05</p>
+                    <p>Barely learns</p>
+                </div>
+
+                <div class="neuron-box">
+                    <div class="neuron-circle sensitive">0.50</div>
+                    <div class="status good">Sensitive</div>
+                    <p>Derivative = 0.25</p>
+                    <p>Learns fastest!</p>
+                </div>
+
+                <div class="neuron-box">
+                    <div class="neuron-circle saturated">0.95</div>
+                    <div class="status bad">Saturated HIGH</div>
+                    <p>Derivative ≈ 0.05</p>
+                    <p>Barely learns</p>
+                </div>
+            </div>
+
+            <p style="text-align: center; margin-top: 20px;">
+                This is why networks can get "stuck" — if neurons saturate, gradients vanish and learning stalls.<br>
+                <span class="highlight">The derivative prevents wasting updates on neurons that can't change much anyway.</span>
+            </p>
+        </div>
+
+        <div class="explanation">
+            <h2>Why This Improves Generalization</h2>
+            <p>Without the derivative, the network learns "all or nothing" — it pushes neurons hard toward 0 or 1.</p>
+            <p>With the derivative, learning is <span class="highlight">proportional to sensitivity</span>. The network develops more nuanced internal representations.</p>
+            <p>Result: When you input "maybe" (1) instead of "yes" (2), the network handles the ambiguity better because it learned smoother decision boundaries, not sharp cliffs.</p>
+        </div>
+    </div>
+
+    <script>
+        // Draw sigmoid curve
+        const sigmoidCtx = document.getElementById('sigmoidChart').getContext('2d');
+        const derivCtx = document.getElementById('derivativeChart').getContext('2d');
+
+        function sigmoid(x) {
+            return 1 / (1 + Math.exp(-x));
+        }
+
+        function sigmoidDerivative(output) {
+            return output * (1 - output);
+        }
+
+        function drawChart(ctx, fn, color, yLabel, isDerivative = false) {
+            const width = 400;
+            const height = 300;
+            const padding = 40;
+
+            // Clear
+            ctx.fillStyle = '#0f3460';
+            ctx.fillRect(0, 0, width, height);
+
+            // Grid
+            ctx.strokeStyle = '#1e3a5f';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 10; i++) {
+                const x = padding + (i / 10) * (width - 2 * padding);
+                const y = padding + (i / 10) * (height - 2 * padding);
+                ctx.beginPath();
+                ctx.moveTo(x, padding);
+                ctx.lineTo(x, height - padding);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(padding, y);
+                ctx.lineTo(width - padding, y);
+                ctx.stroke();
+            }
+
+            // Axes
+            ctx.strokeStyle = '#64748b';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padding, height - padding);
+            ctx.lineTo(width - padding, height - padding);
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, height - padding);
+            ctx.stroke();
+
+            // Labels
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+
+            if (isDerivative) {
+                // X axis: 0 to 1 (output values)
+                ctx.fillText('0', padding, height - padding + 20);
+                ctx.fillText('0.5', width/2, height - padding + 20);
+                ctx.fillText('1', width - padding, height - padding + 20);
+                ctx.fillText('Output', width/2, height - 5);
+
+                // Y axis: 0 to 0.25
+                ctx.textAlign = 'right';
+                ctx.fillText('0', padding - 5, height - padding);
+                ctx.fillText('0.25', padding - 5, padding + 10);
+            } else {
+                // X axis: -6 to 6
+                ctx.fillText('-6', padding, height - padding + 20);
+                ctx.fillText('0', width/2, height - padding + 20);
+                ctx.fillText('6', width - padding, height - padding + 20);
+                ctx.fillText('Input', width/2, height - 5);
+
+                // Y axis: 0 to 1
+                ctx.textAlign = 'right';
+                ctx.fillText('0', padding - 5, height - padding);
+                ctx.fillText('1', padding - 5, padding + 10);
+            }
+
+            // Draw curve
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+
+            const points = 200;
+            for (let i = 0; i <= points; i++) {
+                let x, y, plotX, plotY;
+
+                if (isDerivative) {
+                    // X is output (0 to 1), Y is derivative (0 to 0.25)
+                    x = i / points;
+                    y = fn(x);
+                    plotX = padding + x * (width - 2 * padding);
+                    plotY = height - padding - (y / 0.25) * (height - 2 * padding);
+                } else {
+                    // X is input (-6 to 6), Y is sigmoid output (0 to 1)
+                    x = -6 + (i / points) * 12;
+                    y = fn(x);
+                    plotX = padding + (i / points) * (width - 2 * padding);
+                    plotY = height - padding - y * (height - 2 * padding);
+                }
+
+                if (i === 0) {
+                    ctx.moveTo(plotX, plotY);
+                } else {
+                    ctx.lineTo(plotX, plotY);
+                }
+            }
+            ctx.stroke();
+        }
+
+        // Initial draw
+        drawChart(sigmoidCtx, sigmoid, '#00d9ff', 'Output');
+        drawChart(derivCtx, sigmoidDerivative, '#f59e0b', 'Derivative', true);
+
+        // Slider interaction
+        const slider = document.getElementById('outputSlider');
+        const outputValue = document.getElementById('outputValue');
+        const derivativeValue = document.getElementById('derivativeValue');
+        const multiplierPercent = document.getElementById('multiplierPercent');
+        const neuronCircle = document.getElementById('neuronCircle');
+        const sensitivityStatus = document.getElementById('sensitivityStatus');
+        const learningEmoji = document.getElementById('learningEmoji');
+        const learningText = document.getElementById('learningText');
+
+        function updateDisplay() {
+            const output = slider.value / 100;
+            const derivative = output * (1 - output);
+
+            outputValue.textContent = output.toFixed(2);
+            derivativeValue.textContent = derivative.toFixed(3);
+            multiplierPercent.textContent = (derivative * 100).toFixed(1) + '%';
+
+            // Update neuron appearance
+            if (output > 0.3 && output < 0.7) {
+                neuronCircle.className = 'neuron-circle sensitive';
+                sensitivityStatus.className = 'status good';
+                sensitivityStatus.textContent = 'Sensitive Zone';
+                learningEmoji.textContent = '🚀';
+                learningText.textContent = 'Fast learning!';
+            } else if (output > 0.15 && output < 0.85) {
+                neuronCircle.className = 'neuron-circle';
+                neuronCircle.style.background = 'linear-gradient(135deg, #fbbf24, #f59e0b)';
+                sensitivityStatus.className = 'status';
+                sensitivityStatus.style.background = '#78350f';
+                sensitivityStatus.style.color = '#fbbf24';
+                sensitivityStatus.textContent = 'Moderate';
+                learningEmoji.textContent = '🚶';
+                learningText.textContent = 'Moderate learning';
+            } else {
+                neuronCircle.className = 'neuron-circle saturated';
+                sensitivityStatus.className = 'status bad';
+                sensitivityStatus.textContent = 'Saturated!';
+                learningEmoji.textContent = '🐌';
+                learningText.textContent = 'Very slow learning';
+            }
+
+            // Redraw charts with marker
+            drawChart(sigmoidCtx, sigmoid, '#00d9ff', 'Output');
+            drawChart(derivCtx, sigmoidDerivative, '#f59e0b', 'Derivative', true);
+
+            // Draw marker on derivative chart
+            const markerX = 40 + output * 320;
+            const markerY = 260 - (derivative / 0.25) * 220;
+            derivCtx.fillStyle = '#fff';
+            derivCtx.beginPath();
+            derivCtx.arc(markerX, markerY, 8, 0, Math.PI * 2);
+            derivCtx.fill();
+            derivCtx.strokeStyle = '#f59e0b';
+            derivCtx.lineWidth = 3;
+            derivCtx.stroke();
+        }
+
+        slider.addEventListener('input', updateDisplay);
+        updateDisplay();
+    </script>
+</body>
+</html>

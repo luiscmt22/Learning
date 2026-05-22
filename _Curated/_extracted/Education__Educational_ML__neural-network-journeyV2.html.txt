@@ -1,0 +1,737 @@
+Neural Networks from Scratch: The 20 Questions Journey
+🧠
+Neural Networks from Scratch
+The 20 Questions Journey
+A complete guide to understanding how computers learn — no programming experience required.
+We'll build an AI that plays 20 Questions and actually gets smarter over time.
+Use ← → arrow keys or buttons below to navigate
+What We're Building
+A game that learns from its mistakes
+🎮 The Game
+You've probably played 20 Questions before. Think of an animal. I ask yes/no questions. I try to guess what you're thinking of.
+Simple rules, but here's the twist: Our computer won't have a list of rules like "if it flies AND it's a bird, guess Eagle." Instead, it will figure out the patterns itself by looking at examples.
+Why This Matters
+This is exactly how modern AI works — from ChatGPT to self-driving cars. They don't follow hand-written rules. They learn patterns from data .
+❌ Traditional Programming
+Human writes rules:
+"If it swims AND has fins → Fish"
+"If it flies AND has feathers → Bird"
+Problem: What about penguins? Flying fish? Edge cases explode!
+✅ Machine Learning
+Human provides examples:
+"Here's a salmon. It swims."
+"Here's an eagle. It flies."
+The computer figures out its own rules!
+🤔
+Think About It
+If you had to teach a 5-year-old to tell the difference between cats and dogs, would you give them a rulebook, or show them lots of pictures of cats and dogs?
+Reveal the connection
+💡 The Connection
+You'd show them examples! That's exactly what neural networks do. They look at many examples and gradually figure out what makes a cat a cat and a dog a dog.
+The child doesn't memorize "cats have triangular ears" — they develop an intuition . Neural networks do the same thing, but with numbers.
+The Core Problem: Classification
+Teaching computers to put things in categories
+At its heart, 20 Questions is a classification problem: given some information (your answers), put the thing into the right category (which animal).
+📬 Real-World Analogy: The Mailroom
+Imagine you work in a mailroom. Letters arrive, and you need to put each one in the correct mailbox. You look at the address, the name, maybe the return address — and you decide which box it goes in.
+That's classification! You're looking at features (address, name) and making a decision (which mailbox).
+Examples of Classification
+📧 Email Spam Filter
+Features: Words in email, sender, links
+Categories: Spam or Not Spam
+🏥 Medical Diagnosis
+Features: Symptoms, test results, age
+Categories: Different diseases
+📷 Photo Recognition
+Features: Pixels, colors, shapes
+Categories: Cat, Dog, Car, Person...
+🎮 Our 20 Questions
+Features: Answers to questions
+Categories: Different animals
+💡 Key Insight
+Classification is everywhere in AI. Once you understand how to classify things, you understand the foundation of most machine learning systems.
+MODULE 1
+Representing Animals as Numbers
+Creating a "fingerprint" for each animal
+Computers don't understand "penguin" or "flies" — they only understand numbers. So our first job is to turn animals into numbers.
+The Questions We Ask
+We'll ask 4 simple yes/no questions about each animal:
+#
+Question
+No = 0
+Maybe = 1
+Yes = 2
+1 Does it fly? Doesn't fly Glides/sometimes Definitely flies
+2 Does it swim? Doesn't swim Can swim Lives in water
+3 Is it a mammal? No — Yes
+4 Is it a bird? No — Yes
+Turning Animals into Numbers
+Now we can describe each animal as a list of 4 numbers — its feature vector :
+Animal
+Flies?
+Swims?
+Mammal?
+Bird?
+Feature Vector
+🐧 Penguin 0 2 0 2 [0, 2, 0, 2]
+🐕 Dog 0 0 2 0 [0, 0, 2, 0]
+🦅 Eagle 2 0 0 2 [2, 0, 0, 2]
+🦈 Shark 0 2 0 0 [0, 2, 0, 0]
+Each animal is now a unique "fingerprint" of numbers
+🏠 Think of it like an address
+Your home address is a way to uniquely identify where you live using numbers and text. A feature vector is like an "address" in animal-space — it tells the computer exactly where this animal is located in the space of all possible animals.
+✏️
+Your Turn
+What would the feature vector be for a Bat ?
+(Hint: Bats fly, don't swim, ARE mammals, and are NOT birds)
+Check your answer
+✅ Answer
+Bat = [2, 0, 2, 0]
+Flies? Yes (2)
+Swims? No (0)
+Mammal? Yes (2)
+Bird? No (0)
+Notice how a bat has a different fingerprint than an eagle [2, 0, 0, 2] — the mammal/bird questions separate them!
+Similar Things Are Close Together
+Measuring similarity with distance
+Here's a powerful idea: if we can turn things into numbers, we can measure how similar they are by measuring the distance between them.
+🗺️ Think about a map
+On a map, cities that are close together are... close together! Paris and London are more similar (geographically) than Paris and Tokyo. We can measure this with distance.
+Feature vectors work the same way. Animals with similar features have vectors that are "close" to each other.
+Calculating Distance
+We'll use a simple method: add up the differences between each number.
+📏 Example: How similar is a player's answer to each animal?
+Player answers: [0, 2, 0, 2] (doesn't fly, swims, not mammal, is bird)
+vs Penguin [0, 2, 0, 2]:
+|0-0| + |2-2| + |0-0| + |2-2| = 0 + 0 + 0 + 0 = 0 ← Perfect match!
+vs Dog [0, 0, 2, 0]:
+|0-0| + |2-0| + |0-2| + |2-0| = 0 + 2 + 2 + 2 = 6 ← Very different!
+vs Shark [0, 2, 0, 0]:
+|0-0| + |2-2| + |0-0| + |2-0| = 0 + 0 + 0 + 2 = 2 ← Close, but not exact
+The smallest distance wins! In this case: Penguin (distance 0) is the best match.
+💡 Key Insight
+This simple approach is called k-Nearest Neighbors (k-NN) . It's one of the oldest machine learning algorithms, and it works surprisingly well! But it has a problem we'll discover next...
+🤔
+The Problem
+Look at Dog [0, 0, 2, 0] and Cat [0, 0, 2, 0].
+Both don't fly, don't swim, ARE mammals, and aren't birds.
+What's the distance between them? And why is that a problem?
+Reveal the problem
+⚠️ The Problem
+Distance = 0! They have identical feature vectors.
+This means no algorithm can tell them apart! If the player is thinking of a cat, and we calculate distances, cat and dog are tied. We'd have to guess randomly.
+Solution: We need better questions! "Is it a feline?" would give Cat = Yes (2), Dog = No (0).
+This teaches us a crucial lesson: the quality of your questions (features) determines the ceiling of your AI's intelligence.
+MODULE 2
+From Lookup to Learning
+What if the computer figured out patterns itself?
+So far, we've been doing "lookup" — comparing the player's answers directly to stored animal profiles. But what if we could teach the computer to learn which features matter most?
+👨‍🎓 Learning vs. Memorizing
+Memorizing: A student memorizes "2 + 2 = 4, 2 + 3 = 5, 2 + 4 = 6..." for every possible problem.
+Learning: A student understands "to add, count up by the second number" — and can solve ANY addition problem.
+We want our computer to learn , not just memorize!
+Introducing: The Artificial Neuron
+We're going to build a tiny "brain cell" — inspired by how real neurons in your brain work.
+Flies?
+Swims?
+Mammal?
+×0.1
+×0.8
+×0.3
+Add up
+& squash
+0.73
+Inputs
+Weights
+Neuron
+Output (0-1)
+A neuron multiplies each input by a weight, adds them up, and outputs a number between 0 and 1
+The Three Key Parts
+Inputs
+The answers to our questions: [0, 2, 0, 2] for a penguin. These are the facts we know.
+Weights
+Numbers that say how important each input is. A high weight means "pay attention to this!" A low weight means "ignore this."
+This is what the neuron LEARNS. It adjusts weights based on feedback.
+Output
+A single number between 0 and 1. Think of it as confidence: 0 = "definitely not", 1 = "definitely yes", 0.5 = "unsure".
+How a Neuron Thinks
+The math behind the magic (it's easier than you think!)
+A neuron does just three things: multiply, add, and squash. Let's see each step.
+Step 1: Multiply Each Input by Its Weight
+Let's say we have inputs [2, 0, 0, 2] (an eagle) and weights [0.5, 0.3, 0.1, 0.8]
+Multiplication
+Input 1 (flies=2) × Weight 1 (0.5) = 1.0
+Input 2 (swims=0) × Weight 2 (0.3) = 0.0
+Input 3 (mammal=0) × Weight 3 (0.1) = 0.0
+Input 4 (bird=2) × Weight 4 (0.8) = 1.6
+Step 2: Add Them All Up
+1.0 + 0.0 + 0.0 + 1.6 = 2.6
+We also add a bias (like a starting point). Let's say bias = -1.0:
+2.6 + (-1.0) = 1.6
+Step 3: Squash to 0-1 (The Sigmoid Function)
+The sum could be any number (-1000 to +1000). We need to squash it into a nice 0 to 1 range.
+-∞
+0
++∞
+0
+1
+0.5
+1.6 → 0.83
+The sigmoid function: big positive numbers → close to 1, big negative numbers → close to 0
+💡 What does 0.83 mean?
+If this neuron is trying to detect "is this an eagle?", then 0.83 means "83% confident this is an eagle."
+If we fed in a dog's features, we'd want this neuron to output something low, like 0.12 (12% confidence).
+✏️
+Your Turn
+Why do you think we need to squash the output to 0-1?
+What would happen if we just used the raw sum (like 2.6)?
+Reveal why
+💡 Why Squashing Matters
+Three reasons:
+Interpretable: 0-1 is easy to understand as confidence/probability
+Comparable: We can compare neurons fairly (otherwise one might output 1000, another 0.001)
+Stable: Without squashing, numbers can explode to infinity and break the math
+How Learning Happens
+Adjusting weights based on mistakes
+Here's the beautiful part: a neuron learns by making mistakes and adjusting . Just like humans!
+🏀 Learning to Shoot Free Throws
+When you miss a shot, you don't just keep shooting the exact same way. You adjust:
+Shot went left? Aim a little right next time.
+Shot was short? Put more power next time.
+Each miss gives you information about how to adjust. Neural networks work the same way!
+The Learning Recipe
+Make a Prediction
+Feed in an eagle [2, 0, 0, 2]. Neuron outputs 0.4
+Check the Answer
+We wanted 1.0 (yes, it's an eagle!). We got 0.4.
+Error = 1.0 - 0.4 = 0.6 (we were too low by 0.6)
+Adjust the Weights
+The error tells us we need to increase our output. So we nudge the weights UP a little bit.
+Repeat!
+Do this thousands of times with different examples. The weights gradually settle into values that work well.
+The Weight Update Rule
+new weight = old weight + (learning rate × error × input)
+📝 Let's trace through an example
+The "flies" weight is 0.5. The input was 2 (yes, flies). The error was 0.6. Learning rate is 0.1.
+Weight Update Calculation
+new weight = 0.5 + (0.1 × 0.6 × 2)
+= 0.5 + 0.12
+= 0.62
+The "flies" weight went from 0.5 to 0.62. Next time, the neuron will pay MORE attention to flying things!
+💡 Why multiply by the input?
+If an input was 0 (not important for this example), we don't want to change its weight — it didn't contribute to the error!
+If an input was 2 (very relevant), we want to adjust its weight more — it was important for this decision.
+MODULE 3
+One Neuron Per Animal
+Building a network that recognizes many categories
+A single neuron can only answer one question: "Is this a penguin? (yes/no)". But we have 8 animals! Solution: use 8 neurons , one for each animal.
+Questions (Inputs)
+Flies?
+Swims?
+Mammal?
+Bird?
+→
+Animal Detectors
+🐧
+🐕
+🦅
+🦈
+🐱
+🐋
+🦇
+🐟
+→
+Pick Highest
+🏆
+How It Works
+Feed in penguin's features [0, 2, 0, 2]. Each neuron outputs its confidence:
+Neuron Output Meaning
+🐧 Penguin 0.92 92% confident
+🐕 Dog 0.15 15% confident
+🦅 Eagle 0.23 23% confident
+🦈 Shark 0.45 45% confident
+... etc ... ...
+Winner: 🐧 Penguin with 0.92!
+Training: Everyone Learns at Once
+When we show the network a penguin, we tell ALL neurons what they should output:
+Expected Outputs for Penguin
+Penguin neuron: should output 1.0 (yes, this IS a penguin)
+Dog neuron: should output 0.0 (no, this is NOT a dog)
+Eagle neuron: should output 0.0 (no, this is NOT an eagle)
+... and so on for all 8 neurons
+Each neuron calculates its own error and adjusts its own weights. They learn independently but work together!
+💡 Key Insight
+A network is just neurons working together. Each neuron specializes in detecting one thing. The collective behavior produces intelligent classification.
+MODULE 5
+Why One Layer Isn't Enough
+The limits of simple networks
+Our network works! But it has a fundamental limitation. Let's discover it together.
+🤔
+Spot the Problem
+Can a single neuron learn to recognize this pattern?
+Input A Input B Output
+0 0 0
+0 1 1
+1 0 1
+1 1 0
+Output is 1 when inputs are different , 0 when they're the same
+Reveal the answer
+❌ No, it can't!
+This is called the XOR problem (exclusive or). It's impossible for a single neuron to solve.
+Why? A single neuron can only draw one straight line to separate "yes" from "no". But look at this pattern:
+B
+↑
+1 | NO YES
+| ● ●
+|
+0 | YES NO
+| ● ●
++------------→ A
+0 1
+You can't draw ONE straight line that puts YES on one side and NO on the other. You'd need two lines!
+The Solution: Add a Hidden Layer
+What if we had neurons between the inputs and outputs? These "hidden" neurons can detect combinations of features .
+Inputs
+A
+B
+→
+Hidden Layer
+H1
+H2
+→
+Output
+XOR
+🧩 What the hidden neurons learn
+H1 might learn: "A OR B" (at least one is 1)
+H2 might learn: "A AND B" (both are 1)
+The output neuron combines these: "H1 but NOT H2" = XOR!
+💡 Key Insight
+Hidden layers learn intermediate representations. In our animal game, a hidden neuron might learn to detect "aquatic mammal" (whale, dolphin) or "flying non-bird" (bat). These abstract features make the final classification easier.
+Our Multi-Layer Network
+Adding depth to our animal classifier
+Inputs (6)
+Flies?
+Swims?
+Mammal?
+Bird?
+Feline?
+Danger?
+→
+Hidden (6)
+H0
+H1
+H2
+H3
+H4
+H5
+→
+Output (8)
+🐧
+🐕
+🦅
+🦈
+🐱
+🐋
+🦇
+🐟
+How Data Flows Through
+Input → Hidden
+Each of the 6 hidden neurons receives ALL 6 inputs. Each has its own weights (6 weights + 1 bias = 7 parameters per neuron).
+Hidden layer total: 6 neurons × 7 parameters = 42 learnable values
+Hidden → Output
+Each of the 8 output neurons receives outputs from ALL 6 hidden neurons. Each output neuron has 6 weights + 1 bias = 7 parameters.
+Output layer total: 8 neurons × 7 parameters = 56 learnable values
+🔢 Total Parameters
+42 + 56 = 98 learnable values
+These 98 numbers are what the network "learns" during training!
+C# — The Key Code
+// Data flows through each layer, output becomes next input
+public double [] Compute ( double [] inputs)
+{
+var outputs = new double [] { };
+foreach ( var layer in Layers)
+{
+outputs = ComputeSingleLayer (inputs, layer);
+inputs = outputs; // ← This line is the magic!
+}
+return outputs;
+}
+MODULE 6
+The Credit Assignment Problem
+When something goes wrong, who's to blame?
+With multiple layers, we have a problem: if the network makes a mistake, which neurons are responsible?
+⚽ The Soccer Team Analogy
+Your team loses a match. Who's at fault?
+The striker who missed the shot?
+The midfielder who made a bad pass?
+The defender who let someone through?
+The goalkeeper who didn't save it?
+Usually, it's everyone a little bit — and we need to figure out how much each player contributed to the loss.
+This is exactly the problem neural networks face!
+The Output Layer Is Easy
+For output neurons, we know exactly what they should have output:
+Output Error
+Expected: [0, 0, 0, 0, 1 , 0, 0, 0] // Cat (index 4)
+Actual: [0.1, 0.2, 0.1, 0.3, 0.6 , 0.1, 0.1, 0.1]
+Error for Cat neuron: 1.0 - 0.6 = +0.4 // Too low!
+Error for Dog neuron: 0.0 - 0.2 = -0.2 // Too high!
+But the Hidden Layer? 🤔
+⚠️ The Challenge
+Hidden neurons don't have "expected outputs." There's no teacher saying "H3 should have output 0.7."
+So how do we train them?
+🤔
+Think About It
+Hidden neuron H2 connects to output neuron "Dog" with a very strong weight (0.9) .
+The Dog neuron had a big error (it fired when it shouldn't have).
+Does this tell us anything about H2's responsibility?
+Reveal the insight
+💡 The Key Insight
+Yes! If H2 has a strong connection to Dog, and Dog made a big mistake, then H2 probably contributed significantly to that mistake.
+The blame H2 receives should be proportional to:
+How big the Dog's error was
+How strong the connection from H2 to Dog was
+This is the core idea of backpropagation!
+Backpropagation: Blame Flows Backward
+The algorithm that made deep learning possible
+Backpropagation is just a method for figuring out how much each neuron contributed to the error, so we know how much to adjust each weight.
+The Core Idea
+Hidden Error = Σ (Output Error × Connection Weight)
+📐 Concrete Example
+Hidden neuron H2 connects to three output neurons:
+Output Neuron Its Error Weight from H2 Blame to H2
+Dog -0.2 0.9 -0.18
+Cat +0.4 0.3 +0.12
+Eagle -0.1 0.2 -0.02
+H2's total error: -0.18 + 0.12 + (-0.02) = -0.08
+H2 should decrease its output slightly (negative error)
+Visual: Forward vs. Backward
+Input
+Hidden
+H2
+Output
+FORWARD: Signals
+BACKWARD: Errors
+Weights AMPLIFY
+signals forward
+Same weights DISTRIBUTE
+blame backward
+💡 The Beautiful Symmetry
+The same weights that carry signals forward also carry errors backward. It's like the network is asking each neuron: "Given how much you contributed to the output, how much did you contribute to the error?"
+The Sigmoid Derivative
+Why confident neurons learn slowly
+There's one more piece to backpropagation: we need to account for how "responsive" each neuron is.
+🚗 The Gas Pedal Analogy
+Imagine you're driving:
+Going 30 mph: Pressing the gas makes a big difference. The car responds!
+Going 120 mph: Pressing the gas barely changes anything. You're near the limit.
+Neurons work similarly. A neuron outputting 0.5 is very responsive. A neuron outputting 0.99 is "maxed out" — it can barely change.
+The Sigmoid Derivative
+derivative = output × (1 - output)
+Output: 0 (very low)
+Output: 1 (very high)
+Output: 0.50
+Derivative: 0.250
+Neuron is very responsive — learns quickly!
+Output Derivative Meaning
+0.01 0.01 Almost no learning — neuron says "definitely no"
+0.5 0.25 Maximum learning — neuron is uncertain
+0.99 0.01 Almost no learning — neuron says "definitely yes"
+💡 Why This Matters
+Without the derivative, a neuron outputting 0.99 would get the same error signal as one outputting 0.5. But the 0.99 neuron can barely move! Including the derivative prevents wasting updates on "stubborn" neurons.
+Result: The network generalizes better and doesn't overfit to training examples.
+Backpropagation: The Complete Algorithm
+Putting it all together
+Forward Pass
+Feed inputs through the network. Save each layer's outputs — we'll need them later!
+Step 1
+hiddenOutputs = ComputeLayer (inputs, hiddenLayer)
+finalOutputs = ComputeLayer (hiddenOutputs, outputLayer)
+Calculate Output Errors
+Compare predictions to expected values. Include the sigmoid derivative!
+Step 2
+for each output neuron i:
+rawError = expected[i] - actual[i]
+outputErrors[i] = rawError × actual[i] × (1 - actual[i])
+Backpropagate to Hidden Layer
+For each hidden neuron, sum up the blame from all outputs it connects to.
+Step 3
+for each hidden neuron h:
+sum = 0
+for each output neuron o:
+sum += outputErrors[o] × weight[h → o]
+hiddenErrors[h] = sum × hiddenOutput[h] × (1 - hiddenOutput[h])
+Update All Weights
+Each layer adjusts its weights based on its errors and inputs.
+Step 4
+// Output layer learns from hidden layer outputs
+outputLayer. Train (hiddenOutputs, outputErrors, learningRate)
+// Hidden layer learns from original inputs
+hiddenLayer. Train (inputs, hiddenErrors, learningRate)
+💡 That's It!
+This simple algorithm — forward pass, calculate errors, backpropagate, update weights — is the foundation of all modern deep learning. GPT, image recognition, self-driving cars... they all use this same core idea, just at massive scale.
+What We've Built So Far
+A working neural network from scratch
+✅ Module 1: Feature Vectors
+Turning animals into numbers — the "fingerprint" that lets computers understand the world.
+✅ Module 2: Single Neurons
+The building block of AI — multiply, add, squash. Simple math, powerful results.
+✅ Module 3: Multi-Class Output
+One neuron per animal. The network learns to recognize 8 different creatures.
+✅ Module 4: Database Integration
+EF Core stores animals and questions. Real software engineering, not just experiments.
+✅ Module 5: Hidden Layers
+Adding depth — hidden neurons learn abstract patterns humans never designed.
+✅ Module 6: Backpropagation
+The algorithm that revolutionized AI — error flows backward through weights.
+💡 Key Achievement
+You didn't just use a library. You built the core algorithms yourself. You understand what a weight IS, not just how to call a function.
+Next: The Road Ahead
+Five more modules will transform our learning project into a polished, production-ready game. Let's preview what's coming...
+MODULE 7 — COMING NEXT
+Training at Scale
+Making training faster, smarter, and more reliable
+Right now, our network trains one example at a time. That works, but it's slow and unstable . Let's fix that.
+Problem 1: One-at-a-Time Training
+⚠️ The Issue
+Training on one example, then immediately adjusting weights, makes the network "overreact" to each individual case.
+Imagine learning to drive by overcorrecting after every single bump in the road — you'd zigzag wildly!
+Solution: Batch Training
+Batch Training Concept
+// Instead of updating after EACH example:
+foreach (example in trainingData)
+{
+Train (example); // Update weights immediately
+}
+// We accumulate errors across a BATCH:
+foreach (batch in trainingData. Chunk (32))
+{
+var totalError = AccumulateErrors (batch);
+UpdateWeights (totalError / batch.Length); // Average error
+}
+Problem 2: Learning Rate
+🎯 The Goldilocks Problem
+Too high: Learning is fast but unstable — you overshoot the optimal weights and oscillate forever.
+Too low: Learning is stable but SLOW — you take tiny steps and never finish.
+Solution: Start high (bold exploration), then decrease (fine-tuning). This is called learning rate scheduling .
+Problem 3: Overfitting
+❌ Overfitting
+The network memorizes the training data perfectly... but fails on new animals it's never seen.
+Like a student who memorizes test answers but can't solve new problems.
+✅ Good Generalization
+The network learns the underlying patterns, not the specific examples.
+It can recognize a new animal based on what it learned about feature combinations.
+Techniques We'll Learn
+Validation set: Hold out some data to test if we're overfitting
+Early stopping: Stop training when validation error starts increasing
+Dropout: Randomly "turn off" neurons during training to prevent co-dependency
+MODULE 8 — COMING SOON
+Persistence: Saving Your Brain
+Don't lose 2 million iterations of learning!
+Right now, every time we restart the program, the network forgets everything. All those millions of training iterations? Gone. Let's fix that.
+💾 The Problem
+Imagine if you forgot everything you learned every time you went to sleep. You'd have to relearn walking, talking, and reading every morning!
+Our network has the same problem. We need to give it long-term memory .
+What Do We Need to Save?
+🧠 The Network's "Knowledge"
+A trained network is just a collection of numbers:
+Weights: How strongly each input connects to each neuron
+Biases: Each neuron's "starting point"
+Architecture: How many layers, how many neurons per layer
+Our 98-parameter network is just 98 numbers that we need to save!
+Serialization Options
+📄 JSON
+Pros: Human-readable, easy to debug
+Cons: Larger file size, slower
+{
+"layers": [
+{"weights": [[0.5, 0.3], [0.2, 0.8]],
+"biases": [0.1, -0.2]}
+]
+}
+🔢 Binary
+Pros: Compact, fast, exact precision
+Cons: Not human-readable
+// 98 doubles × 8 bytes
+// = 784 bytes total
+// That's less than 1 KB!
+The Save/Load Pattern
+C# — Network Persistence
+public void Save ( string path)
+{
+var data = new NetworkData
+{
+Layers = Layers. Select (l => new LayerData
+{
+Weights = l. Select (n => n.Weights).ToArray(),
+Biases = l. Select (n => n.Bias).ToArray()
+}).ToList()
+};
+File. WriteAllText (path, JsonSerializer. Serialize (data));
+}
+public static NeuralNetwork Load ( string path)
+{
+var data = JsonSerializer. Deserialize <NetworkData>(
+File. ReadAllText (path));
+// Reconstruct neurons from saved weights/biases...
+}
+💡 Real-World Impact
+This is exactly how production ML works. Models like GPT-4 are trained once (at massive cost), then the weights are saved and distributed. When you use ChatGPT, you're running inference on pre-saved weights — no training happens!
+MODULE 9 — COMING SOON
+Smart Questions
+Asking the questions that matter most
+Not all questions are equally useful. "Is it an animal?" is useless if we're only playing with animals. Which question gives us the most information?
+🎯 The Classic 20 Questions Strategy
+Good players start broad: "Is it alive?" eliminates half the possibilities.
+Bad players ask specific things: "Is it a blue whale?" — probably not, and you wasted a question.
+There's actual math behind this intuition. It's called Information Theory .
+Introducing: Entropy
+Entropy = Σ (-p × log₂(p)) for each possible outcome
+📊 What Does Entropy Measure?
+High entropy: Very uncertain. Many equally likely outcomes.
+Low entropy: Very certain. One outcome dominates.
+Example — 8 animals, all equally likely:
+Entropy = 8 × (-0.125 × log₂(0.125)) = 3 bits
+This means we need at least 3 yes/no questions to identify the animal (2³ = 8).
+Information Gain
+The best question is the one that reduces entropy the most .
+❌ Bad Question: "Is it a penguin?"
+If Yes (12.5%): We know it's a penguin! Entropy = 0
+If No (87.5%): Still 7 possibilities. Entropy ≈ 2.8
+Average info gain: 0.17 bits
+✅ Good Question: "Is it a mammal?"
+If Yes (50%): 4 mammals left. Entropy = 2
+If No (50%): 4 non-mammals left. Entropy = 2
+Average info gain: 1.0 bit
+Implementing Smart Question Selection
+C# — Select Best Question
+public Question SelectBestQuestion (List<Animal> remaining, List<Question> asked)
+{
+var candidates = allQuestions. Except (asked);
+return candidates
+. OrderByDescending (q => CalculateInfoGain (remaining, q))
+. First ();
+}
+💡 Why This Matters
+With random questions, you might need 15 questions to find an animal. With optimal questions, you can do it in 3-4 . That's the power of information theory!
+MODULE 10 — COMING SOON
+ML Libraries: The Real World
+How professionals do it (and why we built from scratch first)
+In production, nobody writes neurons from scratch. Let's see what libraries exist and how they compare — now that you understand what they're doing under the hood .
+Why We Built from Scratch First
+🚗 Learning to Drive
+You could start with an automatic car and never learn what a clutch does. But if something goes wrong, you'll have no idea why.
+By building from scratch, you now understand:
+Why training is slow (millions of weight updates)
+Why learning rate matters (step size in error landscape)
+Why deep networks need backpropagation (credit assignment)
+The Big Players
+Library
+Language
+Best For
+Complexity
+ML.NET
+C# / .NET
+Enterprise apps, .NET ecosystem
+Medium
+PyTorch
+Python
+Research, dynamic networks
+Medium-High
+TensorFlow
+Python/C++
+Production, mobile deployment
+High
+scikit-learn
+Python
+Classic ML, fast prototypes
+Low
+Our Code vs. ML.NET
+Our Scratch Implementation
+// We wrote every line!
+var hidden = new List<Neuron>();
+for ( int i = 0; i < 6; i++)
+hidden.Add( new Neuron(6));
+var output = new List<Neuron>();
+for ( int i = 0; i < 8; i++)
+output.Add( new Neuron(6));
+network.Train(inputs, expected, lr);
+ML.NET Equivalent
+// Library handles the details
+var pipeline = context.Transforms
+.Concatenate( "Features" , inputColumns)
+.Append(context.MulticlassClassification
+.Trainers.SdcaMaximumEntropy());
+var model = pipeline.Fit(trainingData);
+var prediction = model.Transform(newData);
+💡 The Tradeoff
+Libraries: Faster to write, optimized, handles edge cases — but you're trusting a black box.
+From scratch: Slower, educational — but you understand every decision.
+Best approach? Learn from scratch first, then use libraries with understanding. That's exactly what we did!
+MODULE 11 — FINAL MODULE
+Building the Game UI
+Making it actually fun to play!
+We have the brains. Now we need a face! Let's build a beautiful, interactive game interface using Blazor and MudBlazor .
+What We'll Build
+🧠 20 Questions AI
+Think of an animal...
+Does it fly?
+Yes
+Maybe
+No
+Questions asked: 3/20
+A mockup of the game interface we'll build
+Technology Stack
+🔷 Blazor Server
+C# runs on the server, UI updates in real-time. No JavaScript needed (mostly)!
+🎨 MudBlazor
+Beautiful, pre-built components: buttons, cards, dialogs, progress bars, and more.
+💾 Our Neural Network
+The brain we built connects directly to the UI. Same C# code!
+📊 EF Core
+Animals, questions, and game history stored in SQL Server.
+Key UI Features
+🎯 Answer buttons: Yes / Maybe / No with visual feedback
+📊 Confidence display: Show the network's top guesses as it narrows down
+🎉 Reveal animation: Dramatic guess reveal at the end
+📈 Statistics: Track win rate, average questions needed
+➕ Add animals: Teach the network new animals when it loses
+💡 Full Stack AI
+By the end, you'll have built a complete, playable AI game : from the mathematical foundations of neural networks, through database design, to a polished user interface. That's real software engineering!
+Key Takeaways
+What you've learned (and will learn)
+Features determine intelligence: Good questions (features) set the ceiling of your AI's capability. Garbage in, garbage out.
+Weights encode knowledge: Training is just adjusting numbers until errors shrink. The "magic" is in finding the right numbers.
+Hidden layers find patterns: They learn intermediate representations that humans never explicitly designed — like "aquatic mammal" or "flying non-bird".
+Errors flow backward: Backpropagation assigns credit (and blame) proportional to influence. The same weights that amplify signals distribute errors.
+The sigmoid derivative prevents waste: Confident neurons don't learn much — they're already "maxed out."
+Information theory guides questions: The best question is the one that maximally reduces uncertainty.
+Understanding > memorizing: Build it yourself, and you'll never forget how it works. Libraries are tools, not magic.
+The Journey Map
+1
+Features
+→
+2
+Neurons
+→
+3-6
+Network
+→
+7-8
+Scale
+→
+9-10
+Polish
+→
+11
+UI
+● Complete ● Coming Soon
+🎉
+Congratulations!
+You understand how neural networks really work.
+Not just how to use a library. Not just the buzzwords. But the actual math , the intuition , and the code .
+Most people who talk about AI can't explain what a weight is. You can build one from scratch.
+Built with 🧠 by a human and an AI, learning together.
+GitHub: github.com/luiscmt22/TwentyQ
+← Previous
+1 / 17
+Next →

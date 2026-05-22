@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>05-Polite-Code-Style</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 14-Code-Quality</div>
+  <h1>05-Polite-Code-Style</h1>
+  <div class="meta">Source: <code>Education/05-Polite-Code-Style.md</code> &middot; <a href="05-Polite-Code-Style.md">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<h1 id="polite-code-style-guide">Polite Code Style Guide</h1>
+<h2 id="what-is-polite-code">What is &quot;Polite Code&quot;?</h2>
+<p>Polite code is self-documenting, readable, and expressive. Instead of forcing developers to trace through complex logic, polite code tells you exactly what it does at a glance.</p>
+<h2 id="key-principles">Key Principles</h2>
+<h3 id="1-boolean-properties-with-clear-names">1. Boolean Properties with Clear Names</h3>
+<pre><code class="lang-csharp"><span class="cmt">// GOOD - &quot;Polite&quot; boolean properties</span>
+<span class="kw">protected</span> <span class="kw">bool</span> <span class="type">IsSuperAdmin</span> =&gt; <span class="type">RoleLevel</span> &gt;= <span class="num">100</span>;
+<span class="kw">protected</span> <span class="kw">bool</span> <span class="type">IsAdminOrAbove</span> =&gt; <span class="type">RoleLevel</span> &gt;= <span class="num">80</span>;
+<span class="kw">protected</span> <span class="kw">bool</span> <span class="type">IsManagerOrAbove</span> =&gt; <span class="type">RoleLevel</span> &gt;= <span class="num">60</span>;
+<span class="kw">protected</span> <span class="kw">bool</span> <span class="type">HasLinkedEmployee</span> =&gt; employeeLinkage != <span class="kw">null</span> &amp;&amp; employeeLinkage.<span class="type">IsActive</span>;
+
+<span class="cmt">// BAD - Unclear</span>
+<span class="kw">protected</span> <span class="kw">bool</span> <span class="type">CheckAdmin</span>() =&gt; role &gt; <span class="num">2</span>;
+<span class="kw">protected</span> <span class="kw">bool</span> <span class="type">HasEmployee</span> =&gt; emp != <span class="kw">null</span>;</code></pre>
+<h3 id="2-compound-conditions-that-read-like-english">2. Compound Conditions That Read Like English</h3>
+<pre><code class="lang-csharp"><span class="cmt">// GOOD - Reads like a sentence: &quot;If admin or above AND employee belongs to current company AND has linked employee ID&quot;</span>
+<span class="kw">@if</span> (<span class="type">IsAdminOrAbove</span> &amp;&amp; colaboradorBelongsToCurrentCompany &amp;&amp; <span class="type">LinkedEmployeeId</span>.<span class="type">HasValue</span>)
+{
+    &lt;<span class="type">EmployeeConfigurationPanel</span> ... /&gt;
+}
+
+<span class="cmt">// BAD - Hard to understand at a glance</span>
+<span class="kw">@if</span> (_role &gt;= <span class="num">80</span> &amp;&amp; _empCoId == _sessCoId &amp;&amp; _linkId != <span class="kw">null</span>)
+{
+    ...
+}</code></pre>
+<h3 id="3-descriptive-variable-names">3. Descriptive Variable Names</h3>
+<pre><code class="lang-csharp"><span class="cmt">// GOOD</span>
+<span class="kw">private</span> <span class="kw">bool</span> colaboradorBelongsToCurrentCompany = <span class="kw">false</span>;
+<span class="kw">private</span> <span class="kw">string</span>? linkedEmployeeCompanyName;
+<span class="kw">private</span> <span class="kw">int</span>? <span class="type">LinkedEmployeeId</span> =&gt; employeeLinkage?.<span class="type">EmployeeId</span>;
+
+<span class="cmt">// BAD</span>
+<span class="kw">private</span> <span class="kw">bool</span> sameCo = <span class="kw">false</span>;
+<span class="kw">private</span> <span class="kw">string</span>? empCoName;
+<span class="kw">private</span> <span class="kw">int</span>? empId =&gt; link?.<span class="type">EmpId</span>;</code></pre>
+<h3 id="4-properties-over-direct-access">4. Properties Over Direct Access</h3>
+<pre><code class="lang-csharp"><span class="cmt">// GOOD - Use properties that express intent</span>
+<span class="kw">protected</span> <span class="kw">int</span> <span class="type">CurrentUserId</span> =&gt; <span class="type">UserSession</span>?.<span class="type">User</span>.<span class="type">Id</span> ?? <span class="num">0</span>;
+<span class="kw">protected</span> <span class="kw">string</span> <span class="type">CompanyDatabase</span> =&gt; <span class="type">UserSession</span>?.<span class="type">Empresa</span>?.<span class="type">BaseNome</span> ?? <span class="kw">string</span>.<span class="type">Empty</span>;
+
+<span class="cmt">// Component usage</span>
+&lt;<span class="type">SomeComponent</span> <span class="type">UserId</span>=<span class="str">&quot;@CurrentUserId&quot;</span> <span class="type">Database</span>=<span class="str">&quot;@CompanyDatabase&quot;</span> /&gt;
+
+<span class="cmt">// BAD - Direct access scattered throughout</span>
+&lt;<span class="type">SomeComponent</span> <span class="type">UserId</span>=<span class="str">&quot;@UserSession?.User.Id ?? 0&quot;</span> <span class="type">Database</span>=<span class="str">&quot;@UserSession?.Empresa?.BaseNome ?? string.Empty&quot;</span> /&gt;</code></pre>
+<h2 id="real-world-examples-from-hrmodule">Real-World Examples from HRModule</h2>
+<h3 id="authorization-checks">Authorization Checks</h3>
+<pre><code class="lang-csharp"><span class="cmt">// In AuthenticatedComponentBase - &quot;Polite&quot; convenience properties</span>
+<span class="kw">protected</span> <span class="kw">bool</span> <span class="type">IsSuperAdmin</span> =&gt; <span class="type">RoleLevel</span> &gt;= <span class="num">100</span>;
+<span class="kw">protected</span> <span class="kw">bool</span> <span class="type">IsAdminOrAbove</span> =&gt; <span class="type">RoleLevel</span> &gt;= <span class="num">80</span>;
+<span class="kw">protected</span> <span class="kw">bool</span> <span class="type">IsManagerOrAbove</span> =&gt; <span class="type">RoleLevel</span> &gt;= <span class="num">60</span>;
+
+<span class="cmt">// Usage in Razor - crystal clear intent</span>
+<span class="kw">@if</span> (<span class="type">IsSuperAdmin</span>)
+{
+    &lt;<span class="type">MudButton</span> <span class="type">Color</span>=<span class="str">&quot;Color.Error&quot;</span>&gt;<span class="type">Delete</span> <span class="type">System</span>&lt;/<span class="type">MudButton</span>&gt;
+}
+
+<span class="kw">@if</span> (<span class="type">IsAdminOrAbove</span>)
+{
+    &lt;<span class="type">MudButton</span>&gt;<span class="type">Manage</span> <span class="type">Users</span>&lt;/<span class="type">MudButton</span>&gt;
+}
+
+<span class="kw">@if</span> (<span class="type">IsManagerOrAbove</span>)
+{
+    &lt;<span class="type">MudButton</span>&gt;<span class="type">View</span> <span class="type">Team</span> <span class="type">Reports</span>&lt;/<span class="type">MudButton</span>&gt;
+}</code></pre>
+<h3 id="conditional-ui-rendering">Conditional UI Rendering</h3>
+<pre><code class="lang-csharp"><span class="cmt">// UtilizadorDetalhes.razor - All conditions are immediately understandable</span>
+<span class="kw">@if</span> (<span class="type">IsAdminOrAbove</span> &amp;&amp; colaboradorBelongsToCurrentCompany &amp;&amp; <span class="type">LinkedEmployeeId</span>.<span class="type">HasValue</span>)
+{
+    &lt;<span class="type">MudTabPanel</span> <span class="type">Text</span>=<span class="str">&quot;Configurações HR&quot;</span> <span class="type">Icon</span>=<span class="str">&quot;@Icons.Material.Filled.Settings&quot;</span>&gt;
+        &lt;<span class="type">EmployeeConfigurationPanel</span> <span class="type">EmployeeId</span>=<span class="str">&quot;@LinkedEmployeeId.Value&quot;</span>
+                                    <span class="type">CompanyDatabase</span>=<span class="str">&quot;@CompanyDatabase&quot;</span>
+                                    <span class="type">CurrentUserId</span>=<span class="str">&quot;@CurrentUserId&quot;</span>
+                                    <span class="type">ReadOnly</span>=<span class="str">&quot;@(!IsAdminOrAbove)&quot;</span> /&gt;
+    &lt;/<span class="type">MudTabPanel</span>&gt;
+}</code></pre>
+<h3 id="service-methods">Service Methods</h3>
+<pre><code class="lang-csharp"><span class="cmt">// IEmployeeConfigurationService - Method names express exactly what they do</span>
+<span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">CanEmployeeCheckInAsync</span>(<span class="kw">int</span> employeeId, <span class="kw">string</span> companyDatabase);
+<span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">CanEmployeeValidateAttendanceAsync</span>(<span class="kw">int</span> employeeId, <span class="kw">string</span> companyDatabase);
+<span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">RequiresGeolocationAsync</span>(<span class="kw">int</span> employeeId, <span class="kw">string</span> companyDatabase);
+<span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">HasHoursBankEnabledAsync</span>(<span class="kw">int</span> employeeId, <span class="kw">string</span> companyDatabase);</code></pre>
+<h2 id="code-review-checklist">Code Review Checklist</h2>
+<p>When reviewing code, ask:</p>
+<ol>
+<li><strong>Readability</strong>: Can you understand the condition without tracing variable definitions?</li>
+<li><strong>Intent</strong>: Does the code express <em>what</em> it&#x27;s checking, not <em>how</em>?</li>
+<li><strong>Naming</strong>: Are booleans named as questions that return true/false answers?</li>
+<li><strong>Compound Conditions</strong>: Do multi-part conditions read like English sentences?</li>
+<li><strong>Consistency</strong>: Are similar checks using the same patterns throughout?</li>
+</ol>
+<h2 id="migration-strategy">Migration Strategy</h2>
+<p>When refactoring existing code to &quot;polite&quot; style:</p>
+<ol>
+<li><strong>Identify unclear patterns</strong>: Look for magic numbers, abbreviations, direct property chains</li>
+<li><strong>Create expressive properties</strong>: Add <code class="il">IsXxx</code>, <code class="il">HasXxx</code>, <code class="il">CanXxx</code> properties</li>
+<li><strong>Update usages</strong>: Replace direct checks with property references</li>
+<li><strong>Document intent</strong>: Use XML comments for non-obvious properties</li>
+</ol>
+<pre><code class="lang-csharp"><span class="cmt">// Before</span>
+<span class="kw">@if</span> (userSession?.<span class="type">User</span>?.<span class="type">Role</span> &gt;= <span class="num">80</span> &amp;&amp; linkedFuncId != <span class="kw">null</span>)
+
+<span class="cmt">// After - with supporting properties</span>
+<span class="cmt">/// &lt;summary&gt;</span>
+<span class="cmt">/// User has Admin role or higher (SuperAdmin, Admin)</span>
+<span class="cmt">/// &lt;/summary&gt;</span>
+<span class="kw">protected</span> <span class="kw">bool</span> <span class="type">IsAdminOrAbove</span> =&gt; <span class="type">RoleLevel</span> &gt;= <span class="num">80</span>;
+
+<span class="kw">protected</span> <span class="kw">int</span>? <span class="type">LinkedEmployeeId</span> =&gt; employeeLinkage?.<span class="type">EmployeeId</span>;
+
+<span class="kw">@if</span> (<span class="type">IsAdminOrAbove</span> &amp;&amp; <span class="type">LinkedEmployeeId</span>.<span class="type">HasValue</span>)</code></pre>
+<h2 id="summary">Summary</h2>
+<p>Polite code:</p>
+<ul>
+<li>Uses clear, descriptive names</li>
+<li>Expresses intent, not implementation</li>
+<li>Reads like English</li>
+<li>Is self-documenting</li>
+<li>Reduces cognitive load for future maintainers</li>
+</ul>
+<p><strong>Remember</strong>: Code is read far more often than it&#x27;s written. Invest in readability.</p>
+</div>
+</body>
+</html>

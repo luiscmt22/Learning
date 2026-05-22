@@ -1,0 +1,65 @@
+Sigmoid Derivative Visualized
+Why Sigmoid Derivative Matters
+The sigmoid function squashes any input into a value between 0 and 1. But here's the key insight:
+The slope (derivative) tells us how "sensitive" the neuron is to changes.
+When we backpropagate errors, we multiply by this derivative. Why? Because it answers: "If I nudge the input a little, how much does the output actually change?"
+Sigmoid Function
+Output = 1 / (1 + e -x )
+Sigmoid Derivative
+Derivative = output × (1 - output)
+Interactive Explorer
+Drag the slider to see how the derivative changes at different output values:
+Output: 0
+1
+Neuron Output
+0.50
+Sensitive
+→
+Derivative: 0.250
+Error multiplier: 25%
+→
+Learning Speed
+🚀
+Fast learning!
+The Math in Plain English
+error_to_backpropagate = raw_error × output × (1 - output)
+Example: The network predicted 0.9 for "Dog" but expected 0.0 (wrong animal).
+Scenario
+Output
+Raw Error
+Derivative
+Scaled Error
+Learning
+Without derivative
+0.9
+-0.9
+—
+-0.900
+Big change 💥
+With derivative
+0.9
+-0.9
+0.9 × 0.1 = 0.09
+-0.081
+Small change 🎯
+Why is the small change better?
+When output is 0.9, the neuron is in the "flat" part of the sigmoid curve. Even a large weight change barely moves the output! The derivative tells us: "Don't waste effort here — this neuron can barely change anyway."
+The Three Zones
+0.05
+Saturated LOW
+Derivative ≈ 0.05
+Barely learns
+0.50
+Sensitive
+Derivative = 0.25
+Learns fastest!
+0.95
+Saturated HIGH
+Derivative ≈ 0.05
+Barely learns
+This is why networks can get "stuck" — if neurons saturate, gradients vanish and learning stalls.
+The derivative prevents wasting updates on neurons that can't change much anyway.
+Why This Improves Generalization
+Without the derivative, the network learns "all or nothing" — it pushes neurons hard toward 0 or 1.
+With the derivative, learning is proportional to sensitivity . The network develops more nuanced internal representations.
+Result: When you input "maybe" (1) instead of "yes" (2), the network handles the ambiguity better because it learned smoother decision boundaries, not sharp cliffs.

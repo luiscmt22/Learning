@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Backpropagation</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 18-Machine-Learning</div>
+  <h1>Backpropagation</h1>
+  <div class="meta">Source: <code>Education/Educational_ML/Backpropagation.md</code> &middot; <a href="Backpropagation.md">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<h1 id="backpropagation-visual-guide">Backpropagation Visual Guide</h1>
+<h2 id="the-problem-credit-assignment">The Problem: Credit Assignment</h2>
+<p>When the network makes a wrong prediction, we know the <strong>output layer&#x27;s error</strong> (expected - actual). But what about the <strong>hidden layer</strong>? There&#x27;s no &quot;expected output&quot; for hidden neurons.</p>
+<p><strong>The solution:</strong> Propagate errors backward through the weights.</p>
+<hr>
+<h2 id="forward-pass-left-to-right">Forward Pass (left to right)</h2>
+<p>Data flows from inputs through hidden layer to output layer.</p>
+<div class="diagram-box"><pre>    INPUTS              HIDDEN LAYER           OUTPUT LAYER
+    [0,2,2,0,2,0]          (6 neurons)            (8 neurons)
+         │                     │                      │
+         │    ┌────────────────┼───────────────┐      │
+         │    │                │               │      │
+         ▼    ▼                ▼               ▼      ▼
+        ┌──┐ ┌──┐            ┌──┐            ┌──┐   ┌──┐
+        │H0│ │H1│ ...        │H5│            │O0│...│O7│
+        └──┘ └──┘            └──┘            └──┘   └──┘
+          │    │               │               ▲      ▲
+          │    │               │               │      │
+          └────┴───────────────┴───────────────┴──────┘
+                    (weights connect every H to every O)</pre></div>
+<hr>
+<h2 id="backward-pass-right-to-left">Backward Pass (right to left)</h2>
+<p>Errors flow from output layer back to hidden layer, <strong>scaled by weights</strong>.</p>
+<div class="diagram-box"><pre>                                           EXPECTED: [0,0,0,0,1,0,0,0] (Cat)
+                                           ACTUAL:   [0.2,0.3,0.1,0.1,0.6,0.2,0.1,0.1]
+                                                            │
+                                                            ▼
+    INPUTS              HIDDEN LAYER           OUTPUT ERRORS
+                                              O0: -0.2  (0 - 0.2)
+         │                  H0◄────────────── O1: -0.3
+         │                    ◄─────────┐     O2: -0.1
+         │                    ◄────┐    │     O3: -0.1
+         │                         │    │     O4: +0.4  ★ (1 - 0.6)
+         │                  H1◄────┼────┼──── O5: -0.2
+         │                         │    │     O6: -0.1
+         │                         │    │     O7: -0.1</pre></div>
+<hr>
+<h2 id="the-key-insight-blame-is-proportional-to-connection-strength">The Key Insight: Blame is Proportional to Connection Strength</h2>
+<div class="diagram-box"><pre>             weight = 0.9 (strong connection)
+        H0 ═══════════════════════════════► O4 (error: +0.4)
+
+             weight = 0.1 (weak connection)
+        H1 ───────────────────────────────► O4 (error: +0.4)
+
+
+    H0&#x27;s blame from O4: 0.4 × 0.9 = 0.36  (BIG - strong connection)
+    H1&#x27;s blame from O4: 0.4 × 0.1 = 0.04  (small - weak connection)</pre></div>
+<p>If a hidden neuron has a <strong>strong weight</strong> to an output neuron with a <strong>big error</strong>, that hidden neuron gets more blame.</p>
+<hr>
+<h2 id="hidden-error-formula">Hidden Error Formula</h2>
+<p>For each hidden neuron <code class="il">h</code>:</p>
+<pre><code class="lang-text">hiddenError[h] = Σ (outputError[o] × weight[h→o])
+                 for all output neurons o</code></pre>
+<p>In code:</p>
+<pre><code class="lang-csharp"><span class="kw">for</span> (<span class="kw">int</span> h = <span class="num">0</span>; h &lt; hiddenLayer.<span class="type">Count</span>; h++)        <span class="cmt">// For each hidden neuron</span>
+{
+    hiddenErrors[h] = <span class="num">0.0</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> o = <span class="num">0</span>; o &lt; outputLayer.<span class="type">Count</span>; o++)    <span class="cmt">// Sum blame from ALL outputs</span>
+    {
+        hiddenErrors[h] += outputErrors[o] * outputLayer[o].<span class="type">Weights</span>[h];
+    }
+}</code></pre>
+<hr>
+<h2 id="full-backpropagation-algorithm">Full Backpropagation Algorithm</h2>
+<pre><code class="lang-text">1. FORWARD PASS
+   - Compute hidden layer outputs from inputs
+   - Compute final outputs from hidden outputs
+   - Save both for later
+
+2. CALCULATE OUTPUT ERRORS
+   - outputError[i] = expected[i] - actual[i]
+
+3. BACKPROPAGATE TO HIDDEN LAYER
+   - hiddenError[h] = Σ (outputError[o] × weight[h→o])
+
+4. UPDATE WEIGHTS
+   - Output neurons: Train with hiddenOutputs and outputErrors
+   - Hidden neurons: Train with original inputs and hiddenErrors</code></pre>
+<hr>
+<h2 id="why-it-s-called-backpropagation">Why It&#x27;s Called &quot;Backpropagation&quot;</h2>
+<p>The error signal <strong>propagates backward</strong> through the network:</p>
+<pre><code class="lang-text">Output Error → (× weights) → Hidden Error → (× weights) → [next layer if any]</code></pre>
+<p>Each layer asks: &quot;How much did I contribute to the downstream error?&quot;</p>
+<p>The answer flows backward through the same weights that carried signals forward.</p>
+<hr>
+<h2 id="the-symmetry">The Symmetry</h2>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Forward Pass</th>
+<th>Backward Pass</th>
+</tr></thead><tbody>
+<tr>
+<td>Signals flow through weights</td>
+<td>Errors flow through same weights</td>
+</tr>
+<tr>
+<td>Input → Hidden → Output</td>
+<td>Output → Hidden → Input</td>
+</tr>
+<tr>
+<td>Weights amplify signals</td>
+<td>Weights distribute blame</td>
+</tr>
+</tbody></table></div>
+</div>
+</body>
+</html>

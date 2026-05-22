@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Actions&amp;Events</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 03-Blazor</div>
+  <h1>Actions&amp;Events</h1>
+  <div class="meta">Source: <code>Actions&amp;Events.docx</code> &middot; <a href="Actions&amp;Events.docx">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<p>C# Events and Async Patterns for Godot Developers</p>
+<p>Understanding Events, Actions, and Async Patterns in .NET</p>
+<p>Table of Contents</p>
+<p>Events/Actions = Godot Signals</p>
+<p>The Observer Pattern Connection</p>
+<p>Understanding async void</p>
+<p>Complete Comparison Reference</p>
+<p>Practical Implementation</p>
+<p>Events/Actions = Godot Signals {#events-are-signals}</p>
+<p>Direct Comparison: Godot Signal vs C# Event</p>
+<p>Events in C# are exactly like Signals in Godot - they implement the same Observer pattern for decoupled communication between objects.</p>
+<p>In Godot (GDScript):</p>
+<h1 id="define-a-signal">Define a signal</h1>
+<p>signal health_changed(new_health)</p>
+<h1 id="emit-the-signal">Emit the signal</h1>
+<p>emit_signal(&quot;health_changed&quot;, 50)</p>
+<h1 id="connect-to-the-signal">Connect to the signal</h1>
+<p>player.connect(&quot;health_changed&quot;, self, &quot;_on_player_health_changed&quot;)</p>
+<p>func _on_player_health_changed(new_health):</p>
+<p>print(&quot;Health is now: &quot;, new_health)</p>
+<p>In C# (Events):</p>
+<p>// Define an event (like a signal)</p>
+<p>public event Action&lt;int&gt; OnHealthChanged;</p>
+<p>// Fire the event (like emit_signal)</p>
+<p>OnHealthChanged?.Invoke(50);</p>
+<p>// Subscribe to the event (like connect)</p>
+<p>player.OnHealthChanged += OnPlayerHealthChanged;</p>
+<p>private void OnPlayerHealthChanged(int newHealth)</p>
+<p>{</p>
+<p>Console.WriteLine($&quot;Health is now: {newHealth}&quot;);</p>
+<p>}</p>
+<p>Understanding Action Types</p>
+<p>Action is a delegate type (function pointer) that defines what parameters the signal/event sends:</p>
+<p>// Godot signal with parameters</p>
+<p>signal item_picked_up(item_name, quantity)  // Sends string and int</p>
+<p>// C# equivalent</p>
+<p>public event Action&lt;string, int&gt; OnItemPickedUp;  // Action&lt;string, int&gt; = sends string and int</p>
+<p>Common Action Types:</p>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Action Type</th>
+<th>Parameters</th>
+<th>Godot Equivalent</th>
+</tr></thead><tbody>
+<tr>
+<td>Action</td>
+<td>None</td>
+<td>signal clicked()</td>
+</tr>
+<tr>
+<td>Action&lt;int&gt;</td>
+<td>One integer</td>
+<td>signal health_changed(amount)</td>
+</tr>
+<tr>
+<td>Action&lt;string, int&gt;</td>
+<td>String and integer</td>
+<td>signal item_picked(name, qty)</td>
+</tr>
+<tr>
+<td>Action&lt;CrmEmpresa&gt;</td>
+<td>Complex object</td>
+<td>signal company_changed(company_data)</td>
+</tr>
+</tbody></table></div>
+<p>The Observer Pattern Connection {#observer-pattern}</p>
+<p>Events and Signals are implementations of the Observer Pattern, providing loose coupling between components.</p>
+<p>Pattern Structure:</p>
+<p>// THE PATTERN:</p>
+<p>// Subject (Observable) ← Has the event</p>
+<p>// Observers (Listeners) ← Subscribe to the event</p>
+<p>// In practice:</p>
+<p>public class ThemeChangeService  // Subject (like a Godot Node with signals)</p>
+<p>{</p>
+<p>public event Action&lt;CrmEmpresa&gt; OnThemeChanged;  // The signal</p>
+<p>public void NotifyThemeChanged(CrmEmpresa empresa)</p>
+<p>{</p>
+<p>OnThemeChanged?.Invoke(empresa);  // emit_signal()</p>
+<p>}</p>
+<p>}</p>
+<p>public class MainLayout  // Observer (like a Godot Node listening to signals)</p>
+<p>{</p>
+<p>void Subscribe()</p>
+<p>{</p>
+<p>service.OnThemeChanged += HandleChange;  // connect()</p>
+<p>}</p>
+<p>void HandleChange(CrmEmpresa empresa)  // Signal handler</p>
+<p>{</p>
+<p>// React to the signal</p>
+<p>}</p>
+<p>void Unsubscribe()</p>
+<p>{</p>
+<p>service.OnThemeChanged -= HandleChange;  // disconnect()</p>
+<p>}</p>
+<p>}</p>
+<p>Understanding async void {#async-void}</p>
+<p>Why async void is Usually Bad</p>
+<p>The main issue with async void is exception handling and error propagation.</p>
+<p>Normal async method (Good):</p>
+<p>public async Task SaveDataAsync()  // Returns Task</p>
+<p>{</p>
+<p>await DatabaseSave();</p>
+<p>// If this crashes, the Task contains the exception</p>
+<p>// Caller can catch it</p>
+<p>}</p>
+<p>// Usage:</p>
+<p>try</p>
+<p>{</p>
+<p>await SaveDataAsync();  // Can catch exceptions!</p>
+<p>}</p>
+<p>catch(Exception ex)</p>
+<p>{</p>
+<p>// We can handle errors</p>
+<p>}</p>
+<p>Async void method (Dangerous):</p>
+<p>public async void SaveDataAsync()  // Returns nothing</p>
+<p>{</p>
+<p>await DatabaseSave();</p>
+<p>// If this crashes, exception goes to global handler</p>
+<p>// Can CRASH your entire app!</p>
+<p>}</p>
+<p>// Usage:</p>
+<p>SaveDataAsync();  // Can&#x27;t await it! Can&#x27;t catch exceptions!</p>
+<p>// If it fails, your app might crash</p>
+<p>Why Events MUST Use async void</p>
+<p>Events are defined to return void, not Task, because they follow a fire-and-forget pattern:</p>
+<p>// The event delegate signature is fixed:</p>
+<p>public event Action&lt;CrmEmpresa&gt; OnThemeChanged;</p>
+<p>//            ^^^^^^</p>
+<p>//            Action returns void, not Task!</p>
+<p>// So handlers must match:</p>
+<p>async void HandleThemeChanged(CrmEmpresa e)  // Must be void to match Action</p>
+<p>{</p>
+<p>try</p>
+<p>{</p>
+<p>// Always wrap async void in try-catch!</p>
+<p>await DoStuff();</p>
+<p>}</p>
+<p>catch(Exception ex)</p>
+<p>{</p>
+<p>// Handle errors here, don&#x27;t let them escape!</p>
+<p>_logger.LogError(ex, &quot;Error in event handler&quot;);</p>
+<p>}</p>
+<p>}</p>
+<p>The Godot Analogy</p>
+<p>In Godot, signals are fire-and-forget:</p>
+<h1 id="this-doesn-t-wait-for-handlers">This doesn&#x27;t wait for handlers</h1>
+<p>emit_signal(&quot;theme_changed&quot;, empresa)</p>
+<h1 id="next-line-runs-immediately">Next line runs immediately</h1>
+<h1 id="similar-to-c">Similar to C#:</h1>
+<p>ThemeChangeService.NotifyThemeChanged(empresa);</p>
+<p>// Code continues immediately, doesn&#x27;t wait for handlers</p>
+<p>Complete Comparison Reference {#comparison-reference}</p>
+<p>Terminology Mapping</p>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Godot</th>
+<th>C#</th>
+<th>Purpose</th>
+</tr></thead><tbody>
+<tr>
+<td>signal</td>
+<td>event</td>
+<td>Declare an observable event</td>
+</tr>
+<tr>
+<td>emit_signal()</td>
+<td>Invoke()</td>
+<td>Fire the event</td>
+</tr>
+<tr>
+<td>connect()</td>
+<td>+=</td>
+<td>Subscribe to event</td>
+</tr>
+<tr>
+<td>disconnect()</td>
+<td>-=</td>
+<td>Unsubscribe from event</td>
+</tr>
+<tr>
+<td>Signal handler</td>
+<td>Event handler</td>
+<td>Function that responds</td>
+</tr>
+<tr>
+<td>queue_free()</td>
+<td>Dispose()</td>
+<td>Cleanup when destroying</td>
+</tr>
+<tr>
+<td>AutoLoad singleton</td>
+<td>Singleton service</td>
+<td>Global accessible instance</td>
+</tr>
+<tr>
+<td>_ready()</td>
+<td>OnInitialized()</td>
+<td>Component initialization</td>
+</tr>
+<tr>
+<td>_exit_tree()</td>
+<td>Dispose()</td>
+<td>Component cleanup</td>
+</tr>
+</tbody></table></div>
+<p>Memory Management Comparison</p>
+<p>Godot (Automatic):</p>
+<p>func _ready():</p>
+<p>player.connect(&quot;health_changed&quot;, self, &quot;_on_health_changed&quot;)</p>
+<h1 id="godot-automatically-disconnects-when-node-is-freed">Godot automatically disconnects when node is freed</h1>
+<p>func _exit_tree():</p>
+<h1 id="optional-godot-handles-this-automatically">Optional - Godot handles this automatically</h1>
+<p>pass</p>
+<p>C# (Manual):</p>
+<p>protected override void OnInitialized()</p>
+<p>{</p>
+<p>player.OnHealthChanged += OnHealthChanged;</p>
+<p>// We MUST manually unsubscribe!</p>
+<p>}</p>
+<p>public void Dispose()</p>
+<p>{</p>
+<p>// REQUIRED - prevent memory leaks!</p>
+<p>player.OnHealthChanged -= OnHealthChanged;</p>
+<p>}</p>
+<p>Practical Implementation {#practical-implementation}</p>
+<p>Complete ThemeChange System Example</p>
+<p>If this were Godot:</p>
+<h1 id="themechangeservice-gd-like-a-global-autoload">ThemeChangeService.gd (like a global AutoLoad)</h1>
+<p>extends Node</p>
+<p>signal theme_changed(company_data)</p>
+<p>func notify_theme_changed(company):</p>
+<p>emit_signal(&quot;theme_changed&quot;, company)</p>
+<h1 id="mainlayout-gd">MainLayout.gd</h1>
+<p>extends Control</p>
+<p>func _ready():</p>
+<h1 id="subscribe-to-the-global-signal">Subscribe to the global signal</h1>
+<p>ThemeChangeService.connect(&quot;theme_changed&quot;, self, &quot;_on_theme_changed&quot;)</p>
+<p>func _on_theme_changed(company):</p>
+<h1 id="update-ui-with-new-theme">Update UI with new theme</h1>
+<p>update_colors(company.color1, company.color2)</p>
+<p>update_logo(company.logo_path)</p>
+<p>func _exit_tree():</p>
+<h1 id="cleanup-automatic-in-godot-manual-in-c">Cleanup (automatic in Godot, manual in C#)</h1>
+<p>ThemeChangeService.disconnect(&quot;theme_changed&quot;, self, &quot;_on_theme_changed&quot;)</p>
+<p>The C# Implementation:</p>
+<p>// ThemeChangeService.cs (Singleton/Scoped service)</p>
+<p>public class ThemeChangeService : IThemeChangeService</p>
+<p>{</p>
+<p>public event Action&lt;CrmEmpresa&gt; OnThemeChanged;</p>
+<p>public void NotifyThemeChanged(CrmEmpresa empresa)</p>
+<p>{</p>
+<p>OnThemeChanged?.Invoke(empresa);</p>
+<p>}</p>
+<p>}</p>
+<p>// MainLayout.razor</p>
+<p>@implements IDisposable</p>
+<p>@code {</p>
+<p>protected override async Task OnInitializedAsync()</p>
+<p>{</p>
+<p>// Subscribe to theme changes (_ready equivalent)</p>
+<p>ThemeChangeService.OnThemeChanged += HandleThemeChanged;</p>
+<p>}</p>
+<p>private async void HandleThemeChanged(CrmEmpresa empresa)</p>
+<p>{</p>
+<p>try</p>
+<p>{</p>
+<p>// Update UI with new theme</p>
+<p>await UpdateColors(empresa.Cor1, empresa.Cor2);</p>
+<p>await UpdateLogo(empresa.LogoNavBar);</p>
+<p>// Tell Blazor to re-render (Godot does this automatically)</p>
+<p>await InvokeAsync(StateHasChanged);</p>
+<p>}</p>
+<p>catch (Exception ex)</p>
+<p>{</p>
+<p>// Always handle exceptions in async void!</p>
+<p>_logger.LogError(ex, &quot;Theme update failed&quot;);</p>
+<p>}</p>
+<p>}</p>
+<p>public void Dispose()</p>
+<p>{</p>
+<p>// Manual cleanup required (_exit_tree equivalent)</p>
+<p>ThemeChangeService.OnThemeChanged -= HandleThemeChanged;</p>
+<p>}</p>
+<p>}</p>
+<p>Thread Safety Considerations</p>
+<p>Why InvokeAsync is Needed:</p>
+<p>Blazor components are not thread-safe, similar to how Godot&#x27;s scene tree must be accessed from the main thread:</p>
+<p>// Event might fire from any thread</p>
+<p>private async void HandleThemeChanged(CrmEmpresa empresa)</p>
+<p>{</p>
+<p>// Wrong - might crash if on wrong thread:</p>
+<p>// StateHasChanged();</p>
+<p>// Correct - ensures UI thread:</p>
+<p>await InvokeAsync(StateHasChanged);</p>
+<p>// Similar to Godot&#x27;s:</p>
+<p>// call_deferred(&quot;update_ui&quot;)</p>
+<p>}</p>
+<p>Service Lifetime Comparison</p>
+<p>Singleton (Global, like AutoLoad):</p>
+<p>builder.Services.AddSingleton&lt;IThemeChangeService, ThemeChangeService&gt;();</p>
+<p>// One instance for entire application</p>
+<p>// All users share the same instance</p>
+<p>// Like Godot&#x27;s AutoLoad</p>
+<p>Scoped (Per-Connection):</p>
+<p>builder.Services.AddScoped&lt;IThemeChangeService, ThemeChangeService&gt;();</p>
+<p>// One instance per user session</p>
+<p>// Each user gets their own instance</p>
+<p>// Better for user-specific state</p>
+<p>Transient (New Each Time):</p>
+<p>builder.Services.AddTransient&lt;IThemeChangeService, ThemeChangeService&gt;();</p>
+<p>// New instance every injection</p>
+<p>// Rarely used for event systems</p>
+<p>Key Takeaways</p>
+<p>Events = Signals: C# events are functionally identical to Godot signals</p>
+<p>Manual Memory Management: Unlike Godot, C# requires manual event unsubscription</p>
+<p>async void Exception: Only use with events, always wrap in try-catch</p>
+<p>Thread Safety: Use InvokeAsync() when updating UI from events</p>
+<p>Service Lifetimes: Choose Scoped for user-specific events, Singleton for app-wide</p>
+<p>Best Practices</p>
+<p>Always Implement IDisposable When Using Events:</p>
+<p>@implements IDisposable</p>
+<p>public void Dispose()</p>
+<p>{</p>
+<p>// Unsubscribe all events</p>
+<p>Service.OnEvent -= Handler;</p>
+<p>}</p>
+<p>Always Handle Exceptions in async void:</p>
+<p>private async void EventHandler(Data data)</p>
+<p>{</p>
+<p>try</p>
+<p>{</p>
+<p>await AsyncOperation();</p>
+<p>}</p>
+<p>catch (Exception ex)</p>
+<p>{</p>
+<p>_logger.LogError(ex, &quot;Handler failed&quot;);</p>
+<p>}</p>
+<p>}</p>
+<p>Use InvokeAsync for UI Updates:</p>
+<p>await InvokeAsync(() =&gt;</p>
+<p>{</p>
+<p>// UI updates here</p>
+<p>StateHasChanged();</p>
+<p>});</p>
+<p>This guide bridges the conceptual gap between Godot&#x27;s signal system and C#&#x27;s event system, helping Godot developers quickly understand and apply C# patterns in their .NET applications.</p>
+</div>
+</body>
+</html>

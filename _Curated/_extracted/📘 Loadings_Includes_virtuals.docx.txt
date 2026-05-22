@@ -1,0 +1,217 @@
+# 📘 Entity Framework Core — Relationships, Lazy Loading & Virtual Properties
+
+---
+
+## 🧩 1. Navigation Properties & Foreign Keys
+
+In EF Core, each relationship usually uses both an FK property and a navigation property:
+
+```csharp
+
+public class Empresa
+
+{
+
+public string EmpresaId { get; set; }
+
+public string Nome { get; set; }
+
+// Foreign key
+
+public int CountryId { get; set; }
+
+// Navigation property
+
+public Country Country { get; set; }
+
+}
+
+```
+
+| Property | Purpose | Stored in DB? |
+
+|-----------|----------|---------------|
+
+| `CountryId` | Foreign key, links entities | ✅ Yes |
+
+| `Country` | Navigation for related data | ❌ No |
+
+---
+
+## ⚙️ 2. Loading Related Data
+
+| Loading type | Description | Example | SQL queries | Recommended for |
+
+|---------------|--------------|----------|--------------|-----------------|
+
+| **Lazy Loading** | Loads data when property is first accessed | `empresa.Country.Name` | Many (N+1) | Small datasets, simple UIs |
+
+| **Eager Loading** | Loads related data up front via join | `.Include(e => e.Country)` | Single | Lists, tables, APIs |
+
+| **Explicit Loading** | Manually load related data later | `context.Entry(e).Reference(x => x.Country).Load()` | Separate | Controlled cases |
+
+---
+
+## 🧠 3. The `virtual` Keyword
+
+| Context | Is `virtual` needed? | Why |
+
+|----------|----------------------|-----|
+
+| Lazy loading | ✅ Yes | EF substitutes proxy overrides for navigation props |
+
+| Eager loading (`Include`) | ❌ No | Data loaded via join |
+
+| Explicit loading (`Load`) | ❌ No | Manual load |
+
+| Projection (`Select`) | ❌ No | Custom object mapping |
+
+> 💡 Tip: Many production apps **turn lazy loading off** for predictable performance and simpler debugging.
+
+---
+
+## 🧱 4. Recommended Relationship Setup
+
+```csharp
+
+public class Country
+
+{
+
+public int CountryId { get; set; }
+
+public string Name { get; set; }
+
+public ICollection<Empresa> Empresas { get; set; }
+
+}
+
+public class Empresa
+
+{
+
+public string EmpresaId { get; set; }
+
+public string Nome { get; set; }
+
+public int CountryId { get; set; }
+
+public Country Country { get; set; }
+
+}
+
+```
+
+Optional explicit Fluent API configuration:
+
+```csharp
+
+modelBuilder.Entity<Empresa>()
+
+.HasOne(e => e.Country)
+
+.WithMany(c => c.Empresas)
+
+.HasForeignKey(e => e.CountryId);
+
+```
+
+---
+
+## 🚀 5. Query Examples
+
+### ✅ Eager Loading (Recommended for lists)
+
+```csharp
+
+var empresas = dbContext.Empresas
+
+.Include(e => e.Country)
+
+.Select(e => new
+
+{
+
+e.EmpresaId,
+
+e.Nome,
+
+CountryName = e.Country.Name
+
+})
+
+.ToList();
+
+```
+
+🧠 *Result:* A single optimized `JOIN` query fetching only needed data.
+
+---
+
+## 🧰 6. `[NotMapped]` Attribute
+
+Use `[NotMapped]` **only** for properties **that don’t exist in the database**, e.g.:
+
+```csharp
+
+[NotMapped]
+
+public string DisplayName => $"{Nome} ({Country?.Name})";
+
+```
+
+Do **not** use `[NotMapped]` on valid navigation properties like `Country`.
+
+---
+
+## ⚡ 7. Performance Tips
+
+| Tip | Why |
+
+|-----|-----|
+
+| Avoid lazy loading in large loops | Prevents N+1 query issues |
+
+| Use `.Include()` | Loads related data in one query |
+
+| Use `.Select()` | Fetch only columns you need |
+
+| Keep `virtual` only if lazy loading is used | Otherwise unnecessary |
+
+| Turn off lazy loading globally in production | Makes query flow explicit |
+
+---
+
+## 🧭 8. Quick Decision Guide
+
+| Scenario | Lazy Loading | Eager Loading | `virtual` Needed | `[NotMapped]` |
+
+|-----------|---------------|---------------|------------------|---------------|
+
+| Small admin pages | ✅ Optional | ✅ Good | ✅ Yes | ❌ No |
+
+| Large tables / APIs | ❌ No | ✅ Yes | ❌ No | ❌ No |
+
+| Computed property | N/A | N/A | ❌ No | ✅ Yes |
+
+| DTO / projection | ❌ No | ✅ Yes | ❌ No | ✅ (if outside EF) |
+
+---
+
+## ✅ 9. Key Takeaways
+
+- ✔️ Keep both `CountryId` (FK) and `Country` (navigation).
+
+- ⚙️ Use `.Include()` or `.Select()` instead of lazy loading.
+
+- 🚫 Don’t mark navigation properties `[NotMapped]`.
+
+- 🧠 Only use `virtual` when you enable lazy loading.
+
+- 💪 Prefer eager loading for predictable, performant queries.
+
+- 🧾 EF automatically manages relationships via conventions or `OnModelCreating`.
+
+---
+
+**End of Notes — EF Core Relationship & Loading Reference**

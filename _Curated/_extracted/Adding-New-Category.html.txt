@@ -1,0 +1,299 @@
+Tutorial: Adding a New Category to Furnor
+Tutorial: Adding a New Category to Furnor
+Audience: Developers of all skill levels
+Time: 10 – 20 minutes
+Last Updated: February 2026
+Overview
+This tutorial explains every single change required to add a new category to the Furnor system. Follow these steps exactly like a recipe.
+The system uses a configuration-driven architecture that minimizes code changes.
+CategoryService works generically with any entity type via EF Core, and BaseContext auto-registers category entities from the registry.
+Most components automatically discover new categories through configuration.
+Quick Reference: Files You MUST Modify
+Step File What to Add
+1 Models/Artigo/Entities/Categories.cs Entity class
+2 Models/Artigo/Entities/DefaultMasterDataProvider.cs Wizard registry config
+3 Models/Artigo/CategoryConfigRegistry.cs CRUD UI config
+4 Models/Artigo/Entities/Article.cs Code property
+5 Migrations/ New migration file
+That's it! Only 5 files need changes. Everything else works automatically.
+Two Registries Explained:
+DefaultMasterDataProvider.cs → Used by Article Wizard (field selection)
+CategoryConfigRegistry.cs → Used by Category Management UI (CRUD pages)
+Step-by-Step Instructions
+1
+Create the Entity Class
+Models/Artigo/Entities/Categories.cs
+Add your new class at the end of the file (before the closing brace).
+Flat Category
+Hierarchical Category
+/// <summary>
+/// TipoArtigo - Article Type (PA, PI, MP).
+/// </summary>
+public class ArticleType : CategoryBase
+{
+// No extra properties needed for simple categories
+} C#
+/// <summary>
+/// ParentExample - Parent category.
+/// </summary>
+public class ParentExample : CategoryBase
+{
+// Parent categories don't need extra properties
+}
+/// <summary>
+/// ChildExample - Child of ParentExample.
+/// </summary>
+public class ChildExample : CategoryBase
+{
+/// <summary>
+/// Foreign key to parent (uses CODE, not ID).
+/// </summary>
+public string ParentExampleCode { get ; set ; } = string . Empty ;
+} C#
+Note: Child categories use the parent's CODE as foreign key, not ID.
+2
+Add to MasterData Registry
+Models/Artigo/Entities/DefaultMasterDataProvider.cs
+Find the GetConfigs() method and add your configuration.
+Flat Category
+Hierarchical Category
+Add in the “Flat Categories” section (after line 140):
+[ "TipoArtigo" ] = new MasterDataConfig
+{
+FieldName = "TipoArtigo" ,
+EntityType = typeof ( ArticleType ),
+CodeProperty = "Code" ,
+DescriptionProperty = "Description" ,
+ListPropertyName = "articleTypeList" ,
+ProductPropertyName = "ArticleTypeCode" , // MUST match Article.cs property name!
+DisplayOrder = 11 ,
+HasDescriptionEN = true
+}, C#
+A) Add Parent (in “Parent Entities” section, lines 11-78):
+[ "ParentExample" ] = new MasterDataConfig
+{
+FieldName = "ParentExample" ,
+EntityType = typeof ( ParentExample ),
+CodeProperty = "Code" ,
+DescriptionProperty = "Description" ,
+ListPropertyName = "parentExampleList" ,
+ProductPropertyName = "ParentExampleCode" ,
+DisplayOrder = 11 ,
+HasDescriptionEN = true ,
+ChildEntities = new ()
+{
+new ChildEntityConfig
+{
+ChildFieldName = "ChildExample" ,
+EntityType = typeof ( ChildExample ),
+ParentKeyProperty = "ParentExampleCode" ,
+ListPropertyName = "childExampleList"
+}
+}
+}, C#
+B) Add Child (in “Child Entities” section, lines 80-137):
+[ "ChildExample" ] = new MasterDataConfig
+{
+FieldName = "ChildExample" ,
+EntityType = typeof ( ChildExample ),
+CodeProperty = "Code" ,
+DescriptionProperty = "Description" ,
+ListPropertyName = "childExampleList" ,
+ProductPropertyName = "ChildExampleCode" ,
+ParentFieldName = "ParentExample" ,
+ParentKeyProperty = "ParentExampleCode" ,
+DisplayOrder = 12 ,
+HasDescriptionEN = true
+}, C#
+3
+Add to Category Config Registry (CRUD UI)
+Models/Artigo/CategoryConfigRegistry.cs
+Find the RegisterAllConfigs() method and add your configuration.
+Why this file? This registry controls the Category Management UI (CRUD pages at /artigo/categorias ).
+It also drives auto-registration of entity types in BaseContext.OnModelCreating , so you do NOT need to add a DbSet property.
+Flat Category
+Hierarchical Category
+Add in the “Simple categories” section (after line 100):
+Register ( new SimpleCategoryConfig (
+displayName : "TipoArtigo" ,
+entityType : typeof ( ArticleType ),
+codeProperty : "Code" ,
+descriptionProperty : "Description" ,
+columns : new List < ColumnConfig >
+{
+new () { PropertyName = "Code" , DisplayName = "Codigo" , IsRequired = true },
+new () { PropertyName = "Description" , DisplayName = "Descricao" , IsRequired = true },
+new () { PropertyName = "DescriptionEN" , DisplayName = "Descricao (EN)" }
+},
+supportsMultiLanguage : true )); C#
+Add in the “Hierarchical categories” section (after line 20):
+// ParentExample -> ChildExample
+var childExampleConfig = new ChildCategoryConfig (
+displayName : "ChildExample" ,
+entityType : typeof ( ChildExample ),
+codeProperty : "Code" ,
+descriptionProperty : "Description" ,
+parentKeyProperty : "ParentExampleCode" ,
+supportsMultiLanguage : true );
+Register ( new HierarchicalCategoryConfig (
+displayName : "ParentExample" ,
+entityType : typeof ( ParentExample ),
+codeProperty : "Code" ,
+descriptionProperty : "Description" ,
+childConfig : childExampleConfig,
+supportsMultiLanguage : true ));
+Register (childExampleConfig); C#
+Note: The displayName must match the key used in DefaultMasterDataProvider.cs !
+4
+Add Property to Article Entity
+Models/Artigo/Entities/Article.cs
+Add a property for the category code (around line 64, after existing codes):
+#region Category Codes
+// ... existing properties ...
+/// <summary>
+/// Article type code (PA, PI, MP).
+/// </summary>
+public string ? ArticleTypeCode { get ; set ; }
+#endregion C#
+CRITICAL: The property name MUST exactly match ProductPropertyName from Step 2!
+5
+Create Database Migration
+Run this command in the terminal:
+dotnet ef migrations add AddArticleType bash
+This creates a new migration file in the Migrations/ folder.
+Open the generated file and verify it contains:
+1. Table creation for the new category:
+migrationBuilder. CreateTable (
+name : "ArticleTypes" ,
+columns : table => new
+{
+Id = table. Column < int >( nullable : false )
+. Annotation ( "SqlServer:Identity" , "1, 1" ),
+Code = table. Column < string >( nullable : false ),
+Description = table. Column < string >( nullable : false ),
+DescriptionEN = table. Column < string >( nullable : true ),
+DescriptionFR = table. Column < string >( nullable : true ),
+IsActive = table. Column < bool >( nullable : false , defaultValue : true )
+},
+constraints : table =>
+{
+table. PrimaryKey ( "PK_ArticleTypes" , x => x. Id );
+}); C#
+2. Column addition to Articles table:
+migrationBuilder. AddColumn < string >(
+name : "ArticleTypeCode" ,
+table : "Articles" ,
+nullable : true ); C#
+Apply the migration:
+dotnet ef database update bash
+Verification Checklist
+After completing all steps, verify:
+Entity class exists in Categories.cs (Step 1)
+Config exists in DefaultMasterDataProvider.cs (Step 2)
+Config exists in CategoryConfigRegistry.cs (Step 3)
+Property exists in Article.cs (Step 4)
+Migration was applied successfully (Step 5)
+ProductPropertyName exactly matches Article property name
+displayName is the same in both registry files
+DisplayOrder doesn't conflict with existing categories
+Testing Your New Category
+Start the application
+Navigate to Category Management:
+Go to: /artigo/categorias
+Your new category should appear in the list
+Add Test Data:
+Click on your category
+Add a few test entries (e.g., PA, PI, MP for ArticleType)
+Test in Article Wizard:
+Create or edit a template to include your category
+Use the wizard to generate articles
+Verify your category appears in field selection
+Verify Persistence:
+Generate and save articles
+Check the database to confirm the code is saved
+Files That Work AUTOMATICALLY
+These files require NO changes — they discover new categories through configuration:
+File Why It Works Automatically
+CategoryListManager.cs Loads categories dynamically via reflection
+CategoryService.cs Uses generic EF Core calls ( context.Add , context.FindAsync , Set<T>() )
+BaseContext.OnModelCreating Auto-registers entity types from CategoryConfigRegistry
+GenericCategoryManager.razor Renders any category from config
+ArticleGenerationService.cs Uses registry for field mapping
+Step1_TemplateFieldSelection.razor Iterates registry configs
+ArticlePersistenceService.cs Uses GetProductPropertyName() from registry
+OPTIONAL: Article Grid Filtering/Sorting
+If you want to filter/sort articles by your new category in grid views, you'll need to update:
+Services/Artigo/ArticleService.cs
+Add to the ApplyFilter method (around line 179):
+"articletypecode" or "tipoartigo" => query. Where (a => a. ArticleTypeCode == filterValue), C#
+Add to the ApplySorting method (around line 213):
+"articletypecode" or "tipoartigo" => descending
+? query. OrderByDescending (a => a. ArticleTypeCode )
+: query. OrderBy (a => a. ArticleTypeCode ), C#
+Note: This is optional. The category will work in the wizard and category management without this change.
+This is only needed for article list filtering/sorting.
+OPTIONAL: Add DbSet for Typed Access
+If another service needs direct typed access to your category (e.g., context.MyCategories.Where(...) ),
+you can optionally add a DbSet property to BaseContext.cs :
+public virtual DbSet < ArticleType > ArticleTypes { get ; set ; } C#
+Note: This is NOT required for the category to work. CategoryService and the wizard work without it.
+Only add this if you need typed queries from other services.
+Common Mistakes
+Mistake Symptom Fix
+ProductPropertyName doesn't match Article property
+Articles save but category code is null
+Ensure exact match in spelling and casing
+Wrong ParentKeyProperty for child
+Child filtering doesn't work
+Must match the FK property name exactly
+DisplayOrder conflicts
+Categories appear in wrong order
+Use unique DisplayOrder values
+Forgot migration
+Table doesn't exist in database
+Run dotnet ef migrations add and update
+displayName mismatch between registries
+Category works in wizard but not CRUD (or vice-versa)
+Use the same displayName in both files
+Complete Example: Adding ArticleType (PA/PI/MP)
+1. Categories.cs
+public class ArticleType : CategoryBase { } C#
+2. DefaultMasterDataProvider.cs
+[ "TipoArtigo" ] = new MasterDataConfig
+{
+FieldName = "TipoArtigo" ,
+EntityType = typeof ( ArticleType ),
+CodeProperty = "Code" ,
+DescriptionProperty = "Description" ,
+ListPropertyName = "articleTypeList" ,
+ProductPropertyName = "ArticleTypeCode" ,
+DisplayOrder = 11 ,
+HasDescriptionEN = true
+}, C#
+3. CategoryConfigRegistry.cs
+Register ( new SimpleCategoryConfig (
+displayName : "TipoArtigo" ,
+entityType : typeof ( ArticleType ),
+codeProperty : "Code" ,
+descriptionProperty : "Description" ,
+columns : new List < ColumnConfig >
+{
+new () { PropertyName = "Code" , DisplayName = "Codigo" , IsRequired = true },
+new () { PropertyName = "Description" , DisplayName = "Descricao" , IsRequired = true },
+new () { PropertyName = "DescriptionEN" , DisplayName = "Descricao (EN)" }
+},
+supportsMultiLanguage : true )); C#
+4. Article.cs
+public string ? ArticleTypeCode { get ; set ; } C#
+5. Migration Command
+dotnet ef migrations add AddArticleType
+dotnet ef database update bash
+Need Help?
+If something doesn't work:
+Check the browser console for JavaScript errors
+Check the terminal for .NET exceptions
+Verify all names match exactly (case-sensitive!)
+Ensure migration was applied ( dotnet ef database update )
+This tutorial covers the complete category system as of February 2026.
+If the architecture changes, this document should be updated.
+Furnor — Metallic Furniture Manufacturing

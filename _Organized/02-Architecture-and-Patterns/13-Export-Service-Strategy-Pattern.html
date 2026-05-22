@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>13-Export-Service-Strategy-Pattern</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 02-Architecture-and-Patterns</div>
+  <h1>13-Export-Service-Strategy-Pattern</h1>
+  <div class="meta">Source: <code>Education/13-Export-Service-Strategy-Pattern.md</code> &middot; <a href="13-Export-Service-Strategy-Pattern.md">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<h1 id="strategy-pattern-in-export-services">Strategy Pattern in Export Services</h1>
+<h2 id="overview">Overview</h2>
+<p>The Attendance Export Service demonstrates a real-world implementation of the <strong>Strategy Pattern</strong> - one of the most powerful behavioral design patterns. This document explains the pattern, why it&#x27;s used, and how it follows SOLID principles.</p>
+<h2 id="the-problem-without-strategy-pattern">The Problem Without Strategy Pattern</h2>
+<p>Imagine implementing exports like this:</p>
+<pre><code class="lang-csharp"><span class="cmt">// BAD: Violates Open/Closed Principle</span>
+<span class="kw">public</span> <span class="kw">byte</span>[] <span class="type">GenerateReport</span>(<span class="type">ReportType</span> type, <span class="type">ExportFormat</span> format, <span class="type">Data</span> data)
+{
+    <span class="cmt">// Build report data</span>
+    <span class="kw">switch</span> (type)
+    {
+        <span class="kw">case</span> <span class="type">ReportType</span>.<span class="type">AttendanceSummary</span>:
+            <span class="cmt">// 50 lines of summary logic...</span>
+            <span class="kw">break</span>;
+        <span class="kw">case</span> <span class="type">ReportType</span>.<span class="type">LeaveMap</span>:
+            <span class="cmt">// 50 lines of leave logic...</span>
+            <span class="kw">break</span>;
+        <span class="cmt">// ... 6 more cases</span>
+    }
+
+    <span class="cmt">// Generate output</span>
+    <span class="kw">switch</span> (format)
+    {
+        <span class="kw">case</span> <span class="type">ExportFormat</span>.<span class="type">Excel</span>:
+            <span class="cmt">// 100 lines of Excel generation...</span>
+            <span class="kw">break</span>;
+        <span class="kw">case</span> <span class="type">ExportFormat</span>.<span class="type">Pdf</span>:
+            <span class="cmt">// 100 lines of PDF generation...</span>
+            <span class="kw">break</span>;
+        <span class="cmt">// ... more cases</span>
+    }
+}</code></pre>
+<h3 id="problems-with-this-approach">Problems with This Approach</h3>
+<ol>
+<li><strong>Massive method</strong>: Hundreds of lines in one method</li>
+<li><strong>Hard to test</strong>: Can&#x27;t test Excel generation in isolation</li>
+<li><strong>Hard to extend</strong>: Adding a new format requires modifying this class</li>
+<li><strong>Violates SRP</strong>: One class handles ALL report types AND ALL formats</li>
+<li><strong>Violates OCP</strong>: Must modify existing code to add features</li>
+</ol>
+<h2 id="the-strategy-pattern-solution">The Strategy Pattern Solution</h2>
+<p>The Strategy Pattern defines a family of algorithms, encapsulates each one, and makes them interchangeable.</p>
+<h3 id="architecture-diagram">Architecture Diagram</h3>
+<div class="diagram-box"><pre>┌─────────────────────────────────────────────────────────────────────┐
+│                    AttendanceExportService                          │
+│                       (Orchestrator)                                │
+│                                                                     │
+│   ┌─────────────────┐                    ┌─────────────────┐        │
+│   │  IEnumerable    │                    │  IEnumerable    │        │
+│   │ &lt;IReportBuilder&gt;│                    │&lt;IExportGenerator&gt;│       │
+│   └────────┬────────┘                    └────────┬────────┘        │
+└────────────┼─────────────────────────────────────┼──────────────────┘
+             │                                      │
+    ┌────────┴────────┐                   ┌────────┴────────┐
+    │   STRATEGIES    │                   │   STRATEGIES    │
+    └─────────────────┘                   └─────────────────┘
+
+    ┌─────────────────┐                   ┌─────────────────┐
+    │AttendanceSummary│                   │  ExcelGenerator │
+    │    Builder      │                   │                 │
+    ├─────────────────┤                   ├─────────────────┤
+    │   LeaveMap      │                   │   CsvGenerator  │
+    │    Builder      │                   │                 │
+    ├─────────────────┤                   ├─────────────────┤
+    │ ScheduledVsActual                   │   PdfGenerator  │
+    │    Builder      │                   │                 │
+    ├─────────────────┤                   └─────────────────┘
+    │EmployeeDetails  │
+    │    Builder      │
+    ├─────────────────┤
+    │   JobReport     │
+    │    Builder      │
+    ├─────────────────┤
+    │    Trends       │
+    │    Builder      │
+    └─────────────────┘</pre></div>
+<h3 id="key-components">Key Components</h3>
+<h4 id="1-strategy-interfaces">1. Strategy Interfaces</h4>
+<pre><code class="lang-csharp"><span class="cmt">// Report building strategy</span>
+<span class="kw">public</span> <span class="kw">interface</span> <span class="type">IReportBuilder</span>
+{
+    <span class="type">ReportType</span> <span class="type">ReportType</span> { <span class="kw">get</span>; }
+    <span class="type">Task</span>&lt;<span class="type">ReportData</span>&gt; <span class="type">BuildAsync</span>(<span class="type">ReportBuildContext</span> context);
+}
+
+<span class="cmt">// Export generation strategy</span>
+<span class="kw">public</span> <span class="kw">interface</span> <span class="type">IExportGenerator</span>
+{
+    <span class="type">ExportFormat</span> <span class="type">Format</span> { <span class="kw">get</span>; }
+    <span class="kw">string</span> <span class="type">ContentType</span> { <span class="kw">get</span>; }
+    <span class="kw">string</span> <span class="type">FileExtension</span> { <span class="kw">get</span>; }
+    <span class="kw">byte</span>[] <span class="type">Generate</span>(<span class="type">ReportData</span> data, <span class="type">ExportOptions</span> options);
+}</code></pre>
+<p>Each interface defines:</p>
+<ul>
+<li><strong>Identity</strong>: What type/format it handles</li>
+<li><strong>Contract</strong>: The method signature for its operation</li>
+</ul>
+<h4 id="2-concrete-strategies">2. Concrete Strategies</h4>
+<p>Each strategy implements exactly one thing:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">ExcelExportGenerator</span> : <span class="type">IExportGenerator</span>
+{
+    <span class="kw">public</span> <span class="type">ExportFormat</span> <span class="type">Format</span> =&gt; <span class="type">ExportFormat</span>.<span class="type">Excel</span>;
+    <span class="kw">public</span> <span class="kw">string</span> <span class="type">ContentType</span> =&gt; <span class="str">&quot;application/vnd.openxmlformats-officedocument.spreadsheetml.sheet&quot;</span>;
+    <span class="kw">public</span> <span class="kw">string</span> <span class="type">FileExtension</span> =&gt; <span class="str">&quot;.xlsx&quot;</span>;
+
+    <span class="kw">public</span> <span class="kw">byte</span>[] <span class="type">Generate</span>(<span class="type">ReportData</span> data, <span class="type">ExportOptions</span> options)
+    {
+        <span class="cmt">// ONLY Excel generation logic here</span>
+        <span class="kw">using</span> <span class="kw">var</span> workbook = <span class="kw">new</span> <span class="type">XLWorkbook</span>();
+        <span class="cmt">// ... Excel-specific code</span>
+        <span class="kw">return</span> stream.<span class="type">ToArray</span>();
+    }
+}</code></pre>
+<h4 id="3-the-orchestrator-context">3. The Orchestrator (Context)</h4>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">AttendanceExportService</span> : <span class="type">IAttendanceExportService</span>
+{
+    <span class="kw">private</span> <span class="kw">readonly</span> <span class="type">Dictionary</span>&lt;<span class="type">ReportType</span>, <span class="type">IReportBuilder</span>&gt; _builders;
+    <span class="kw">private</span> <span class="kw">readonly</span> <span class="type">Dictionary</span>&lt;<span class="type">ExportFormat</span>, <span class="type">IExportGenerator</span>&gt; _generators;
+
+    <span class="kw">public</span> <span class="type">AttendanceExportService</span>(
+        <span class="type">IEnumerable</span>&lt;<span class="type">IReportBuilder</span>&gt; builders,
+        <span class="type">IEnumerable</span>&lt;<span class="type">IExportGenerator</span>&gt; generators)
+    {
+        <span class="cmt">// Build lookup dictionaries from injected strategies</span>
+        _builders = builders.<span class="type">ToDictionary</span>(b =&gt; b.<span class="type">ReportType</span>);
+        _generators = generators.<span class="type">ToDictionary</span>(g =&gt; g.<span class="type">Format</span>);
+    }
+
+    <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="type">ExportResult</span>&gt; <span class="type">GenerateReportAsync</span>(<span class="type">ExportRequest</span> request, <span class="kw">string</span> companyDatabase)
+    {
+        <span class="cmt">// 1. Select the right builder strategy</span>
+        <span class="kw">if</span> (!_builders.<span class="type">TryGetValue</span>(request.<span class="type">ReportType</span>, <span class="kw">out</span> <span class="kw">var</span> builder))
+            <span class="kw">return</span> <span class="type">ExportResult</span>.<span class="type">Failure</span>(<span class="str">&quot;Unknown report type&quot;</span>);
+
+        <span class="cmt">// 2. Build the report data</span>
+        <span class="kw">var</span> reportData = <span class="kw">await</span> builder.<span class="type">BuildAsync</span>(context);
+
+        <span class="cmt">// 3. Select the right generator strategy</span>
+        <span class="kw">if</span> (!_generators.<span class="type">TryGetValue</span>(request.<span class="type">Format</span>, <span class="kw">out</span> <span class="kw">var</span> generator))
+            <span class="kw">return</span> <span class="type">ExportResult</span>.<span class="type">Failure</span>(<span class="str">&quot;Unknown format&quot;</span>);
+
+        <span class="cmt">// 4. Generate the output</span>
+        <span class="kw">var</span> bytes = generator.<span class="type">Generate</span>(reportData, request.<span class="type">Options</span>);
+
+        <span class="kw">return</span> <span class="kw">new</span> <span class="type">ExportResult</span>(<span class="kw">true</span>, fileName, bytes, generator.<span class="type">ContentType</span>, <span class="kw">null</span>);
+    }
+}</code></pre>
+<h2 id="solid-principles-in-action">SOLID Principles in Action</h2>
+<h3 id="single-responsibility-principle-srp">Single Responsibility Principle (SRP)</h3>
+<p>Each class has ONE job:</p>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Class</th>
+<th>Single Responsibility</th>
+</tr></thead><tbody>
+<tr>
+<td><code class="il">AttendanceSummaryBuilder</code></td>
+<td>Build attendance summary report data</td>
+</tr>
+<tr>
+<td><code class="il">LeaveMapBuilder</code></td>
+<td>Build leave map report data</td>
+</tr>
+<tr>
+<td><code class="il">ExcelExportGenerator</code></td>
+<td>Generate Excel files</td>
+</tr>
+<tr>
+<td><code class="il">PdfExportGenerator</code></td>
+<td>Generate PDF files</td>
+</tr>
+<tr>
+<td><code class="il">AttendanceExportService</code></td>
+<td>Orchestrate builders and generators</td>
+</tr>
+</tbody></table></div>
+<h3 id="open-closed-principle-ocp">Open/Closed Principle (OCP)</h3>
+<p><strong>Adding a new report type</strong> (e.g., OvertimeReport):</p>
+<pre><code class="lang-csharp"><span class="cmt">// Just create a new class - NO changes to existing code</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">OvertimeReportBuilder</span> : <span class="type">IReportBuilder</span>
+{
+    <span class="kw">public</span> <span class="type">ReportType</span> <span class="type">ReportType</span> =&gt; <span class="type">ReportType</span>.<span class="type">Overtime</span>;
+
+    <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="type">ReportData</span>&gt; <span class="type">BuildAsync</span>(<span class="type">ReportBuildContext</span> context)
+    {
+        <span class="cmt">// New report logic here</span>
+    }
+}</code></pre>
+<p>Then register it in DI:</p>
+<pre><code class="lang-csharp">builder.<span class="type">Services</span>.<span class="type">AddTransient</span>&lt;<span class="type">IReportBuilder</span>, <span class="type">OvertimeReportBuilder</span>&gt;();</code></pre>
+<p>The orchestrator automatically picks it up - <strong>zero changes to AttendanceExportService</strong>!</p>
+<p><strong>Adding a new format</strong> (e.g., JSON):</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">JsonExportGenerator</span> : <span class="type">IExportGenerator</span>
+{
+    <span class="kw">public</span> <span class="type">ExportFormat</span> <span class="type">Format</span> =&gt; <span class="type">ExportFormat</span>.<span class="type">Json</span>;
+    <span class="kw">public</span> <span class="kw">string</span> <span class="type">ContentType</span> =&gt; <span class="str">&quot;application/json&quot;</span>;
+    <span class="kw">public</span> <span class="kw">string</span> <span class="type">FileExtension</span> =&gt; <span class="str">&quot;.json&quot;</span>;
+
+    <span class="kw">public</span> <span class="kw">byte</span>[] <span class="type">Generate</span>(<span class="type">ReportData</span> data, <span class="type">ExportOptions</span> options)
+    {
+        <span class="kw">var</span> json = <span class="type">JsonSerializer</span>.<span class="type">Serialize</span>(data);
+        <span class="kw">return</span> <span class="type">Encoding</span>.<span class="type">UTF8</span>.<span class="type">GetBytes</span>(json);
+    }
+}</code></pre>
+<h3 id="dependency-inversion-principle-dip">Dependency Inversion Principle (DIP)</h3>
+<p>The orchestrator depends on abstractions (interfaces), not concrete implementations:</p>
+<pre><code class="lang-csharp"><span class="cmt">// Constructor depends on interfaces</span>
+<span class="kw">public</span> <span class="type">AttendanceExportService</span>(
+    <span class="type">IEnumerable</span>&lt;<span class="type">IReportBuilder</span>&gt; builders,      <span class="cmt">// Abstraction</span>
+    <span class="type">IEnumerable</span>&lt;<span class="type">IExportGenerator</span>&gt; generators   <span class="cmt">// Abstraction</span>
+)</code></pre>
+<p>This is injected by the DI container, which provides concrete implementations.</p>
+<h3 id="liskov-substitution-principle-lsp">Liskov Substitution Principle (LSP)</h3>
+<p>Any implementation of <code class="il">IReportBuilder</code> can be substituted for another without breaking the system:</p>
+<pre><code class="lang-csharp"><span class="cmt">// These are interchangeable - the orchestrator doesn&#x27;t care which one it uses</span>
+<span class="type">IReportBuilder</span> builder = <span class="kw">new</span> <span class="type">AttendanceSummaryBuilder</span>(...);
+<span class="type">IReportBuilder</span> builder = <span class="kw">new</span> <span class="type">LeaveMapBuilder</span>(...);
+<span class="type">IReportBuilder</span> builder = <span class="kw">new</span> <span class="type">JobReportBuilder</span>(...);</code></pre>
+<h3 id="interface-segregation-principle-isp">Interface Segregation Principle (ISP)</h3>
+<p>Interfaces are small and focused:</p>
+<pre><code class="lang-csharp"><span class="cmt">// IReportBuilder only has what builders need</span>
+<span class="kw">public</span> <span class="kw">interface</span> <span class="type">IReportBuilder</span>
+{
+    <span class="type">ReportType</span> <span class="type">ReportType</span> { <span class="kw">get</span>; }
+    <span class="type">Task</span>&lt;<span class="type">ReportData</span>&gt; <span class="type">BuildAsync</span>(<span class="type">ReportBuildContext</span> context);
+}
+
+<span class="cmt">// IExportGenerator only has what generators need</span>
+<span class="kw">public</span> <span class="kw">interface</span> <span class="type">IExportGenerator</span>
+{
+    <span class="type">ExportFormat</span> <span class="type">Format</span> { <span class="kw">get</span>; }
+    <span class="kw">string</span> <span class="type">ContentType</span> { <span class="kw">get</span>; }
+    <span class="kw">string</span> <span class="type">FileExtension</span> { <span class="kw">get</span>; }
+    <span class="kw">byte</span>[] <span class="type">Generate</span>(<span class="type">ReportData</span> data, <span class="type">ExportOptions</span> options);
+}</code></pre>
+<p>No class is forced to implement methods it doesn&#x27;t need.</p>
+<h2 id="di-registration-pattern">DI Registration Pattern</h2>
+<pre><code class="lang-csharp"><span class="cmt">// Register all strategies</span>
+builder.<span class="type">Services</span>.<span class="type">AddTransient</span>&lt;<span class="type">IReportBuilder</span>, <span class="type">AttendanceSummaryBuilder</span>&gt;();
+builder.<span class="type">Services</span>.<span class="type">AddTransient</span>&lt;<span class="type">IReportBuilder</span>, <span class="type">LeaveMapBuilder</span>&gt;();
+builder.<span class="type">Services</span>.<span class="type">AddTransient</span>&lt;<span class="type">IReportBuilder</span>, <span class="type">ScheduledVsActualBuilder</span>&gt;();
+builder.<span class="type">Services</span>.<span class="type">AddTransient</span>&lt;<span class="type">IReportBuilder</span>, <span class="type">EmployeeDetailsBuilder</span>&gt;();
+builder.<span class="type">Services</span>.<span class="type">AddTransient</span>&lt;<span class="type">IReportBuilder</span>, <span class="type">JobReportBuilder</span>&gt;();
+builder.<span class="type">Services</span>.<span class="type">AddTransient</span>&lt;<span class="type">IReportBuilder</span>, <span class="type">TrendsBuilder</span>&gt;();
+
+builder.<span class="type">Services</span>.<span class="type">AddTransient</span>&lt;<span class="type">IExportGenerator</span>, <span class="type">ExcelExportGenerator</span>&gt;();
+builder.<span class="type">Services</span>.<span class="type">AddTransient</span>&lt;<span class="type">IExportGenerator</span>, <span class="type">CsvExportGenerator</span>&gt;();
+builder.<span class="type">Services</span>.<span class="type">AddTransient</span>&lt;<span class="type">IExportGenerator</span>, <span class="type">PdfExportGenerator</span>&gt;();
+
+<span class="cmt">// The orchestrator receives ALL of them via IEnumerable</span>
+builder.<span class="type">Services</span>.<span class="type">AddScoped</span>&lt;<span class="type">IAttendanceExportService</span>, <span class="type">AttendanceExportService</span>&gt;();</code></pre>
+<p>When you register multiple implementations of the same interface, ASP.NET Core&#x27;s DI container can inject them all as <code class="il">IEnumerable&lt;T&gt;</code>.</p>
+<h2 id="testing-benefits">Testing Benefits</h2>
+<p>Each strategy can be tested in complete isolation:</p>
+<pre><code class="lang-csharp">[<span class="type">Fact</span>]
+<span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">AttendanceSummaryBuilder_Returns_Correct_Sections</span>()
+{
+    <span class="cmt">// Arrange</span>
+    <span class="kw">var</span> mockQueryService = <span class="kw">new</span> <span class="type">Mock</span>&lt;<span class="type">IAttendanceQueryService</span>&gt;();
+    mockQueryService.<span class="type">Setup</span>(x =&gt; x.<span class="type">GetAttendanceStatisticsAsync</span>(...))
+        .<span class="type">ReturnsAsync</span>(testStats);
+
+    <span class="kw">var</span> builder = <span class="kw">new</span> <span class="type">AttendanceSummaryBuilder</span>(mockQueryService.<span class="type">Object</span>);
+
+    <span class="cmt">// Act</span>
+    <span class="kw">var</span> result = <span class="kw">await</span> builder.<span class="type">BuildAsync</span>(context);
+
+    <span class="cmt">// Assert</span>
+    <span class="type">Assert</span>.<span class="type">Equal</span>(<span class="str">&quot;Resumo de Presencas&quot;</span>, result.<span class="type">Title</span>);
+    <span class="type">Assert</span>.<span class="type">Equal</span>(<span class="num">2</span>, result.<span class="type">Sections</span>.<span class="type">Count</span>);
+}
+
+[<span class="type">Fact</span>]
+<span class="kw">public</span> <span class="kw">void</span> <span class="type">ExcelGenerator_Creates_Valid_Workbook</span>()
+{
+    <span class="cmt">// Arrange</span>
+    <span class="kw">var</span> generator = <span class="kw">new</span> <span class="type">ExcelExportGenerator</span>();
+    <span class="kw">var</span> testData = <span class="type">CreateTestReportData</span>();
+
+    <span class="cmt">// Act</span>
+    <span class="kw">var</span> bytes = generator.<span class="type">Generate</span>(testData, <span class="kw">new</span> <span class="type">ExportOptions</span>(<span class="kw">false</span>, <span class="kw">false</span>, <span class="kw">false</span>));
+
+    <span class="cmt">// Assert</span>
+    <span class="kw">using</span> <span class="kw">var</span> stream = <span class="kw">new</span> <span class="type">MemoryStream</span>(bytes);
+    <span class="kw">using</span> <span class="kw">var</span> workbook = <span class="kw">new</span> <span class="type">XLWorkbook</span>(stream);
+    <span class="type">Assert</span>.<span class="type">Single</span>(workbook.<span class="type">Worksheets</span>);
+}</code></pre>
+<h2 id="common-pattern-two-dimensional-strategy">Common Pattern: Two-Dimensional Strategy</h2>
+<p>This implementation uses a <strong>two-dimensional strategy pattern</strong>:</p>
+<ol>
+<li><strong>First dimension</strong>: Report type (WHAT data to build)</li>
+<li><strong>Second dimension</strong>: Export format (HOW to output it)</li>
+</ol>
+<p>This creates a matrix of possibilities:</p>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th></th>
+<th>Excel</th>
+<th>CSV</th>
+<th>PDF</th>
+</tr></thead><tbody>
+<tr>
+<td>Attendance</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+</tr>
+<tr>
+<td>Leave Map</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+</tr>
+<tr>
+<td>Scheduled</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+</tr>
+<tr>
+<td>Employee</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+</tr>
+<tr>
+<td>Job Report</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+</tr>
+<tr>
+<td>Trends</td>
+<td>X</td>
+<td>X</td>
+<td>X</td>
+</tr>
+</tbody></table></div>
+<p><strong>6 report types x 3 formats = 18 combinations</strong>, but only <strong>9 classes</strong> (6 builders + 3 generators).</p>
+<p>Without the pattern, you&#x27;d need 18 separate methods or one massive switch statement.</p>
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ol>
+<li><strong>Strategy Pattern</strong> separates WHAT to do from HOW to do it</li>
+<li><strong>DI + IEnumerable</strong> allows automatic strategy discovery</li>
+<li><strong>Dictionary lookup</strong> by type/format gives O(1) strategy selection</li>
+<li><strong>New features = new classes</strong>, not modifications to existing code</li>
+<li><strong>Testing is easy</strong> because each strategy is isolated</li>
+<li><strong>SOLID principles</strong> emerge naturally from good pattern use</li>
+</ol>
+<h2 id="further-reading">Further Reading</h2>
+<ul>
+<li><a href="https://refactoring.guru/design-patterns/strategy" target="_blank">Refactoring Guru: Strategy Pattern</a></li>
+<li><a href="https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection" target="_blank">Microsoft DI Documentation</a></li>
+<li>CLAUDE.md in this project for service patterns</li>
+</ul>
+</div>
+</body>
+</html>

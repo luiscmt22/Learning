@@ -1,0 +1,319 @@
+Base Entity Abstractions & Soft Delete — The Nesting Dolls of Domain Models
+Base Entity Abstractions & Soft Delete
+Tutorial #27 — The Nesting Dolls of Domain Models
+1. Why Base Classes?
+Imagine a project with 45+ entity models . Every single one needs an
+Id property. Most need audit fields ( CreatedAt ,
+CreatedByUserId , ModifiedAt , ModifiedByUserId ).
+Many need soft-delete fields ( IsDeleted , DeletedAt ,
+DeletedByUserId ).
+Without base classes, you would copy-paste the same 8 properties into every entity class:
+45 entities × 8 properties = 360 lines of duplicated boilerplate
+Need to add a new audit field? Change it in 45 places
+Typo in one entity? Silent inconsistency across the domain
+With base classes, you define each property once . Every entity inherits it automatically. Change the base — every child updates.
+The inheritance chain is like Russian nesting dolls. The smallest doll ( BaseEntity )
+just has an ID. The middle doll ( BaseAuditableEntity ) adds "who created/modified
+this." The biggest doll ( BaseSoftDeletableEntity ) adds "can this be hidden
+without destroying it?"
+2. The Inheritance Hierarchy
+Here is the full inheritance tree, from simplest to most feature-rich:
+BaseEntity ( abstract )
+Id : int [ Key ]
+|
+|
+BaseAuditableEntity ( abstract ) : BaseEntity + IAuditable
+CreatedAt : DateTime = DateTime . UtcNow
+CreatedByUserId : int?
+ModifiedAt : DateTime?
+ModifiedByUserId : int?
+|
+|
+BaseSoftDeletableEntity ( abstract ) : BaseAuditableEntity + ISoftDeletable
+IsDeleted : bool
+DeletedAt : DateTime?
+DeletedByUserId : int?
+Each level adds capability without repeating what came before.
+BaseSoftDeletableEntity has all 8 properties — the ID from
+BaseEntity , the 4 audit fields from BaseAuditableEntity ,
+and its own 3 soft-delete fields.
+3. The Interfaces — IAuditable and ISoftDeletable
+Before looking at the base classes themselves, we define two interfaces .
+Interfaces allow checking any entity for audit or soft-delete capability
+without knowing its concrete type.
+IAuditable
+public interface IAuditable
+{
+DateTime CreatedAt { get ; set ; }
+int? CreatedByUserId { get ; set ; }
+DateTime? ModifiedAt { get ; set ; }
+int? ModifiedByUserId { get ; set ; }
+}
+ISoftDeletable
+public interface ISoftDeletable
+{
+bool IsDeleted { get ; set ; }
+DateTime? DeletedAt { get ; set ; }
+int? DeletedByUserId { get ; set ; }
+}
+Why Interfaces AND Base Classes?
+The base classes give you implementation reuse (inherit properties once,
+done). The interfaces give you polymorphic behavior — you can write
+code that works on any auditable entity without caring what it actually is:
+// In an EF Core interceptor or generic service method:
+if ( entity is IAuditable auditable )
+{
+auditable . ModifiedAt = DateTime . UtcNow ;
+auditable . ModifiedByUserId = currentUserId ;
+}
+if ( entity is ISoftDeletable softDeletable )
+{
+softDeletable . IsDeleted = true ;
+softDeletable . DeletedAt = DateTime . UtcNow ;
+softDeletable . DeletedByUserId = currentUserId ;
+}
+This pattern-match approach means a single interceptor can automatically
+stamp audit fields on every save for every entity in the system — without knowing
+about any specific entity class.
+4. The Base Classes — Full Code
+BaseEntity
+The simplest base. Every entity in the system has an integer primary key.
+public abstract class BaseEntity
+{
+[ Key ]
+public int Id { get ; set ; }
+}
+abstract means you cannot do new BaseEntity() . It only exists
+to be inherited. The [Key] attribute tells EF Core this is the primary key.
+BaseAuditableEntity
+Adds the four audit-tracking fields. Inherits Id from BaseEntity .
+public abstract class BaseAuditableEntity : BaseEntity , IAuditable
+{
+public DateTime CreatedAt { get ; set ; } = DateTime . UtcNow ;
+public int? CreatedByUserId { get ; set ; }
+public DateTime? ModifiedAt { get ; set ; }
+public int? ModifiedByUserId { get ; set ; }
+}
+Key details:
+CreatedAt defaults to DateTime.UtcNow — automatically stamped when the object is instantiated
+All user ID fields are int? (nullable) — some records are created by system processes, not users
+Implements IAuditable , so interceptors can find it via pattern matching
+BaseSoftDeletableEntity
+The most feature-rich base. Gets ID + audit fields from its parents, adds soft-delete on top.
+public abstract class BaseSoftDeletableEntity : BaseAuditableEntity , ISoftDeletable
+{
+public bool IsDeleted { get ; set ; }
+public DateTime? DeletedAt { get ; set ; }
+public int? DeletedByUserId { get ; set ; }
+}
+A BaseSoftDeletableEntity has 8 properties total —
+Id + 4 audit fields + 3 soft-delete fields — but the class only
+declares the 3 that are new. Everything else comes from inheritance.
+5. Choosing the Right Base
+Not every entity needs every feature. Here is the decision guide:
+Base Class
+Use When
+Example Entities
+BaseEntity
+Just need an ID (lookup tables, simple references)
+Country, District, Holiday
+BaseAuditableEntity
+Need audit trail but records are never deleted
+Article, Configuration, AuditLog
+BaseSoftDeletableEntity
+Full audit + soft-delete capability
+Lead, Opportunity, Ticket, Document
+The rule of thumb: start with the simplest base that covers your needs . You can always move up the hierarchy later (since each level is a superset of the one below).
+6. Soft Delete — How It Works
+Soft delete means "mark a record as deleted instead of physically removing it from the
+database." The row stays in the table, but a WHERE IsDeleted = 0 filter
+hides it from all normal queries.
+This requires three pieces working together:
+a) Entity Configuration with HasQueryFilter
+The global query filter is the magic that makes soft delete transparent.
+It is configured once per entity type using EF Core's fluent API:
+public class LeadConfiguration : IEntityTypeConfiguration < Lead >
+{
+public void Configure ( EntityTypeBuilder < Lead > builder )
+{
+builder . HasQueryFilter ( l => ! l . IsDeleted );
+}
+}
+builder.HasQueryFilter(l => !l.IsDeleted) reads as:
+"Every time someone queries leads, automatically add WHERE IsDeleted = false .
+They'll never see deleted records unless they explicitly ask."
+b) Soft-Delete in a Service Method
+Instead of calling context.Remove(entity) , the service sets the
+soft-delete fields:
+public async Task < ServiceResult > DeleteAsync ( int id , int userId , string companyDatabase )
+{
+await using var context = _contextFactory . CreateCompanyContext ( companyDatabase );
+var existing = await context . Leads . FindAsync ( id );
+if ( existing == null )
+return ServiceResult . Failure ( "Lead not found." );
+// Soft delete: mark, don't remove
+existing . IsDeleted = true ;
+existing . DeletedAt = DateTime . UtcNow ;
+existing . DeletedByUserId = userId ;
+await context . SaveChangesAsync ();
+return ServiceResult . SuccessResult ();
+}
+The record is still in the database. But because of the global query filter,
+the next time anyone queries context.Leads , this record is invisible.
+c) Querying — Automatic Filter
+// This automatically adds WHERE IsDeleted = 0 (thanks to HasQueryFilter)
+var leads = await context . Leads . ToListAsync ();
+// To include deleted records (admin recovery, reports):
+var allLeads = await context . Leads
+. IgnoreQueryFilters ()
+. ToListAsync ();
+HasQueryFilter applies globally to ALL queries on that
+entity — including navigations and .Include() calls. If you load
+an Order and .Include(o => o.Lead) , the filter still applies
+to the Lead. Use .IgnoreQueryFilters() only when you intentionally need
+deleted records (admin views, recovery tools).
+Never hard-delete business data. Use BaseSoftDeletableEntity +
+HasQueryFilter . The data is "gone" from the user's perspective but
+recoverable if needed. Hard deletes are acceptable only for truly ephemeral data
+(session tokens, temporary caches).
+7. Multi-Context Configuration
+In a multi-tenant system, a single assembly may contain entity configurations for
+two different databases . The central database
+( BaseControleContext ) holds users, companies, and geography tables. The
+tenant database ( DynamicCompanyContext ) holds employees, jobs, CRM data, etc.
+The problem: ApplyConfigurationsFromAssembly finds all
+configurations in the assembly. We need to prevent geography configs from being applied
+to tenant databases.
+The Blocklist Pattern
+private static readonly HashSet < Type > _centralOnlyConfigurations = new ()
+{
+typeof ( CountryConfiguration ),
+typeof ( DistrictConfiguration ),
+typeof ( CountyConfiguration ),
+};
+modelBuilder . ApplyConfigurationsFromAssembly (
+typeof ( BaseContext ). Assembly ,
+type => ! _centralOnlyConfigurations . Contains ( type ));
+The HashSet<Type> acts as a blocklist. The predicate
+type => !_centralOnlyConfigurations.Contains(type) tells EF:
+"Apply every configuration you find except the ones in this set."
+modelBuilder.Ignore<T>()
+Even if a configuration is excluded, EF might still discover an entity type through
+navigation properties. Ignore<T>() explicitly tells EF: "This entity
+does not belong to this context. Do not create a table for it."
+// In the tenant context: these entities live in the central database only
+modelBuilder . Ignore < Country >();
+modelBuilder . Ignore < User >();
+modelBuilder . Ignore < Company >();
+Without these Ignore calls, EF would see a navigation property like
+Employee.Country , follow it, and try to create a Countries
+table in the tenant database — which would be wrong.
+8. Global Cascade Delete Prevention
+By default, EF Core configures cascade delete on required foreign keys.
+That means deleting a parent record automatically deletes all children. In a complex
+multi-tenant system, this is dangerous:
+Cascade chains can trigger unexpected mass deletions
+SQL Server disallows multiple cascade paths to the same table
+Soft-delete entities should never be hard-deleted by cascade
+The solution: disable cascade delete globally and handle it explicitly in services.
+foreach ( var relationship in modelBuilder . Model . GetEntityTypes ()
+. SelectMany ( e => e . GetForeignKeys ()))
+{
+relationship . DeleteBehavior = DeleteBehavior . NoAction ;
+}
+This iterates over every foreign key relationship in the model and sets the
+delete behavior to NoAction . Now, if you try to delete a parent that has
+children, SQL Server will throw an error instead of silently cascading. Your service
+layer must handle the deletion order explicitly.
+This pairs perfectly with soft delete: since you never actually DELETE
+rows, cascade behavior becomes irrelevant. But the safety net catches accidental
+hard deletes during development.
+9. ApplyConfigurationsFromAssembly
+Instead of manually registering every entity configuration, EF Core can
+auto-discover them from the assembly:
+modelBuilder . ApplyConfigurationsFromAssembly (
+typeof ( BaseContext ). Assembly ,
+type => ! _centralOnlyConfigurations . Contains ( type ));
+How this works step by step:
+Scans the assembly for all classes that implement IEntityTypeConfiguration<T>
+Filters using the predicate — excludes central-only configs from tenant contexts
+Instantiates each configuration class and calls its Configure() method
+Applies the result to the ModelBuilder
+The beauty of this pattern:
+Zero registration — create a new configuration class, it is automatically picked up
+Convention-based — no need to remember to add it to a list somewhere
+Filterable — the predicate gives fine-grained control over which configs apply to which context
+When you add a new entity with its own IEntityTypeConfiguration<T> ,
+the next time the context builds its model, the new configuration is discovered and applied
+automatically. Nothing else to wire up.
+10. Creating a New Entity — Step by Step
+Here is the complete workflow for adding a new entity to the system:
+Step 1: Choose the Right Base Class
+Ask yourself:
+Is this a simple lookup/reference? → BaseEntity
+Do I need to track who created/modified it? → BaseAuditableEntity
+Should users be able to "delete" it without losing data? → BaseSoftDeletableEntity
+Step 2: Create the Entity Class
+public class SupportTicket : BaseSoftDeletableEntity
+{
+public string Code { get ; set ; }
+public string Title { get ; set ; }
+public int Priority { get ; set ; }
+public int StatusId { get ; set ; }
+// Navigation properties
+public virtual TicketStatus Status { get ; set ; }
+}
+This class has 12 properties in total: Id (from
+BaseEntity ), 4 audit fields (from BaseAuditableEntity ),
+3 soft-delete fields (from BaseSoftDeletableEntity ), and the 4 domain-specific
+properties declared here. But the class only explicitly declares the 4 that are unique to it.
+Step 3: Add Entity-Specific Properties
+Only declare what is unique to this entity. Id , CreatedAt ,
+IsDeleted , etc. are all inherited. Do not redeclare them.
+Step 4 (Optional): Create a Configuration Class
+public class SupportTicketConfiguration : IEntityTypeConfiguration < SupportTicket >
+{
+public void Configure ( EntityTypeBuilder < SupportTicket > builder )
+{
+// Soft-delete query filter
+builder . HasQueryFilter ( t => ! t . IsDeleted );
+// Indexes for common queries
+builder . HasIndex ( t => t . Code ). IsUnique ();
+builder . HasIndex ( t => t . StatusId );
+// Property constraints
+builder . Property ( t => t . Code ). HasMaxLength ( 20 ). IsRequired ();
+builder . Property ( t => t . Title ). HasMaxLength ( 200 ). IsRequired ();
+}
+}
+This configuration is auto-discovered by ApplyConfigurationsFromAssembly .
+No manual registration needed.
+Step 5: Add a DbSet to the Context
+// In your DbContext class:
+public DbSet < SupportTicket > SupportTickets { get ; set ; }
+That is it. Five steps. The entity gets an ID, full audit tracking, soft-delete capability,
+a global query filter, indexes, and a database table — with minimal boilerplate.
+Putting It All Together
+Here is the complete picture of how all these pieces interact at runtime:
+1. Entity inherits from BaseSoftDeletableEntity
+SupportTicket gets: Id, CreatedAt, CreatedByUserId,
+ModifiedAt, ModifiedByUserId, IsDeleted, DeletedAt, DeletedByUserId
+2. Configuration applies HasQueryFilter
+Every query on SupportTickets adds: WHERE IsDeleted = 0
+3. Service creates a record
+CreatedAt = UtcNow (auto from property default)
+CreatedByUserId = current user (set by interceptor or service)
+4. Service updates a record
+ModifiedAt = UtcNow (set by interceptor via IAuditable check)
+ModifiedByUserId = current user
+5. Service "deletes" a record
+IsDeleted = true, DeletedAt = UtcNow, DeletedByUserId = current user
+Record stays in DB but disappears from all queries
+6. Admin needs to see deleted records
+context.SupportTickets.IgnoreQueryFilters().Where(t => t.IsDeleted)
+The base classes, interfaces, query filters, and interceptors form a cohesive system.
+Each entity that inherits from the right base automatically participates in audit
+tracking and soft-delete — no additional code required per entity.
+Think of it as a building's utility infrastructure. Once you wire electricity to every
+floor (base classes), each apartment (entity) just plugs into the wall socket (inherits).
+The electricity (audit + soft-delete) flows without each apartment needing its own
+generator.

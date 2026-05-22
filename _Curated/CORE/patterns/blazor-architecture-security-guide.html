@@ -1,0 +1,2967 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Blazor Server Architecture and Security Guide</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #07090f;
+  --bg-1: #0c111c;
+  --bg-2: #11182a;
+  --bg-3: #1a2238;
+  --bg-4: #232e4a;
+  --border: #1e2840;
+  --border-2: #2a3551;
+  --border-3: #3a4870;
+  --text: #e9eef8;
+  --text-dim: #94a3bf;
+  --text-mut: #5f6b86;
+  --accent: #6aa6ff;
+  --accent-strong: #3b82f6;
+  --accent-2: #b86aff;
+  --accent-3: #f472b6;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+  --info: #38bdf8;
+  --code-bg: #0a1020;
+  --code-border: #1a2340;
+  --shadow: 0 8px 32px rgba(0,0,0,0.55);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.35);
+  --shadow-glow: 0 0 0 1px rgba(106,166,255,0.18), 0 12px 40px rgba(106,166,255,0.10);
+}
+
+/* Doc-type theming */
+[data-doc-type="core-concept"] {
+  --doc-accent: #6aa6ff;
+  --doc-accent-rgb: 106,166,255;
+  --doc-eyebrow: "Concept";
+}
+[data-doc-type="applied-implementation"] {
+  --doc-accent: #b86aff;
+  --doc-accent-rgb: 184,106,255;
+  --doc-eyebrow: "Implementation";
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font: 16px/1.7 -apple-system, "Inter", \'Segoe UI\', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+::selection { background: rgba(106,166,255,0.30); }
+
+/* ═══ Top bar ═══════════════════════════════════════════════════════ */
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(7,9,15,0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 28px;
+  display: flex; align-items: center; gap: 16px;
+}
+.topbar .crumbs {
+  flex: 1; font-size: 13px; color: var(--text-dim);
+  display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden;
+}
+.topbar .crumbs span.sep { color: var(--text-mut); }
+.topbar .crumbs .current {
+  color: var(--text); font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.topbar .crumbs a { color: var(--text-dim); text-decoration: none; }
+.topbar .crumbs a:hover { color: var(--accent); }
+.topbar .actions { display: flex; gap: 6px; flex-shrink: 0; }
+.topbar .action {
+  font-size: 13px; padding: 6px 14px; border-radius: 8px;
+  color: var(--text-dim); text-decoration: none;
+  border: 1px solid transparent; transition: all .15s;
+}
+.topbar .action:hover {
+  color: var(--text); background: var(--bg-2); border-color: var(--border);
+  text-decoration: none;
+}
+
+/* ═══ Document layout ═══════════════════════════════════════════════ */
+.layout {
+  display: grid; grid-template-columns: 280px 1fr;
+  max-width: 1380px; margin: 0 auto; align-items: start;
+}
+.layout.no-toc { grid-template-columns: 1fr; max-width: 940px; }
+
+.toc-sidebar {
+  position: sticky; top: 70px;
+  align-self: start;
+  max-height: calc(100vh - 90px);
+  overflow-y: auto;
+  padding: 40px 8px 40px 28px;
+  border-right: 1px solid var(--border);
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+.toc-sidebar::-webkit-scrollbar { width: 6px; }
+.toc-sidebar::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
+.toc-sidebar h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px; padding-left: 14px; font-weight: 600;
+}
+.toc-sidebar ol { list-style: none; margin: 0; padding: 0; }
+.toc-sidebar li { margin: 0; }
+.toc-sidebar a {
+  display: block;
+  padding: 5px 14px;
+  border-left: 2px solid transparent;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 13px;
+  line-height: 1.5;
+  transition: all .15s;
+  word-break: break-word;
+}
+.toc-sidebar a:hover {
+  color: var(--text); border-left-color: var(--border-2); text-decoration: none;
+}
+.toc-sidebar a.active {
+  color: var(--doc-accent, var(--accent));
+  border-left-color: var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.07);
+}
+.toc-sidebar .lvl-3 a { padding-left: 28px; font-size: 12.5px; }
+.toc-sidebar .lvl-4 a, .toc-sidebar .lvl-5 a, .toc-sidebar .lvl-6 a {
+  padding-left: 42px; font-size: 12px;
+}
+
+.content { padding: 40px 64px 120px; min-width: 0; }
+
+/* ═══ Hero (per-doc) ════════════════════════════════════════════════ */
+.doc-hero {
+  position: relative;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 32px;
+  margin-bottom: 36px;
+}
+.doc-hero::before {
+  content: ''; position: absolute;
+  top: -40px; left: -64px; right: -64px; height: 220px;
+  background: radial-gradient(ellipse 60% 100% at 0% 0%, rgba(var(--doc-accent-rgb, 106,166,255),0.10), transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+.doc-hero > * { position: relative; z-index: 1; }
+.doc-hero .eyebrow {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  color: var(--doc-accent, var(--accent)); font-weight: 600;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.doc-hero .eyebrow .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--doc-accent, var(--accent));
+  box-shadow: 0 0 8px var(--doc-accent, var(--accent));
+}
+.doc-hero h1 {
+  font-size: 40px; line-height: 1.1;
+  margin: 12px 0 16px;
+  font-weight: 700; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.doc-hero .one-liner {
+  font-size: 18px; line-height: 1.55;
+  color: var(--text-dim);
+  margin: 0 0 20px;
+  max-width: 70ch;
+}
+.doc-hero .meta-row {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  font-size: 12.5px;
+}
+.meta-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--bg-2); border: 1px solid var(--border);
+  padding: 5px 12px; border-radius: 14px;
+  font-size: 12px; color: var(--text-dim);
+}
+.meta-pill .num { color: var(--text); font-weight: 600; font-feature-settings: "tnum"; }
+.meta-pill.fmt-md   { color: #6aa6ff; border-color: rgba(106,166,255,0.30); background: rgba(106,166,255,0.06); }
+.meta-pill.fmt-pdf  { color: #f87171; border-color: rgba(248,113,113,0.30); background: rgba(248,113,113,0.06); }
+.meta-pill.fmt-docx { color: #38bdf8; border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.fmt-html { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.fmt-htm  { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.complexity-beginner    { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.06); }
+.meta-pill.complexity-intermediate { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.complexity-advanced     { color: #fb923c; border-color: rgba(251,146,60,0.30); background: rgba(251,146,60,0.06); }
+.meta-pill.complexity-unknown      { color: var(--text-mut); }
+.meta-pill.source code { background: transparent; padding: 0; border: 0; font-size: 11px; color: var(--text-dim); }
+
+/* ═══ Curation panels ═══════════════════════════════════════════════ */
+
+.curation {
+  margin-bottom: 36px;
+}
+
+.intro-hook {
+  font-size: 18px;
+  line-height: 1.65;
+  color: var(--text);
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  padding: 8px 0 8px 20px;
+  margin: 0 0 28px;
+  font-style: italic;
+  font-weight: 350;
+}
+
+.exec-summary {
+  background: linear-gradient(135deg, rgba(var(--doc-accent-rgb, 106,166,255),0.07), rgba(var(--doc-accent-rgb, 106,166,255),0.02));
+  border: 1px solid rgba(var(--doc-accent-rgb, 106,166,255),0.20);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 0 0 24px;
+}
+.exec-summary h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent, var(--accent));
+  font-weight: 600;
+}
+.exec-summary p {
+  margin: 0; font-size: 15px; line-height: 1.65; color: var(--text);
+}
+
+.metaphor-callout {
+  display: flex; gap: 14px; align-items: flex-start;
+  background: rgba(184,106,255,0.06);
+  border: 1px solid rgba(184,106,255,0.25);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 0 0 24px;
+}
+.metaphor-callout .icon {
+  font-size: 22px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 4px rgba(184,106,255,0.4));
+}
+.metaphor-callout .body {
+  flex: 1; font-size: 14.5px; line-height: 1.6;
+  color: var(--text);
+}
+.metaphor-callout .body .label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--accent-2); font-weight: 700;
+  display: block; margin-bottom: 4px;
+}
+
+.tutorial-structure {
+  display: grid; grid-template-columns: 1fr; gap: 14px;
+  margin: 0 0 28px;
+}
+.tutorial-section {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--doc-accent);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+}
+.tutorial-section h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent);
+  font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.tutorial-section h3 .num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--doc-accent); color: var(--bg);
+  font-size: 10px; font-weight: 700;
+}
+.tutorial-section p {
+  margin: 0; font-size: 14.5px; line-height: 1.65; color: var(--text);
+}
+
+.context-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin: 0 0 28px;
+}
+.context-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.context-card h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut);
+  font-weight: 600;
+}
+.context-card ul {
+  margin: 0; padding: 0; list-style: none;
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.context-card li {
+  background: var(--bg-3);
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--text-dim);
+  border: 1px solid var(--border-2);
+}
+.context-card.prereqs li { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.05); }
+.context-card.builds li { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.05); }
+.context-card.concepts li { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.05); }
+
+.takeaways {
+  background: linear-gradient(135deg, rgba(74,222,128,0.05), rgba(74,222,128,0.01));
+  border: 1px solid rgba(74,222,128,0.20);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin: 36px 0 0;
+}
+.takeaways h3 {
+  margin: 0 0 10px;
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--ok); font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.takeaways h3::before {
+  content: '✓';
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(74,222,128,0.18);
+  font-size: 12px; font-weight: 700;
+}
+.takeaways ul { margin: 0; padding-left: 22px; }
+.takeaways li {
+  font-size: 14.5px; line-height: 1.6; color: var(--text);
+  margin: 6px 0;
+}
+
+/* ═══ Article body ══════════════════════════════════════════════════ */
+article { font-size: 16px; line-height: 1.78; color: var(--text); max-width: 78ch; }
+article > * + * { margin-top: 1.0em; }
+article p { margin: 0; }
+article h1, article h2, article h3, article h4 {
+  font-weight: 650; letter-spacing: -0.01em; color: var(--text);
+  scroll-margin-top: 90px; position: relative;
+}
+article h1 { font-size: 28px; margin-top: 56px; }
+article h2 {
+  font-size: 24px; margin-top: 56px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+article h3 { font-size: 19px; margin-top: 36px; }
+article h4 { font-size: 16.5px; margin-top: 24px; color: var(--text-dim); }
+article h2::before, article h3::before {
+  content: '#'; position: absolute; left: -28px;
+  color: var(--text-mut); font-weight: 400;
+  opacity: 0; transition: opacity .15s;
+}
+article h2:hover::before, article h3:hover::before { opacity: 1; }
+
+article ul, article ol { padding-left: 1.5em; margin: 0; }
+article li { margin: .35em 0; }
+article li > p { margin: 0; }
+
+article hr {
+  border: 0; height: 1px; background: var(--border); margin: 36px 0;
+}
+
+article blockquote {
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.05);
+  padding: 14px 18px;
+  margin: 22px 0;
+  border-radius: 0 8px 8px 0;
+  color: var(--text-dim);
+}
+article blockquote p { margin: 0; }
+
+article pre {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-size: 13.5px;
+  line-height: 1.65;
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+article pre::-webkit-scrollbar { height: 7px; }
+article pre::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+article code, article pre {
+  font-family: "JetBrains Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+  font-feature-settings: "calt" 1;
+}
+article code.il {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  padding: 1px 7px; border-radius: 5px;
+  font-size: 0.88em;
+  color: var(--accent);
+}
+.code-block { position: relative; }
+.code-block .copy-btn {
+  position: absolute; top: 8px; right: 8px;
+  background: var(--bg-3); border: 1px solid var(--border);
+  color: var(--text-dim); padding: 4px 11px; border-radius: 5px;
+  font-size: 11px; font-family: inherit; cursor: pointer;
+  opacity: 0; transition: all .15s;
+}
+.code-block:hover .copy-btn { opacity: 1; }
+.code-block .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+.code-block .copy-btn.copied { color: var(--ok); border-color: var(--ok); }
+
+article pre .kw   { color: #c084fc; font-weight: 500; }
+article pre .type { color: #67e8f9; }
+article pre .str  { color: #fcd34d; }
+article pre .num  { color: #fb923c; }
+article pre .cmt  { color: #6b7d99; font-style: italic; }
+
+article .tbl-wrap {
+  overflow-x: auto; margin: 22px 0;
+  border-radius: 10px; border: 1px solid var(--border);
+}
+article table { border-collapse: collapse; width: 100%; font-size: 14px; }
+article th {
+  background: var(--bg-3); padding: 11px 14px; text-align: left;
+  font-weight: 600; color: var(--text);
+  border-bottom: 1px solid var(--border-2);
+}
+article td {
+  padding: 11px 14px; border-top: 1px solid var(--border); vertical-align: top;
+}
+article tr:nth-child(even) td { background: rgba(255,255,255,0.013); }
+
+article .diagram-box {
+  background: linear-gradient(135deg, #1c2540 0%, #0e1424 100%);
+  border: 1px solid var(--border-2);
+  border-radius: 12px;
+  padding: 22px 26px;
+  margin: 24px 0;
+  box-shadow: var(--shadow);
+}
+article .diagram-box pre {
+  background: transparent; border: 0; padding: 0;
+  color: #e8edf5; font-size: 13px; line-height: 1.55;
+}
+
+article .img-ref {
+  display: inline-block;
+  background: var(--bg-2); color: var(--text-mut);
+  padding: 1px 8px; border-radius: 4px;
+  font-size: 11px; font-style: normal;
+  border: 1px dashed var(--border-2);
+}
+
+/* ═══ Duplicate banners ═════════════════════════════════════════════ */
+.dup-banner {
+  background: linear-gradient(135deg, rgba(251,191,36,0.10), rgba(251,191,36,0.04));
+  border: 1px solid rgba(251,191,36,0.35);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 18px;
+  font-size: 14px; line-height: 1.55;
+  display: flex; gap: 14px; align-items: flex-start;
+}
+.dup-banner + .dup-banner { margin-top: 0; }
+.dup-banner .icon { font-size: 22px; line-height: 1.2; flex-shrink: 0; }
+.dup-banner .body { flex: 1; min-width: 0; }
+.dup-banner h4 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--warn); text-transform: uppercase; letter-spacing: 1px; }
+.dup-banner p { margin: 0; color: var(--text-dim); }
+.dup-banner ul { margin: 6px 0 0; padding-left: 22px; color: var(--text-dim); }
+.dup-banner ul li { margin: 3px 0; word-break: break-word; }
+.dup-banner code {
+  background: var(--bg-3); padding: 2px 7px; border-radius: 5px;
+  font-size: 0.92em; color: var(--text);
+}
+.dup-banner.exact {
+  border-color: rgba(248,113,113,0.40);
+  background: linear-gradient(135deg, rgba(248,113,113,0.10), rgba(248,113,113,0.04));
+}
+.dup-banner.exact h4 { color: var(--bad); }
+.dup-banner.near {
+  border-color: rgba(56,189,248,0.40);
+  background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(56,189,248,0.04));
+}
+.dup-banner.near h4 { color: var(--info); }
+.banner-stack { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+
+/* ═══ PDF page cards ════════════════════════════════════════════════ */
+.pdf-page {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin: 24px 0;
+  overflow: hidden;
+  scroll-margin-top: 90px;
+}
+.pdf-page .page-head {
+  background: var(--bg-3);
+  padding: 9px 20px;
+  font-size: 11px; font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 1.4px;
+  border-bottom: 1px solid var(--border);
+}
+.pdf-page .page-body { padding: 18px 24px 22px; }
+.pdf-page pre {
+  margin: 0; background: transparent; border: 0; padding: 0;
+  white-space: pre-wrap; word-wrap: break-word;
+  color: var(--text); font-size: 13px; line-height: 1.6;
+}
+
+.empty-note {
+  background: var(--bg-2);
+  border: 1px dashed var(--border-2);
+  border-radius: 10px;
+  padding: 18px 22px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* ═══ Cross-references + related ════════════════════════════════════ */
+.cross-refs {
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.cross-refs h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.cross-ref-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.cross-ref-list a {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: all .15s;
+}
+.cross-ref-list a:hover {
+  color: var(--text);
+  border-color: var(--doc-accent, var(--accent));
+  background: var(--bg-3);
+  text-decoration: none;
+}
+.cross-ref-list a .arrow { color: var(--doc-accent, var(--accent)); margin-right: 6px; }
+
+.related {
+  margin-top: 48px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.related h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 18px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.related-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+.related-card {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+}
+.related-card:hover {
+  border-color: var(--doc-accent, var(--accent));
+  transform: translateY(-1px);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+}
+.related-card .title {
+  font-weight: 600; font-size: 13.5px; line-height: 1.35;
+  color: var(--text);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.related-card .meta {
+  font-size: 11px; color: var(--text-mut); margin-top: 6px;
+  display: flex; gap: 8px; align-items: center;
+}
+.related-card .meta .badge {
+  padding: 1px 6px; border-radius: 3px;
+  background: var(--bg-3); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* ═══ Master index page ═════════════════════════════════════════════ */
+
+.index-hero {
+  text-align: center;
+  padding: 80px 24px 56px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.index-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 30% 0%, rgba(106,166,255,0.13), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 70% 30%, rgba(184,106,255,0.10), transparent 70%);
+  pointer-events: none;
+}
+.index-hero > * { position: relative; z-index: 1; }
+.index-hero .eyebrow {
+  color: var(--accent); font-size: 12px;
+  text-transform: uppercase; letter-spacing: 1.8px; font-weight: 600;
+}
+.index-hero h1 {
+  font-size: 56px; margin: 16px 0 12px;
+  font-weight: 750; letter-spacing: -0.025em;
+  background: linear-gradient(135deg, #6aa6ff 0%, #b86aff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.index-hero .tagline {
+  color: var(--text-dim); font-size: 18px;
+  max-width: 720px; margin: 14px auto 0; line-height: 1.6;
+}
+.search-row {
+  display: flex; gap: 12px;
+  max-width: 720px; margin: 36px auto 0;
+}
+.search-row input {
+  flex: 1;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 15px;
+  padding: 14px 22px;
+  border-radius: 14px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color .15s, box-shadow .15s;
+}
+.search-row input::placeholder { color: var(--text-mut); }
+.search-row input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(106,166,255,0.13);
+}
+
+.summary-stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  max-width: 1080px; margin: 36px auto 56px; padding: 0 24px;
+}
+.stat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  text-align: center;
+  transition: border-color .15s;
+}
+.stat-card:hover { border-color: var(--border-2); }
+.stat-card .num {
+  font-size: 32px; font-weight: 700; color: var(--accent);
+  font-feature-settings: "tnum"; line-height: 1.1;
+}
+.stat-card .lbl {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--text-mut); margin-top: 6px;
+}
+
+.split-view {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  max-width: 1320px; margin: 0 auto; padding: 0 24px 60px;
+}
+@media (max-width: 980px) {
+  .split-view { grid-template-columns: 1fr; }
+}
+
+.hub-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 32px 36px;
+  position: relative;
+  overflow: hidden;
+  transition: all .2s;
+}
+.hub-card.core::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 0% 0%, rgba(106,166,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card.applications::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 100% 0%, rgba(184,106,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card > * { position: relative; z-index: 1; }
+.hub-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.hub-card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 700;
+}
+.hub-card.core .label { color: var(--accent); }
+.hub-card.applications .label { color: var(--accent-2); }
+.hub-card h2 {
+  font-size: 32px; line-height: 1.15;
+  margin: 8px 0 12px;
+  font-weight: 700; letter-spacing: -0.02em;
+  color: var(--text);
+}
+.hub-card .desc {
+  font-size: 15px; line-height: 1.6; color: var(--text-dim);
+  margin: 0 0 24px;
+}
+.hub-card .stats {
+  display: flex; gap: 18px; margin-bottom: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-card .stats .num { color: var(--text); font-weight: 600; }
+.hub-card .cta {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 10px;
+  font-size: 13.5px; font-weight: 600;
+  text-decoration: none;
+}
+.hub-card.core .cta {
+  background: rgba(106,166,255,0.12);
+  color: var(--accent);
+  border: 1px solid rgba(106,166,255,0.30);
+}
+.hub-card.applications .cta {
+  background: rgba(184,106,255,0.12);
+  color: var(--accent-2);
+  border: 1px solid rgba(184,106,255,0.30);
+}
+.hub-card .cta:hover { text-decoration: none; transform: translateX(2px); }
+.hub-card .quick {
+  margin-top: 24px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.hub-card .quick h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut); font-weight: 600;
+}
+.hub-card .quick ul { list-style: none; margin: 0; padding: 0; }
+.hub-card .quick li { padding: 4px 0; font-size: 13px; }
+.hub-card .quick li a { color: var(--text-dim); text-decoration: none; }
+.hub-card .quick li a:hover { color: var(--text); }
+
+/* ═══ Hub page (CORE / APPLICATIONS landing) ════════════════════════ */
+
+.hub-hero {
+  padding: 64px 32px 36px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1240px; margin: 0 auto;
+}
+.hub-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 600;
+}
+.hub-hero h1 {
+  font-size: 48px; margin: 12px 0 14px;
+  font-weight: 750; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.hub-hero p {
+  color: var(--text-dim); font-size: 17px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.hub-hero .stats {
+  display: flex; gap: 22px; margin-top: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-hero .stats .num { color: var(--text); font-weight: 600; }
+
+.cat-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 18px;
+  max-width: 1280px; margin: 28px auto; padding: 0 32px 80px;
+}
+.cat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 24px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.cat-card:hover {
+  border-color: var(--border-3);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+}
+.cat-card .head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 12px;
+}
+.cat-card .head .icon {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 18px;
+  color: var(--accent);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.cat-card.app .head .icon { color: var(--accent-2); }
+.cat-card .title {
+  font-size: 18px; font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  flex: 1;
+}
+.cat-card .head .count {
+  font-size: 12px; color: var(--text-mut);
+  flex-shrink: 0;
+}
+.cat-card .tagline {
+  font-size: 13px; color: var(--accent);
+  font-weight: 500;
+  margin: 0;
+}
+.cat-card.app .tagline { color: var(--accent-2); }
+.cat-card .desc {
+  font-size: 13.5px; color: var(--text-dim);
+  line-height: 1.55;
+  margin: 4px 0 0;
+}
+
+/* ═══ Category landing (per family/domain) ══════════════════════════ */
+
+.cat-hero {
+  padding: 56px 32px 32px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1180px; margin: 0 auto;
+}
+.cat-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px; font-weight: 600;
+}
+.cat-hero h1 {
+  font-size: 42px; margin: 10px 0 14px;
+  font-weight: 700; letter-spacing: -0.02em;
+}
+.cat-hero p {
+  color: var(--text-dim); font-size: 16px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.cat-hero .stats {
+  display: flex; gap: 20px; margin-top: 22px;
+  font-size: 13px; color: var(--text-mut);
+}
+.cat-hero .stats .num { color: var(--text); font-weight: 600; }
+.cat-hero .search-row {
+  max-width: 520px; margin: 24px 0 0;
+}
+.cat-hero .search-row input { padding: 12px 18px; font-size: 14px; }
+
+.doc-cards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 14px;
+  max-width: 1180px; margin: 36px auto 96px;
+  padding: 0 32px;
+}
+.doc-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 22px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .18s;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.doc-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.doc-card.app:hover { border-color: var(--accent-2); }
+.doc-card .head {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+}
+.doc-card .title {
+  font-size: 16px; font-weight: 650; line-height: 1.3;
+  color: var(--text); flex: 1;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  letter-spacing: -0.01em;
+}
+.doc-card .badges { display: flex; gap: 4px; flex-shrink: 0; }
+.doc-card .badge {
+  font-size: 9px; padding: 2px 7px; border-radius: 3px;
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px;
+  background: var(--bg-3); color: var(--text-mut);
+}
+.doc-card .badge.dup { background: rgba(248,113,113,0.18); color: var(--bad); }
+.doc-card .badge.fmt-md { background: rgba(106,166,255,0.18); color: #6aa6ff; }
+.doc-card .badge.fmt-pdf { background: rgba(248,113,113,0.18); color: #f87171; }
+.doc-card .badge.fmt-docx { background: rgba(56,189,248,0.18); color: #38bdf8; }
+.doc-card .badge.fmt-html { background: rgba(251,191,36,0.18); color: #fbbf24; }
+.doc-card .one-liner {
+  font-size: 13.5px; color: var(--text-dim); line-height: 1.55;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  flex: 1;
+}
+.doc-card .meta {
+  display: flex; gap: 14px; font-size: 11px; color: var(--text-mut);
+  border-top: 1px solid var(--border); padding-top: 12px;
+  margin-top: auto;
+}
+.doc-card .meta .num { color: var(--text-dim); font-weight: 600; font-feature-settings: "tnum"; }
+
+/* ═══ Mobile ════════════════════════════════════════════════════════ */
+@media (max-width: 980px) {
+  .layout { grid-template-columns: 1fr; }
+  .toc-sidebar { display: none; }
+  .content { padding: 28px 24px 80px; }
+  .doc-hero h1 { font-size: 30px; }
+  .doc-hero .one-liner { font-size: 16px; }
+  .topbar { padding: 10px 18px; }
+  .index-hero h1 { font-size: 38px; }
+  .index-hero { padding: 56px 20px 36px; }
+  .hub-hero h1 { font-size: 34px; }
+  .hub-hero { padding: 40px 20px 24px; }
+  .cat-hero h1 { font-size: 32px; }
+  .cat-hero { padding: 36px 20px 24px; }
+  .doc-cards, .cat-grid { padding: 0 20px 60px; }
+  .split-view { padding: 0 20px 40px; }
+}
+</style>
+</head>
+<body data-doc-type="core-concept">
+<nav class="topbar">
+<div class="crumbs"><a href="../../00-Index.html">Learning</a><span class="sep">›</span><a href="../_Hub.html">CORE</a><span class="sep">›</span><a href="_Category.html">Patterns &amp; Architecture</a><span class="sep">›</span><span class="current">Blazor Server Architecture and Security Guide</span></div>
+<div class="actions"><a class="action" href="blazor-architecture-security-guide.pdf" download>↓ Download</a><a class="action" href="../../00-Index.html">All docs</a></div>
+</nav>
+<div class="layout">
+<aside class="toc-sidebar"><h3>On this page</h3><ol><li class="lvl-2"><a href="#page-1">Page 1</a></li><li class="lvl-2"><a href="#page-2">Page 2</a></li><li class="lvl-2"><a href="#page-3">Page 3</a></li><li class="lvl-2"><a href="#page-4">Page 4</a></li><li class="lvl-2"><a href="#page-5">Page 5</a></li><li class="lvl-2"><a href="#page-6">Page 6</a></li><li class="lvl-2"><a href="#page-7">Page 7</a></li><li class="lvl-2"><a href="#page-8">Page 8</a></li><li class="lvl-2"><a href="#page-9">Page 9</a></li><li class="lvl-2"><a href="#page-10">Page 10</a></li><li class="lvl-2"><a href="#page-11">Page 11</a></li><li class="lvl-2"><a href="#page-12">Page 12</a></li><li class="lvl-2"><a href="#page-13">Page 13</a></li><li class="lvl-2"><a href="#page-14">Page 14</a></li><li class="lvl-2"><a href="#page-15">Page 15</a></li><li class="lvl-2"><a href="#page-16">Page 16</a></li><li class="lvl-2"><a href="#page-17">Page 17</a></li><li class="lvl-2"><a href="#page-18">Page 18</a></li><li class="lvl-2"><a href="#page-19">Page 19</a></li><li class="lvl-2"><a href="#page-20">Page 20</a></li><li class="lvl-2"><a href="#page-21">Page 21</a></li><li class="lvl-2"><a href="#page-22">Page 22</a></li><li class="lvl-2"><a href="#page-23">Page 23</a></li><li class="lvl-2"><a href="#page-24">Page 24</a></li><li class="lvl-2"><a href="#page-25">Page 25</a></li><li class="lvl-2"><a href="#page-26">Page 26</a></li><li class="lvl-2"><a href="#page-27">Page 27</a></li><li class="lvl-2"><a href="#page-28">Page 28</a></li><li class="lvl-2"><a href="#page-29">Page 29</a></li><li class="lvl-2"><a href="#page-30">Page 30</a></li><li class="lvl-2"><a href="#page-31">Page 31</a></li><li class="lvl-2"><a href="#page-32">Page 32</a></li><li class="lvl-2"><a href="#page-33">Page 33</a></li><li class="lvl-2"><a href="#page-34">Page 34</a></li><li class="lvl-2"><a href="#page-35">Page 35</a></li><li class="lvl-2"><a href="#page-36">Page 36</a></li><li class="lvl-2"><a href="#page-37">Page 37</a></li><li class="lvl-2"><a href="#page-38">Page 38</a></li><li class="lvl-2"><a href="#page-39">Page 39</a></li><li class="lvl-2"><a href="#page-40">Page 40</a></li><li class="lvl-2"><a href="#page-41">Page 41</a></li><li class="lvl-2"><a href="#page-42">Page 42</a></li></ol></aside>
+<main class="content">
+
+<header class="doc-hero">
+  <div class="eyebrow"><span class="dot"></span>Concept · Patterns &amp; Architecture</div>
+  <h1>Blazor Server Architecture and Security Guide</h1>
+  <p class="one-liner">A comprehensive guide covering architecture patterns (base classes, EF configurations, ServiceResult, Adapter, bulk operations), security fundamentals (roles, BCrypt, sessions, CSRF, claims), and Blazor-specific gotchas (ProtectedLocalStorage, localization, JS interop).</p>
+  <div class="meta-row">
+    <span class="meta-pill fmt-pdf">PDF</span>
+    <span class="meta-pill complexity-intermediate">Intermediate</span>
+    <span class="meta-pill"><span class="num">6,090</span> words</span>
+    <span class="meta-pill"><span class="num">30</span> min read</span>
+    <span class="meta-pill source">Source: <code>Education/Basics/Blazor_Architecture_and_Security_Guide.pdf</code></span>
+  </div>
+</header>
+
+<div class="curation"><p class="intro-hook">You can build a Blazor app that &#x27;works&#x27; in about an afternoon. Building one that survives its third feature request, its first security audit, and its first prerender crash at 2am — that takes the twelve decisions in this guide.</p>
+<div class="exec-summary"><h3>Executive summary</h3><p>This 13-chapter guide walks through the full stack of patterns you need for an enterprise Blazor Server application, from DRY inheritance hierarchies and EF Core configuration classes to the ServiceResult pattern for error handling and the Adapter pattern for model-agnostic modules. Part II covers security without ASP.NET Identity using custom claims, BCrypt, session tokens, and antiforgery. Part III tackles the prerendering trap: why ProtectedLocalStorage and JS interop crash in OnInitializedAsync and must defer to OnAfterRenderAsync.</p></div>
+<div class="metaphor-callout"><div class="icon">💡</div><div class="body"><span class="label">Metaphor</span>This guide is like a Swiss Army knife in a Blazor belt pouch: base classes are the shared handle, ServiceResult is the tiny &#x27;did it cut cleanly?&#x27; indicator, the Adapter is the universal-bit screwdriver, and the prerendering warnings are the loud &#x27;do NOT open during takeoff&#x27; sticker on the whole thing.</div></div>
+<div class="context-row"><div class="context-card prereqs"><h4>You should know first</h4><ul><li>C# fundamentals</li><li>Blazor Server basics</li><li>Entity Framework Core basics</li></ul></div><div class="context-card concepts"><h4>Key concepts covered</h4><ul><li>base entity inheritance</li><li>IEntityTypeConfiguration</li><li>ServiceResult pattern</li><li>adapter pattern</li><li>BulkExtensions</li><li>claims-based authorization</li><li>BCrypt hashing</li><li>CSRF antiforgery tokens</li><li>ProtectedLocalStorage</li><li>Blazor prerendering lifecycle</li></ul></div><div class="context-card builds"><h4>Opens the door to</h4><ul><li>clean-architecture</li><li>DDD</li><li>custom-authentication-state-provider</li><li>blazor-jsinterop-deep-dive</li></ul></div></div></div>
+<article>
+<div class="pdf-page" id="page-1"><div class="page-head">Page 1</div><div class="page-body"><pre>               Blazor Server
+
+                        Architecture &amp; Security Guide
+
+Patterns, Authentication, and Best Practices
+
+A comprehensive guide covering architecture patterns, security implementations, and Blazor-specific
+techniques for building robust enterprise applications.</pre></div></div>
+<div class="pdf-page" id="page-2"><div class="page-head">Page 2</div><div class="page-body"><pre>            Table of Contents
+
+Part I: Architecture Patterns
+
+      Chapter 1: Understanding Base Classes
+      Chapter 2: Entity Framework Configurations
+      Chapter 3: The ServiceResult Pattern
+      Chapter 4: The Adapter Pattern &amp; Model Agnostic Design
+      Chapter 5: Bulk Operations with Entity Framework Core
+
+Part II: Security
+
+      Chapter 6: Role-Based Permissions
+      Chapter 7: Password Security
+      Chapter 8: Session Management
+      Chapter 9: Antiforgery &amp; CSRF Protection
+      Chapter 10: Claims-Based Authorization Without ASP.NET Identity
+
+Part III: Blazor-Specific Patterns
+
+      Chapter 11: ProtectedLocalStorage
+      Chapter 12: Localization
+      Chapter 13: JavaScript Interop
+
+Appendix: Quick Reference</pre></div></div>
+<div class="pdf-page" id="page-3"><div class="page-head">Page 3</div><div class="page-body"><pre>Part I: Architecture Patterns</pre></div></div>
+<div class="pdf-page" id="page-4"><div class="page-head">Page 4</div><div class="page-body"><pre>Chapter 1: Understanding Base Classes
+
+1.1 The Problem: Code Duplication
+
+Look at typical entity classes without inheritance:
+
+             public class Board
+             {
+
+                    public int Id { get; set; }
+                    public DateTime CreatedAt { get; set; }
+                    public DateTime? UpdatedAt { get; set; }
+                    // ... other properties
+             }
+
+             public class TaskItem
+             {
+
+                    public int Id { get; set; }
+                    public DateTime CreatedAt { get; set; }
+                    public DateTime? UpdatedAt { get; set; }
+                    // ... other properties
+             }
+
+             public class Tag
+             {
+
+                    public int Id { get; set; }
+                    // No audit fields here - inconsistent!
+             }
+
+Problems with this approach:
+
+      • Code duplication - We repeat Id, CreatedAt, UpdatedAt in every entity
+      • Inconsistency - Some entities have audit fields, some don&#x27;t
+      • Maintenance nightmare - Adding CreatedById requires modifying every entity
+
+1.2 The Solution: Inheritance
+
+We create base classes that contain common properties:
+
+             // Level 1: Every entity has an ID
+             public abstract class BaseEntity
+             {
+
+                    public int Id { get; set; }
+             }
+
+             // Level 2: Entities that track who created/modified them
+             public abstract class BaseAuditableEntity : BaseEntity
+             {
+
+                    public DateTime CreatedAt { get; set; }
+                    public int? CreatedById { get; set; }
+                    public DateTime? UpdatedAt { get; set; }
+                    public int? UpdatedById { get; set; }
+             }
+
+Now entities become cleaner:
+
+             public class Board : BaseAuditableEntity
+             {
+
+                    public string Name { get; set; }
+                    public string? Description { get; set; }
+                    public bool IsArchived { get; set; }
+                    // Id, CreatedAt, CreatedById, etc. are inherited!
+             }</pre></div></div>
+<div class="pdf-page" id="page-5"><div class="page-head">Page 5</div><div class="page-body"><pre>1.3 Why abstract?
+
+The abstract keyword means you cannot create an instance of the class directly. It only exists to be
+inherited by other classes.
+
+             // This won&#x27;t compile
+             var entity = new BaseEntity();
+
+             // This works
+             var board = new Board();
+
+Why? A &quot;BaseEntity&quot; by itself is meaningless. It&#x27;s not a board, not a task, not a user. It&#x27;s just a template for
+other classes.
+
+1.4 Why Two Levels?
+
+Not every entity needs audit fields:
+Level 1 - BaseEntity (just Id) - For simple entities like:
+
+      • Role - System-defined, no need to track who created them
+      • Permission - Same as roles
+      • Join tables like TaskTag - Just relationships, not independent entities
+Level 2 - BaseAuditableEntity (Id + audit fields) - For business entities:
+      • Board, TaskItem, User - Need to know who created/modified them
+
+1.5 The DRY Principle
+
+DRY = Don&#x27;t Repeat Yourself
+
+Before:    Id, CreatedAt, UpdatedAt, Name, Description, IsArchived
+Board:     Id, CreatedAt, UpdatedAt, Title, Description, Priority
+TaskItem:  Id, CreatedAt, UpdatedAt, Name, Color
+Tag:       Id, CreatedAt, UpdatedAt, Email, UserName, PasswordHash
+User:
+
+After:
+
+BaseAuditableEntity: Id, CreatedAt, CreatedById, UpdatedAt, UpdatedById
+
+sss Board:                   Name, Description, IsArchived
+
+sss TaskItem: Title, Description, Priority
+
+sss Tag:                     Name, Color
+
+sss User:                    Email, UserName, PasswordHash
+
+1.6 Real-World Benefit: Adding Features
+
+Imagine adding soft delete (mark as deleted instead of actually deleting):
+
+Without base classes: Modify 10+ entity files
+
+With base classes:
+
+             public abstract class BaseAuditableEntity : BaseEntity
+             {
+
+                    public DateTime CreatedAt { get; set; }
+                    public int? CreatedById { get; set; }
+                    public DateTime? UpdatedAt { get; set; }
+                    public int? UpdatedById { get; set; }
+
+                    // NEW: Soft delete - one change, all entities get the feature</pre></div></div>
+<div class="pdf-page" id="page-6"><div class="page-head">Page 6</div><div class="page-body"><pre>               public bool IsDeleted { get; set; }
+               public DateTime? DeletedAt { get; set; }
+               public int? DeletedById { get; set; }
+       }
+
+This is the power of inheritance: One change affects all inheriting classes.</pre></div></div>
+<div class="pdf-page" id="page-7"><div class="page-head">Page 7</div><div class="page-body"><pre>Chapter 2: Entity Framework Configurations
+
+2.1 Where Do We Define Database Rules?
+
+EF Core needs to know: Which properties are required? What&#x27;s the maximum length? How are entities
+related? What columns should be indexed? There are three approaches:
+
+Approach 1: Data Annotations (Simple but Limited)
+
+             public class User
+             {
+
+                    public int Id { get; set; }
+
+                    [Required]
+                    [MaxLength(256)]
+                    [EmailAddress]
+                    public string Email { get; set; }
+             }
+
+Cons: Mixes domain model with database concerns, limited capabilities, clutters entity class.
+
+Approach 2: Fluent API in OnModelCreating (Messy)
+
+             protected override void OnModelCreating(ModelBuilder modelBuilder)
+             {
+
+                    modelBuilder.Entity&lt;User&gt;(entity =&gt;
+                    {
+
+                            entity.HasKey(e =&gt; e.Id);
+                            entity.Property(e =&gt; e.Email).IsRequired().HasMaxLength(256);
+                            // ... 20 more lines per entity
+                    });
+                    // 10 more entities = 500+ lines!
+             }
+
+Cons: OnModelCreating becomes huge, hard to find configurations.
+
+Approach 3: Separate Configuration Classes (Recommended)
+
+             // Data/Configurations/Identity/UserConfiguration.cs
+             public class UserConfiguration : IEntityTypeConfiguration&lt;User&gt;
+             {
+
+                    public void Configure(EntityTypeBuilder&lt;User&gt; builder)
+                    {
+
+                            builder.HasKey(e =&gt; e.Id);
+
+                            builder.Property(e =&gt; e.Email)
+                                   .IsRequired()
+                                   .HasMaxLength(256);
+
+                            builder.HasIndex(e =&gt; e.Email).IsUnique();
+
+                            builder.HasMany(e =&gt; e.UserRoles)
+                                   .WithOne(e =&gt; e.User)
+                                   .HasForeignKey(e =&gt; e.UserId)
+                                   .OnDelete(DeleteBehavior.Cascade);
+
+                    }
+             }
+
+Then in DbContext:
+
+             protected override void OnModelCreating(ModelBuilder modelBuilder)
+             {
+
+                    // One line loads ALL configurations from the assembly
+                    modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);</pre></div></div>
+<div class="pdf-page" id="page-8"><div class="page-head">Page 8</div><div class="page-body"><pre>}
+
+2.2 Understanding the Fluent API
+
+Primary Keys
+
+             // Simple primary key
+             builder.HasKey(e =&gt; e.Id);
+
+// Composite primary key (for join tables)
+builder.HasKey(e =&gt; new { e.UserId, e.RoleId });
+
+Property Configuration
+
+builder.Property(e =&gt; e.Email)
+
+   .IsRequired()                         // NOT NULL in database
+
+   .HasMaxLength(256)                    // NVARCHAR(256)
+
+   .HasColumnName(&quot;email&quot;) // Override column name
+
+   .HasDefaultValue(&quot;&quot;); // Default value
+
+Indexes
+
+             // Simple index
+             builder.HasIndex(e =&gt; e.Email);
+
+// Unique index (no duplicates allowed)
+builder.HasIndex(e =&gt; e.Email).IsUnique();
+
+// Composite index
+builder.HasIndex(e =&gt; new { e.EntityType, e.EntityId });
+
+Relationships
+
+// One-to-Many: One User has Many UserRoles
+
+builder.HasMany(e =&gt; e.UserRoles)             // User has many UserRoles
+
+   .WithOne(e =&gt; e.User)                      // Each UserRole has one User
+
+   .HasForeignKey(e =&gt; e.UserId)              // Foreign key column
+
+   .OnDelete(DeleteBehavior.Cascade); // Delete UserRoles when User deleted
+
+2.3 Delete Behaviors
+
+   Behavior             Use Case
+   Cascade              UserRoles when User is deleted
+   Restrict             Can&#x27;t delete Role if users have it
+   SetNull              AuditLog.UserId when User deleted (keep logs)
+   NoAction             Database default behavior
+
+2.4 Common Mistakes
+
+             // BAD - creates NVARCHAR(MAX) column
+             builder.Property(e =&gt; e.Name);
+
+             // GOOD - explicit length
+             builder.Property(e =&gt; e.Name).HasMaxLength(100);
+
+             // BAD - deleting a role deletes all users with that role
+             builder.HasMany(e =&gt; e.UserRoles)</pre></div></div>
+<div class="pdf-page" id="page-9"><div class="page-head">Page 9</div><div class="page-body"><pre>       .WithOne(e =&gt; e.Role)
+       .OnDelete(DeleteBehavior.Cascade);
+
+// GOOD - can&#x27;t delete role if users have it
+builder.HasMany(e =&gt; e.UserRoles)
+
+       .WithOne(e =&gt; e.Role)
+       .OnDelete(DeleteBehavior.Restrict);</pre></div></div>
+<div class="pdf-page" id="page-10"><div class="page-head">Page 10</div><div class="page-body"><pre>Chapter 3: The ServiceResult Pattern
+
+3.1 The Problem: How Do Services Report Errors?
+
+             public async Task&lt;User&gt; CreateUserAsync(CreateUserDto dto)
+             {
+
+                    // What if email already exists?
+                    // What if password is too weak?
+                    // What if database fails?
+
+                    var user = new User { Email = dto.Email };
+                    await _context.Users.AddAsync(user);
+                    await _context.SaveChangesAsync();
+                    return user;
+             }
+
+3.2 Bad Approaches
+
+Return Null
+
+             public async Task&lt;User?&gt; CreateUserAsync(CreateUserDto dto)
+             {
+
+                    if (await EmailExists(dto.Email))
+                            return null; // Why null? Email? Validation? Database?
+
+             }
+
+Problem: Caller doesn&#x27;t know why it failed.
+
+Throw Exceptions
+
+             public async Task&lt;User&gt; CreateUserAsync(CreateUserDto dto)
+             {
+
+                    if (await EmailExists(dto.Email))
+                            throw new Exception(&quot;Email already exists&quot;);
+
+             }
+
+Problems: Exceptions are for exceptional cases, not business logic. They&#x27;re expensive and force try/catch
+everywhere.
+
+3.3 The Solution: ServiceResult Pattern
+
+             public class ServiceResult&lt;T&gt;
+             {
+
+                    public bool Success { get; private set; }
+                    public T? Data { get; private set; }
+                    public string? Message { get; private set; }
+                    public List&lt;string&gt; Errors { get; private set; } = [];
+
+                    public static ServiceResult&lt;T&gt; Ok(T data, string? message = null)
+                    {
+
+                            return new ServiceResult&lt;T&gt;
+                            {
+
+                                   Success = true,
+                                   Data = data,
+                                   Message = message
+                            };
+                    }
+
+                    public static ServiceResult&lt;T&gt; Fail(string error)
+                    {
+
+                            return new ServiceResult&lt;T&gt;</pre></div></div>
+<div class="pdf-page" id="page-11"><div class="page-head">Page 11</div><div class="page-body"><pre>                            {
+                                   Success = false,
+                                   Message = error,
+                                   Errors = [error]
+
+                            };
+                    }
+
+                    public static ServiceResult&lt;T&gt; Fail(List&lt;string&gt; errors)
+                    {
+
+                            return new ServiceResult&lt;T&gt;
+                            {
+
+                                   Success = false,
+                                   Message = errors.FirstOrDefault(),
+                                   Errors = errors
+                            };
+                    }
+             }
+
+3.4 Using ServiceResult in Services
+
+             public async Task&lt;ServiceResult&lt;UserDto&gt;&gt; CreateUserAsync(CreateUserDto dto)
+             {
+
+                    // Validation
+                    if (await EmailExistsAsync(dto.Email))
+
+                            return ServiceResult&lt;UserDto&gt;.Fail(&quot;Email already exists&quot;);
+
+                    var (isStrong, message) = _passwordService.ValidateStrength(dto.Password);
+                    if (!isStrong)
+
+                            return ServiceResult&lt;UserDto&gt;.Fail(message);
+
+                    // Create user
+                    var user = new User
+                    {
+
+                            Email = dto.Email,
+                            UserName = dto.UserName,
+                            PasswordHash = _passwordService.Hash(dto.Password)
+                    };
+
+                    await _context.Users.AddAsync(user);
+                    await _context.SaveChangesAsync();
+
+                    // Success
+                    return ServiceResult&lt;UserDto&gt;.Ok(MapToDto(user), &quot;User created successfully&quot;);
+             }
+
+3.5 Using ServiceResult in UI Components
+
+             @code {
+                    private async Task HandleSubmit()
+                    {
+                            var result = await UserService.CreateUserAsync(_createDto);
+
+                            if (result.Success)
+                            {
+
+                                   Snackbar.Add(result.Message, Severity.Success);
+                                   NavigationManager.NavigateTo(&quot;/users&quot;);
+                            }
+                            else
+                            {
+                                   foreach (var error in result.Errors)
+                                   {
+
+                                          Snackbar.Add(error, Severity.Error);
+                                   }</pre></div></div>
+<div class="pdf-page" id="page-12"><div class="page-head">Page 12</div><div class="page-body"><pre>                            }  Explanation
+                    }          Caller must check Success - can&#x27;t ignore errors
+             }                 Errors contain meaningful messages
+                               Same pattern across all services
+3.6 Benefits                   Compiler enforces handling
+                               Business logic stays clean
+              Benefit          Easy to chain service calls
+              Explicit
+              Informative
+              Consistent
+              Type-safe
+              No exceptions
+              Composable</pre></div></div>
+<div class="pdf-page" id="page-13"><div class="page-head">Page 13</div><div class="page-body"><pre>Chapter 4: The Adapter Pattern &amp; Model Agnostic
+Design
+
+4.1 The Problem: Tight Coupling
+
+Imagine you&#x27;re building an LMS (Learning Management System). You need to track which users are
+enrolled in courses:
+
+             public class EnrollmentService
+             {
+
+                    public async Task EnrollUserAsync(User user, int courseId)
+                    {
+
+                            var enrollment = new Enrollment
+                            {
+
+                                   UserId = user.Id,
+                                   UserEmail = user.Email, // Directly accessing User properties
+                                   UserName = user.UserName,
+                                   CourseId = courseId
+                            };
+                    }
+             }
+
+Problems with this approach:
+
+      • LMS is tightly coupled to the User class
+      • Want to use LMS with employees from another system? Rewrite everything.
+      • If User changes? LMS breaks.
+      • Want to extract LMS as standalone project? Can&#x27;t - it depends on User.
+
+4.2 Real-World Analogy: The Power Plug Converter
+
+When you travel to Europe from the US, your phone charger won&#x27;t fit the wall outlets. Different shapes,
+different voltages. The solution? A power adapter (converter) that translates between two incompatible
+interfaces.
+
+ssssssssssssssss  ssssssssssssssss  ssssssssssssssss
+
+s US Charger s ssss s Adapter s ssss s EU Outlet s
+
+s (2 prongs) s    s (converter) s  s (2 round) s
+
+ssssssssssssssss  ssssssssssssssss  ssssssssssssssss
+
+4.3 The Adapter Pattern in Code
+
+Step 1: Define What You Need (The Interface)
+
+Instead of depending on User directly, the LMS defines what it needs from a learner:
+
+             // Services/LMS/Abstractions/ILmsLearner.cs
+             public interface ILmsLearner
+             {
+
+                    int Id { get; }
+                    string Name { get; }
+                    string Email { get; }
+                    string? AvatarUrl { get; }
+             }
+
+This is the &quot;universal plug&quot; - any user system can implement this.
+
+Step 2: Create the Adapter (The Converter)</pre></div></div>
+<div class="pdf-page" id="page-14"><div class="page-head">Page 14</div><div class="page-body"><pre>Create a class that adapts your actual User to the ILmsLearner interface:
+
+// Services/LMS/Adapters/SkillCanvasLearnerAdapter.cs
+public class SkillCanvasLearnerAdapter : ILmsLearner
+{
+
+       private readonly UserDto _user;
+
+   public SkillCanvasLearnerAdapter(UserDto user)
+   {
+
+          _user = user;
+   }
+
+   // Adapt User properties to ILmsLearner interface
+
+   public int Id =&gt; _user.Id;
+
+   public string Name =&gt; _user.UserName;        // UserName -&gt; Name
+
+   public string Email =&gt; _user.Email;
+
+   public string? AvatarUrl =&gt; null;            // User doesn&#x27;t have avatar
+
+}
+
+Step 3: Create a Provider (The Factory)
+
+A provider fetches and adapts users on demand:
+
+public class SkillCanvasLearnerProvider : ILmsLearnerProvider
+{
+
+       private readonly IUserService _userService;
+       private readonly IAuthenticationService _authService;
+
+   public async Task&lt;ILmsLearner?&gt; GetLearnerAsync(int userId)
+   {
+
+          var result = await _userService.GetByIdAsync(userId);
+          if (!result.Success || result.Data == null)
+
+                 return null;
+
+          return new SkillCanvasLearnerAdapter(result.Data);
+   }
+
+   public async Task&lt;ILmsLearner?&gt; GetCurrentLearnerAsync()
+   {
+
+          var session = await _authService.GetCurrentSessionAsync();
+          if (session?.User == null)
+
+                 return null;
+
+              return new SkillCanvasLearnerAdapter(session.User);
+       }
+}
+
+Step 4: LMS Uses Only the Interface
+
+Now the LMS never touches User directly:
+
+             public class EnrollmentService
+             {
+
+                    private readonly ILmsLearnerProvider _learnerProvider;
+
+   public async Task&lt;ServiceResult&gt; EnrollCurrentUserAsync(int courseId)
+   {
+
+          // Gets an ILmsLearner, not a User!
+          var learner = await _learnerProvider.GetCurrentLearnerAsync();
+          if (learner == null)
+
+                 return ServiceResult.Failure(&quot;No authenticated learner&quot;);
+
+   var enrollment = new Enrollment
+   {
+
+          UserId = learner.Id, // ILmsLearner.Id</pre></div></div>
+<div class="pdf-page" id="page-15"><div class="page-head">Page 15</div><div class="page-body"><pre>                     CourseId = courseId
+              };
+              // ...
+       }
+}
+
+4.4 Why &quot;Model Agnostic&quot;?
+
+Model Agnostic means the LMS doesn&#x27;t care about your specific models. It works with any user system
+that provides an adapter.
+
+              Scenario                           Solution
+              Today: SkillCanvas with User       SkillCanvasLearnerAdapter
+              Tomorrow: HR System with Employee  EmployeeLearnerAdapter
+              Future: Standalone with AppUser    StandaloneUserAdapter
+Same LMS code, different adapters.
+
+4.5 Benefits
+
+Benefit                Explanation
+Decoupling             LMS doesn&#x27;t depend on specific user implementation
+Reusability            Extract LMS as separate project anytime
+Testability            Mock ILmsLearnerProvider in tests
+Flexibility            Switch user systems without changing LMS
+Single Responsibility  Adapter handles only translation
+
+4.6 When to Use the Adapter Pattern
+
+Use it when:
+
+      • You want decoupled modules that can be extracted later
+      • You need to integrate with multiple user systems
+      • You want testable code with mockable dependencies
+      • You&#x27;re building reusable libraries or modules
+Don&#x27;t use it for:
+
+      • Simple internal services that won&#x27;t be reused
+      • When tight coupling is acceptable (small projects)</pre></div></div>
+<div class="pdf-page" id="page-16"><div class="page-head">Page 16</div><div class="page-body"><pre>Chapter 5: Bulk Operations with Entity Framework
+Core
+
+5.1 The Problem: Why Bulk Operations?
+
+When importing large datasets, traditional Entity Framework approaches become painfully slow:
+
+             // Inserting 1000 articles the &quot;normal&quot; way
+             foreach (var artigo in artigos)
+             {
+
+                    context.CrmArtigos.Add(artigo);
+                    await context.SaveChangesAsync(); // 1000 round trips to database!
+             }
+
+Each SaveChangesAsync() generates: a network round trip, transaction overhead, identity column
+retrieval, and change tracking updates. For 1000 records, that&#x27;s 1000 round trips!
+
+5.2 Approach Comparison
+
+Approach 1: Individual SaveChanges (Slow)
+
+             // Total time for 100 articles with 4 phases each: ~30 seconds
+             foreach (var row in excelRows)
+             {
+
+                    var artigo = CreateArtigo(row);
+                    context.CrmArtigos.Add(artigo);
+                    await context.SaveChangesAsync(); // Round trip #1
+
+                    foreach (var phase in row.Phases)
+                    {
+
+                            var faseArtigo = CreateFaseArtigo(phase, artigo.Id);
+                            context.CrmFaseArtigos.Add(faseArtigo);
+                            await context.SaveChangesAsync(); // Round trip #2, #3, #4...
+                    }
+             }
+
+Approach 2: AddRange + Single SaveChanges (Better)
+
+             // Add all at once, save once
+             var artigos = excelRows.Select(r =&gt; CreateArtigo(r)).ToList();
+             context.CrmArtigos.AddRange(artigos);
+             await context.SaveChangesAsync(); // Single round trip!
+
+Cons: Still generates individual INSERT statements. Can&#x27;t get IDs until SaveChanges completes.
+
+Approach 3: EFCore.BulkExtensions (Our Approach)
+
+             // NuGet: EFCore.BulkExtensions
+             using EFCore.BulkExtensions;
+
+             var bulkConfig = new BulkConfig
+             {
+
+                    PreserveInsertOrder = true,
+                    SetOutputIdentity = true // KEY: Gets IDs back after insert!
+             };
+
+             await context.BulkInsertAsync(artigos, bulkConfig);
+             // Now artigos[0].Id, artigos[1].Id, etc. are populated!
+
+5.3 Key Concepts</pre></div></div>
+<div class="pdf-page" id="page-17"><div class="page-head">Page 17</div><div class="page-body"><pre>SetOutputIdentity = true
+
+This is the magic that retrieves IDs after bulk insert:
+
+var bulkConfig = new BulkConfig
+{
+
+       SetOutputIdentity = true // Without this, IDs remain 0!
+};
+
+await context.BulkInsertAsync(artigos, bulkConfig);
+Console.WriteLine(artigos[0].Id); // 12345 (actual ID from database)
+
+PreserveInsertOrder = true
+
+Ensures entities maintain their order, so you can correlate back to source data:
+
+var bulkConfig = new BulkConfig     // artigos[0] stays at index 0
+{
+
+       PreserveInsertOrder = true,
+       SetOutputIdentity = true
+};
+
+await context.BulkInsertAsync(artigos, bulkConfig);
+
+// Now artigos[i] corresponds to excelRows[i]
+for (int i = 0; i &lt; artigos.Count; i++)
+{
+
+       var ficha = CreateFicha(excelRows[i], artigos[i].Id);
+}
+
+5.4 Pattern for Dependent Objects
+
+When you have parent-child relationships, follow this order:
+
+             // Step 1: Insert parents, get IDs
+             var bulkConfig = new BulkConfig
+             {
+
+                    PreserveInsertOrder = true,
+                    SetOutputIdentity = true
+             };
+             await context.BulkInsertAsync(artigos, bulkConfig);
+             // artigos now have IDs!
+
+             // Step 2: Create children using parent IDs
+             var fichas = new List&lt;CrmArtigoFicha&gt;();
+             for (int i = 0; i &lt; artigos.Count; i++)
+             {
+
+                    fichas.Add(CreateFicha(excelRows[i], artigos[i].Id));
+             }
+             await context.BulkInsertAsync(fichas);
+
+             // Step 3: For grandchildren, use an index map
+             var faseArtigos = new List&lt;CrmFaseArtigo&gt;();
+             var indexMap = new Dictionary&lt;(int artigoId, string phase), int&gt;();
+
+             for (int i = 0; i &lt; artigos.Count; i++)
+             {
+
+                    foreach (var phase in excelRows[i].Phases)
+                    {
+
+                            var faseArtigo = new CrmFaseArtigo { Artigoid = artigos[i].Id };
+                            indexMap[(artigos[i].Id, phase.Name)] = faseArtigos.Count;
+                            faseArtigos.Add(faseArtigo);
+                    }
+             }</pre></div></div>
+<div class="pdf-page" id="page-18"><div class="page-head">Page 18</div><div class="page-body"><pre>await context.BulkInsertAsync(faseArtigos, bulkConfig);
+// faseArtigos now have IDs, use indexMap to find them!
+
+5.5 Transaction Handling: All-or-Nothing
+
+             await using var transaction = await context.Database.BeginTransactionAsync();
+
+             try
+             {
+
+                    await context.BulkInsertAsync(artigos, bulkConfig);
+                    await context.BulkInsertAsync(fichas);
+                    await context.BulkInsertAsync(faseArtigos, bulkConfig);
+                    await context.BulkInsertAsync(componentes);
+
+                    await transaction.CommitAsync();
+             }
+             catch (Exception)
+             {
+
+                    await transaction.RollbackAsync();
+                    throw; // All changes undone!
+             }
+
+5.6 Performance Comparison
+
+Approach                    100 Articles                 1000 Articles
+Individual SaveChanges      ~30 seconds                  ~5 minutes
+AddRange + SaveChanges      ~5 seconds                   ~45 seconds
+BulkExtensions              ~0.5 seconds                 ~3 seconds
+
+5.7 Common Mistakes
+
+             // WRONG: IDs remain 0
+             await context.BulkInsertAsync(artigos);
+             Console.WriteLine(artigos[0].Id); // 0!
+
+             // RIGHT: IDs are populated
+             await context.BulkInsertAsync(artigos, new BulkConfig { SetOutputIdentity = true });
+
+             // WRONG: Order may change, correlation breaks
+             await context.BulkInsertAsync(artigos, new BulkConfig { SetOutputIdentity = true });
+             var ficha = CreateFicha(excelRows[0], artigos[0].Id); // May not match!
+
+             // RIGHT: Order preserved
+             await context.BulkInsertAsync(artigos, new BulkConfig
+             {
+
+                    SetOutputIdentity = true,
+                    PreserveInsertOrder = true
+             });
+
+             // WRONG: If componentes fails, artigos are already committed!
+             await context.BulkInsertAsync(artigos, bulkConfig);
+             await context.BulkInsertAsync(componentes); // Error leaves orphan artigos
+
+             // RIGHT: Transaction wraps everything
+             await using var transaction = await context.Database.BeginTransactionAsync();
+             // ... all inserts ... then CommitAsync()</pre></div></div>
+<div class="pdf-page" id="page-19"><div class="page-head">Page 19</div><div class="page-body"><pre>5.8 When to Use Bulk Operations
+
+Scenario                   Recommended Approach
+Single entity insert       context.Add() + SaveChangesAsync()
+5-50 entities              AddRange() + SaveChangesAsync()
+50+ entities               BulkInsertAsync()
+With dependent objects     BulkInsertAsync() with SetOutputIdentity
+Upsert (insert or update)  BulkInsertOrUpdateAsync()</pre></div></div>
+<div class="pdf-page" id="page-20"><div class="page-head">Page 20</div><div class="page-body"><pre>Part II: Security</pre></div></div>
+<div class="pdf-page" id="page-21"><div class="page-head">Page 21</div><div class="page-body"><pre>Chapter 6: Role-Based Permissions
+
+6.1 The Bad Way: Boolean Flags
+
+             public class User
+             {
+
+                    public int Id { get; set; }
+                    public string Email { get; set; }
+
+                    // Authorization via booleans
+                    public bool IsAdmin { get; set; }
+                    public bool CanCreateBoards { get; set; }
+                    public bool CanDeleteBoards { get; set; }
+                    public bool CanManageUsers { get; set; }
+                    public bool CanViewReports { get; set; }
+                    // ... 20 more boolean flags
+             }
+
+Why this is bad:
+
+      • Database bloat - 20 permissions = 20 columns per user
+      • No grouping - 100 managers × 20 flags to maintain
+      • Hard to change - New permission = column + property + forms + checks
+      • No hierarchy - No relationship between Admin and Manager
+
+6.2 The Good Way: Role-Permission Model
+
+             User ss→ UserRole ss→ Role ss→ RolePermission ss→ Permission
+
+             Users have Roles:
+             Luis → [User, Manager]
+             Ana → [User]
+             João → [User, Admin]
+
+             Roles have Permissions:
+             User → [Boards.View, Tasks.Create, Tasks.Edit]
+             Manager → [Boards.Create, Boards.Edit, Users.View]
+             Admin → [Users.Create, Users.Delete, System.ViewAuditLogs]
+
+             Result:
+             Luis can: Boards.View, Tasks.Create, Tasks.Edit (from User)
+
+                            + Boards.Create, Boards.Edit, Users.View (from Manager)
+
+6.3 Benefits
+
+Single Source of Truth: Change a role once, all users updated.
+
+             &quot;Managers can now delete tasks.&quot;
+             - Old way: Update 100 user records
+             - New way: Add Tasks.Delete to Manager role (1 change)
+
+Hierarchical Levels:
+
+             public class Role
+             {
+
+                    public int HierarchyLevel { get; set; }
+                    // 0 = User, 1 = Manager, 2 = Admin, 3 = SuperAdmin
+             }
+
+             // Can this user manage that user?
+             bool canManage = currentUser.HierarchyLevel &gt; targetUser.HierarchyLevel;</pre></div></div>
+<div class="pdf-page" id="page-22"><div class="page-head">Page 22</div><div class="page-body"><pre>6.4 Permission Naming Convention
+
+             public static class Permissions
+             {
+
+                    public static class Boards
+                    {
+
+                            public const string View = &quot;Boards.View&quot;;
+                            public const string Create = &quot;Boards.Create&quot;;
+                            public const string Edit = &quot;Boards.Edit&quot;;
+                            public const string Delete = &quot;Boards.Delete&quot;;
+                    }
+             }
+
+             // BAD - typo won&#x27;t be caught until runtime
+             if (HasPermission(userId, &quot;Bords.Create&quot;)) // Typo!
+
+             // GOOD - compiler catches errors
+             if (HasPermission(userId, Permissions.Boards.Create))</pre></div></div>
+<div class="pdf-page" id="page-23"><div class="page-head">Page 23</div><div class="page-body"><pre>Chapter 7: Password Security
+
+7.1 Why We Never Store Plain Passwords
+
+Scenario: Your database gets hacked (it happens to the best companies).
+
+Storage Method  Hacker sees                       Result
+Plain text      password123                       Immediate access to all accounts
+Hashed          $2a$12$LQv3c1yq...                Useless without cracking
+
+Rule #1: Never, ever store plain text passwords.
+
+7.2 What is Hashing?
+
+Hashing is a one-way function: Input → Output, but you cannot reverse it.
+
+             Password → [Hash Function] → Hash
+             &quot;abc123&quot; → [BCrypt] → &quot;$2a$12$R9h/cIPz0gi.URNNX3kh2O...&quot;
+
+             Hash → [???] → Password
+             &quot;$2a$12$R9h/cIPz0gi.URNNX3kh2O...&quot; → ??? → IMPOSSIBLE
+
+7.3 Why BCrypt (Not MD5 or SHA)
+
+MD5 and SHA are designed to be fast. A modern GPU can compute 180 billion MD5 hashes per second.
+BCrypt is intentionally slow with a configurable work factor.
+
+Work Factor     Time per Hash                     Hashes/Second
+10              ~100ms                            10
+12              ~300ms                            3
+14              ~1 second                         1
+
+8-character password cracking time:
+MD5: 6.6 quadrillion ÷ 180 billion = ~10 hours
+BCrypt: 6.6 quadrillion ÷ 3 = 70 million years
+
+7.4 What is Salting?
+
+A salt is a random string added to the password before hashing. Same password + different salts =
+different hashes.
+
+             Without salt:
+             &quot;password123&quot; → [Hash] → &quot;5f4dcc3b5aa...&quot;
+             Two users with same password = same hash (bad!)
+
+             With salt:
+             &quot;password123&quot; + &quot;x7Kj9L&quot; → [Hash] → &quot;a1b2c3...&quot;
+             &quot;password123&quot; + &quot;mN4pQ2&quot; → [Hash] → &quot;d4e5f6...&quot;
+             Same password, different hashes (good!)
+
+             BCrypt includes the salt in the hash itself:
+             $2a$12$LQv3c1yqT.SIvHn4FZNVCuqQ.aXP1vF...</pre></div></div>
+<div class="pdf-page" id="page-24"><div class="page-head">Page 24</div><div class="page-body"><pre>             s s s sss Salt + Hash (combined)
+             s s sss Work factor (12)
+             s sss BCrypt version
+             sss Algorithm identifier
+
+7.5 Implementation
+
+             public class PasswordService : IPasswordService
+             {
+
+                    private const int WorkFactor = 12;
+
+                    public string Hash(string password)
+                    {
+
+                            // BCrypt automatically generates a random salt
+                            return BCrypt.Net.BCrypt.HashPassword(password, WorkFactor);
+                    }
+
+                    public bool Verify(string password, string hash)
+                    {
+
+                            // BCrypt extracts the salt from the stored hash
+                            return BCrypt.Net.BCrypt.Verify(password, hash);
+                    }
+             }
+
+7.6 Account Lockout
+
+             if (user.LockoutEnd &gt; DateTime.UtcNow)
+                    return LoginResult.Locked(user.LockoutEnd.Value);
+
+             if (!_passwordService.Verify(password, user.PasswordHash))
+             {
+
+                    user.FailedLoginAttempts++;
+
+                    // Lock after 5 failed attempts
+                    if (user.FailedLoginAttempts &gt;= 5)
+
+                            user.LockoutEnd = DateTime.UtcNow.AddMinutes(15);
+
+                    return LoginResult.InvalidCredentials(5 - user.FailedLoginAttempts);
+             }
+
+             // Success - reset attempts
+             user.FailedLoginAttempts = 0;
+             user.LockoutEnd = null;
+
+7.7 The &quot;Invalid Credentials&quot; Message
+
+             // BAD - reveals that email exists
+             if (user == null) return &quot;Email not found&quot;;
+             if (!validPassword) return &quot;Incorrect password&quot;;
+
+             // GOOD - doesn&#x27;t reveal anything
+             if (user == null || !validPassword)
+
+                    return &quot;Invalid credentials&quot;;
+
+Why? An attacker could use &quot;Email not found&quot; to build a list of valid emails.</pre></div></div>
+<div class="pdf-page" id="page-25"><div class="page-head">Page 25</div><div class="page-body"><pre>Chapter 8: Session Management
+
+8.1 The Problem: HTTP is Stateless
+
+             Request 1: &quot;Hi, I&#x27;m Luis, here&#x27;s my password&quot; → Server: &quot;OK, logged in&quot;
+             Request 2: &quot;Show me my boards&quot; → Server: &quot;Who are you?&quot;
+
+             Solution: Sessions
+             Login: &quot;Here&#x27;s my password&quot; → Server: &quot;OK, here&#x27;s token: abc123&quot;
+             Request 2: &quot;Show boards (token: abc123)&quot; → Server: &quot;Ah, Luis! Here you go&quot;
+
+8.2 How Session Tokens Work
+
+Step 1: Generate Token on Login
+
+             var token = GenerateSecureToken(); // &quot;x7Kj9LmN4pQ2...&quot;
+
+var session = new UserSession
+{
+
+       UserId = user.Id,
+       TokenHash = HashToken(token), // Store hash, not plain token
+       CreatedAt = DateTime.UtcNow,
+       ExpiresAt = DateTime.UtcNow.AddHours(24),
+       IpAddress = GetClientIp(),
+       UserAgent = GetUserAgent()
+};
+
+await _context.UserSessions.AddAsync(session);
+return LoginResult.Success(user, token); // Return plain token once
+
+Step 2: Store Token in Browser Cookie
+
+Response.Cookies.Append(&quot;session_token&quot;, token, new CookieOptions
+
+{
+
+     HttpOnly = true, // JavaScript can&#x27;t access (XSS protection)
+
+     Secure = true,  // Only sent over HTTPS
+
+     SameSite = SameSiteMode.Strict, // Only same-origin requests
+
+     Expires = DateTime.UtcNow.AddHours(24)
+
+});
+
+Step 3: Validate Token on Each Request
+
+             public async Task&lt;User?&gt; ValidateSessionAsync(string token)
+             {
+
+                    var tokenHash = HashToken(token);
+
+     var session = await _context.UserSessions
+            .Include(s =&gt; s.User)
+            .FirstOrDefaultAsync(s =&gt;
+                   s.TokenHash == tokenHash &amp;&amp;
+                   s.ExpiresAt &gt; DateTime.UtcNow &amp;&amp;
+                   !s.IsRevoked);
+
+     if (session == null) return null;
+
+       session.LastActivityAt = DateTime.UtcNow;
+       await _context.SaveChangesAsync();
+       return session.User;
+}
+
+8.3 Cookie Security Options</pre></div></div>
+<div class="pdf-page" id="page-26"><div class="page-head">Page 26</div><div class="page-body"><pre>Option           Attack Prevented
+HttpOnly         XSS (cross-site scripting)
+Secure           Man-in-the-middle
+SameSite=Strict  CSRF (cross-site request forgery)
+
+8.4 Multiple Sessions (Multi-Device Support)
+
+             Luis&#x27;s sessions:
+             sss Session 1: Work PC (Chrome, IP: 192.168.1.100)
+             sss Session 2: Home Laptop (Firefox, IP: 85.241.52.18)
+             sss Session 3: Phone (Safari, IP: 10.0.0.45)
+
+             // Log out all other sessions (after password change)
+             public async Task RevokeAllSessionsExceptAsync(int userId, int currentSessionId)
+             {
+
+                    var sessions = await _context.UserSessions
+                            .Where(s =&gt; s.UserId == userId &amp;&amp; s.Id != currentSessionId)
+                            .ToListAsync();
+
+                    foreach (var session in sessions)
+                            session.IsRevoked = true;
+
+                    await _context.SaveChangesAsync();
+             }</pre></div></div>
+<div class="pdf-page" id="page-27"><div class="page-head">Page 27</div><div class="page-body"><pre>Chapter 9: Antiforgery &amp; CSRF Protection
+
+9.1 The Attack Explained
+
+CSRF (Cross-Site Request Forgery) tricks a user&#x27;s browser into making unwanted requests to a site where
+the user is authenticated.
+
+             1. Alice logs into her-bank.com
+                   → Browser receives auth cookie: &quot;session=abc123&quot;
+
+             2. Alice visits evil-site.com (in another tab)
+                   → Evil site contains hidden form:
+
+                   &lt;form action=&quot;https://her-bank.com/transfer&quot; method=&quot;POST&quot;&gt;
+                          &lt;input type=&quot;hidden&quot; name=&quot;to&quot; value=&quot;attacker&quot; /&gt;
+                          &lt;input type=&quot;hidden&quot; name=&quot;amount&quot; value=&quot;10000&quot; /&gt;
+
+                   &lt;/form&gt;
+                   &lt;script&gt;document.forms[0].submit();&lt;/script&gt;
+
+             3. Browser automatically includes her-bank.com cookies
+                   → Transfer executes with Alice&#x27;s session!
+
+9.2 How Antiforgery Tokens Solve This
+
+ASP.NET Core uses a double-submit cookie pattern:
+
+YOUR SITE (legitimate request):
+
+ssssssssssssssss             ssssssssssssssss
+
+s Browser s sssssss s Server                 s
+
+s Cookie:  s     s Cookie               s
+
+s Form token: s  s Form                 s
+
+ssssssssssssssss             s Match              s
+
+                  ssssssssssssssss
+
+                  → s Request OK
+
+EVIL SITE (forged request):
+
+ssssssssssssssss             ssssssssssssssss
+
+s Browser s sssssss s Server                 s
+
+s Cookie:  s     s Cookie               s
+
+s Form token: #s  s Form #              s
+
+s (can&#x27;t read) s  ssssssssssssssss
+
+ssssssssssssssss             → s BLOCKED
+
+9.3 Implementation
+
+             // Automatic in Razor forms
+             &lt;form method=&quot;post&quot;&gt;
+
+                    &lt;input name=&quot;__RequestVerificationToken&quot; type=&quot;hidden&quot; value=&quot;CfDJ8...&quot; /&gt;
+             &lt;/form&gt;
+
+             // Controller protection
+             [HttpPost]
+             [ValidateAntiForgeryToken] // Requires valid token
+             public IActionResult TransferMoney(TransferDto dto)
+             {
+
+                    // Only executes if token is valid
+             }
+
+9.4 When to Use [IgnoreAntiforgeryToken]
+
+Safe to ignore:</pre></div></div>
+<div class="pdf-page" id="page-28"><div class="page-head">Page 28</div><div class="page-body"><pre>      • Read-only operations (GET requests)
+      • Non-sensitive preferences (language, theme)
+      • Public endpoints (no authentication required)
+Never ignore:
+
+      • Financial transactions
+      • Password changes
+      • Account deletion
+      • Data modification</pre></div></div>
+<div class="pdf-page" id="page-29"><div class="page-head">Page 29</div><div class="page-body"><pre>Chapter 10: Claims-Based Authorization
+
+    Key Insight: [Authorize], &lt;AuthorizeView&gt;, and IsInRole() work with Claims, not with ASP.NET
+    Identity. Identity is just one way to create claims - you can build your own!
+
+10.1 What Are Claims?
+
+A Claim is a statement about a user - a key-value pair that describes something about them.
+
+// Examples of claims:                            // User&#x27;s name
+new Claim(ClaimTypes.Name, &quot;john.doe&quot;)           // User&#x27;s email
+new Claim(ClaimTypes.Email, &quot;john@example.com&quot;)  // User is in Admin role
+new Claim(ClaimTypes.Role, &quot;Admin&quot;)              // Custom claim: has permission
+new Claim(&quot;permission&quot;, &quot;users.create&quot;)          // Custom claim: department
+new Claim(&quot;department&quot;, &quot;Engineering&quot;)
+
+ClaimsPrincipal Structure
+
+             ClaimsPrincipal (represents the user)
+                    sss ClaimsIdentity (authentication method, e.g., &quot;SkillCanvasAuth&quot;)
+                                   sss Claims[] (list of key-value pairs)
+                                                 sss ClaimTypes.NameIdentifier = &quot;123&quot;
+                                                 sss ClaimTypes.Name = &quot;john.doe&quot;
+                                                 sss ClaimTypes.Role = &quot;Admin&quot;
+                                                 sss ClaimTypes.Role = &quot;Manager&quot; ← Multiple role claims!
+                                                 sss &quot;permission&quot; = &quot;users.create&quot;
+
+Key Point: A user can have multiple claims of the same type - this is how we support multiple roles!
+
+10.2 Claims vs ASP.NET Identity
+
+Many developers think you need ASP.NET Identity for authorization. This is a misconception. The
+authorization system only cares about Claims - it doesn&#x27;t know or care where they came from.
+
+Feature                ASP.NET Identity          Custom Claims System
+                                                 Your own User table
+User storage           Identity tables           You implement (BCrypt)
+                                                 Yes!
+Password hashing       Built-in                  Yes!
+                                                 Yes!
+[Authorize] works?     Yes
+
+&lt;AuthorizeView&gt; works? Yes
+
+IsInRole() works?      Yes
+
+10.3 How Authorization Actually Works
+
+             // When you write:
+             [Authorize(Roles = &quot;Admin,Manager&quot;)]
+
+             // The framework checks if ClaimsPrincipal has a claim where:
+             // - Type == ClaimTypes.Role
+             // - Value == &quot;Admin&quot; OR Value == &quot;Manager&quot;
+
+             // IsInRole() is equivalent to:
+             user.IsInRole(&quot;Admin&quot;)
+             // Same as:
+             user.Claims.Any(c =&gt; c.Type == ClaimTypes.Role &amp;&amp; c.Value == &quot;Admin&quot;)</pre></div></div>
+<div class="pdf-page" id="page-30"><div class="page-head">Page 30</div><div class="page-body"><pre>10.4 Building a Custom AuthenticationStateProvider
+
+             public class CustomAuthStateProvider : AuthenticationStateProvider
+             {
+
+                    private readonly IAuthenticationService _authService;
+                    private AuthenticationState? _cachedState;
+
+                    public override async Task&lt;AuthenticationState&gt; GetAuthenticationStateAsync()
+                    {
+
+                            // Return cached state if available (prevents race conditions)
+                            if (_cachedState != null) return _cachedState;
+
+                            try
+                            {
+
+                                   var result = await _authService.GetCurrentUserAsync();
+
+                                   if (result.Success &amp;&amp; result.Data != null)
+                                   {
+
+                                          // BUILD CLAIMS FROM YOUR USER MODEL
+                                          var claims = BuildClaims(result.Data);
+                                          var identity = new ClaimsIdentity(claims, &quot;MyAuthType&quot;);
+                                          var principal = new ClaimsPrincipal(identity);
+
+                                          _cachedState = new AuthenticationState(principal);
+                                   }
+                                   else
+                                   {
+
+                                          _cachedState = new AuthenticationState(new ClaimsPrincipal());
+                                   }
+                            }
+                            catch
+                            {
+                                   _cachedState = new AuthenticationState(new ClaimsPrincipal());
+                            }
+
+                            return _cachedState;
+                    }
+
+                    // Call after login/logout to refresh state
+                    public void NotifyAuthStateChanged()
+                    {
+
+                            _cachedState = null;
+                            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+                    }
+             }
+
+10.5 Mapping Your User Model to Claims
+
+             private List&lt;Claim&gt; BuildClaims(UserDto user)
+             {
+
+                    var claims = new List&lt;Claim&gt;
+                    {
+
+                            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                            new(ClaimTypes.Name, user.UserName),
+                            new(ClaimTypes.Email, user.Email),
+                            new(&quot;display_name&quot;, user.DisplayName ?? user.UserName)
+                    };
+
+                    // Add role claims - ONE CLAIM PER ROLE
+                    foreach (var role in user.Roles)
+                    {
+
+                            claims.Add(new Claim(ClaimTypes.Role, role));
+                    }</pre></div></div>
+<div class="pdf-page" id="page-31"><div class="page-head">Page 31</div><div class="page-body"><pre>                    // Add permission claims
+                    foreach (var permission in user.Permissions)
+                    {
+
+                            claims.Add(new Claim(&quot;permission&quot;, permission));
+                    }
+
+                    return claims;
+             }
+
+10.6 Using Authorization in Blazor
+
+             // Page-level protection
+             @attribute [Authorize] // Must be logged in
+             @attribute [Authorize(Roles = &quot;Admin,SuperAdmin&quot;)] // Specific roles
+
+             // Conditional UI
+             &lt;AuthorizeView&gt;
+
+                    &lt;Authorized&gt;
+                            &lt;MudText&gt;Welcome, @context.User.Identity?.Name!&lt;/MudText&gt;
+
+                    &lt;/Authorized&gt;
+                    &lt;NotAuthorized&gt;
+
+                            &lt;MudButton Href=&quot;/login&quot;&gt;Login&lt;/MudButton&gt;
+                    &lt;/NotAuthorized&gt;
+             &lt;/AuthorizeView&gt;
+
+             // Role-specific content
+             &lt;AuthorizeView Roles=&quot;Admin,SuperAdmin&quot;&gt;
+
+                    &lt;Authorized&gt;
+                            &lt;MudNavLink Href=&quot;/admin/users&quot;&gt;User Management&lt;/MudNavLink&gt;
+
+                    &lt;/Authorized&gt;
+             &lt;/AuthorizeView&gt;
+
+10.7 Permission-Based Authorization
+
+             // Extension method for fine-grained control
+             public static class ClaimsPrincipalExtensions
+             {
+
+                    public static bool HasPermission(this ClaimsPrincipal? user, string permission)
+                    {
+
+                            if (user == null) return false;
+                            return user.Claims.Any(c =&gt;
+
+                                   c.Type == &quot;permission&quot; &amp;&amp;
+                                   c.Value.Equals(permission, StringComparison.OrdinalIgnoreCase));
+                    }
+             }
+
+             // Usage in components
+             &lt;AuthorizeView&gt;
+
+                    &lt;Authorized&gt;
+                            @if (context.User.HasPermission(&quot;users.create&quot;))
+                            {
+                                   &lt;MudButton OnClick=&quot;CreateUser&quot;&gt;Create User&lt;/MudButton&gt;
+                            }
+                            @if (context.User.HasPermission(&quot;users.delete&quot;))
+                            {
+                                   &lt;MudButton Color=&quot;Color.Error&quot;&gt;Delete User&lt;/MudButton&gt;
+                            }
+
+                    &lt;/Authorized&gt;
+             &lt;/AuthorizeView&gt;
+
+10.8 Program.cs Registration
+
+             // Register your custom provider</pre></div></div>
+<div class="pdf-page" id="page-32"><div class="page-head">Page 32</div><div class="page-body"><pre>builder.Services.AddScoped&lt;CustomAuthStateProvider&gt;();
+builder.Services.AddScoped&lt;AuthenticationStateProvider&gt;(sp =&gt;
+
+       sp.GetRequiredService&lt;CustomAuthStateProvider&gt;());
+
+// Required for [Authorize] and &lt;AuthorizeView&gt;
+builder.Services.AddAuthorizationCore();</pre></div></div>
+<div class="pdf-page" id="page-33"><div class="page-head">Page 33</div><div class="page-body"><pre>Part III: Blazor-Specific Patterns</pre></div></div>
+<div class="pdf-page" id="page-34"><div class="page-head">Page 34</div><div class="page-body"><pre>Chapter 11: ProtectedLocalStorage
+
+11.1 What is ProtectedLocalStorage?
+
+ProtectedLocalStorage is a Blazor Server service that provides secure, encrypted access to the
+browser&#x27;s localStorage. Unlike regular JavaScript localStorage, it encrypts data before storing and protects
+against tampering.
+
+             @inject ProtectedLocalStorage LocalStorage
+
+             // Store a value (encrypted automatically)
+             await LocalStorage.SetAsync(&quot;user_preference&quot;, &quot;dark_mode&quot;);
+
+             // Retrieve a value (decrypted automatically)
+             var result = await LocalStorage.GetAsync&lt;string&gt;(&quot;user_preference&quot;);
+             if (result.Success)
+             {
+
+                    var value = result.Value; // &quot;dark_mode&quot;
+             }
+
+11.2 The Prerendering Problem
+
+Blazor Server uses prerendering by default. The page is first rendered on the server (no browser exists
+yet), then sent to the client, then Blazor reconnects via SignalR. During server prerendering, there is no
+browser—so ProtectedLocalStorage throws an exception!
+
+             // BAD - This will fail during prerendering!
+             protected override async Task OnInitializedAsync()
+             {
+
+                    var result = await LocalStorage.GetAsync&lt;string&gt;(&quot;token&quot;); // EXCEPTION!
+             }
+
+             // GOOD - OnAfterRenderAsync runs after browser is available
+             protected override async Task OnAfterRenderAsync(bool firstRender)
+             {
+
+                    if (firstRender)
+                    {
+
+                            var result = await LocalStorage.GetAsync&lt;string&gt;(&quot;token&quot;); // Works!
+                            if (result.Success)
+                            {
+
+                                   _token = result.Value;
+                                   StateHasChanged(); // Re-render with loaded data
+                            }
+                    }
+             }
+
+11.3 UI Pattern: Loading State
+
+             @if (!IsAuthLoaded)
+             {
+
+                    &lt;MudSkeleton Width=&quot;200px&quot; Height=&quot;32px&quot; /&gt;
+                    &lt;MudProgressLinear Indeterminate=&quot;true&quot; /&gt;
+                    return;
+             }
+
+             @* Real content here - only shown after auth loads *@
+             &lt;MudText&gt;Welcome, @CurrentUser.DisplayName!&lt;/MudText&gt;
+
+11.4 Common Mistakes</pre></div></div>
+<div class="pdf-page" id="page-35"><div class="page-head">Page 35</div><div class="page-body"><pre>// WRONG - can throw if storage unavailable
+var result = await LocalStorage.GetAsync&lt;string&gt;(&quot;key&quot;);
+var value = result.Value; // May be null!
+
+// CORRECT - always check Success
+if (result.Success)
+{
+
+       var value = result.Value;
+}
+
+// WRONG - UI won&#x27;t update after loading data
+protected override async Task OnAfterRenderAsync(bool firstRender)
+{
+
+       if (firstRender)
+       {
+
+              _data = await LoadDataAsync();
+              // UI still shows old state!
+       }
+}
+
+// CORRECT - call StateHasChanged()
+protected override async Task OnAfterRenderAsync(bool firstRender)
+{
+
+       if (firstRender)
+       {
+
+              _data = await LoadDataAsync();
+              StateHasChanged(); // UI updates!
+       }
+}</pre></div></div>
+<div class="pdf-page" id="page-36"><div class="page-head">Page 36</div><div class="page-body"><pre>Chapter 12: Localization
+
+12.1 Overview
+
+Localization allows your app to display text in different languages using resource files (.resx),
+IStringLocalizer, and a CultureController for language switching.
+
+12.2 Resource Files
+
+Project/
+
+sss SharedResources.cs    # Marker class (PROJECT ROOT!)
+
+sss Resources/
+
+sss SharedResources.resx  # Default (English)
+
+sss SharedResources.pt-PT.resx # Portuguese
+
+SharedResources.resx:
+&lt;data name=&quot;Login&quot;&gt;&lt;value&gt;Login&lt;/value&gt;&lt;/data&gt;
+&lt;data name=&quot;Logout&quot;&gt;&lt;value&gt;Logout&lt;/value&gt;&lt;/data&gt;
+
+SharedResources.pt-PT.resx:
+&lt;data name=&quot;Login&quot;&gt;&lt;value&gt;Entrar&lt;/value&gt;&lt;/data&gt;
+&lt;data name=&quot;Logout&quot;&gt;&lt;value&gt;Sair&lt;/value&gt;&lt;/data&gt;
+
+CRITICAL: The marker class file must be in the project root, not inside the Resources folder.
+IStringLocalizer uses the file location to resolve resources.
+
+12.3 The Marker Class
+
+             namespace SkillCanvas; // ROOT namespace, NOT SkillCanvas.Resources!
+
+             /// &lt;summary&gt;
+             /// Marker class for localization resources.
+             /// &lt;/summary&gt;
+             public class SharedResources
+             {
+
+                    // Empty - just a marker for IStringLocalizer&lt;SharedResources&gt;
+             }
+
+12.4 Using IStringLocalizer in Components
+
+             @inject IStringLocalizer&lt;SharedResources&gt; L
+
+             &lt;MudButton&gt;@L[&quot;Login&quot;]&lt;/MudButton&gt;
+             &lt;MudNavLink&gt;@L[&quot;Home&quot;]&lt;/MudNavLink&gt;
+             &lt;MudText&gt;@L[&quot;Welcome&quot;]&lt;/MudText&gt;
+
+12.5 CultureController for Language Switching
+
+             [Route(&quot;[controller]/[action]&quot;)]
+             public class CultureController : Controller
+             {
+
+                    [IgnoreAntiforgeryToken] // Required for Blazor navigation
+                    public IActionResult Set(string culture, string redirectUri)
+                    {
+
+                            if (!string.IsNullOrWhiteSpace(culture))
+                            {
+
+                                   HttpContext.Response.Cookies.Append(
+                                          CookieRequestCultureProvider.DefaultCookieName,
+                                          CookieRequestCultureProvider.MakeCookieValue(</pre></div></div>
+<div class="pdf-page" id="page-37"><div class="page-head">Page 37</div><div class="page-body"><pre>                                                 new RequestCulture(culture, culture)),
+                                          new CookieOptions
+                                          {
+
+                                                 Expires = DateTimeOffset.UtcNow.AddYears(1),
+                                                 IsEssential = true
+                                          }
+                                   );
+                            }
+                            return LocalRedirect(redirectUri ?? &quot;/&quot;);
+                    }
+             }
+
+12.6 LanguageSwitcher Component
+
+             @inject NavigationManager NavigationManager
+
+             &lt;MudMenu Icon=&quot;@Icons.Material.Filled.Language&quot;&gt;
+                    &lt;MudMenuItem OnClick=&quot;@(() =&gt; SetCulture(&quot;en&quot;))&quot;&gt;English&lt;/MudMenuItem&gt;
+                    &lt;MudMenuItem OnClick=&quot;@(() =&gt; SetCulture(&quot;pt-PT&quot;))&quot;&gt;Português&lt;/MudMenuItem&gt;
+
+             &lt;/MudMenu&gt;
+
+             @code {
+                    private void SetCulture(string culture)
+                    {
+                            var uri = new Uri(NavigationManager.Uri)
+                                   .GetComponents(UriComponents.PathAndQuery, UriFormat.Unescaped);
+
+                            NavigationManager.NavigateTo(
+                                   $&quot;Culture/Set?culture={Uri.EscapeDataString(culture)}&quot; +
+                                   $&quot;&amp;redirectUri={Uri.EscapeDataString(uri)}&quot;,
+                                   forceLoad: true); // Full page reload required!
+
+                    }
+             }
+
+12.7 Program.cs Configuration
+
+             // Add localization services
+             builder.Services.AddLocalization(options =&gt; options.ResourcesPath = &quot;Resources&quot;);
+             builder.Services.AddControllers();
+
+             // Configure middleware
+             var supportedCultures = new[] { &quot;en&quot;, &quot;pt-PT&quot; };
+             var localizationOptions = new RequestLocalizationOptions()
+
+                    .SetDefaultCulture(&quot;pt-PT&quot;)
+                    .AddSupportedCultures(supportedCultures)
+                    .AddSupportedUICultures(supportedCultures);
+
+             localizationOptions.RequestCultureProviders = new List&lt;IRequestCultureProvider&gt;
+             {
+
+                    new CookieRequestCultureProvider(), // Read from cookie first
+                    new QueryStringRequestCultureProvider()
+             };
+
+             app.UseRequestLocalization(localizationOptions);
+             app.MapControllers();</pre></div></div>
+<div class="pdf-page" id="page-38"><div class="page-head">Page 38</div><div class="page-body"><pre>Chapter 13: JavaScript Interop
+
+    Key Insight: JavaScript interop in Blazor Server is NOT available during prerendering. You must
+    handle InvalidOperationException gracefully and defer JS calls to OnAfterRenderAsync.
+
+13.1 What is JavaScript Interop?
+
+Blazor runs C# code, but sometimes you need to interact with browser JavaScript APIs (DOM
+manipulation, localStorage, third-party JS libraries). JavaScript Interop (JS Interop) is the bridge
+between C# and JavaScript.
+
+             // Calling JavaScript from C#
+             @inject IJSRuntime JS
+
+             var result = await JS.InvokeAsync&lt;string&gt;(&quot;localStorage.getItem&quot;, &quot;myKey&quot;);
+
+             // Or call a custom function
+             await JS.InvokeVoidAsync(&quot;myJsFunction&quot;, arg1, arg2);
+
+             // JavaScript side
+             window.myJsFunction = function(arg1, arg2) {
+
+                    console.log(&quot;Called from C#!&quot;, arg1, arg2);
+             };
+
+13.2 The Blazor Server Rendering Timeline
+
+             Phase 1: PRERENDER (Server-Side, NO JavaScript)
+             ssssssssssssssssssssssssssssssssssssssssssssssss
+             - Initial HTTP request arrives at server
+             - Components render to static HTML
+             - NO SignalR connection yet
+             - s JS Interop calls WILL FAIL
+
+             Phase 2: HTML SENT TO BROWSER
+             ssssssssssssssssssssssssssssssssssssssssssssssss
+             - Static HTML displayed to user (fast first paint!)
+             - Blazor JavaScript bundle loads
+             - SignalR connection establishing...
+             - s JS Interop still not ready
+
+             Phase 3: INTERACTIVE MODE (SignalR Connected)
+             ssssssssssssssssssssssssssssssssssssssssssssssss
+             - SignalR WebSocket connection established
+             - OnAfterRenderAsync(firstRender: true) fires
+             - s JS Interop NOW AVAILABLE
+
+13.3 Why JS Interop Fails During Prerender
+
+             // This FAILS during prerender!
+             protected override async Task OnInitializedAsync()
+             {
+
+                    var value = await JS.InvokeAsync&lt;string&gt;(&quot;localStorage.getItem&quot;, &quot;key&quot;);
+             }
+
+             // Error:
+             // InvalidOperationException: JavaScript interop calls cannot be issued at
+             // this time. This is because the component is being statically rendered.
+
+13.4 Safe Patterns for JS Interop</pre></div></div>
+<div class="pdf-page" id="page-39"><div class="page-head">Page 39</div><div class="page-body"><pre>Pattern 1: OnAfterRenderAsync (Recommended)
+
+             @code {
+                    private string? _storedValue;
+                    private bool _isLoaded = false;
+
+                    protected override async Task OnAfterRenderAsync(bool firstRender)
+                    {
+
+                            if (firstRender)
+                            {
+
+                                   // s SAFE - SignalR is connected, JS is available
+                                   _storedValue = await JS.InvokeAsync&lt;string&gt;(&quot;localStorage.getItem&quot;, &quot;key&quot;);
+                                   _isLoaded = true;
+                                   StateHasChanged(); // Re-render with loaded data
+                            }
+                    }
+             }
+
+Pattern 2: Try-Catch with Graceful Fallback
+
+             public async Task&lt;string?&gt; GetSessionTokenAsync()
+             {
+
+                    try
+                    {
+
+                            var result = await _localStorage.GetAsync&lt;string&gt;(&quot;session_token&quot;);
+                            return result.Success ? result.Value : null;
+                    }
+                    catch (InvalidOperationException)
+                    {
+                            // Expected during prerender - JS not available
+                            _logger.LogDebug(&quot;Session token unavailable (prerender phase)&quot;);
+                            return null;
+                    }
+                    catch (Exception ex)
+                    {
+                            // Actual errors should be logged as ERROR
+                            _logger.LogError(ex, &quot;Error retrieving session token&quot;);
+                            return null;
+                    }
+             }
+
+13.5 Common Pitfalls and Solutions
+
+             // s WRONG - OnInitializedAsync runs during prerender
+             protected override async Task OnInitializedAsync()
+             {
+
+                    _value = await JS.InvokeAsync&lt;string&gt;(&quot;localStorage.getItem&quot;, &quot;key&quot;);
+             }
+
+             // s CORRECT - OnAfterRenderAsync is safe
+             protected override async Task OnAfterRenderAsync(bool firstRender)
+             {
+
+                    if (firstRender)
+                    {
+
+                            _value = await JS.InvokeAsync&lt;string&gt;(&quot;localStorage.getItem&quot;, &quot;key&quot;);
+                            StateHasChanged();
+                    }
+             }
+
+             // s WRONG - Infinite loop!
+             protected override async Task OnAfterRenderAsync(bool firstRender)
+             {
+
+                    _value = await LoadDataAsync(); // Always loads
+                    StateHasChanged(); // Re-renders → OnAfterRenderAsync → repeat!</pre></div></div>
+<div class="pdf-page" id="page-40"><div class="page-head">Page 40</div><div class="page-body"><pre>}
+
+// s CORRECT - Only load once
+protected override async Task OnAfterRenderAsync(bool firstRender)
+{
+
+       if (firstRender) // Only on first render!
+       {
+
+              _value = await LoadDataAsync();
+              StateHasChanged();
+       }
+}
+
+13.6 Handling Null State in UI
+
+             @* s WRONG - Throws if _user is null during prerender *@
+             &lt;span&gt;Welcome, @_user.DisplayName!&lt;/span&gt;
+
+             @* s CORRECT - Handle null state *@
+             @if (_user != null)
+             {
+
+                    &lt;span&gt;Welcome, @_user.DisplayName!&lt;/span&gt;
+             }
+             else
+             {
+
+                    &lt;MudSkeleton Width=&quot;100px&quot; /&gt;
+             }
+
+13.7 Exception Handling Best Practices
+
+Scenario                 Exception                                     Log Level
+Prerender phase          InvalidOperationException                     Debug
+Language change          InvalidOperationException                     Debug
+Network error            JSException                                   Error
+Deserialization failure  JsonException                                 Error
+
+13.8 Key Takeaways
+
+      • JS Interop requires SignalR - Not available during prerender
+      • Use OnAfterRenderAsync - The ONLY safe lifecycle method for JS calls
+      • Check firstRender - Avoid infinite render loops
+      • Handle InvalidOperationException - Expected during prerender, log as Debug
+      • Show loading states - UI must handle null/loading gracefully
+      • Cache when possible - Prevent concurrent JS calls</pre></div></div>
+<div class="pdf-page" id="page-41"><div class="page-head">Page 41</div><div class="page-body"><pre>           Appendix: Quick Reference
+
+Security Checklist
+
+Area                      Best Practice
+Passwords                 BCrypt with work factor 12+, never store plain
+Sessions                  Hash tokens, HttpOnly + Secure + SameSite cookies
+CSRF                      [ValidateAntiForgeryToken] on state-changing endpoints
+Errors                    Generic messages (&quot;Invalid credentials&quot;)
+Lockout                   5 failed attempts → 15 min lockout
+Claims                    Build ClaimsPrincipal from your user model
+
+Architecture Patterns
+
+Pattern                   When to Use
+Base Classes              Share common properties (Id, audit fields)
+ServiceResult             Return success/failure from service methods
+IEntityTypeConfiguration  Separate EF config per entity
+Adapter Pattern           Decouple modules, enable model-agnostic design
+Bulk Operations           Import 50+ entities with SetOutputIdentity
+Role-Permission Model     Flexible authorization
+
+Blazor Server Lifecycle
+
+Method                    When It Runs            Use For
+OnInitializedAsync
+OnAfterRenderAsync        Component init (pre-render + interacLtiovaed) data from services
+OnParametersSetAsync
+                          After DOM render (browser availableP)rotectedLocalStorage, JS interop
+
+                          When parameters change  React to parameter updates</pre></div></div>
+<div class="pdf-page" id="page-42"><div class="page-head">Page 42</div><div class="page-body"><pre>EF Core Bulk Operations
+
+Config Option               Purpose
+SetOutputIdentity = true    Get auto-generated IDs back after insert
+PreserveInsertOrder = true  Maintain correlation with source data
+UpdateByProperties          Specify columns for upsert matching
+
+Claims Authorization
+
+Claim Type                  Purpose
+ClaimTypes.NameIdentifier   User ID
+ClaimTypes.Name             Username
+ClaimTypes.Role             Role membership (one per role)
+&quot;permission&quot;                Fine-grained permissions
+
+This guide compiles essential patterns and security practices for building robust Blazor Server
+applications. Apply these consistently across your projects for maintainable, secure code.</pre></div></div>
+</article>
+<div class="takeaways"><h3>Key takeaways</h3><ul><li>Two-level base class hierarchy (BaseEntity, BaseAuditableEntity) removes audit-field duplication and lets you add features like soft-delete in one place</li><li>IEntityTypeConfiguration per entity beats Data Annotations and OnModelCreating mega-methods; ApplyConfigurationsFromAssembly wires them up automatically</li><li>ServiceResult&lt;T&gt; with Ok/Fail factory methods turns service errors into first-class return values, killing both the null-returning and throw-everywhere anti-patterns</li><li>The Adapter pattern lets a module like an LMS depend on ILmsLearner instead of your concrete User class, making it reusable and extractable</li><li>BulkExtensions with SetOutputIdentity=true is 60x faster than per-row SaveChanges and returns the new IDs into your original list</li><li>ASP.NET Identity is optional: [Authorize] and &lt;AuthorizeView&gt; only inspect Claims, so a custom AuthenticationStateProvider that builds ClaimsPrincipal from your own User table works identically</li><li>BCrypt&#x27;s intentional slowness (work factor 12 ~300ms per hash) turns a 10-hour MD5 crack into a 70-million-year BCrypt crack</li><li>ProtectedLocalStorage and JSRuntime throw InvalidOperationException during prerender; move those calls to OnAfterRenderAsync(firstRender) and call StateHasChanged() after</li></ul></div>
+<aside class="cross-refs"><h2>Cross-references</h2><div class="cross-ref-list"><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>service-result-pattern</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>adapter-pattern</a><a href="../../CORE/patterns/strategy-pattern.html"><span class="arrow">→</span>Strategy Pattern: Pluggable Algorithms</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>bcrypt-password-hashing</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>claims-based-authorization</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>csrf-antiforgery</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>blazor-prerendering-lifecycle</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>ef-core-bulk-operations</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>ef-core-fluent-configurations</a></div></aside>
+<aside class="related"><h2>More in this category</h2><div class="related-grid"><a class="related-card" href="../../CORE/patterns/adapter-pattern-module-decoupling.html"><div class="title">Adapter Pattern Explained (Decoupling Modules from Host Models)</div><div class="meta"><span class="badge">MD</span><span>532 words</span></div></a><a class="related-card" href="../../CORE/patterns/schedule-conflict-strategy-pattern.html"><div class="title">Agnostic Schedule Conflict Detection</div><div class="meta"><span class="badge">MD</span><span>1,111 words</span></div></a><a class="related-card" href="../../CORE/patterns/blazor-architecture-security-for-dummies.html"><div class="title">Blazor Server For Dummies — Simple Explanations for Complex Concepts</div><div class="meta"><span class="badge">PDF</span><span>2,951 words</span></div></a><a class="related-card" href="../../CORE/patterns/notification-recipient-resolver-pipeline.html"><div class="title">Notification Recipient Resolver Pipeline - For Dummies</div><div class="meta"><span class="badge">MD</span><span>798 words</span></div></a><a class="related-card" href="../../CORE/patterns/polite-code-style.html"><div class="title">Polite Code Style Guide</div><div class="meta"><span class="badge">MD</span><span>591 words</span></div></a><a class="related-card" href="../../CORE/patterns/strategy-pattern-export-service.html"><div class="title">Strategy Pattern in Export Services</div><div class="meta"><span class="badge">MD</span><span>1,268 words</span></div></a></div></aside>
+</main>
+</div>
+<script>
+// ─── Active TOC item on scroll ────────────────────────────────────
+(function() {
+  const tocLinks = document.querySelectorAll('.toc-sidebar a[href^="#"]');
+  if (!tocLinks.length) return;
+  const headings = Array.from(document.querySelectorAll(
+    'article h1[id], article h2[id], article h3[id], article h4[id], .pdf-page[id]'
+  ));
+  if (!headings.length) return;
+  function setActive(id) {
+    tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+  }
+  let lastVisible = headings[0].id;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) lastVisible = e.target.id; });
+    setActive(lastVisible);
+  }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+  headings.forEach(h => observer.observe(h));
+  setActive(headings[0].id);
+})();
+
+// ─── Copy code buttons ────────────────────────────────────────────
+(function() {
+  document.querySelectorAll('article pre').forEach(pre => {
+    if (pre.closest('.diagram-box')) return;
+    if (pre.closest('.pdf-page')) return;
+    if (pre.parentElement && pre.parentElement.classList.contains('code-block')) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'code-block';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.type = 'button';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', () => {
+      const code = pre.querySelector('code') || pre;
+      const text = code.innerText;
+      const done = () => {
+        btn.textContent = 'Copied';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(() => {});
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+    });
+    wrap.appendChild(btn);
+  });
+})();
+
+// ─── Live filter (master + hub + category pages) ─────────────────
+(function() {
+  const search = document.getElementById('search-input');
+  if (!search) return;
+  const items = document.querySelectorAll('[data-search]');
+  function apply() {
+    const q = search.value.toLowerCase().trim();
+    items.forEach(el => {
+      const match = !q || el.dataset.search.includes(q);
+      el.style.display = match ? '' : 'none';
+    });
+    document.querySelectorAll('[data-search-parent]').forEach(parent => {
+      const visible = Array.from(parent.querySelectorAll('[data-search]'))
+        .some(el => el.style.display !== 'none');
+      parent.style.display = visible ? '' : 'none';
+    });
+  }
+  search.addEventListener('input', apply);
+})();
+</script>
+</body>
+</html>

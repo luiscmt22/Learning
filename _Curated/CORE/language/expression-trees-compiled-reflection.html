@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expression Trees & Compiled Reflection — From Slow Reflection to Native Speed</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --surface: #16213e;
+            --surface2: #0f3460;
+            --accent: #e94560;
+            --accent2: #533483;
+            --text: #eee;
+            --text-muted: #aab;
+            --success: #4ecca3;
+            --warning: #f0a500;
+            --code-bg: #0d1117;
+            --border: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+
+        h2 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin: 2.5rem 0 1rem 0;
+            padding-bottom: 0.3rem;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        h3 {
+            color: var(--success);
+            font-size: 1.2rem;
+            margin: 1.8rem 0 0.8rem 0;
+        }
+
+        h4 {
+            color: var(--warning);
+            font-size: 1.05rem;
+            margin: 1.2rem 0 0.5rem 0;
+        }
+
+        p { margin-bottom: 1rem; }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.2rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        code {
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9rem;
+        }
+
+        p code, li code {
+            background: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .keyword { color: #569cd6; }
+        .type { color: #4ec9b0; }
+        .string { color: #ce9178; }
+        .comment { color: #6a9955; }
+        .method { color: #dcdcaa; }
+        .number { color: #b5cea8; }
+        .param { color: #9cdcfe; }
+
+        .callout {
+            border-radius: 8px;
+            padding: 1.2rem 1.5rem;
+            margin: 1.5rem 0;
+            border-left: 4px solid;
+        }
+
+        .callout-metaphor {
+            background: rgba(83, 52, 131, 0.2);
+            border-color: var(--accent2);
+        }
+        .callout-metaphor::before {
+            content: "Metaphor";
+            display: block;
+            font-weight: bold;
+            color: var(--accent2);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-english {
+            background: rgba(78, 204, 163, 0.1);
+            border-color: var(--success);
+        }
+        .callout-english::before {
+            content: "Read It Like English";
+            display: block;
+            font-weight: bold;
+            color: var(--success);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-warning {
+            background: rgba(240, 165, 0, 0.1);
+            border-color: var(--warning);
+        }
+        .callout-warning::before {
+            content: "Common Confusion";
+            display: block;
+            font-weight: bold;
+            color: var(--warning);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-rule {
+            background: rgba(233, 69, 96, 0.1);
+            border-color: var(--accent);
+        }
+        .callout-rule::before {
+            content: "Golden Rule";
+            display: block;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        ul, ol {
+            margin: 0.5rem 0 1rem 1.5rem;
+        }
+
+        li { margin-bottom: 0.3rem; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 0.6rem 1rem;
+            text-align: left;
+        }
+
+        th {
+            background: var(--surface2);
+            color: var(--success);
+        }
+
+        td { background: var(--surface); }
+
+        .diagram {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'Cascadia Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            white-space: pre;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+<div style="background:rgba(7,9,15,0.94);border-bottom:1px solid #1f2940;padding:12px 24px;font:13px/1.4 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;position:fixed;top:0;left:0;right:0;z-index:99999;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);display:flex;align-items:center;gap:10px;color:#94a3bf;box-sizing:border-box;min-height:48px;"><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;">Learning</a><span style="color:#5f6b86;">›</span><a href="../_Hub.html" style="color:#94a3bf;text-decoration:none;">CORE</a><span style="color:#5f6b86;">›</span><a href="_Category.html" style="color:#94a3bf;text-decoration:none;">C# Language</a><span style="color:#5f6b86;">›</span><span style="color:#e9eef8;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">Expression Trees &amp; Compiled Reflection — From Slow Reflection to Native Speed</span><a href="expression-trees-compiled-reflection.html" download style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">↓ Download</a><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">All docs</a></div><div style="height:48px;"></div><div style="background:linear-gradient(135deg,#0a0e1a 0%,#11182a 100%);border:1px solid #1f2940;border-radius:14px;padding:24px 28px;margin:20px;font:15px/1.7 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;color:#e9eef8;box-shadow:0 12px 40px rgba(0,0,0,0.35);"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.6px;color:#6aa6ff;font-weight:600;margin-bottom:8px;">▸ Curated · Concept · Language</div><div style="font-size:24px;font-weight:700;color:#e9eef8;margin-bottom:10px;letter-spacing:-0.02em;line-height:1.2;">Expression Trees &amp; Compiled Reflection — From Slow Reflection to Native Speed</div><div style="font-size:16px;color:#94a3bf;margin-bottom:18px;line-height:1.5;">How to build a ReflectionCache that compiles property getters and setters into delegates at runtime so config-driven property access runs at native speed instead of 100x slower reflection.</div><div style="font-style:italic;border-left:3px solid #6aa6ff;padding:6px 0 6px 16px;margin:14px 0;color:#e9eef8;">Your config file says &#x27;CodeProperty: Codigo&#x27; and suddenly you&#x27;re calling PropertyInfo.GetValue 50,000 times per page load. The profiler lights up red. You need dynamic property access without the dynamic tax — and .NET has a trick for that, hiding in the System.Linq.Expressions namespace.</div><div style="background:rgba(106,166,255,0.06);border:1px solid rgba(106,166,255,0.20);border-radius:10px;padding:14px 18px;margin:14px 0;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#6aa6ff;margin-bottom:6px;font-weight:600;">Executive summary</div><div style="font-size:14px;color:#e9eef8;line-height:1.6;">The doc tackles a real problem: when a config file names properties as strings, the naive solution is PropertyInfo.GetValue, which is roughly 100x slower than direct access because each call re-looks up metadata and boxes values. It walks through building an expression tree — Parameter → Convert → Property → Convert → Lambda → Compile — to produce a native delegate equivalent to hand-written code, then caches the delegate in a ConcurrentDictionary keyed by (Type, propertyName) so compilation only happens once per pair. The critical distinction it hammers home is Expression&lt;Func&lt;T,R&gt;&gt; (data, inspectable, what EF Core translates to SQL) versus Func&lt;T,R&gt; (already-compiled machine code), because passing a compiled Func to EF Core&#x27;s Where collapses server-side filtering into client-side evaluation — a catastrophe this doc helps you avoid.</div></div><div style="background:rgba(184,106,255,0.06);border:1px solid rgba(184,106,255,0.25);border-radius:10px;padding:14px 18px;margin:14px 0;display:flex;gap:12px;"><div style="font-size:20px;flex-shrink:0;">💡</div><div style="flex:1;font-size:14px;color:#e9eef8;line-height:1.6;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#b86aff;margin-bottom:4px;font-weight:700;">Metaphor</div>Reflection is like opening the cookbook every single time you need to chop an onion — you re-read which page, re-read the technique, then finally cut. A compiled expression is what happens after you&#x27;ve made that recipe fifty times: your hands just know. You pay for studying once; after that, every onion gets chopped at muscle-memory speed.</div></div><div style="margin-top:14px;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#5f6b86;margin-bottom:8px;font-weight:600;">Key concepts</div><div><span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">Expression trees as code-as-data</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">Expression.Compile() and JIT</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">ConcurrentDictionary caching</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">ReflectionCache pattern</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">Expression&lt;Func&lt;T,R&gt;&gt; vs Func&lt;T,R&gt;</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">EF Core LINQ-to-SQL translation</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">runtime code generation</span></div></div><div style="margin-top:18px;padding-top:14px;border-top:1px solid #1f2940;font-size:11px;color:#5f6b86;">↑ Curated overlay added by render_curated.py · the original document follows below</div></div>
+
+<h1>Expression Trees & Compiled Reflection</h1>
+<p class="subtitle">Tutorial #26 — From Slow Reflection to Native Speed at Runtime</p>
+
+<!-- ============================================================ -->
+<h2>1. The Problem: Reflection Is Slow</h2>
+
+<p>
+    Sometimes you need to read or write a property whose name you don't know at compile time.
+    Maybe a config file says <code>"CodeProperty": "Codigo"</code> and your service needs to read
+    <code>entity.Codigo</code> without hard-coding that property name.
+</p>
+
+<p>
+    The classic .NET answer is <strong>reflection</strong> — use <code>PropertyInfo.GetValue()</code>
+    and <code>PropertyInfo.SetValue()</code>. It works. But it's roughly <strong>100x slower</strong>
+    than direct property access, because every call has to:
+</p>
+
+<ul>
+    <li>Look up metadata at runtime</li>
+    <li>Validate types and access permissions</li>
+    <li>Box value types into <code>object</code></li>
+    <li>Invoke the getter/setter through an indirect dispatch</li>
+</ul>
+
+<p>
+    If you're doing this once, who cares. If you're doing it in a loop over thousands of entities,
+    it becomes a bottleneck. Here's the performance ladder:
+</p>
+
+<div class="diagram">
+  Performance Ladder (approximate, per-call)
+  ──────────────────────────────────────────
+
+  Direct access:         article.Code              ~1 nanosecond
+  Compiled expression:   getter(article)           ~3 nanoseconds
+  PropertyInfo.GetValue: prop.GetValue(obj)      ~300 nanoseconds
+
+  ──────────────────────────────────────────
+  Compiled expressions are ~100x faster than raw reflection
+  and nearly identical to direct access.
+</div>
+
+<p>
+    The solution: <strong>build a compiled delegate at runtime, cache it, and reuse it forever</strong>.
+    You pay the compilation cost once (microseconds), then every subsequent call is at native speed.
+</p>
+
+<div class="callout callout-metaphor">
+    Reflection is like reading a recipe every time you cook. Compiled expressions are like memorizing
+    the recipe — the first read takes effort, but after that you cook from memory at full speed.
+</div>
+
+<!-- ============================================================ -->
+<h2>2. What IS an Expression Tree?</h2>
+
+<p>
+    An expression tree is <strong>code represented as data</strong> — a tree of nodes that describe
+    what the code does, without actually executing it. Each node represents an operation: a parameter,
+    a type cast, a property access, an assignment, a method call.
+</p>
+
+<p>
+    Because it's data, you can:
+</p>
+
+<ul>
+    <li><strong>Inspect it</strong> — walk the tree to see what it does</li>
+    <li><strong>Modify it</strong> — rewrite nodes to change behavior</li>
+    <li><strong>Translate it</strong> — EF Core reads expression trees and generates SQL</li>
+    <li><strong>Compile it</strong> — JIT-compile the tree into a native delegate</li>
+</ul>
+
+<p>
+    All expression tree types live in the <code>System.Linq.Expressions</code> namespace.
+</p>
+
+<h3>Visualizing an Expression Tree</h3>
+
+<p>
+    Let's draw the tree for the lambda <code>(object obj) => ((Article)obj).Code</code>:
+</p>
+
+<div class="diagram">
+  Lambda  Func&lt;object, object&gt;
+  └── Convert  (to object)            ← box the result back to object
+      └── Property Access  (.Code)    ← read the Code property
+          └── Convert  (to Article)   ← cast the input to Article
+              └── Parameter  (obj: object)  ← the input parameter
+</div>
+
+<p>
+    Read it bottom-up: take a parameter <code>obj</code>, cast it to <code>Article</code>,
+    access the <code>.Code</code> property, cast the result to <code>object</code>, and wrap
+    the whole thing in a lambda that can be compiled into a <code>Func&lt;object, object&gt;</code>.
+</p>
+
+<p>
+    That's the entire idea. Each level is a node. The tree describes the code. <code>.Compile()</code>
+    turns the tree into executable machine code.
+</p>
+
+<!-- ============================================================ -->
+<h2>3. Building a Getter Expression — Step by Step</h2>
+
+<p>
+    Here's the <code>CreateGetter</code> method from <code>ReflectionCache</code>. We'll walk
+    through every line:
+</p>
+
+<pre><code><span class="keyword">private static</span> <span class="type">Func</span>&lt;<span class="keyword">object</span>, <span class="keyword">object</span>?&gt;? <span class="method">CreateGetter</span>((<span class="type">Type</span> <span class="param">type</span>, <span class="keyword">string</span> <span class="param">propertyName</span>) <span class="param">key</span>)
+{
+    <span class="comment">// Step 1: Find the property via reflection (just once!)</span>
+    <span class="keyword">var</span> <span class="param">property</span> = <span class="param">key</span>.<span class="param">type</span>.<span class="method">GetProperty</span>(
+        <span class="param">key</span>.<span class="param">propertyName</span>,
+        <span class="type">BindingFlags</span>.Public | <span class="type">BindingFlags</span>.Instance);
+
+    <span class="keyword">if</span> (<span class="param">property</span> == <span class="keyword">null</span> || !<span class="param">property</span>.CanRead) <span class="keyword">return null</span>;
+
+    <span class="comment">// Step 2: Create a parameter node: (object obj)</span>
+    <span class="keyword">var</span> <span class="param">param</span> = <span class="type">Expression</span>.<span class="method">Parameter</span>(<span class="keyword">typeof</span>(<span class="keyword">object</span>), <span class="string">"obj"</span>);
+
+    <span class="comment">// Step 3: Cast object to the entity type: (Article)obj</span>
+    <span class="keyword">var</span> <span class="param">castToEntity</span> = <span class="type">Expression</span>.<span class="method">Convert</span>(<span class="param">param</span>, <span class="param">key</span>.<span class="param">type</span>);
+
+    <span class="comment">// Step 4: Access the property: ((Article)obj).Code</span>
+    <span class="keyword">var</span> <span class="param">propertyAccess</span> = <span class="type">Expression</span>.<span class="method">Property</span>(<span class="param">castToEntity</span>, <span class="param">property</span>);
+
+    <span class="comment">// Step 5: Cast result back to object: (object)((Article)obj).Code</span>
+    <span class="keyword">var</span> <span class="param">castToObject</span> = <span class="type">Expression</span>.<span class="method">Convert</span>(<span class="param">propertyAccess</span>, <span class="keyword">typeof</span>(<span class="keyword">object</span>));
+
+    <span class="comment">// Step 6: Compile the tree into a callable delegate</span>
+    <span class="keyword">return</span> <span class="type">Expression</span>.<span class="method">Lambda</span>&lt;<span class="type">Func</span>&lt;<span class="keyword">object</span>, <span class="keyword">object</span>?&gt;&gt;(<span class="param">castToObject</span>, <span class="param">param</span>)
+        .<span class="method">Compile</span>();
+}</code></pre>
+
+<h3>What Each Expression Node Does</h3>
+
+<table>
+    <thead>
+        <tr>
+            <th>Step</th>
+            <th>Expression Method</th>
+            <th>What It Creates</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>1</td>
+            <td><code>GetProperty()</code></td>
+            <td>Standard reflection lookup — happens once, not per call</td>
+        </tr>
+        <tr>
+            <td>2</td>
+            <td><code>Expression.Parameter()</code></td>
+            <td>Declares the input parameter: <code>obj</code> of type <code>object</code></td>
+        </tr>
+        <tr>
+            <td>3</td>
+            <td><code>Expression.Convert()</code></td>
+            <td>Type cast node — unboxes <code>object</code> to <code>Article</code></td>
+        </tr>
+        <tr>
+            <td>4</td>
+            <td><code>Expression.Property()</code></td>
+            <td>Property access node — reads <code>.Code</code> from the cast entity</td>
+        </tr>
+        <tr>
+            <td>5</td>
+            <td><code>Expression.Convert()</code></td>
+            <td>Another cast — boxes the property value back to <code>object</code></td>
+        </tr>
+        <tr>
+            <td>6</td>
+            <td><code>Expression.Lambda().Compile()</code></td>
+            <td>Wraps the tree into a lambda shape and JIT-compiles it to native code</td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="callout callout-english">
+    <code>Expression.Lambda&lt;Func&lt;object, object?&gt;&gt;(castToObject, param).Compile()</code>
+    reads as: "Build a function that takes an <code>object</code> and returns an <code>object?</code>,
+    with this body, then compile it to native code."
+</div>
+
+<p>
+    After <code>.Compile()</code>, the result is a <code>Func&lt;object, object?&gt;</code> — a normal
+    delegate you can call like any other function. It runs at the same speed as if you'd written
+    <code>return (object)((Article)obj).Code;</code> by hand.
+</p>
+
+<!-- ============================================================ -->
+<h2>4. Building a Setter Expression</h2>
+
+<p>
+    A setter needs <strong>two parameters</strong> (the object and the value to set) and uses
+    <code>Expression.Assign</code> to write the property:
+</p>
+
+<pre><code><span class="keyword">private static</span> <span class="type">Action</span>&lt;<span class="keyword">object</span>, <span class="keyword">object</span>?&gt;? <span class="method">CreateSetter</span>((<span class="type">Type</span> <span class="param">type</span>, <span class="keyword">string</span> <span class="param">propertyName</span>) <span class="param">key</span>)
+{
+    <span class="keyword">var</span> <span class="param">property</span> = <span class="param">key</span>.<span class="param">type</span>.<span class="method">GetProperty</span>(
+        <span class="param">key</span>.<span class="param">propertyName</span>,
+        <span class="type">BindingFlags</span>.Public | <span class="type">BindingFlags</span>.Instance);
+
+    <span class="keyword">if</span> (<span class="param">property</span> == <span class="keyword">null</span> || !<span class="param">property</span>.CanWrite) <span class="keyword">return null</span>;
+
+    <span class="comment">// Two parameters: the object and the value</span>
+    <span class="keyword">var</span> <span class="param">objParam</span> = <span class="type">Expression</span>.<span class="method">Parameter</span>(<span class="keyword">typeof</span>(<span class="keyword">object</span>), <span class="string">"obj"</span>);
+    <span class="keyword">var</span> <span class="param">valueParam</span> = <span class="type">Expression</span>.<span class="method">Parameter</span>(<span class="keyword">typeof</span>(<span class="keyword">object</span>), <span class="string">"value"</span>);
+
+    <span class="comment">// Cast object to entity type</span>
+    <span class="keyword">var</span> <span class="param">castToEntity</span> = <span class="type">Expression</span>.<span class="method">Convert</span>(<span class="param">objParam</span>, <span class="param">key</span>.<span class="param">type</span>);
+
+    <span class="comment">// Access the property on the cast entity</span>
+    <span class="keyword">var</span> <span class="param">propertyAccess</span> = <span class="type">Expression</span>.<span class="method">Property</span>(<span class="param">castToEntity</span>, <span class="param">property</span>);
+
+    <span class="comment">// Cast the incoming value to the property's actual type</span>
+    <span class="keyword">var</span> <span class="param">castValue</span> = <span class="type">Expression</span>.<span class="method">Convert</span>(<span class="param">valueParam</span>, <span class="param">property</span>.PropertyType);
+
+    <span class="comment">// Assign: ((Article)obj).Code = (string)value</span>
+    <span class="keyword">var</span> <span class="param">assign</span> = <span class="type">Expression</span>.<span class="method">Assign</span>(<span class="param">propertyAccess</span>, <span class="param">castValue</span>);
+
+    <span class="keyword">return</span> <span class="type">Expression</span>.<span class="method">Lambda</span>&lt;<span class="type">Action</span>&lt;<span class="keyword">object</span>, <span class="keyword">object</span>?&gt;&gt;(
+        <span class="param">assign</span>, <span class="param">objParam</span>, <span class="param">valueParam</span>).<span class="method">Compile</span>();
+}</code></pre>
+
+<h3>Setter Tree Visualization</h3>
+
+<div class="diagram">
+  Lambda  Action&lt;object, object?&gt;
+  └── Assign
+      ├── Property Access  (.Code)         ← left side of assignment
+      │   └── Convert  (to Article)
+      │       └── Parameter  (obj: object)
+      └── Convert  (to string)             ← right side, cast value to property type
+          └── Parameter  (value: object)
+</div>
+
+<p>
+    Note the extra pieces compared to the getter: a second parameter (<code>value</code>),
+    <code>Expression.Assign</code> for the write operation, and a <code>Convert</code> that casts
+    the incoming <code>object</code> to the property's actual type (e.g., <code>string</code>,
+    <code>int</code>, <code>decimal</code>).
+</p>
+
+<!-- ============================================================ -->
+<h2>5. Caching — The Key to Performance</h2>
+
+<p>
+    The <code>.Compile()</code> call is the expensive part — it invokes the JIT compiler to generate
+    native machine code. This takes <strong>microseconds</strong>. But it only needs to happen
+    <strong>once per (Type, PropertyName) pair</strong>. After that, every call to the resulting
+    delegate is <strong>nanoseconds</strong>.
+</p>
+
+<p>
+    We use <code>ConcurrentDictionary</code> (thread-safe, lock-free reads) to cache the compiled delegates:
+</p>
+
+<pre><code><span class="keyword">private static readonly</span> <span class="type">ConcurrentDictionary</span>&lt;(<span class="type">Type</span>, <span class="keyword">string</span>), <span class="type">Func</span>&lt;<span class="keyword">object</span>, <span class="keyword">object</span>?&gt;&gt; <span class="param">Getters</span> = <span class="keyword">new</span>();
+<span class="keyword">private static readonly</span> <span class="type">ConcurrentDictionary</span>&lt;(<span class="type">Type</span>, <span class="keyword">string</span>), <span class="type">Action</span>&lt;<span class="keyword">object</span>, <span class="keyword">object</span>?&gt;&gt; <span class="param">Setters</span> = <span class="keyword">new</span>();
+
+<span class="keyword">public static</span> <span class="type">T</span>? <span class="method">GetValue</span>&lt;<span class="type">T</span>&gt;(<span class="keyword">object</span> <span class="param">entity</span>, <span class="keyword">string</span> <span class="param">propertyName</span>)
+{
+    <span class="keyword">var</span> <span class="param">key</span> = (<span class="param">entity</span>.<span class="method">GetType</span>(), <span class="param">propertyName</span>);
+
+    <span class="comment">// GetOrAdd: compile once, reuse forever</span>
+    <span class="keyword">var</span> <span class="param">getter</span> = <span class="param">Getters</span>.<span class="method">GetOrAdd</span>(<span class="param">key</span>, <span class="method">CreateGetter</span>);
+
+    <span class="keyword">return</span> (<span class="type">T</span>)<span class="param">getter</span>(<span class="param">entity</span>);
+}</code></pre>
+
+<h3>The Flow Over Time</h3>
+
+<div class="diagram">
+  First call:   GetValue&lt;string&gt;(article, "Code")
+  ─────────────────────────────────────────────────
+  1. key = (Article, "Code")
+  2. Getters has no entry → calls CreateGetter()
+  3. CreateGetter builds expression tree → .Compile() → native delegate
+  4. Stores delegate in Getters[(Article, "Code")]
+  5. Calls delegate(article) → returns "ART001"
+  Time: ~50 microseconds (compilation cost)
+
+  Second call:  GetValue&lt;string&gt;(article2, "Code")
+  ─────────────────────────────────────────────────
+  1. key = (Article, "Code")
+  2. Getters already has entry → returns cached delegate
+  3. Calls delegate(article2) → returns "ART002"
+  Time: ~3 nanoseconds (just a function call)
+</div>
+
+<div class="callout callout-rule">
+    Compile once, cache forever. The <code>Expression.Compile()</code> call is the expensive part.
+    The resulting delegate is as fast as hand-written code. Never compile inside a loop — always
+    cache with <code>GetOrAdd</code>.
+</div>
+
+<!-- ============================================================ -->
+<h2>6. Real-World Usage: Config-Driven Article Field Mapping</h2>
+
+<p>
+    In our codebase, the category system has 20+ entity types (articles, entities, leads, etc.).
+    Instead of writing 20 separate services with hard-coded property access, one generic service
+    uses <strong>configuration objects</strong> that specify property names as strings.
+    <code>ReflectionCache</code> makes this fast.
+</p>
+
+<pre><code><span class="comment">// Read a property by name (from configuration)</span>
+<span class="keyword">var</span> <span class="param">code</span> = <span class="type">ReflectionCache</span>.<span class="method">GetValue</span>&lt;<span class="keyword">string</span>&gt;(<span class="param">entity</span>, <span class="param">config</span>.CodeProperty);
+<span class="keyword">var</span> <span class="param">description</span> = <span class="type">ReflectionCache</span>.<span class="method">GetValue</span>&lt;<span class="keyword">string</span>&gt;(<span class="param">entity</span>, <span class="param">config</span>.DescriptionProperty);
+
+<span class="comment">// Write a property by name</span>
+<span class="type">ReflectionCache</span>.<span class="method">SetValue</span>(<span class="param">entity</span>, <span class="param">config</span>.CodeProperty, <span class="param">newCode</span>);</code></pre>
+
+<h3>Why This Pattern Matters</h3>
+
+<p>
+    Without <code>ReflectionCache</code>, you'd need one of these unpleasant options:
+</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Approach</th>
+            <th>Downside</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>20 separate service classes</td>
+            <td>Massive code duplication, maintenance nightmare</td>
+        </tr>
+        <tr>
+            <td>Giant switch statement</td>
+            <td>Fragile, every new type requires code changes</td>
+        </tr>
+        <tr>
+            <td>Raw <code>PropertyInfo.GetValue()</code></td>
+            <td>Works, but 100x slower — bad in loops over thousands of rows</td>
+        </tr>
+        <tr>
+            <td>Compiled expressions via <code>ReflectionCache</code></td>
+            <td>One generic service, config-driven, native speed</td>
+        </tr>
+    </tbody>
+</table>
+
+<p>
+    The config object says <em>which</em> property to access. The compiled expression says <em>how</em>
+    to access it — at native speed. The generic service doesn't know or care about the specific entity type.
+</p>
+
+<!-- ============================================================ -->
+<h2>7. Expression Trees in EF Core (LINQ Translation)</h2>
+
+<p>
+    Expression trees aren't just for compiled reflection. EF Core uses them as its <strong>primary
+    mechanism for translating LINQ to SQL</strong>. When you write <code>.Where(x =&gt; x.Name == "test")</code>,
+    the compiler doesn't compile that lambda to IL — it builds an expression tree that EF Core walks
+    and converts to a SQL <code>WHERE</code> clause.
+</p>
+
+<p>
+    In our codebase, <code>CrmEntityServiceBase</code> uses expression trees for dynamic sorting:
+</p>
+
+<pre><code><span class="comment">// Base class declares an abstract expression</span>
+<span class="keyword">protected abstract</span> <span class="type">Expression</span>&lt;<span class="type">Func</span>&lt;<span class="type">TEntity</span>, <span class="keyword">object</span>&gt;&gt; <span class="method">GetSortExpression</span>(<span class="keyword">string</span> <span class="param">sortBy</span>);
+
+<span class="comment">// LeadService provides concrete implementations:</span>
+<span class="keyword">protected override</span> <span class="type">Expression</span>&lt;<span class="type">Func</span>&lt;<span class="type">Lead</span>, <span class="keyword">object</span>&gt;&gt; <span class="method">GetSortExpression</span>(<span class="keyword">string</span> <span class="param">sortBy</span>) =&gt; <span class="param">sortBy</span> <span class="keyword">switch</span>
+{
+    <span class="string">"Nome"</span>    =&gt; <span class="param">l</span> =&gt; <span class="param">l</span>.Nome,
+    <span class="string">"Codigo"</span>  =&gt; <span class="param">l</span> =&gt; <span class="param">l</span>.Codigo,
+    <span class="string">"Status"</span>  =&gt; <span class="param">l</span> =&gt; <span class="param">l</span>.Status,
+    _         =&gt; <span class="param">l</span> =&gt; <span class="param">l</span>.CreatedAt
+};
+
+<span class="comment">// Used in the base class:</span>
+<span class="keyword">var</span> <span class="param">sortExpr</span> = <span class="method">GetSortExpression</span>(<span class="param">sortBy</span>);
+<span class="keyword">var</span> <span class="param">query</span> = <span class="param">ascending</span>
+    ? <span class="param">query</span>.<span class="method">OrderBy</span>(<span class="param">sortExpr</span>)
+    : <span class="param">query</span>.<span class="method">OrderByDescending</span>(<span class="param">sortExpr</span>);</code></pre>
+
+<p>
+    The critical difference: these expressions are <strong>not compiled by us</strong>. They are
+    passed to EF Core, which reads the expression tree and translates it to SQL
+    <code>ORDER BY Nome</code>, <code>ORDER BY Codigo</code>, etc. The expressions never execute
+    in .NET — they're instructions for the database.
+</p>
+
+<!-- ============================================================ -->
+<h2>8. Two Kinds of Expressions in .NET</h2>
+
+<p>
+    This is the single most important distinction to understand:
+</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Type</th>
+            <th>Purpose</th>
+            <th>Who Compiles?</th>
+            <th>Example</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code>Expression&lt;Func&lt;T, R&gt;&gt;</code></td>
+            <td>Data (inspectable tree)</td>
+            <td>EF Core translates to SQL</td>
+            <td><code>.Where(x =&gt; x.Name == "test")</code></td>
+        </tr>
+        <tr>
+            <td><code>Func&lt;T, R&gt;</code></td>
+            <td>Code (already compiled)</td>
+            <td>.NET JIT (already done)</td>
+            <td><code>getter = expr.Compile()</code></td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="callout callout-warning">
+    <code>Expression&lt;Func&lt;T, R&gt;&gt;</code> is NOT the same as <code>Func&lt;T, R&gt;</code>.
+    The <code>Expression</code> version is data that can be inspected (by EF Core to generate SQL).
+    The <code>Func</code> version is already machine code and can only be executed. If you pass a
+    <code>Func</code> to EF Core's <code>.Where()</code>, it will pull the entire table into memory
+    and filter in C# — catastrophic for performance.
+</div>
+
+<h3>The Key Insight</h3>
+
+<p>
+    <code>Expression&lt;Func&lt;&gt;&gt;</code> can be <strong>compiled</strong> (turned into a <code>Func</code>)
+    OR <strong>translated</strong> (turned into SQL). <code>Func&lt;&gt;</code> is already compiled and
+    can only be <strong>executed</strong>.
+</p>
+
+<div class="diagram">
+                       Expression&lt;Func&lt;T, R&gt;&gt;
+                      (data — a tree of nodes)
+                           /              \
+                          /                \
+                   .Compile()          EF Core reads it
+                        |                    |
+                  Func&lt;T, R&gt;           SQL Query
+              (native delegate)    (ORDER BY, WHERE, etc.)
+              can only execute     runs on the database
+</div>
+
+<!-- ============================================================ -->
+<h2>9. The Full ReflectionCache Class</h2>
+
+<p>
+    Here's the complete implementation with all public methods:
+</p>
+
+<pre><code><span class="keyword">using</span> System.Collections.Concurrent;
+<span class="keyword">using</span> System.Linq.Expressions;
+<span class="keyword">using</span> System.Reflection;
+
+<span class="keyword">public static class</span> <span class="type">ReflectionCache</span>
+{
+    <span class="comment">// ── Cached compiled delegates ──────────────────────────────</span>
+    <span class="keyword">private static readonly</span> <span class="type">ConcurrentDictionary</span>&lt;(<span class="type">Type</span>, <span class="keyword">string</span>), <span class="type">Func</span>&lt;<span class="keyword">object</span>, <span class="keyword">object</span>?&gt;&gt;
+        <span class="param">Getters</span> = <span class="keyword">new</span>();
+
+    <span class="keyword">private static readonly</span> <span class="type">ConcurrentDictionary</span>&lt;(<span class="type">Type</span>, <span class="keyword">string</span>), <span class="type">Action</span>&lt;<span class="keyword">object</span>, <span class="keyword">object</span>?&gt;&gt;
+        <span class="param">Setters</span> = <span class="keyword">new</span>();
+
+    <span class="keyword">private static readonly</span> <span class="type">ConcurrentDictionary</span>&lt;(<span class="type">Type</span>, <span class="keyword">string</span>), <span class="keyword">bool</span>&gt;
+        <span class="param">PropertyExists</span> = <span class="keyword">new</span>();
+
+    <span class="comment">// ── Public API ─────────────────────────────────────────────</span>
+
+    <span class="comment">/// &lt;summary&gt;Get a property value by name, with type casting.&lt;/summary&gt;</span>
+    <span class="keyword">public static</span> <span class="type">T</span>? <span class="method">GetValue</span>&lt;<span class="type">T</span>&gt;(<span class="keyword">object</span> <span class="param">entity</span>, <span class="keyword">string</span> <span class="param">propertyName</span>)
+    {
+        <span class="keyword">var</span> <span class="param">key</span> = (<span class="param">entity</span>.<span class="method">GetType</span>(), <span class="param">propertyName</span>);
+        <span class="keyword">var</span> <span class="param">getter</span> = <span class="param">Getters</span>.<span class="method">GetOrAdd</span>(<span class="param">key</span>, <span class="method">CreateGetter</span>);
+        <span class="keyword">if</span> (<span class="param">getter</span> == <span class="keyword">null</span>) <span class="keyword">return default</span>;
+
+        <span class="keyword">var</span> <span class="param">result</span> = <span class="param">getter</span>(<span class="param">entity</span>);
+        <span class="keyword">return</span> <span class="param">result</span> <span class="keyword">is</span> <span class="type">T</span> <span class="param">typed</span> ? <span class="param">typed</span> : <span class="keyword">default</span>;
+    }
+
+    <span class="comment">/// &lt;summary&gt;Get a property value as object (no casting).&lt;/summary&gt;</span>
+    <span class="keyword">public static</span> <span class="keyword">object</span>? <span class="method">GetValue</span>(<span class="keyword">object</span> <span class="param">entity</span>, <span class="keyword">string</span> <span class="param">propertyName</span>)
+    {
+        <span class="keyword">var</span> <span class="param">key</span> = (<span class="param">entity</span>.<span class="method">GetType</span>(), <span class="param">propertyName</span>);
+        <span class="keyword">var</span> <span class="param">getter</span> = <span class="param">Getters</span>.<span class="method">GetOrAdd</span>(<span class="param">key</span>, <span class="method">CreateGetter</span>);
+
+        <span class="keyword">return</span> <span class="param">getter</span>?.Invoke(<span class="param">entity</span>);
+    }
+
+    <span class="comment">/// &lt;summary&gt;Set a property value by name.&lt;/summary&gt;</span>
+    <span class="keyword">public static void</span> <span class="method">SetValue</span>(<span class="keyword">object</span> <span class="param">entity</span>, <span class="keyword">string</span> <span class="param">propertyName</span>, <span class="keyword">object</span>? <span class="param">value</span>)
+    {
+        <span class="keyword">var</span> <span class="param">key</span> = (<span class="param">entity</span>.<span class="method">GetType</span>(), <span class="param">propertyName</span>);
+        <span class="keyword">var</span> <span class="param">setter</span> = <span class="param">Setters</span>.<span class="method">GetOrAdd</span>(<span class="param">key</span>, <span class="method">CreateSetter</span>);
+
+        <span class="param">setter</span>?.Invoke(<span class="param">entity</span>, <span class="param">value</span>);
+    }
+
+    <span class="comment">/// &lt;summary&gt;Check if a type has a given property.&lt;/summary&gt;</span>
+    <span class="keyword">public static</span> <span class="keyword">bool</span> <span class="method">HasProperty</span>(<span class="type">Type</span> <span class="param">type</span>, <span class="keyword">string</span> <span class="param">propertyName</span>)
+    {
+        <span class="keyword">return</span> <span class="param">PropertyExists</span>.<span class="method">GetOrAdd</span>(
+            (<span class="param">type</span>, <span class="param">propertyName</span>),
+            <span class="param">k</span> =&gt; <span class="param">k</span>.Item1.<span class="method">GetProperty</span>(<span class="param">k</span>.Item2,
+                <span class="type">BindingFlags</span>.Public | <span class="type">BindingFlags</span>.Instance) != <span class="keyword">null</span>);
+    }
+
+    <span class="comment">/// &lt;summary&gt;Clear all caches (useful for hot-reload or testing).&lt;/summary&gt;</span>
+    <span class="keyword">public static void</span> <span class="method">ClearCache</span>()
+    {
+        <span class="param">Getters</span>.<span class="method">Clear</span>();
+        <span class="param">Setters</span>.<span class="method">Clear</span>();
+        <span class="param">PropertyExists</span>.<span class="method">Clear</span>();
+    }
+
+    <span class="comment">// ── Private Expression Builders ─────────────────────────────</span>
+
+    <span class="keyword">private static</span> <span class="type">Func</span>&lt;<span class="keyword">object</span>, <span class="keyword">object</span>?&gt;? <span class="method">CreateGetter</span>((<span class="type">Type</span> <span class="param">type</span>, <span class="keyword">string</span> <span class="param">propertyName</span>) <span class="param">key</span>)
+    {
+        <span class="keyword">var</span> <span class="param">property</span> = <span class="param">key</span>.<span class="param">type</span>.<span class="method">GetProperty</span>(
+            <span class="param">key</span>.<span class="param">propertyName</span>,
+            <span class="type">BindingFlags</span>.Public | <span class="type">BindingFlags</span>.Instance);
+
+        <span class="keyword">if</span> (<span class="param">property</span> == <span class="keyword">null</span> || !<span class="param">property</span>.CanRead) <span class="keyword">return null</span>;
+
+        <span class="keyword">var</span> <span class="param">param</span> = <span class="type">Expression</span>.<span class="method">Parameter</span>(<span class="keyword">typeof</span>(<span class="keyword">object</span>), <span class="string">"obj"</span>);
+        <span class="keyword">var</span> <span class="param">castToEntity</span> = <span class="type">Expression</span>.<span class="method">Convert</span>(<span class="param">param</span>, <span class="param">key</span>.<span class="param">type</span>);
+        <span class="keyword">var</span> <span class="param">propertyAccess</span> = <span class="type">Expression</span>.<span class="method">Property</span>(<span class="param">castToEntity</span>, <span class="param">property</span>);
+        <span class="keyword">var</span> <span class="param">castToObject</span> = <span class="type">Expression</span>.<span class="method">Convert</span>(<span class="param">propertyAccess</span>, <span class="keyword">typeof</span>(<span class="keyword">object</span>));
+
+        <span class="keyword">return</span> <span class="type">Expression</span>.<span class="method">Lambda</span>&lt;<span class="type">Func</span>&lt;<span class="keyword">object</span>, <span class="keyword">object</span>?&gt;&gt;(
+            <span class="param">castToObject</span>, <span class="param">param</span>).<span class="method">Compile</span>();
+    }
+
+    <span class="keyword">private static</span> <span class="type">Action</span>&lt;<span class="keyword">object</span>, <span class="keyword">object</span>?&gt;? <span class="method">CreateSetter</span>((<span class="type">Type</span> <span class="param">type</span>, <span class="keyword">string</span> <span class="param">propertyName</span>) <span class="param">key</span>)
+    {
+        <span class="keyword">var</span> <span class="param">property</span> = <span class="param">key</span>.<span class="param">type</span>.<span class="method">GetProperty</span>(
+            <span class="param">key</span>.<span class="param">propertyName</span>,
+            <span class="type">BindingFlags</span>.Public | <span class="type">BindingFlags</span>.Instance);
+
+        <span class="keyword">if</span> (<span class="param">property</span> == <span class="keyword">null</span> || !<span class="param">property</span>.CanWrite) <span class="keyword">return null</span>;
+
+        <span class="keyword">var</span> <span class="param">objParam</span> = <span class="type">Expression</span>.<span class="method">Parameter</span>(<span class="keyword">typeof</span>(<span class="keyword">object</span>), <span class="string">"obj"</span>);
+        <span class="keyword">var</span> <span class="param">valueParam</span> = <span class="type">Expression</span>.<span class="method">Parameter</span>(<span class="keyword">typeof</span>(<span class="keyword">object</span>), <span class="string">"value"</span>);
+        <span class="keyword">var</span> <span class="param">castToEntity</span> = <span class="type">Expression</span>.<span class="method">Convert</span>(<span class="param">objParam</span>, <span class="param">key</span>.<span class="param">type</span>);
+        <span class="keyword">var</span> <span class="param">propertyAccess</span> = <span class="type">Expression</span>.<span class="method">Property</span>(<span class="param">castToEntity</span>, <span class="param">property</span>);
+        <span class="keyword">var</span> <span class="param">castValue</span> = <span class="type">Expression</span>.<span class="method">Convert</span>(<span class="param">valueParam</span>, <span class="param">property</span>.PropertyType);
+        <span class="keyword">var</span> <span class="param">assign</span> = <span class="type">Expression</span>.<span class="method">Assign</span>(<span class="param">propertyAccess</span>, <span class="param">castValue</span>);
+
+        <span class="keyword">return</span> <span class="type">Expression</span>.<span class="method">Lambda</span>&lt;<span class="type">Action</span>&lt;<span class="keyword">object</span>, <span class="keyword">object</span>?&gt;&gt;(
+            <span class="param">assign</span>, <span class="param">objParam</span>, <span class="param">valueParam</span>).<span class="method">Compile</span>();
+    }
+}</code></pre>
+
+<h3>Design Decisions Explained</h3>
+
+<ul>
+    <li><strong>Static class</strong> — no instance state needed; the caches are static and thread-safe</li>
+    <li><strong>Tuple key <code>(Type, string)</code></strong> — value-type key means no heap allocations for lookups</li>
+    <li><strong><code>GetOrAdd</code></strong> — atomic: if two threads race for the same key, at most one extra compilation happens (harmless)</li>
+    <li><strong>Null returns</strong> — if the property doesn't exist, we return <code>null</code> instead of throwing</li>
+    <li><strong><code>ClearCache()</code></strong> — useful for unit testing or hot-reload scenarios where types may change</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2>10. When to Use Expression Trees</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Use Case</th>
+            <th>Approach</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Known properties at compile time</td>
+            <td>Direct access (no expressions needed)</td>
+        </tr>
+        <tr>
+            <td>Config-driven property mapping</td>
+            <td><code>ReflectionCache</code> (compiled expressions)</td>
+        </tr>
+        <tr>
+            <td>Dynamic sorting in EF Core</td>
+            <td><code>Expression&lt;Func&lt;T, object&gt;&gt;</code></td>
+        </tr>
+        <tr>
+            <td>Dynamic filtering in EF Core</td>
+            <td>Build expression trees programmatically</td>
+        </tr>
+        <tr>
+            <td>One-off reflection</td>
+            <td><code>PropertyInfo</code> (not worth compiling)</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>Decision Flowchart</h3>
+
+<div class="diagram">
+  Do you know the property name at compile time?
+  ├── YES → Use direct access: entity.Code
+  └── NO → Will you access this property many times?
+           ├── YES → Use ReflectionCache (compiled expression)
+           └── NO → Is this for EF Core (LINQ query)?
+                    ├── YES → Use Expression&lt;Func&lt;T, R&gt;&gt;
+                    └── NO → Use PropertyInfo.GetValue() (one-off is fine)
+</div>
+
+<h3>Summary of the Three Layers</h3>
+
+<div class="diagram">
+  Layer 1: COMPILE TIME (fastest — no overhead)
+  ──────────────────────────────────────────────
+  var code = article.Code;
+  You know the property. The compiler generates direct access.
+
+  Layer 2: RUNTIME + COMPILED EXPRESSION (near-native speed)
+  ──────────────────────────────────────────────
+  var code = ReflectionCache.GetValue&lt;string&gt;(article, "Code");
+  You don't know the property at compile time.
+  But you compile a delegate once and cache it.
+
+  Layer 3: RUNTIME REFLECTION (slowest — 100x overhead)
+  ──────────────────────────────────────────────
+  var code = prop.GetValue(article);
+  You look up metadata and invoke through reflection every time.
+</div>
+
+<div class="callout callout-rule">
+    Compile once, cache forever. If you find yourself calling <code>PropertyInfo.GetValue()</code>
+    or <code>SetValue()</code> inside a loop, that's a signal to switch to compiled expressions.
+    The one-time compilation cost pays for itself after just a few calls.
+</div>
+
+<div class="callout callout-metaphor">
+    Think of the three layers like navigation: Layer 1 is knowing the way by heart (you live there).
+    Layer 2 is memorizing the route from a map (one-time study, then you drive from memory).
+    Layer 3 is stopping to read the map at every intersection (slow, but works for a place you'll visit once).
+</div>
+
+</body>
+</html>

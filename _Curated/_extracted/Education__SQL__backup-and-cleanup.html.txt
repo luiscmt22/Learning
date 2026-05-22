@@ -1,0 +1,527 @@
+SQL Server - Backup, Restore & Maintenance Reference
+SQL Server - Backup, Restore & Maintenance
+Reference guide for database administration operations | Last updated March 2026
+Contents
+1. Backup Databases
+2. Drop Databases
+3. Restore Databases
+4. Clone a Database (Restore as New Name)
+5. Create Empty Databases
+6. Users & Permissions
+7. Inspect & Monitor
+8. Maintenance & Housekeeping
+9. SQL Express Limitations
+10. BACKUP/RESTORE Options Cheat Sheet
+11. SQLCMD Mode & Variables
+12. Linked Servers & OPENQUERY
+13. UPSERT Patterns (UPDATE + INSERT)
+14. Idempotent Schema Changes
+15. Stored Procedures with Error Handling
+16. Data Migration & Cleanup Patterns
+1. Backup Databases safe / read-only
+Create a backup directory on the server
+EXEC master.dbo. xp_create_subdir N' C:\SqlBackups\MyBackupFolder ' ;
+Full backup (single database)
+BACKUP DATABASE [ MyDatabase ]
+TO DISK = N' C:\SqlBackups\MyDatabase.bak '
+WITH FORMAT, INIT;
+Backup multiple databases at once
+BACKUP DATABASE [ Database1 ]
+TO DISK = N' C:\SqlBackups\Database1.bak '
+WITH FORMAT, INIT;
+BACKUP DATABASE [ Database2 ]
+TO DISK = N' C:\SqlBackups\Database2.bak '
+WITH FORMAT, INIT;
+Backup with compression (Standard/Enterprise only)
+-- NOT supported on Express Edition!
+BACKUP DATABASE [ MyDatabase ]
+TO DISK = N' C:\SqlBackups\MyDatabase.bak '
+WITH FORMAT, INIT, COMPRESSION;
+Backup with a description and timestamp
+BACKUP DATABASE [ MyDatabase ]
+TO DISK = N' C:\SqlBackups\MyDatabase_20260306.bak '
+WITH FORMAT, INIT,
+NAME = N'MyDatabase - Full Backup before migration' ,
+DESCRIPTION = N'Pre-cleanup backup March 2026' ;
+Verify backups exist on disk
+EXEC master.dbo. xp_dirtree N' C:\SqlBackups ' , 1 , 1 ;
+Verify a backup is valid (without restoring)
+RESTORE VERIFYONLY FROM DISK = N' C:\SqlBackups\MyDatabase.bak ' ;
+FORMAT overwrites the backup media header (starts fresh). INIT overwrites existing backup sets. Together they ensure a clean single-backup file.
+2. Drop Databases destructive
+IRREVERSIBLE: This permanently deletes the database and its files. Always verify backups exist before dropping!
+Drop a single database (force disconnect users first)
+ALTER DATABASE [ MyDatabase ] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+DROP DATABASE [ MyDatabase ];
+Safe drop (only if exists)
+IF DB_ID ( ' MyDatabase ' ) IS NOT NULL
+BEGIN
+ALTER DATABASE [ MyDatabase ] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+DROP DATABASE [ MyDatabase ];
+PRINT 'Dropped MyDatabase' ;
+END
+ELSE
+PRINT 'MyDatabase does not exist' ;
+Confirm databases are gone
+SELECT name FROM sys.databases
+WHERE name NOT IN ( 'master' , 'tempdb' , 'model' , 'msdb' )
+ORDER BY name;
+Why SINGLE_USER? You can't drop a database while connections are active. SET SINGLE_USER WITH ROLLBACK IMMEDIATE kicks everyone out and rolls back their transactions instantly.
+3. Restore Databases overwrites if exists
+Restore a database (same name as original)
+RESTORE DATABASE [ MyDatabase ]
+FROM DISK = N' C:\SqlBackups\MyDatabase.bak '
+WITH REPLACE, RECOVERY;
+Check what's inside a backup before restoring
+-- Shows logical file names, sizes, and physical paths
+RESTORE FILELISTONLY FROM DISK = N' C:\SqlBackups\MyDatabase.bak ' ;
+-- Shows backup sets (date, type, description)
+RESTORE HEADERONLY FROM DISK = N' C:\SqlBackups\MyDatabase.bak ' ;
+REPLACE overwrites the existing database (if one exists with that name). RECOVERY makes the DB immediately usable. Without RECOVERY, the DB stays in "restoring" state (useful for applying multiple backups in sequence).
+4. Clone a Database (Restore as New Name) creates new DB
+This restores a backup into a brand new database with a different name . It's the SQL Server way of cloning/duplicating a database. The original backup is untouched.
+Step 1: Check the logical file names inside the backup
+RESTORE FILELISTONLY FROM DISK = N' C:\SqlBackups\OriginalDB.bak ' ;
+Look for: The LogicalName column. You'll typically see two rows: one for the data file (.mdf) and one for the log file (.ldf). You need these names for the MOVE clauses below.
+Step 2: Restore with MOVE to give it new file names
+-- Replace the logical names and paths from Step 1
+RESTORE DATABASE [ ClonedDB ]
+FROM DISK = N' C:\SqlBackups\OriginalDB.bak '
+WITH RECOVERY,
+MOVE N' OriginalDB_Data ' TO N' C:\SQLData\ClonedDB.mdf ' ,
+MOVE N' OriginalDB_Log ' TO N' C:\SQLData\ClonedDB_log.ldf ' ;
+Result: You now have a complete, independent copy of the original database under a new name. Changes to one don't affect the other. This is perfect for creating test environments from production backups.
+Find the default data directory (for the MOVE paths)
+SELECT
+SERVERPROPERTY ( 'InstanceDefaultDataPath' ) AS DataPath,
+SERVERPROPERTY ( 'InstanceDefaultLogPath' ) AS LogPath;
+5. Create Empty Databases
+Simple create (uses server defaults)
+CREATE DATABASE [ MyNewDatabase ];
+Create with specific file locations and sizes
+CREATE DATABASE [ MyNewDatabase ]
+ON PRIMARY (
+NAME = N' MyNewDatabase_Data ' ,
+FILENAME = N' C:\SQLData\MyNewDatabase.mdf ' ,
+SIZE = 64 MB,
+FILEGROWTH = 64 MB
+)
+LOG ON (
+NAME = N' MyNewDatabase_Log ' ,
+FILENAME = N' C:\SQLData\MyNewDatabase_log.ldf ' ,
+SIZE = 32 MB,
+FILEGROWTH = 32 MB
+);
+Create and set recovery model
+CREATE DATABASE [ MyNewDatabase ];
+ALTER DATABASE [ MyNewDatabase ] SET RECOVERY SIMPLE;
+-- SIMPLE = no log backups needed (good for dev/test)
+-- FULL = supports point-in-time recovery (good for production)
+6. Users & Permissions
+Create a SQL login
+CREATE LOGIN [ myuser ] WITH PASSWORD = N' StrongPassword123! ' ;
+Create a database user mapped to the login
+USE [ MyDatabase ];
+CREATE USER [ myuser ] FOR LOGIN [ myuser ];
+ALTER ROLE db_owner ADD MEMBER [ myuser ];
+Grant read-only access
+USE [ MyDatabase ];
+CREATE USER [ readonly_user ] FOR LOGIN [ readonly_user ];
+ALTER ROLE db_datareader ADD MEMBER [ readonly_user ];
+Common database roles
+Role Access
+db_owner Full control (DDL + DML + admin)
+db_datareader SELECT on all tables
+db_datawriter INSERT, UPDATE, DELETE on all tables
+db_ddladmin CREATE, ALTER, DROP objects
+db_backupoperator BACKUP DATABASE and BACKUP LOG
+Check who's connected to a database
+SELECT session_id, login_name, host_name, program_name, login_time
+FROM sys.dm_exec_sessions
+WHERE database_id = DB_ID ( ' MyDatabase ' );
+7. Inspect & Monitor read-only
+List all databases with details
+SELECT name, database_id, create_date, state_desc, recovery_model_desc,
+CAST (( SELECT SUM (size) * 8.0 / 1024
+FROM sys.master_files WHERE database_id = d.database_id)
+AS DECIMAL ( 10 , 2 )) AS total_size_mb
+FROM sys.databases d
+WHERE name NOT IN ( 'master' , 'tempdb' , 'model' , 'msdb' )
+ORDER BY name;
+Check table sizes in a database
+USE [ MyDatabase ];
+SELECT
+s.name + '.' + t.name AS table_name,
+p.rows AS row_count,
+CAST ( SUM (a.total_pages) * 8.0 / 1024 AS DECIMAL ( 10 , 2 )) AS total_mb
+FROM sys.tables t
+JOIN sys.schemas s ON t.schema_id = s.schema_id
+JOIN sys.indexes i ON t.object_id = i.object_id
+JOIN sys.partitions p ON i.object_id = p.object_id AND i.index_id = p.index_id
+JOIN sys.allocation_units a ON p.partition_id = a.container_id
+WHERE i.index_id 1
+GROUP BY s.name, t.name, p.rows
+ORDER BY total_mb DESC ;
+Check backup history
+SELECT database_name, type AS backup_type,
+backup_start_date, backup_finish_date,
+CAST (backup_size / 1024.0 / 1024.0 AS DECIMAL ( 10 , 2 )) AS size_mb,
+name AS backup_name
+FROM msdb.dbo.backupset
+ORDER BY backup_start_date DESC ;
+backup type: D = Full, I = Differential, L = Log
+Check server version and edition
+SELECT
+SERVERPROPERTY ( 'ProductVersion' ) AS Version,
+SERVERPROPERTY ( 'ProductLevel' ) AS PatchLevel,
+SERVERPROPERTY ( 'Edition' ) AS Edition,
+SERVERPROPERTY ( 'MachineName' ) AS MachineName,
+SERVERPROPERTY ( 'InstanceName' ) AS InstanceName;
+Kill all connections to a specific database
+DECLARE @kill VARCHAR ( 8000 ) = '' ;
+SELECT @kill = @kill + 'KILL ' + CONVERT ( VARCHAR ( 5 ), session_id) + ';'
+FROM sys.dm_exec_sessions
+WHERE database_id = DB_ID ( ' MyDatabase ' );
+EXEC (@kill);
+Find currently running queries
+SELECT r.session_id, r.status, r.command, r.wait_type,
+r.total_elapsed_time / 1000 AS elapsed_sec,
+DB_NAME (r.database_id) AS db_name,
+t.text AS query_text
+FROM sys.dm_exec_requests r
+CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) t
+WHERE r.session_id > 50
+ORDER BY r.total_elapsed_time DESC ;
+8. Maintenance & Housekeeping
+Shrink a database (reclaim unused space)
+USE [ MyDatabase ];
+DBCC SHRINKDATABASE ( MyDatabase , 10 );
+-- 10 = target percentage of free space to leave
+Use sparingly! Shrink causes index fragmentation. Only use after massive deletes or one-time cleanup. Not for regular maintenance.
+Rebuild all indexes in a database
+USE [ MyDatabase ];
+EXEC sp_MSforeachtable 'ALTER INDEX ALL ON ? REBUILD' ;
+Update statistics for all tables
+USE [ MyDatabase ];
+EXEC sp_updatestats;
+Check database integrity
+DBCC CHECKDB ( ' MyDatabase ' ) WITH NO_INFOMSGS;
+Clean up backup history (older than 30 days)
+DECLARE @cutoff DATETIME = DATEADD (DAY, - 30 , GETDATE ());
+EXEC msdb.dbo.sp_delete_backuphistory @oldest_date = @cutoff;
+Rename a database
+ALTER DATABASE [ OldName ] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+ALTER DATABASE [ OldName ] MODIFY NAME = [ NewName ];
+ALTER DATABASE [ NewName ] SET MULTI_USER;
+Note: This only changes the logical name. The physical .mdf/.ldf files keep their old names on disk. This is cosmetic but functional.
+9. SQL Server Express Limitations Express
+Feature Express Limit Standard
+Max database size 10 GB 524 PB
+Max RAM (buffer pool) 1 GB 128 GB
+CPU 1 socket / 4 cores 4 sockets / 24 cores
+Backup compression Not supported Supported
+SQL Agent (scheduled jobs) Not included Included
+Full-text search Supported Supported
+Partitioning Not supported Not supported (Enterprise only)
+Always On AG Basic AG only Basic AG
+Workaround for no SQL Agent: Use Windows Task Scheduler + sqlcmd scripts to schedule backups and maintenance on Express.
+10. BACKUP / RESTORE Options Cheat Sheet
+BACKUP options
+Option What it does
+FORMAT Writes a new media header, erases all existing backups on the media
+INIT Overwrites existing backup sets (but keeps media header unless FORMAT is used)
+NOINIT Appends to existing backup sets (default)
+COMPRESSION Compresses the backup (Standard/Enterprise only)
+COPY_ONLY Doesn't affect the backup chain (safe for ad-hoc backups)
+CHECKSUM Verifies page checksums during backup
+NAME Friendly name for the backup set
+DESCRIPTION Description text stored with the backup
+RESTORE options
+Option What it does
+RECOVERY Makes DB usable immediately (default). No more restores after this.
+NORECOVERY Keeps DB in "restoring" state for additional restores (diff/log)
+REPLACE Overwrites an existing database with the same name
+MOVE Redirect physical files to new paths (required when cloning)
+STATS = N Print progress every N percent (e.g., STATS = 10 )
+Inspect backup contents (before restoring)
+Command What it shows
+RESTORE FILELISTONLY Logical file names, sizes, paths inside the backup
+RESTORE HEADERONLY Backup set metadata (date, type, description, server)
+RESTORE VERIFYONLY Validates the backup is readable and consistent
+11. SQLCMD Mode & Variables scripting
+SQLCMD mode lets you use variables in SQL scripts, making them portable across environments. Enable it in SSMS: Query > SQLCMD Mode .
+Define variables at the top of a script
+-- These get text-replaced BEFORE SQL executes
+:setvar DestinationDB "MyProductionDB"
+:setvar SourceProcDB "IntegrationDB"
+USE [ $(DestinationDB) ]
+GO
+SELECT * FROM [ $(DestinationDB) ].[dbo].[MyTable];
+How it works: $(VariableName) is pure text substitution at parse time. It's replaced before the SQL is sent to the engine. This means variables work inside stored procedure bodies too — the literal value gets baked in at CREATE time.
+Override variables from the command line (batch files)
+:: Run a .sql file with variable overrides
+sqlcmd -S MyServer -d MyDB -U user -P pass ^
+-v DestinationDB= "ProductionDB" ^
+-v SourceProcDB= "IntegrationDB" ^
+-i "C:\Scripts\025_import.sql"
+:: Or just run a stored procedure directly
+sqlcmd -S MyServer -d MyDB -U user -P pass ^
+-Q "EXEC dbo.MyProcedure @Param = 1;"
+Typical batch file pattern
+@echo off
+set SERVER= "MyServer,14433"
+set DATABASE= IntegrationDB
+set USER= my_user
+set PASSWORD= my_password
+"C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn\sqlcmd.exe" ^
+-S %SERVER% -d %DATABASE% -U %USER% -P %PASSWORD% ^
+-Q "EXEC dbo.Proc1 @UserId = 1; EXEC dbo.Proc2 @UserId = 1;"
+exit /b %ERRORLEVEL%
+Tip: Use the full path to sqlcmd.exe instead of cd 'ing to its directory. Cleaner and avoids working directory side effects.
+12. Linked Servers & OPENQUERY cross-server
+Query data from external databases (e.g., PHC, legacy systems) via linked servers.
+Basic OPENQUERY syntax
+-- Query runs on the REMOTE server, results come back
+SELECT *
+FROM OPENQUERY ( srvphc , '
+SELECT cl.no, cl.nome, cl.clstamp
+FROM inersel.dbo.cl
+WHERE cl.inactivo = 0
+' );
+Key rule: The query string inside OPENQUERY runs on the remote server. Use the remote server's database/table names, not local ones.
+Stage remote data into a temp table
+-- Pull remote data into a local temp table for joining
+IF OBJECT_ID ( 'tempdb..#PHCClients' ) IS NOT NULL
+DROP TABLE #PHCClients;
+SELECT
+clstamp AS PHCId,
+CAST ([no] AS NVARCHAR ( 150 )) AS Code,
+nome AS Name
+INTO #PHCClients
+FROM OPENQUERY ( srvphc , '
+SELECT cl.clstamp, cl.no, cl.nome
+FROM inersel.dbo.cl
+WHERE cl.inactivo = 0
+' );
+-- Now join locally — much faster than cross-server joins
+SELECT * FROM #PHCClients WHERE Code = '210010' ;
+Pattern: Always stage into temp tables first, then join locally. Cross-server JOINs are extremely slow because the engine can't optimize across linked servers.
+Handle text columns from legacy systems
+-- Legacy 'text' type breaks RTRIM/LEN/etc. Cast first!
+SELECT
+CAST (obs AS NVARCHAR ( MAX )) AS Description
+FROM OPENQUERY ( srvphc , 'SELECT obs FROM inersel.dbo.opc' );
+Gotcha: Old databases often have text / ntext / image columns. Functions like RTRIM() , LEN() , and SUBSTRING() don't accept text . Always CAST(col AS NVARCHAR(MAX)) in the outer SELECT.
+Truncate to fit destination columns
+-- Remote data can be any length. Truncate to match your schema.
+SELECT
+LEFT ( RTRIM (descricao), 250 ) AS Name, -- Jobs.Name is NVARCHAR(250)
+LEFT (telefone, 50 ) AS ContactPhone, -- Jobs.ContactPhone is NVARCHAR(50)
+LEFT (email, 250 ) AS ContactEmail -- Jobs.ContactEmail is NVARCHAR(250)
+FROM OPENQUERY ( srvphc , 'SELECT descricao, telefone, email FROM inersel.dbo.opc' );
+Why? PHC fields are often oversized or contain concatenated data (e.g., phone + contact name in one field). Without LEFT() , you get: "String or binary data would be truncated" .
+13. UPSERT Patterns (UPDATE + INSERT) data sync
+SQL Server doesn't have a native UPSERT keyword. Use UPDATE-then-INSERT or MERGE.
+Pattern 1: UPDATE existing, then INSERT new (recommended)
+-- Step 1: Update rows that already exist (matched by Code)
+UPDATE target SET
+target.Name = source.Name,
+target.UpdatedAt = GETDATE ()
+FROM [dbo].[Clients] target
+INNER JOIN #StagedData source
+ON target.Code = source.Code COLLATE SQL_Latin1_General_CP1_CI_AI;
+-- Step 2: Insert rows that don't exist yet
+INSERT INTO [dbo].[Clients] ([Name], [Code], [IsActive], [CreatedAt])
+SELECT source.Name, source.Code, 1 , GETDATE ()
+FROM #StagedData source
+WHERE NOT EXISTS (
+SELECT 1 FROM [dbo].[Clients] c
+WHERE c.Code = source.Code COLLATE SQL_Latin1_General_CP1_CI_AI
+);
+Why this pattern? It's explicit, easy to debug, and you can capture @@ROWCOUNT separately for updates vs inserts. MERGE exists but has known bugs and is harder to read.
+Capture row counts for reporting
+UPDATE ... ;
+DECLARE @Updated INT = @@ROWCOUNT ;
+INSERT INTO ... ;
+DECLARE @Inserted INT = @@ROWCOUNT ;
+SELECT @Updated AS Updated, @Inserted AS Inserted;
+COLLATE: When matching strings from different databases or linked servers, always add COLLATE SQL_Latin1_General_CP1_CI_AI to avoid collation conflicts. CI = Case Insensitive, AI = Accent Insensitive.
+NOT EXISTS vs NOT IN
+-- BAD: NOT IN fails silently with NULLs!
+WHERE Code NOT IN ( SELECT Code FROM Targets)
+-- If any Code in Targets is NULL, the ENTIRE NOT IN returns empty!
+-- GOOD: NOT EXISTS handles NULLs correctly
+WHERE NOT EXISTS (
+SELECT 1 FROM Targets t WHERE t.Code = source.Code
+)
+NULL trap: NOT IN with a subquery that can return NULLs will return zero rows. Always prefer NOT EXISTS or guard with WHERE ISNULL(Code, '') <> '' .
+14. Idempotent Schema Changes re-runnable
+Scripts that can be run multiple times without error. Essential for migration scripts.
+Add column only if it doesn't exist
+IF NOT EXISTS (
+SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'Jobs' AND COLUMN_NAME = 'TenderType'
+)
+BEGIN
+ALTER TABLE [dbo].[Jobs] ADD [TenderType] NVARCHAR ( 100 ) NULL ;
+END
+GO
+Add column with default constraint (named)
+IF NOT EXISTS (
+SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'Clients' AND COLUMN_NAME = 'IsActive'
+)
+BEGIN
+ALTER TABLE [dbo].[Clients]
+ADD [IsActive] BIT NOT NULL
+CONSTRAINT DF_Clients_IsActive DEFAULT 1 ;
+END
+Named constraints: Always name your DEFAULT constraints ( DF_Table_Column ). Anonymous constraints get random names, making them impossible to drop later.
+Create index only if it doesn't exist
+IF NOT EXISTS (
+SELECT 1 FROM sys.indexes
+WHERE name = 'IX_Clients_Code'
+AND object_id = OBJECT_ID ( 'dbo.Clients' )
+)
+BEGIN
+CREATE UNIQUE INDEX [IX_Clients_Code] ON [dbo].[Clients] ([Code]);
+END
+Drop and recreate a stored procedure
+IF OBJECT_ID ( '[dbo].[MyProcedure]' , 'P' ) IS NOT NULL
+DROP PROCEDURE [dbo].[MyProcedure];
+GO
+CREATE PROCEDURE [dbo].[MyProcedure]
+AS
+BEGIN
+-- ...
+END
+GO
+Reset identity seed (after TRUNCATE or manual cleanup)
+-- Reset to 0 (next INSERT gets Id = 1)
+DBCC CHECKIDENT ( 'Clients' , RESEED, 0 );
+-- Or let SQL Server figure out the next value
+DBCC CHECKIDENT ( 'Clients' , RESEED);
+TRUNCATE vs DELETE: TRUNCATE TABLE auto-resets the identity seed. DELETE FROM does not — you need DBCC CHECKIDENT manually.
+15. Stored Procedures with Error Handling patterns
+Template: Transaction + TRY/CATCH
+CREATE PROCEDURE [dbo].[ MyImportProcedure ]
+@CreatedByUserId INT = NULL
+AS
+BEGIN
+SET NOCOUNT ON ;
+-- Stage external data into temp table first
+IF OBJECT_ID ( 'tempdb..#Staged' ) IS NOT NULL
+DROP TABLE #Staged;
+SELECT ...
+INTO #Staged
+FROM OPENQUERY (...);
+BEGIN TRY
+BEGIN TRANSACTION ;
+-- 1. UPDATE existing
+UPDATE ... ;
+DECLARE @Updated INT = @@ROWCOUNT ;
+-- 2. INSERT new
+INSERT INTO ... ;
+DECLARE @Inserted INT = @@ROWCOUNT ;
+COMMIT TRANSACTION ;
+-- Summary (returned as result set)
+SELECT @Updated AS Updated, @Inserted AS Inserted;
+END TRY
+BEGIN CATCH
+IF @@TRANCOUNT > 0
+ROLLBACK TRANSACTION ;
+DECLARE @Msg NVARCHAR ( 4000 ) = ERROR_MESSAGE ();
+DECLARE @Sev INT = ERROR_SEVERITY ();
+DECLARE @State INT = ERROR_STATE ();
+RAISERROR (@Msg, @Sev, @State);
+END CATCH
+-- Cleanup
+IF OBJECT_ID ( 'tempdb..#Staged' ) IS NOT NULL
+DROP TABLE #Staged;
+END
+Why this pattern? If any statement fails, the CATCH block rolls back the entire transaction — no partial data. The RAISERROR re-throws the error so the caller (SSMS, sqlcmd, app) sees it.
+Transaction count mismatch: If you see "Transaction count after EXECUTE indicates a mismatching number of BEGIN and COMMIT" , it means an error occurred inside the TRY but the CATCH didn't roll back properly, or an error happened outside the TRY/CATCH. Always check @@TRANCOUNT > 0 before rolling back.
+SET NOCOUNT ON
+SET NOCOUNT ON ;
+-- Suppresses "(X rows affected)" messages
+-- Essential in procedures! Without it, every UPDATE/INSERT
+-- sends a message that can confuse client applications
+16. Data Migration & Cleanup Patterns real-world
+Remap foreign keys (old ID → new ID)
+-- Jobs had raw PHC client numbers (e.g., 210010) as ClientId.
+-- After creating a Clients table, remap to Clients.Id.
+UPDATE j SET
+j.ClientId = c.Id
+FROM Jobs j
+INNER JOIN Clients c
+ON CAST (j.ClientId AS NVARCHAR ( 150 )) = c.Code
+WHERE j.ClientId IS NOT NULL
+AND j.ClientId <> c.Id
+-- Guard: don't remap if ClientId already points to a valid Client
+AND NOT EXISTS (
+SELECT 1 FROM Clients x WHERE x.Id = j.ClientId
+);
+The NOT EXISTS guard is crucial for idempotency. Without it, re-running the script could wrongly remap already-correct IDs (e.g., ClientId=1 matching Code='1').
+Remap by name (when IDs are lost)
+-- Recovery: ClientId was NULLed but ClientName still has data
+UPDATE j SET j.ClientId = c.Id
+FROM Jobs j
+INNER JOIN Clients c
+ON j.ClientName = c.Name COLLATE SQL_Latin1_General_CP1_CI_AI
+WHERE j.ClientId IS NULL
+AND j.ClientName IS NOT NULL ;
+Extract data from concatenated fields
+-- Old import crammed email + phone into Notes:
+-- "Email: john@example.com | Tel: 912345678"
+-- Extract email
+UPDATE j SET
+j.ContactEmail = RTRIM ( LTRIM (
+SUBSTRING (
+j.Notes,
+CHARINDEX ( 'Email:' , j.Notes) + 6 ,
+CASE
+WHEN CHARINDEX ( '|' , j.Notes, CHARINDEX ( 'Email:' , j.Notes)) > 0
+THEN CHARINDEX ( '|' , j.Notes, CHARINDEX ( 'Email:' , j.Notes))
+- CHARINDEX ( 'Email:' , j.Notes) - 6
+ELSE LEN (j.Notes)
+END
+)
+))
+FROM Jobs j
+WHERE j.ContactEmail IS NULL
+AND j.Notes LIKE '%Email:%' ;
+Pattern: CHARINDEX finds the marker, SUBSTRING extracts from there to the next delimiter ( | ) or end of string. Always RTRIM(LTRIM(...)) the result.
+Move data between columns (fix wrong mappings)
+-- Old import put tender type in Status column
+UPDATE Jobs SET
+TenderType = Status,
+Status = 'Planned'
+WHERE Status IN (
+N'Proposta' , N'Concurso Público' , N'Ajuste Direto' ,
+N'Concurso Limitado' , N'Convite' , N'Outros'
+);
+Populate a new table from existing data
+-- Create Client rows from distinct ClientId/ClientName in Jobs
+INSERT INTO Clients ([Name], [Code], [IsActive], [CreatedAt])
+SELECT
+COALESCE (j.ClientName, 'Cliente ' + CAST (j.ClientId AS NVARCHAR ( 50 ))),
+CAST (j.ClientId AS NVARCHAR ( 150 )),
+1 ,
+GETDATE ()
+FROM (
+SELECT DISTINCT ClientId, ClientName
+FROM Jobs
+WHERE ClientId IS NOT NULL
+) j
+WHERE NOT EXISTS (
+SELECT 1 FROM Clients c
+WHERE c.Code = CAST (j.ClientId AS NVARCHAR ( 150 ))
+);
+COALESCE for fallbacks: COALESCE(ClientName, 'Cliente ' + Id) ensures you always get a meaningful name, even if the original was NULL.
+Subquery in UPDATE for cross-table lookup
+-- Set ClientId by looking up from another table
+UPDATE j SET
+j.ClientId = ( SELECT TOP 1 Id FROM Clients WHERE Code = p.PHCClientNo)
+FROM Jobs j
+INNER JOIN #PHCJobs p ON j.Code = p.Code;
+TOP 1: Use SELECT TOP 1 in subqueries that should return a single value. If there's ever a duplicate, the query won't fail — it just picks one. Without TOP 1, a multi-row result causes an error.

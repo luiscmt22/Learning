@@ -1,0 +1,122 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "Learning" [ref=e4] [cursor=pointer]:
+        - /url: ../00-Index.html
+      - generic [ref=e5]: ›
+      - generic [ref=e6]: Implementations
+    - link "Master index" [ref=e8] [cursor=pointer]:
+      - /url: ../00-Index.html
+  - generic [ref=e9]:
+    - generic [ref=e10]: Implementations
+    - heading "Implementations" [level=1] [ref=e11]
+    - paragraph [ref=e12]: Real systems built and shipped — read these like full project tutorials with the why, what, and how.
+    - generic [ref=e13]:
+      - generic [ref=e14]: 13 categories
+      - generic [ref=e15]: 42 documents
+      - generic [ref=e16]: 72,569 words
+  - generic [ref=e17]:
+    - 'link "◆ Factory Floor System 10 docs Production-line tracking for a real factory A production-tracking system for a real manufacturing floor: jobs, equipment, employees, downtime, quality checks. Documented for engineers (formal spec) and managers (plain-language version), in both English and Portuguese." [ref=e18] [cursor=pointer]':
+      - /url: factory-floor/_Category.html
+      - generic [ref=e19]:
+        - generic [ref=e20]: ◆
+        - generic [ref=e21]: Factory Floor System
+        - generic [ref=e22]: 10 docs
+      - paragraph [ref=e23]: Production-line tracking for a real factory
+      - paragraph [ref=e24]: "A production-tracking system for a real manufacturing floor: jobs, equipment, employees, downtime, quality checks. Documented for engineers (formal spec) and managers (plain-language version), in both English and Portuguese."
+    - link "◆ Stock Service (BioBraga) 8 docs Decorator-cached real-time inventory A real-time inventory service with decorator-pattern caching, raw SQL functions for temporal stock, graduated cache expiration, and 2000ms→1ms cached read times. Documented in ENG and PT." [ref=e25] [cursor=pointer]:
+      - /url: stock-service/_Category.html
+      - generic [ref=e26]:
+        - generic [ref=e27]: ◆
+        - generic [ref=e28]: Stock Service (BioBraga)
+        - generic [ref=e29]: 8 docs
+      - paragraph [ref=e30]: Decorator-cached real-time inventory
+      - paragraph [ref=e31]: A real-time inventory service with decorator-pattern caching, raw SQL functions for temporal stock, graduated cache expiration, and 2000ms→1ms cached read times. Documented in ENG and PT.
+    - 'link "◆ Identity Project 7 docs Custom auth without ASP.NET Identity A custom authentication and authorization system (no ASP.NET Identity): roles, BCrypt hashing, session tokens, claims-based authorization, and the three-layer auth pattern." [ref=e32] [cursor=pointer]':
+      - /url: identity-project/_Category.html
+      - generic [ref=e33]:
+        - generic [ref=e34]: ◆
+        - generic [ref=e35]: Identity Project
+        - generic [ref=e36]: 7 docs
+      - paragraph [ref=e37]: Custom auth without ASP.NET Identity
+      - paragraph [ref=e38]: "A custom authentication and authorization system (no ASP.NET Identity): roles, BCrypt hashing, session tokens, claims-based authorization, and the three-layer auth pattern."
+    - link "◆ Scheduling Module 4 docs Generic conflict detection A scheduling module with agnostic conflict detection and a generic schedule grid that can render any time-based domain (jobs, equipment, employees, rooms…)." [ref=e39] [cursor=pointer]:
+      - /url: scheduling/_Category.html
+      - generic [ref=e40]:
+        - generic [ref=e41]: ◆
+        - generic [ref=e42]: Scheduling Module
+        - generic [ref=e43]: 4 docs
+      - paragraph [ref=e44]: Generic conflict detection
+      - paragraph [ref=e45]: A scheduling module with agnostic conflict detection and a generic schedule grid that can render any time-based domain (jobs, equipment, employees, rooms…).
+    - link "◆ Notification System 3 docs Multi-channel push pipeline A multi-channel notification system built on SignalR with a recipient-resolver pipeline (chain of responsibility) that fans out from groups, departments, sites, or roles." [ref=e46] [cursor=pointer]:
+      - /url: notification-system/_Category.html
+      - generic [ref=e47]:
+        - generic [ref=e48]: ◆
+        - generic [ref=e49]: Notification System
+        - generic [ref=e50]: 3 docs
+      - paragraph [ref=e51]: Multi-channel push pipeline
+      - paragraph [ref=e52]: A multi-channel notification system built on SignalR with a recipient-resolver pipeline (chain of responsibility) that fans out from groups, departments, sites, or roles.
+    - link "◆ Chat System 1 docs In-app real-time messaging In-app real-time chat built on SignalR with persistence — hubs, groups, presence, and message storage in EF Core." [ref=e53] [cursor=pointer]:
+      - /url: chat-system/_Category.html
+      - generic [ref=e54]:
+        - generic [ref=e55]: ◆
+        - generic [ref=e56]: Chat System
+        - generic [ref=e57]: 1 docs
+      - paragraph [ref=e58]: In-app real-time messaging
+      - paragraph [ref=e59]: In-app real-time chat built on SignalR with persistence — hubs, groups, presence, and message storage in EF Core.
+    - 'link "◆ Facial Recognition 2 docs Attendance via face matching A facial-recognition attendance system: face encoding, matching, threshold tuning, and presence verification." [ref=e60] [cursor=pointer]':
+      - /url: facial-recognition/_Category.html
+      - generic [ref=e61]:
+        - generic [ref=e62]: ◆
+        - generic [ref=e63]: Facial Recognition
+        - generic [ref=e64]: 2 docs
+      - paragraph [ref=e65]: Attendance via face matching
+      - paragraph [ref=e66]: "A facial-recognition attendance system: face encoding, matching, threshold tuning, and presence verification."
+    - link "◆ Geofencing 1 docs Location-bound check-ins Browser GPS + Haversine distance + chain-of-responsibility validators for location-bound check-ins." [ref=e67] [cursor=pointer]:
+      - /url: geofencing/_Category.html
+      - generic [ref=e68]:
+        - generic [ref=e69]: ◆
+        - generic [ref=e70]: Geofencing
+        - generic [ref=e71]: 1 docs
+      - paragraph [ref=e72]: Location-bound check-ins
+      - paragraph [ref=e73]: Browser GPS + Haversine distance + chain-of-responsibility validators for location-bound check-ins.
+    - link "◆ Feature Flags 1 docs Hierarchical runtime toggles A hierarchical feature-flag system with dependency resolution between flags." [ref=e74] [cursor=pointer]:
+      - /url: feature-flags/_Category.html
+      - generic [ref=e75]:
+        - generic [ref=e76]: ◆
+        - generic [ref=e77]: Feature Flags
+        - generic [ref=e78]: 1 docs
+      - paragraph [ref=e79]: Hierarchical runtime toggles
+      - paragraph [ref=e80]: A hierarchical feature-flag system with dependency resolution between flags.
+    - link "◆ Migration & Seeding 2 docs Database reset and bootstrap EF Core database reset + migration + seeding mechanism with environment-aware bootstrap data." [ref=e81] [cursor=pointer]:
+      - /url: migration-system/_Category.html
+      - generic [ref=e82]:
+        - generic [ref=e83]: ◆
+        - generic [ref=e84]: Migration & Seeding
+        - generic [ref=e85]: 2 docs
+      - paragraph [ref=e86]: Database reset and bootstrap
+      - paragraph [ref=e87]: EF Core database reset + migration + seeding mechanism with environment-aware bootstrap data.
+    - link "◆ Furnor Categories 1 docs Category CRUD walkthrough A \"new category\" tutorial walkthrough for the Furnor application." [ref=e88] [cursor=pointer]:
+      - /url: furnor-category-system/_Category.html
+      - generic [ref=e89]:
+        - generic [ref=e90]: ◆
+        - generic [ref=e91]: Furnor Categories
+        - generic [ref=e92]: 1 docs
+      - paragraph [ref=e93]: Category CRUD walkthrough
+      - paragraph [ref=e94]: A "new category" tutorial walkthrough for the Furnor application.
+    - link "◆ UI Demos 1 docs Standalone HTML/CSS prototypes Standalone UI/CSS/HTML demos and prototypes." [ref=e95] [cursor=pointer]:
+      - /url: ui-demos/_Category.html
+      - generic [ref=e96]:
+        - generic [ref=e97]: ◆
+        - generic [ref=e98]: UI Demos
+        - generic [ref=e99]: 1 docs
+      - paragraph [ref=e100]: Standalone HTML/CSS prototypes
+      - paragraph [ref=e101]: Standalone UI/CSS/HTML demos and prototypes.
+    - link "◆ Meta 1 docs Library metadata Meta documents that index or describe the library itself." [ref=e102] [cursor=pointer]:
+      - /url: meta-index/_Category.html
+      - generic [ref=e103]:
+        - generic [ref=e104]: ◆
+        - generic [ref=e105]: Meta
+        - generic [ref=e106]: 1 docs
+      - paragraph [ref=e107]: Library metadata
+      - paragraph [ref=e108]: Meta documents that index or describe the library itself.

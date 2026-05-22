@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>07-Facial-Recognition-Architecture</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 10-Integrations</div>
+  <h1>07-Facial-Recognition-Architecture</h1>
+  <div class="meta">Source: <code>Education/07-Facial-Recognition-Architecture.md</code> &middot; <a href="07-Facial-Recognition-Architecture.md">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<h1 id="facial-recognition-architecture">Facial Recognition Architecture</h1>
+<blockquote><strong>Level</strong>: Intermediate<br><strong>Topic</strong>: Facial Recognition System for Attendance</blockquote>
+<h2 id="overview">Overview</h2>
+<p>The HRModule facial recognition system enables employees to check-in/out using their face instead of passwords or cards. It uses a hybrid client-server architecture where:</p>
+<ul>
+<li><strong>Client (Browser)</strong>: Detects faces and extracts facial descriptors using face-api.js</li>
+<li><strong>Server (C#)</strong>: Matches descriptors against the database and records attendance</li>
+</ul>
+<h2 id="why-client-side-detection">Why Client-Side Detection?</h2>
+<p>Face detection is computationally intensive. By running it in the browser:</p>
+<ol>
+<li><strong>Reduced Server Load</strong>: Processing happens on user&#x27;s device</li>
+<li><strong>Better Performance</strong>: No video streaming to server required</li>
+<li><strong>Privacy</strong>: Raw images never leave the device</li>
+</ol>
+<h2 id="architecture-diagram">Architecture Diagram</h2>
+<div class="diagram-box"><pre>┌───────────────────────────────────────────────────────────────────────────┐
+│                            BROWSER (Client)                                │
+│                                                                            │
+│  ┌──────────────┐    ┌──────────────┐    ┌────────────────────────────┐  │
+│  │   Webcam     │───▶│  face-api.js │───▶│  128-dimensional vector   │  │
+│  │   (Video)    │    │  (ML Model)  │    │  &quot;Face Descriptor&quot;         │  │
+│  └──────────────┘    └──────────────┘    └─────────────┬──────────────┘  │
+│                                                         │                  │
+│                                                         │ JSON             │
+│                                                         ▼                  │
+│  ┌─────────────────────────────────────────────────────────────────────┐  │
+│  │                          script.js                                   │  │
+│  │  - Starts camera                                                     │  │
+│  │  - Runs face detection loop                                          │  │
+│  │  - Requires 10 consecutive face detections (anti-spoofing)          │  │
+│  │  - Calls DotNet.invokeMethodAsync() when ready                      │  │
+│  └─────────────────────────────────────────────────────────────────────┘  │
+└───────────────────────────────────────┬───────────────────────────────────┘
+                                        │
+                                        │ JSInvokable
+                                        ▼
+┌───────────────────────────────────────────────────────────────────────────┐
+│                            SERVER (C# Blazor)                              │
+│                                                                            │
+│  ┌─────────────────────────────────────────────────────────────────────┐  │
+│  │                    FacialRecognitionHelper (Static)                  │  │
+│  │  - Receives JS callbacks                                             │  │
+│  │  - Routes to specific component via instanceId                       │  │
+│  └─────────────────────────────────────────────────────────────────────┘  │
+│                                        │                                   │
+│                                        ▼                                   │
+│  ┌─────────────────────────────────────────────────────────────────────┐  │
+│  │                    FacialAttendanceComponent                         │  │
+│  │  - UI for camera preview and status                                  │  │
+│  │  - Handles mode: Identify, CheckIn, CheckOut, Break                 │  │
+│  │  - Calls orchestrator for processing                                 │  │
+│  └─────────────────────────────────────────────────────────────────────┘  │
+│                                        │                                   │
+│                                        ▼                                   │
+│  ┌─────────────────────────────────────────────────────────────────────┐  │
+│  │                    FacialAttendanceOrchestrator                      │  │
+│  │  - Coordinates between services                                      │  │
+│  │  - Discovers employee&#x27;s company database                            │  │
+│  │  - Calls FacialRecognitionService for matching                      │  │
+│  │  - Calls AttendanceService for recording                            │  │
+│  └─────────────────────────────────────────────────────────────────────┘  │
+│                                        │                                   │
+│                     ┌──────────────────┴──────────────────┐               │
+│                     ▼                                      ▼               │
+│  ┌─────────────────────────────┐    ┌─────────────────────────────────┐  │
+│  │  FacialRecognitionService   │    │     AttendanceService           │  │
+│  │  - Loads all user biomarkers│    │     - CheckIn/CheckOut          │  │
+│  │  - Compares descriptors     │    │     - Start/End Break           │  │
+│  │  - Returns best match       │    │     - Records GPS, timestamps   │  │
+│  └─────────────────────────────┘    └─────────────────────────────────┘  │
+│                     │                                      │               │
+│                     └──────────────────┬──────────────────┘               │
+│                                        ▼                                   │
+│  ┌─────────────────────────────────────────────────────────────────────┐  │
+│  │                           DATABASE                                   │  │
+│  │  CRM_UTILIZADOR.Biomarkers    │    Attendance (records)             │  │
+│  │  (JSON array of floats)       │    (CheckIn/Out times, GPS, etc)   │  │
+│  └─────────────────────────────────────────────────────────────────────┘  │
+└───────────────────────────────────────────────────────────────────────────┘</pre></div>
+<h2 id="key-components">Key Components</h2>
+<h3 id="1-face-api-js-client">1. face-api.js (Client)</h3>
+<p>JavaScript library that runs ML models in the browser:</p>
+<ul>
+<li><strong>TinyFaceDetector</strong>: Fast face detection</li>
+<li><strong>FaceLandmark68Net</strong>: Facial landmarks (eyes, nose, mouth)</li>
+<li><strong>FaceRecognitionNet</strong>: Extracts 128-dimensional descriptor</li>
+</ul>
+<p>Location: <code class="il">wwwroot/js/face/face-api.min.js</code></p>
+<h3 id="2-script-js-client">2. script.js (Client)</h3>
+<p>Custom JavaScript that orchestrates the detection flow:</p>
+<pre><code class="lang-javascript">// Detection loop
+processingInterval = setInterval(async () =&gt; {
+    const detection = await faceapi
+        .detectSingleFace(video)
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
+    if (detection &amp;&amp; detection.detection.score &gt;= 0.5) {
+        consecutiveMatches++;
+        if (consecutiveMatches &gt;= 10) {
+            // Send descriptor to server
+            await invokeHelper(&#x27;NotifyFacialIdentifyCompleteForInstance&#x27;,
+                instanceId, JSON.stringify(descriptor));
+        }
+    }
+}, 100);</code></pre>
+<p>Location: <code class="il">wwwroot/js/face/script.js</code></p>
+<h3 id="3-facialrecognitionhelper-server">3. FacialRecognitionHelper (Server)</h3>
+<p>Static class that bridges JavaScript and Blazor:</p>
+<pre><code class="lang-csharp">[<span class="type">JSInvokable</span>]
+<span class="kw">public</span> <span class="kw">static</span> <span class="kw">void</span> <span class="type">NotifyFacialIdentifyCompleteForInstance</span>(<span class="kw">string</span> instanceId, <span class="kw">string</span> descriptor)
+{
+    <span class="cmt">// Route to specific component instance</span>
+    <span class="kw">if</span> (_identifyCallbacks.<span class="type">TryGetValue</span>(instanceId, <span class="kw">out</span> <span class="kw">var</span> callback))
+    {
+        callback.<span class="type">Invoke</span>(descriptor);
+    }
+}</code></pre>
+<p>Location: <code class="il">Services/FacialRecognition/FacialRecognitionHelper.cs</code></p>
+<h3 id="4-facialattendancecomponent-server">4. FacialAttendanceComponent (Server)</h3>
+<p>Blazor component for the camera UI:</p>
+<pre><code class="lang-razor">&lt;video id=<span class="str">&quot;@_videoElementId&quot;</span> autoplay muted&gt;&lt;/video&gt;
+&lt;<span class="type">MudProgressLinear</span> <span class="type">Value</span>=<span class="str">&quot;@_progressPercentage&quot;</span> /&gt;
+&lt;<span class="type">MudAlert</span>&gt;@_statusMessage&lt;/<span class="type">MudAlert</span>&gt;</code></pre>
+<p>Location: <code class="il">Pages/HR/Attendances/Facial/Components/FacialAttendanceComponent.razor</code></p>
+<h3 id="5-facialrecognitionservice-server">5. FacialRecognitionService (Server)</h3>
+<p>Matches descriptors against the database:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="type">FacialMatchResult</span>&gt; <span class="type">IdentifyForAttendanceAsync</span>(<span class="kw">byte</span>[] descriptor)
+{
+    <span class="cmt">// Load all users with biomarkers</span>
+    <span class="kw">var</span> users = <span class="kw">await</span> context.<span class="type">CrmUtilizadors</span>
+        .<span class="type">Where</span>(u =&gt; u.<span class="type">Biomarkers</span> != <span class="kw">null</span>)
+        .<span class="type">ToListAsync</span>();
+
+    <span class="cmt">// Find best match using Euclidean distance</span>
+    <span class="kw">foreach</span> (<span class="kw">var</span> user <span class="kw">in</span> users)
+    {
+        <span class="kw">float</span> distance = <span class="type">CalculateEuclideanDistance</span>(descriptor, user.<span class="type">Biomarkers</span>);
+        <span class="kw">if</span> (distance &lt; bestDistance)
+        {
+            bestDistance = distance;
+            bestMatch = user;
+        }
+    }
+
+    <span class="cmt">// Return match if below threshold</span>
+    <span class="kw">return</span> bestDistance &lt; <span class="num">0.5f</span>
+        ? <span class="kw">new</span> <span class="type">FacialMatchResult</span> { <span class="type">IsMatch</span> = <span class="kw">true</span>, <span class="type">UserId</span> = bestMatch.<span class="type">Id</span> }
+        : <span class="kw">new</span> <span class="type">FacialMatchResult</span> { <span class="type">IsMatch</span> = <span class="kw">false</span> };
+}</code></pre>
+<p>Location: <code class="il">Services/FacialRecognition/FacialRecognitionService.cs</code></p>
+<h2 id="data-flow-check-in-example">Data Flow: Check-In Example</h2>
+<pre><code class="lang-text">1. User clicks &quot;Identificar-me&quot; button
+   ↓
+2. FacialAttendanceComponent.StartFacialCapture()
+   - Calls JS: facialRecognition.startIdentify(videoId, canvasId, instanceId)
+   ↓
+3. script.js starts camera and detection loop
+   - Detects face, extracts 128D descriptor
+   - Requires 10 consecutive detections
+   ↓
+4. JS calls DotNet.invokeMethodAsync(&#x27;NotifyFacialIdentifyCompleteForInstance&#x27;, instanceId, descriptor)
+   ↓
+5. FacialRecognitionHelper routes to component&#x27;s callback
+   ↓
+6. FacialAttendanceComponent.HandleIdentifyComplete(descriptor)
+   - Calls FacialAttendanceOrchestrator.IdentifyUserForAttendanceAsync()
+   ↓
+7. Orchestrator discovers user&#x27;s company database
+   - Calls FacialRecognitionService.IdentifyForAttendanceAsync()
+   ↓
+8. FacialRecognitionService compares descriptor against all users
+   - Finds best match with Euclidean distance
+   - Returns UserId and EmployeeId
+   ↓
+9. Component displays employee info and action buttons
+   ↓
+10. User clicks &quot;Fazer Check-In&quot;
+    - AttendanceService.CheckInAsync() records the attendance</code></pre>
+<h2 id="security-model">Security Model</h2>
+<h3 id="what-happens-client-side">What Happens Client-Side</h3>
+<ul>
+<li>Camera access</li>
+<li>Face detection (ML)</li>
+<li>Descriptor extraction</li>
+<li><strong>NO</strong> authentication decisions</li>
+</ul>
+<h3 id="what-happens-server-side">What Happens Server-Side</h3>
+<ul>
+<li>Descriptor comparison</li>
+<li>User identification</li>
+<li>Attendance recording</li>
+<li><strong>ALL</strong> authentication decisions</li>
+</ul>
+<h3 id="why-this-is-secure">Why This is Secure</h3>
+<ol>
+<li>Client only sends mathematical descriptors, not images</li>
+<li>Server validates all operations</li>
+<li>Descriptors cannot be reversed to images</li>
+<li>10 consecutive matches required (anti-spoofing)</li>
+</ol>
+<h2 id="face-descriptor-explained">Face Descriptor Explained</h2>
+<p>A face descriptor is a 128-dimensional vector of floats:</p>
+<pre><code class="lang-json">[0.12, -0.45, 0.78, 0.23, -0.11, ... (128 values)]</code></pre>
+<p>Properties:</p>
+<ul>
+<li><strong>Unique to each person</strong>: Like a fingerprint</li>
+<li><strong>Consistent</strong>: Same face produces similar descriptors</li>
+<li><strong>Compact</strong>: Only ~512 bytes per face</li>
+<li><strong>Irreversible</strong>: Cannot recreate face from descriptor</li>
+</ul>
+<h3 id="matching-algorithm">Matching Algorithm</h3>
+<pre><code class="lang-csharp"><span class="kw">float</span> <span class="type">CalculateEuclideanDistance</span>(<span class="kw">float</span>[] desc1, <span class="kw">float</span>[] desc2)
+{
+    <span class="kw">float</span> sum = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; <span class="num">128</span>; i++)
+    {
+        <span class="kw">float</span> diff = desc1[i] - desc2[i];
+        sum += diff * diff;
+    }
+    <span class="kw">return</span> <span class="type">Math</span>.<span class="type">Sqrt</span>(sum);
+}
+
+<span class="cmt">// Distance &lt; 0.5 = Same person</span>
+<span class="cmt">// Distance &gt; 0.5 = Different people</span></code></pre>
+<h2 id="kiosk-mode">Kiosk Mode</h2>
+<p>The <code class="il">FacialAttendanceKiosk.razor</code> page provides a simplified UI for shared devices:</p>
+<div class="diagram-box"><pre>┌─────────────────────────────────────┐
+│         ATTENDANCE KIOSK            │
+│                                     │
+│  ┌─────────────────────────────┐   │
+│  │                             │   │
+│  │        [Camera View]        │   │
+│  │                             │   │
+│  └─────────────────────────────┘   │
+│                                     │
+│  [==========] 8/10 matches         │
+│                                     │
+│  &quot;Rosto detetado! A verificar...&quot;  │
+│                                     │
+└─────────────────────────────────────┘</pre></div>
+<p>After identification:</p>
+<div class="diagram-box"><pre>┌─────────────────────────────────────┐
+│           Bem-vindo!                │
+│                                     │
+│       [Avatar] João Silva          │
+│       Check-in: 08:45              │
+│       Status: A trabalhar          │
+│                                     │
+│  ┌──────────┐  ┌──────────────┐   │
+│  │  Pausa   │  │  Check-Out   │   │
+│  └──────────┘  └──────────────┘   │
+│                                     │
+│       [Nova Identificação]          │
+└─────────────────────────────────────┘</pre></div>
+<h2 id="related-files">Related Files</h2>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>File</th>
+<th>Purpose</th>
+</tr></thead><tbody>
+<tr>
+<td><a href="../../Services/FacialRecognition/FacialRecognitionHelper.cs" target="_blank">FacialRecognitionHelper.cs</a></td>
+<td>JS/Blazor bridge</td>
+</tr>
+<tr>
+<td><a href="../../Services/FacialRecognition/FacialRecognitionService.cs" target="_blank">FacialRecognitionService.cs</a></td>
+<td>Matching logic</td>
+</tr>
+<tr>
+<td><a href="../../Services/Orchestration/FacialAttendanceOrchestrator.cs" target="_blank">FacialAttendanceOrchestrator.cs</a></td>
+<td>Coordination</td>
+</tr>
+<tr>
+<td><a href="../../Pages/HR/Attendances/Facial/Components/FacialAttendanceComponent.razor" target="_blank">FacialAttendanceComponent.razor</a></td>
+<td>Camera UI</td>
+</tr>
+<tr>
+<td><a href="../../Pages/HR/Attendances/Facial/FacialAttendanceKiosk.razor" target="_blank">FacialAttendanceKiosk.razor</a></td>
+<td>Kiosk page</td>
+</tr>
+<tr>
+<td><a href="../../wwwroot/js/face/script.js" target="_blank">script.js</a></td>
+<td>JS detection</td>
+</tr>
+<tr>
+<td><a href="../../wwwroot/js/face/face-api.min.js" target="_blank">face-api.min.js</a></td>
+<td>ML library</td>
+</tr>
+</tbody></table></div>
+<h2 id="configuration">Configuration</h2>
+<p>In <code class="il">appsettings.json</code>:</p>
+<pre><code class="lang-json">{
+  &quot;FacialRecognition&quot;: {
+    &quot;MatchingThreshold&quot;: 0.5
+  }
+}</code></pre>
+<ul>
+<li><strong>MatchingThreshold</strong>: Euclidean distance threshold (lower = stricter)</li>
+<li>0.4 = Very strict (fewer false positives, more false negatives)</li>
+<li>0.5 = Balanced (recommended)</li>
+<li>0.6 = Lenient (more false positives, fewer false negatives)</li>
+</ul>
+</div>
+</body>
+</html>

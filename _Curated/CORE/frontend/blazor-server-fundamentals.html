@@ -1,0 +1,1813 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Blazor Server For Dummies</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #07090f;
+  --bg-1: #0c111c;
+  --bg-2: #11182a;
+  --bg-3: #1a2238;
+  --bg-4: #232e4a;
+  --border: #1e2840;
+  --border-2: #2a3551;
+  --border-3: #3a4870;
+  --text: #e9eef8;
+  --text-dim: #94a3bf;
+  --text-mut: #5f6b86;
+  --accent: #6aa6ff;
+  --accent-strong: #3b82f6;
+  --accent-2: #b86aff;
+  --accent-3: #f472b6;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+  --info: #38bdf8;
+  --code-bg: #0a1020;
+  --code-border: #1a2340;
+  --shadow: 0 8px 32px rgba(0,0,0,0.55);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.35);
+  --shadow-glow: 0 0 0 1px rgba(106,166,255,0.18), 0 12px 40px rgba(106,166,255,0.10);
+}
+
+/* Doc-type theming */
+[data-doc-type="core-concept"] {
+  --doc-accent: #6aa6ff;
+  --doc-accent-rgb: 106,166,255;
+  --doc-eyebrow: "Concept";
+}
+[data-doc-type="applied-implementation"] {
+  --doc-accent: #b86aff;
+  --doc-accent-rgb: 184,106,255;
+  --doc-eyebrow: "Implementation";
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font: 16px/1.7 -apple-system, "Inter", \'Segoe UI\', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+::selection { background: rgba(106,166,255,0.30); }
+
+/* ═══ Top bar ═══════════════════════════════════════════════════════ */
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(7,9,15,0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 28px;
+  display: flex; align-items: center; gap: 16px;
+}
+.topbar .crumbs {
+  flex: 1; font-size: 13px; color: var(--text-dim);
+  display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden;
+}
+.topbar .crumbs span.sep { color: var(--text-mut); }
+.topbar .crumbs .current {
+  color: var(--text); font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.topbar .crumbs a { color: var(--text-dim); text-decoration: none; }
+.topbar .crumbs a:hover { color: var(--accent); }
+.topbar .actions { display: flex; gap: 6px; flex-shrink: 0; }
+.topbar .action {
+  font-size: 13px; padding: 6px 14px; border-radius: 8px;
+  color: var(--text-dim); text-decoration: none;
+  border: 1px solid transparent; transition: all .15s;
+}
+.topbar .action:hover {
+  color: var(--text); background: var(--bg-2); border-color: var(--border);
+  text-decoration: none;
+}
+
+/* ═══ Document layout ═══════════════════════════════════════════════ */
+.layout {
+  display: grid; grid-template-columns: 280px 1fr;
+  max-width: 1380px; margin: 0 auto; align-items: start;
+}
+.layout.no-toc { grid-template-columns: 1fr; max-width: 940px; }
+
+.toc-sidebar {
+  position: sticky; top: 70px;
+  align-self: start;
+  max-height: calc(100vh - 90px);
+  overflow-y: auto;
+  padding: 40px 8px 40px 28px;
+  border-right: 1px solid var(--border);
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+.toc-sidebar::-webkit-scrollbar { width: 6px; }
+.toc-sidebar::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
+.toc-sidebar h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px; padding-left: 14px; font-weight: 600;
+}
+.toc-sidebar ol { list-style: none; margin: 0; padding: 0; }
+.toc-sidebar li { margin: 0; }
+.toc-sidebar a {
+  display: block;
+  padding: 5px 14px;
+  border-left: 2px solid transparent;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 13px;
+  line-height: 1.5;
+  transition: all .15s;
+  word-break: break-word;
+}
+.toc-sidebar a:hover {
+  color: var(--text); border-left-color: var(--border-2); text-decoration: none;
+}
+.toc-sidebar a.active {
+  color: var(--doc-accent, var(--accent));
+  border-left-color: var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.07);
+}
+.toc-sidebar .lvl-3 a { padding-left: 28px; font-size: 12.5px; }
+.toc-sidebar .lvl-4 a, .toc-sidebar .lvl-5 a, .toc-sidebar .lvl-6 a {
+  padding-left: 42px; font-size: 12px;
+}
+
+.content { padding: 40px 64px 120px; min-width: 0; }
+
+/* ═══ Hero (per-doc) ════════════════════════════════════════════════ */
+.doc-hero {
+  position: relative;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 32px;
+  margin-bottom: 36px;
+}
+.doc-hero::before {
+  content: ''; position: absolute;
+  top: -40px; left: -64px; right: -64px; height: 220px;
+  background: radial-gradient(ellipse 60% 100% at 0% 0%, rgba(var(--doc-accent-rgb, 106,166,255),0.10), transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+.doc-hero > * { position: relative; z-index: 1; }
+.doc-hero .eyebrow {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  color: var(--doc-accent, var(--accent)); font-weight: 600;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.doc-hero .eyebrow .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--doc-accent, var(--accent));
+  box-shadow: 0 0 8px var(--doc-accent, var(--accent));
+}
+.doc-hero h1 {
+  font-size: 40px; line-height: 1.1;
+  margin: 12px 0 16px;
+  font-weight: 700; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.doc-hero .one-liner {
+  font-size: 18px; line-height: 1.55;
+  color: var(--text-dim);
+  margin: 0 0 20px;
+  max-width: 70ch;
+}
+.doc-hero .meta-row {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  font-size: 12.5px;
+}
+.meta-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--bg-2); border: 1px solid var(--border);
+  padding: 5px 12px; border-radius: 14px;
+  font-size: 12px; color: var(--text-dim);
+}
+.meta-pill .num { color: var(--text); font-weight: 600; font-feature-settings: "tnum"; }
+.meta-pill.fmt-md   { color: #6aa6ff; border-color: rgba(106,166,255,0.30); background: rgba(106,166,255,0.06); }
+.meta-pill.fmt-pdf  { color: #f87171; border-color: rgba(248,113,113,0.30); background: rgba(248,113,113,0.06); }
+.meta-pill.fmt-docx { color: #38bdf8; border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.fmt-html { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.fmt-htm  { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.complexity-beginner    { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.06); }
+.meta-pill.complexity-intermediate { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.complexity-advanced     { color: #fb923c; border-color: rgba(251,146,60,0.30); background: rgba(251,146,60,0.06); }
+.meta-pill.complexity-unknown      { color: var(--text-mut); }
+.meta-pill.source code { background: transparent; padding: 0; border: 0; font-size: 11px; color: var(--text-dim); }
+
+/* ═══ Curation panels ═══════════════════════════════════════════════ */
+
+.curation {
+  margin-bottom: 36px;
+}
+
+.intro-hook {
+  font-size: 18px;
+  line-height: 1.65;
+  color: var(--text);
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  padding: 8px 0 8px 20px;
+  margin: 0 0 28px;
+  font-style: italic;
+  font-weight: 350;
+}
+
+.exec-summary {
+  background: linear-gradient(135deg, rgba(var(--doc-accent-rgb, 106,166,255),0.07), rgba(var(--doc-accent-rgb, 106,166,255),0.02));
+  border: 1px solid rgba(var(--doc-accent-rgb, 106,166,255),0.20);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 0 0 24px;
+}
+.exec-summary h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent, var(--accent));
+  font-weight: 600;
+}
+.exec-summary p {
+  margin: 0; font-size: 15px; line-height: 1.65; color: var(--text);
+}
+
+.metaphor-callout {
+  display: flex; gap: 14px; align-items: flex-start;
+  background: rgba(184,106,255,0.06);
+  border: 1px solid rgba(184,106,255,0.25);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 0 0 24px;
+}
+.metaphor-callout .icon {
+  font-size: 22px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 4px rgba(184,106,255,0.4));
+}
+.metaphor-callout .body {
+  flex: 1; font-size: 14.5px; line-height: 1.6;
+  color: var(--text);
+}
+.metaphor-callout .body .label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--accent-2); font-weight: 700;
+  display: block; margin-bottom: 4px;
+}
+
+.tutorial-structure {
+  display: grid; grid-template-columns: 1fr; gap: 14px;
+  margin: 0 0 28px;
+}
+.tutorial-section {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--doc-accent);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+}
+.tutorial-section h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent);
+  font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.tutorial-section h3 .num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--doc-accent); color: var(--bg);
+  font-size: 10px; font-weight: 700;
+}
+.tutorial-section p {
+  margin: 0; font-size: 14.5px; line-height: 1.65; color: var(--text);
+}
+
+.context-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin: 0 0 28px;
+}
+.context-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.context-card h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut);
+  font-weight: 600;
+}
+.context-card ul {
+  margin: 0; padding: 0; list-style: none;
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.context-card li {
+  background: var(--bg-3);
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--text-dim);
+  border: 1px solid var(--border-2);
+}
+.context-card.prereqs li { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.05); }
+.context-card.builds li { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.05); }
+.context-card.concepts li { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.05); }
+
+.takeaways {
+  background: linear-gradient(135deg, rgba(74,222,128,0.05), rgba(74,222,128,0.01));
+  border: 1px solid rgba(74,222,128,0.20);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin: 36px 0 0;
+}
+.takeaways h3 {
+  margin: 0 0 10px;
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--ok); font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.takeaways h3::before {
+  content: '✓';
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(74,222,128,0.18);
+  font-size: 12px; font-weight: 700;
+}
+.takeaways ul { margin: 0; padding-left: 22px; }
+.takeaways li {
+  font-size: 14.5px; line-height: 1.6; color: var(--text);
+  margin: 6px 0;
+}
+
+/* ═══ Article body ══════════════════════════════════════════════════ */
+article { font-size: 16px; line-height: 1.78; color: var(--text); max-width: 78ch; }
+article > * + * { margin-top: 1.0em; }
+article p { margin: 0; }
+article h1, article h2, article h3, article h4 {
+  font-weight: 650; letter-spacing: -0.01em; color: var(--text);
+  scroll-margin-top: 90px; position: relative;
+}
+article h1 { font-size: 28px; margin-top: 56px; }
+article h2 {
+  font-size: 24px; margin-top: 56px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+article h3 { font-size: 19px; margin-top: 36px; }
+article h4 { font-size: 16.5px; margin-top: 24px; color: var(--text-dim); }
+article h2::before, article h3::before {
+  content: '#'; position: absolute; left: -28px;
+  color: var(--text-mut); font-weight: 400;
+  opacity: 0; transition: opacity .15s;
+}
+article h2:hover::before, article h3:hover::before { opacity: 1; }
+
+article ul, article ol { padding-left: 1.5em; margin: 0; }
+article li { margin: .35em 0; }
+article li > p { margin: 0; }
+
+article hr {
+  border: 0; height: 1px; background: var(--border); margin: 36px 0;
+}
+
+article blockquote {
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.05);
+  padding: 14px 18px;
+  margin: 22px 0;
+  border-radius: 0 8px 8px 0;
+  color: var(--text-dim);
+}
+article blockquote p { margin: 0; }
+
+article pre {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-size: 13.5px;
+  line-height: 1.65;
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+article pre::-webkit-scrollbar { height: 7px; }
+article pre::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+article code, article pre {
+  font-family: "JetBrains Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+  font-feature-settings: "calt" 1;
+}
+article code.il {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  padding: 1px 7px; border-radius: 5px;
+  font-size: 0.88em;
+  color: var(--accent);
+}
+.code-block { position: relative; }
+.code-block .copy-btn {
+  position: absolute; top: 8px; right: 8px;
+  background: var(--bg-3); border: 1px solid var(--border);
+  color: var(--text-dim); padding: 4px 11px; border-radius: 5px;
+  font-size: 11px; font-family: inherit; cursor: pointer;
+  opacity: 0; transition: all .15s;
+}
+.code-block:hover .copy-btn { opacity: 1; }
+.code-block .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+.code-block .copy-btn.copied { color: var(--ok); border-color: var(--ok); }
+
+article pre .kw   { color: #c084fc; font-weight: 500; }
+article pre .type { color: #67e8f9; }
+article pre .str  { color: #fcd34d; }
+article pre .num  { color: #fb923c; }
+article pre .cmt  { color: #6b7d99; font-style: italic; }
+
+article .tbl-wrap {
+  overflow-x: auto; margin: 22px 0;
+  border-radius: 10px; border: 1px solid var(--border);
+}
+article table { border-collapse: collapse; width: 100%; font-size: 14px; }
+article th {
+  background: var(--bg-3); padding: 11px 14px; text-align: left;
+  font-weight: 600; color: var(--text);
+  border-bottom: 1px solid var(--border-2);
+}
+article td {
+  padding: 11px 14px; border-top: 1px solid var(--border); vertical-align: top;
+}
+article tr:nth-child(even) td { background: rgba(255,255,255,0.013); }
+
+article .diagram-box {
+  background: linear-gradient(135deg, #1c2540 0%, #0e1424 100%);
+  border: 1px solid var(--border-2);
+  border-radius: 12px;
+  padding: 22px 26px;
+  margin: 24px 0;
+  box-shadow: var(--shadow);
+}
+article .diagram-box pre {
+  background: transparent; border: 0; padding: 0;
+  color: #e8edf5; font-size: 13px; line-height: 1.55;
+}
+
+article .img-ref {
+  display: inline-block;
+  background: var(--bg-2); color: var(--text-mut);
+  padding: 1px 8px; border-radius: 4px;
+  font-size: 11px; font-style: normal;
+  border: 1px dashed var(--border-2);
+}
+
+/* ═══ Duplicate banners ═════════════════════════════════════════════ */
+.dup-banner {
+  background: linear-gradient(135deg, rgba(251,191,36,0.10), rgba(251,191,36,0.04));
+  border: 1px solid rgba(251,191,36,0.35);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 18px;
+  font-size: 14px; line-height: 1.55;
+  display: flex; gap: 14px; align-items: flex-start;
+}
+.dup-banner + .dup-banner { margin-top: 0; }
+.dup-banner .icon { font-size: 22px; line-height: 1.2; flex-shrink: 0; }
+.dup-banner .body { flex: 1; min-width: 0; }
+.dup-banner h4 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--warn); text-transform: uppercase; letter-spacing: 1px; }
+.dup-banner p { margin: 0; color: var(--text-dim); }
+.dup-banner ul { margin: 6px 0 0; padding-left: 22px; color: var(--text-dim); }
+.dup-banner ul li { margin: 3px 0; word-break: break-word; }
+.dup-banner code {
+  background: var(--bg-3); padding: 2px 7px; border-radius: 5px;
+  font-size: 0.92em; color: var(--text);
+}
+.dup-banner.exact {
+  border-color: rgba(248,113,113,0.40);
+  background: linear-gradient(135deg, rgba(248,113,113,0.10), rgba(248,113,113,0.04));
+}
+.dup-banner.exact h4 { color: var(--bad); }
+.dup-banner.near {
+  border-color: rgba(56,189,248,0.40);
+  background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(56,189,248,0.04));
+}
+.dup-banner.near h4 { color: var(--info); }
+.banner-stack { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+
+/* ═══ PDF page cards ════════════════════════════════════════════════ */
+.pdf-page {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin: 24px 0;
+  overflow: hidden;
+  scroll-margin-top: 90px;
+}
+.pdf-page .page-head {
+  background: var(--bg-3);
+  padding: 9px 20px;
+  font-size: 11px; font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 1.4px;
+  border-bottom: 1px solid var(--border);
+}
+.pdf-page .page-body { padding: 18px 24px 22px; }
+.pdf-page pre {
+  margin: 0; background: transparent; border: 0; padding: 0;
+  white-space: pre-wrap; word-wrap: break-word;
+  color: var(--text); font-size: 13px; line-height: 1.6;
+}
+
+.empty-note {
+  background: var(--bg-2);
+  border: 1px dashed var(--border-2);
+  border-radius: 10px;
+  padding: 18px 22px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* ═══ Cross-references + related ════════════════════════════════════ */
+.cross-refs {
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.cross-refs h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.cross-ref-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.cross-ref-list a {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: all .15s;
+}
+.cross-ref-list a:hover {
+  color: var(--text);
+  border-color: var(--doc-accent, var(--accent));
+  background: var(--bg-3);
+  text-decoration: none;
+}
+.cross-ref-list a .arrow { color: var(--doc-accent, var(--accent)); margin-right: 6px; }
+
+.related {
+  margin-top: 48px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.related h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 18px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.related-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+.related-card {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+}
+.related-card:hover {
+  border-color: var(--doc-accent, var(--accent));
+  transform: translateY(-1px);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+}
+.related-card .title {
+  font-weight: 600; font-size: 13.5px; line-height: 1.35;
+  color: var(--text);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.related-card .meta {
+  font-size: 11px; color: var(--text-mut); margin-top: 6px;
+  display: flex; gap: 8px; align-items: center;
+}
+.related-card .meta .badge {
+  padding: 1px 6px; border-radius: 3px;
+  background: var(--bg-3); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* ═══ Master index page ═════════════════════════════════════════════ */
+
+.index-hero {
+  text-align: center;
+  padding: 80px 24px 56px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.index-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 30% 0%, rgba(106,166,255,0.13), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 70% 30%, rgba(184,106,255,0.10), transparent 70%);
+  pointer-events: none;
+}
+.index-hero > * { position: relative; z-index: 1; }
+.index-hero .eyebrow {
+  color: var(--accent); font-size: 12px;
+  text-transform: uppercase; letter-spacing: 1.8px; font-weight: 600;
+}
+.index-hero h1 {
+  font-size: 56px; margin: 16px 0 12px;
+  font-weight: 750; letter-spacing: -0.025em;
+  background: linear-gradient(135deg, #6aa6ff 0%, #b86aff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.index-hero .tagline {
+  color: var(--text-dim); font-size: 18px;
+  max-width: 720px; margin: 14px auto 0; line-height: 1.6;
+}
+.search-row {
+  display: flex; gap: 12px;
+  max-width: 720px; margin: 36px auto 0;
+}
+.search-row input {
+  flex: 1;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 15px;
+  padding: 14px 22px;
+  border-radius: 14px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color .15s, box-shadow .15s;
+}
+.search-row input::placeholder { color: var(--text-mut); }
+.search-row input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(106,166,255,0.13);
+}
+
+.summary-stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  max-width: 1080px; margin: 36px auto 56px; padding: 0 24px;
+}
+.stat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  text-align: center;
+  transition: border-color .15s;
+}
+.stat-card:hover { border-color: var(--border-2); }
+.stat-card .num {
+  font-size: 32px; font-weight: 700; color: var(--accent);
+  font-feature-settings: "tnum"; line-height: 1.1;
+}
+.stat-card .lbl {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--text-mut); margin-top: 6px;
+}
+
+.split-view {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  max-width: 1320px; margin: 0 auto; padding: 0 24px 60px;
+}
+@media (max-width: 980px) {
+  .split-view { grid-template-columns: 1fr; }
+}
+
+.hub-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 32px 36px;
+  position: relative;
+  overflow: hidden;
+  transition: all .2s;
+}
+.hub-card.core::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 0% 0%, rgba(106,166,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card.applications::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 100% 0%, rgba(184,106,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card > * { position: relative; z-index: 1; }
+.hub-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.hub-card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 700;
+}
+.hub-card.core .label { color: var(--accent); }
+.hub-card.applications .label { color: var(--accent-2); }
+.hub-card h2 {
+  font-size: 32px; line-height: 1.15;
+  margin: 8px 0 12px;
+  font-weight: 700; letter-spacing: -0.02em;
+  color: var(--text);
+}
+.hub-card .desc {
+  font-size: 15px; line-height: 1.6; color: var(--text-dim);
+  margin: 0 0 24px;
+}
+.hub-card .stats {
+  display: flex; gap: 18px; margin-bottom: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-card .stats .num { color: var(--text); font-weight: 600; }
+.hub-card .cta {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 10px;
+  font-size: 13.5px; font-weight: 600;
+  text-decoration: none;
+}
+.hub-card.core .cta {
+  background: rgba(106,166,255,0.12);
+  color: var(--accent);
+  border: 1px solid rgba(106,166,255,0.30);
+}
+.hub-card.applications .cta {
+  background: rgba(184,106,255,0.12);
+  color: var(--accent-2);
+  border: 1px solid rgba(184,106,255,0.30);
+}
+.hub-card .cta:hover { text-decoration: none; transform: translateX(2px); }
+.hub-card .quick {
+  margin-top: 24px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.hub-card .quick h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut); font-weight: 600;
+}
+.hub-card .quick ul { list-style: none; margin: 0; padding: 0; }
+.hub-card .quick li { padding: 4px 0; font-size: 13px; }
+.hub-card .quick li a { color: var(--text-dim); text-decoration: none; }
+.hub-card .quick li a:hover { color: var(--text); }
+
+/* ═══ Hub page (CORE / APPLICATIONS landing) ════════════════════════ */
+
+.hub-hero {
+  padding: 64px 32px 36px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1240px; margin: 0 auto;
+}
+.hub-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 600;
+}
+.hub-hero h1 {
+  font-size: 48px; margin: 12px 0 14px;
+  font-weight: 750; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.hub-hero p {
+  color: var(--text-dim); font-size: 17px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.hub-hero .stats {
+  display: flex; gap: 22px; margin-top: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-hero .stats .num { color: var(--text); font-weight: 600; }
+
+.cat-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 18px;
+  max-width: 1280px; margin: 28px auto; padding: 0 32px 80px;
+}
+.cat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 24px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.cat-card:hover {
+  border-color: var(--border-3);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+}
+.cat-card .head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 12px;
+}
+.cat-card .head .icon {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 18px;
+  color: var(--accent);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.cat-card.app .head .icon { color: var(--accent-2); }
+.cat-card .title {
+  font-size: 18px; font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  flex: 1;
+}
+.cat-card .head .count {
+  font-size: 12px; color: var(--text-mut);
+  flex-shrink: 0;
+}
+.cat-card .tagline {
+  font-size: 13px; color: var(--accent);
+  font-weight: 500;
+  margin: 0;
+}
+.cat-card.app .tagline { color: var(--accent-2); }
+.cat-card .desc {
+  font-size: 13.5px; color: var(--text-dim);
+  line-height: 1.55;
+  margin: 4px 0 0;
+}
+
+/* ═══ Category landing (per family/domain) ══════════════════════════ */
+
+.cat-hero {
+  padding: 56px 32px 32px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1180px; margin: 0 auto;
+}
+.cat-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px; font-weight: 600;
+}
+.cat-hero h1 {
+  font-size: 42px; margin: 10px 0 14px;
+  font-weight: 700; letter-spacing: -0.02em;
+}
+.cat-hero p {
+  color: var(--text-dim); font-size: 16px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.cat-hero .stats {
+  display: flex; gap: 20px; margin-top: 22px;
+  font-size: 13px; color: var(--text-mut);
+}
+.cat-hero .stats .num { color: var(--text); font-weight: 600; }
+.cat-hero .search-row {
+  max-width: 520px; margin: 24px 0 0;
+}
+.cat-hero .search-row input { padding: 12px 18px; font-size: 14px; }
+
+.doc-cards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 14px;
+  max-width: 1180px; margin: 36px auto 96px;
+  padding: 0 32px;
+}
+.doc-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 22px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .18s;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.doc-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.doc-card.app:hover { border-color: var(--accent-2); }
+.doc-card .head {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+}
+.doc-card .title {
+  font-size: 16px; font-weight: 650; line-height: 1.3;
+  color: var(--text); flex: 1;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  letter-spacing: -0.01em;
+}
+.doc-card .badges { display: flex; gap: 4px; flex-shrink: 0; }
+.doc-card .badge {
+  font-size: 9px; padding: 2px 7px; border-radius: 3px;
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px;
+  background: var(--bg-3); color: var(--text-mut);
+}
+.doc-card .badge.dup { background: rgba(248,113,113,0.18); color: var(--bad); }
+.doc-card .badge.fmt-md { background: rgba(106,166,255,0.18); color: #6aa6ff; }
+.doc-card .badge.fmt-pdf { background: rgba(248,113,113,0.18); color: #f87171; }
+.doc-card .badge.fmt-docx { background: rgba(56,189,248,0.18); color: #38bdf8; }
+.doc-card .badge.fmt-html { background: rgba(251,191,36,0.18); color: #fbbf24; }
+.doc-card .one-liner {
+  font-size: 13.5px; color: var(--text-dim); line-height: 1.55;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  flex: 1;
+}
+.doc-card .meta {
+  display: flex; gap: 14px; font-size: 11px; color: var(--text-mut);
+  border-top: 1px solid var(--border); padding-top: 12px;
+  margin-top: auto;
+}
+.doc-card .meta .num { color: var(--text-dim); font-weight: 600; font-feature-settings: "tnum"; }
+
+/* ═══ Mobile ════════════════════════════════════════════════════════ */
+@media (max-width: 980px) {
+  .layout { grid-template-columns: 1fr; }
+  .toc-sidebar { display: none; }
+  .content { padding: 28px 24px 80px; }
+  .doc-hero h1 { font-size: 30px; }
+  .doc-hero .one-liner { font-size: 16px; }
+  .topbar { padding: 10px 18px; }
+  .index-hero h1 { font-size: 38px; }
+  .index-hero { padding: 56px 20px 36px; }
+  .hub-hero h1 { font-size: 34px; }
+  .hub-hero { padding: 40px 20px 24px; }
+  .cat-hero h1 { font-size: 32px; }
+  .cat-hero { padding: 36px 20px 24px; }
+  .doc-cards, .cat-grid { padding: 0 20px 60px; }
+  .split-view { padding: 0 20px 40px; }
+}
+</style>
+</head>
+<body data-doc-type="core-concept">
+<nav class="topbar">
+<div class="crumbs"><a href="../../00-Index.html">Learning</a><span class="sep">›</span><a href="../_Hub.html">CORE</a><span class="sep">›</span><a href="_Category.html">Blazor &amp; Frontend</a><span class="sep">›</span><span class="current">Blazor Server For Dummies</span></div>
+<div class="actions"><a class="action" href="blazor-server-fundamentals.pdf" download>↓ Download</a><a class="action" href="../../00-Index.html">All docs</a></div>
+</nav>
+<div class="layout">
+<aside class="toc-sidebar"><h3>On this page</h3><ol><li class="lvl-2"><a href="#page-1">Page 1</a></li><li class="lvl-2"><a href="#page-2">Page 2</a></li><li class="lvl-2"><a href="#page-3">Page 3</a></li><li class="lvl-2"><a href="#page-4">Page 4</a></li><li class="lvl-2"><a href="#page-5">Page 5</a></li><li class="lvl-2"><a href="#page-6">Page 6</a></li><li class="lvl-2"><a href="#page-7">Page 7</a></li><li class="lvl-2"><a href="#page-8">Page 8</a></li><li class="lvl-2"><a href="#page-9">Page 9</a></li><li class="lvl-2"><a href="#page-10">Page 10</a></li><li class="lvl-2"><a href="#page-11">Page 11</a></li><li class="lvl-2"><a href="#page-12">Page 12</a></li><li class="lvl-2"><a href="#page-13">Page 13</a></li><li class="lvl-2"><a href="#page-14">Page 14</a></li><li class="lvl-2"><a href="#page-15">Page 15</a></li><li class="lvl-2"><a href="#page-16">Page 16</a></li><li class="lvl-2"><a href="#page-17">Page 17</a></li><li class="lvl-2"><a href="#page-18">Page 18</a></li><li class="lvl-2"><a href="#page-19">Page 19</a></li><li class="lvl-2"><a href="#page-20">Page 20</a></li><li class="lvl-2"><a href="#page-21">Page 21</a></li><li class="lvl-2"><a href="#page-22">Page 22</a></li><li class="lvl-2"><a href="#page-23">Page 23</a></li></ol></aside>
+<main class="content">
+
+<header class="doc-hero">
+  <div class="eyebrow"><span class="dot"></span>Concept · Blazor &amp; Frontend</div>
+  <h1>Blazor Server For Dummies</h1>
+  <p class="one-liner">An analogy-driven beginner&#x27;s guide to 13 essential Blazor Server patterns covering base classes, EF Core configuration, ServiceResult, adapters, bulk operations, security, claims, protected storage, localization, and JS interop.</p>
+  <div class="meta-row">
+    <span class="meta-pill fmt-pdf">PDF</span>
+    <span class="meta-pill complexity-beginner">Beginner</span>
+    <span class="meta-pill"><span class="num">2,975</span> words</span>
+    <span class="meta-pill"><span class="num">15</span> min read</span>
+    <span class="meta-pill source">Source: <code>Education/Basics/Blazor_Guide_For_Dummies.pdf</code></span>
+  </div>
+</header>
+<div class="banner-stack"><div class="dup-banner near"><div class="icon">≈</div><div class="body"><h4>Near-duplicate content</h4><p>Significant text overlap (Jaccard ≥ 0.65) with — likely audience variants (ENG/PT, ForDummies/Formal) of the same source:</p><ul><li><code>Education/Basics/Blazor_Guide_For_Dummies (1).pdf</code></li></ul></div></div></div>
+<div class="curation"><p class="intro-hook">Why does every Blazor tutorial start by importing 47 ASP.NET Identity tables when all you really wanted was to know whether the logged-in user can click the delete button? This guide is the antidote — it tells you the actual mechanism (claims) and lets you build the rest yourself.</p>
+<div class="exec-summary"><h3>Executive summary</h3><p>This is the developer&#x27;s own &#x27;For Dummies&#x27; style explainer of the foundational patterns behind a Blazor Server application — written with everyday analogies (pizza shops, moving trucks, festival wristbands, sticky notes) and minimal code. It walks through three parts: Building Blocks (base entities, EF Core configs, ServiceResult, adapters, bulk ops), Security (roles, BCrypt, sessions, CSRF, claims), and Blazor-specific gotchas (ProtectedLocalStorage, localization, JS interop, prerendering pitfalls). The unifying lesson is that authentication and storage in Blazor are simpler than ASP.NET Identity tutorials make them look — you can build claims yourself.</p></div>
+<div class="metaphor-callout"><div class="icon">💡</div><div class="body"><span class="label">Metaphor</span>Learning Blazor patterns from this guide is like getting handed a chef&#x27;s notebook full of doodles instead of a textbook: every page has a sketch — a pizza shop, a wristband, a moving truck — and somewhere underneath the sketch is the recipe. You learn the ServiceResult pattern not because you memorized &#x27;discriminated union of success and failure&#x27;, but because you remember that online order tracking emails told you &#x27;Shipped!&#x27; or &#x27;Wrong address!&#x27;.</div></div>
+<div class="context-row"><div class="context-card prereqs"><h4>You should know first</h4><ul><li>C# basics</li><li>object-oriented programming</li><li>what a web app is</li></ul></div><div class="context-card concepts"><h4>Key concepts covered</h4><ul><li>base entity</li><li>ServiceResult pattern</li><li>adapter pattern</li><li>BCrypt hashing</li><li>antiforgery tokens</li><li>claims</li><li>ProtectedLocalStorage</li><li>prerendering lifecycle</li></ul></div><div class="context-card builds"><h4>Opens the door to</h4><ul><li>clean architecture</li><li>production Blazor app</li><li>authentication flows</li><li>EF Core mastery</li></ul></div></div></div>
+<article>
+<div class="pdf-page" id="page-1"><div class="page-head">Page 1</div><div class="page-body"><pre>            Blazor Server
+                                   For Dummies
+
+                         Simple explanations for complex concepts
+                         Real-world analogies you&#x27;ll actually remember
+                         Focus on the &quot;why&quot; before the &quot;how&quot;
+
+Don&#x27;t worry if you&#x27;re new to this - we all started somewhere! This guide breaks down Blazor
+patterns into bite-sized pieces.</pre></div></div>
+<div class="pdf-page" id="page-2"><div class="page-head">Page 2</div><div class="page-body"><pre>            What&#x27;s Inside
+
+Part I: Building Blocks
+
+      1. Base Classes - Don&#x27;t Repeat Yourself!
+      2. Database Setup - Teaching EF Core About Your Data
+      3. ServiceResult - How to Say &quot;It Worked!&quot; or &quot;Oops!&quot;
+      4. Adapter Pattern - The Universal Translator
+      5. Bulk Operations - Importing Data Without Falling Asleep
+
+Part II: Keeping Bad Guys Out
+
+      6. Roles &amp; Permissions - Who Can Do What
+      7. Password Security - Why &quot;password123&quot; is Terrible
+      8. Sessions - Remembering Who You Are
+      9. CSRF Protection - Stopping Sneaky Attacks
+      10. Claims - Your Digital ID Card
+
+Part III: Blazor Magic
+
+      11. Protected Storage - Your Browser&#x27;s Secret Vault
+      12. Localization - Speaking Your User&#x27;s Language
+      13. JavaScript Interop - When C# Needs JS Help
+
+Cheat Sheets</pre></div></div>
+<div class="pdf-page" id="page-3"><div class="page-head">Page 3</div><div class="page-body"><pre>                Part I: Building Blocks
+
+The foundations every Blazor app needs</pre></div></div>
+<div class="pdf-page" id="page-4"><div class="page-head">Page 4</div><div class="page-body"><pre>Chapter 1: Base Classes
+
+Don&#x27;t Repeat Yourself!
+
+                     Analogy: Imagine you run a pizza shop. Every pizza has dough,
+                     sauce, and cheese. Would you write out &quot;dough, sauce, cheese&quot; on
+                     every single order? No! You&#x27;d have a &quot;base pizza&quot; that all pizzas start
+                     from. That&#x27;s what base classes do for your code!
+
+The Problem
+
+Look at these three classes. Notice anything repetitive?
+
+public class Board
+
+{
+
+   public int Id { get; set; }        // Same!
+
+   public DateTime CreatedAt { get; set; } // Same!
+
+   public string Name { get; set; }
+
+}
+
+public class Task
+
+{
+
+   public int Id { get; set; }        // Same!
+
+   public DateTime CreatedAt { get; set; } // Same!
+
+   public string Title { get; set; }
+
+}
+
+public class User
+
+{
+
+   public int Id { get; set; }        // Same!
+
+   public DateTime CreatedAt { get; set; } // Same!
+
+   public string Email { get; set; }
+
+}
+
+We&#x27;re writing Id and CreatedAt over and over. If we have 20 classes, that&#x27;s 20 copies. What if we
+need to add UpdatedAt later? We&#x27;d have to change ALL 20 files!
+
+The Solution
+
+Create a &quot;base class&quot; with the common stuff, then have other classes inherit from it:
+
+             // The &quot;base pizza&quot; - shared by all
+             public abstract class BaseEntity
+             {
+
+                    public int Id { get; set; }
+                    public DateTime CreatedAt { get; set; }
+             }
+
+             // Now our classes are simpler!
+             public class Board : BaseEntity // Gets Id and CreatedAt for free!
+             {
+
+                    public string Name { get; set; }
+             }
+
+             public class Task : BaseEntity // Gets Id and CreatedAt for free!
+             {</pre></div></div>
+<div class="pdf-page" id="page-5"><div class="page-head">Page 5</div><div class="page-body"><pre>                    public string Title { get; set; }
+             }
+
+                     Key Point: The word abstract means &quot;you can&#x27;t create a BaseEntity
+                     directly&quot; - it only exists to be a parent for other classes. Like how
+                     &quot;pizza&quot; is a concept, but you always order a specific type (Margherita,
+                     Pepperoni, etc.).
+
+Why This Rocks
+
+     * Write once, use everywhere - Common fields defined in one place
+     * Easy changes - Add UpdatedAt to BaseEntity, ALL classes get it
+     * Consistency - Every entity has the same basic structure</pre></div></div>
+<div class="pdf-page" id="page-6"><div class="page-head">Page 6</div><div class="page-body"><pre>Chapter 2: Database Setup
+
+Teaching EF Core About Your Data
+
+                     Analogy: Entity Framework Core (EF Core) is like a builder, and your
+                     database is the house. But the builder needs blueprints! Configuration
+                     classes are those blueprints - they tell EF Core exactly how to build
+                     your database tables.
+
+The Three Ways to Configure
+
+Way 1: Annotations (Quick but Limited)
+
+             public class User
+             {
+
+                    public int Id { get; set; }
+
+   [Required]        // Can&#x27;t be empty
+
+   [MaxLength(100)]  // Max 100 characters
+
+   public string Name { get; set; }
+
+}
+
+   Easy to read                  Limited options                      Clutters your class
+
+Way 2: All in One Place (Messy)
+
+             // Everything crammed into one giant method
+             protected override void OnModelCreating(ModelBuilder m)
+             {
+
+                    // User config... 50 lines
+                    // Board config... 50 lines
+                    // Task config... 50 lines
+                    // This file becomes HUGE!
+             }
+
+               One massive file                  Hard to find things
+
+Way 3: Separate Config Files (The Good Way!)
+
+             // UserConfiguration.cs - just User stuff
+             public class UserConfiguration : IEntityTypeConfiguration&lt;User&gt;
+             {
+
+                    public void Configure(EntityTypeBuilder&lt;User&gt; builder)
+                    {
+
+                            builder.Property(u =&gt; u.Email)
+                                   .IsRequired()
+                                   .HasMaxLength(256);
+
+                            builder.HasIndex(u =&gt; u.Email)
+                                   .IsUnique(); // No duplicate emails!
+
+                    }
+             }
+
+             // In your DbContext - one magic line loads ALL configs!
+             modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);</pre></div></div>
+<div class="pdf-page" id="page-7"><div class="page-head">Page 7</div><div class="page-body"><pre>Organized  Easy to find  Clean DbContext
+
+Key Point: Think of each configuration file as a blueprint for ONE
+table. UserConfiguration = User table blueprint. BoardConfiguration =
+Board table blueprint.</pre></div></div>
+<div class="pdf-page" id="page-8"><div class="page-head">Page 8</div><div class="page-body"><pre>Chapter 3: ServiceResult Pattern
+
+How to Say &quot;It Worked!&quot; or &quot;Oops!&quot;
+
+                     Analogy: When you order something online, you don&#x27;t just get silence
+                     - you get tracking updates: &quot;Shipped!&quot;, &quot;Out for delivery!&quot;, or &quot;Couldn&#x27;t
+                     deliver - wrong address&quot;. ServiceResult is like tracking for your code
+                     operations!
+
+The Problem
+
+What if creating a user fails? How do you tell the caller what went wrong?
+
+// Bad Way 1: Return null
+public User? CreateUser(string email)
+{
+
+       if (EmailExists(email))
+              return null; // WHY did it fail? Who knows!
+
+}
+
+// Bad Way 2: Throw exceptions everywhere           // Messy!
+public User CreateUser(string email)
+{
+
+       if (EmailExists(email))
+              throw new Exception(&quot;Email exists&quot;);
+
+}
+
+The Solution
+
+Return a &quot;package&quot; that contains both the result AND any messages:
+
+public class ServiceResult&lt;T&gt;
+
+{
+
+   public bool Success { get; set; } // Did it work?
+
+   public T? Data { get; set; }  // The actual result
+
+   public string? Message { get; set; } // What happened?
+
+   public List&lt;string&gt; Errors { get; set; } = [];
+
+   // Easy ways to create results:
+   public static ServiceResult&lt;T&gt; Ok(T data) =&gt;
+
+          new() { Success = true, Data = data };
+
+       public static ServiceResult&lt;T&gt; Fail(string error) =&gt;
+              new() { Success = false, Message = error, Errors = [error] };
+
+}
+
+Using It
+
+             // In your service:
+             public ServiceResult&lt;User&gt; CreateUser(string email)
+             {
+
+                    if (EmailExists(email))
+                            return ServiceResult&lt;User&gt;.Fail(&quot;Email already exists!&quot;);
+
+   var user = new User { Email = email };
+   // save to database...</pre></div></div>
+<div class="pdf-page" id="page-9"><div class="page-head">Page 9</div><div class="page-body"><pre>       return ServiceResult&lt;User&gt;.Ok(user);
+}
+
+// In your component:
+var result = await UserService.CreateUser(email);
+
+if (result.Success)
+       ShowMessage(&quot;User created!&quot;);
+
+else
+       ShowError(result.Message); // &quot;Email already exists!&quot;
+
+           Key Point: The caller ALWAYS knows what happened. No guessing,
+           no crashes, just clear communication!</pre></div></div>
+<div class="pdf-page" id="page-10"><div class="page-head">Page 10</div><div class="page-body"><pre>Chapter 4: Adapter Pattern
+
+The Universal Translator
+
+                     Analogy: Your US phone charger won&#x27;t fit European outlets. You need
+                     an adapter! In code, when Module A speaks &quot;User&quot; but Module B
+                     speaks &quot;Employee&quot;, an adapter translates between them.
+
+The Problem
+
+You built a Learning Management System (LMS) that works with your User class. Now another
+company wants to use it, but they have Employee, not User. Rewrite everything?
+
+The Solution
+
+Define what the LMS ACTUALLY needs (an interface), then create adapters for different
+sources:
+
+// Step 1: What does LMS need? Just these basics:
+public interface ILearner
+{
+
+       int Id { get; }
+       string Name { get; }
+       string Email { get; }
+}
+
+// Step 2: Adapter for YOUR system
+public class UserAdapter : ILearner
+{
+
+       private readonly User _user;
+
+       public int Id =&gt; _user.Id;
+       public string Name =&gt; _user.UserName; // Translates UserName -&gt; Name
+       public string Email =&gt; _user.Email;
+}
+
+// Step 3: Adapter for THEIR system
+public class EmployeeAdapter : ILearner
+{
+
+       private readonly Employee _emp;
+
+   public int Id =&gt; _emp.EmployeeId;     // Different field name!
+
+   public string Name =&gt; _emp.FullName; // Different field name!
+
+   public string Email =&gt; _emp.WorkEmail; // Different field name!
+
+}
+
+Now the LMS only talks to ILearner. It doesn&#x27;t care if it&#x27;s a User, Employee, or even a Robot - as
+long as there&#x27;s an adapter!
+
+   Key Point: Adapters let you reuse code with different data sources.
+   Build once, adapt many times!</pre></div></div>
+<div class="pdf-page" id="page-11"><div class="page-head">Page 11</div><div class="page-body"><pre>Chapter 5: Bulk Operations
+
+Importing Data Without Falling Asleep
+
+                     Analogy: Would you move 1000 boxes by carrying them one at a time
+                     to your car, driving to the new house, and coming back? No! You&#x27;d
+                     load a truck with ALL the boxes and make ONE trip. Bulk operations
+                     are the moving truck for your data!
+
+The Slow Way
+
+// One trip per item = SLOW               // Trip to database #1, #2, #3... #1000!
+foreach (var item in thousandItems)
+{
+
+       context.Items.Add(item);
+       await context.SaveChangesAsync();
+}
+// Time: ~30 seconds for 100 items
+
+The Fast Way
+
+// Load the truck, one trip!
+// Install: EFCore.BulkExtensions NuGet package
+
+await context.BulkInsertAsync(thousandItems, new BulkConfig
+
+{
+
+     SetOutputIdentity = true,   // Get the new IDs back!
+
+     PreserveInsertOrder = true  // Keep items in order
+
+});
+
+// Time: ~0.5 seconds for 100 items (60x faster!)
+
+The Magic Settings
+
+   Setting                       What It Does
+   SetOutputIdentity = true      After insert, your objects have their new database IDs
+   PreserveInsertOrder = true    Items stay in the same order (item[0] is still item[0])
+
+     Warning: Always wrap bulk operations in a transaction! If something
+     fails halfway, you want to undo everything, not be left with partial data.</pre></div></div>
+<div class="pdf-page" id="page-12"><div class="page-head">Page 12</div><div class="page-body"><pre>          Part II: Keeping Bad Guys Out
+
+Security doesn&#x27;t have to be scary!</pre></div></div>
+<div class="pdf-page" id="page-13"><div class="page-head">Page 13</div><div class="page-body"><pre>Chapter 6: Roles &amp; Permissions
+
+Who Can Do What
+
+                     Analogy: In an office, the CEO can go anywhere. Managers can
+                     access their floor. Interns can only use the break room. You don&#x27;t give
+                     everyone individual keys - you give them a ROLE (CEO, Manager,
+                     Intern) and the role determines access!
+
+The Bad Way: Boolean Flags
+
+             public class User
+             {
+
+                    public bool CanCreatePosts { get; set; }
+                    public bool CanDeletePosts { get; set; }
+                    public bool CanManageUsers { get; set; }
+                    public bool CanViewReports { get; set; }
+                    // 20 more flags...
+             }
+
+Problems: 20 flags = 20 database columns. Want to give 50 users &quot;Manager&quot; access? Update 50
+records x 20 flags!
+
+The Good Way: Roles
+
+             User -&gt; has Roles -&gt; [&quot;Manager&quot;, &quot;Editor&quot;]
+             Role -&gt; has Permissions -&gt; [&quot;posts.create&quot;, &quot;posts.delete&quot;]
+
+             // To check access:
+             if (user.HasPermission(&quot;posts.delete&quot;))
+             {
+
+                    // Show delete button
+             }
+
+                     Key Point: Change permissions for the Role, and ALL users with that
+                     role are updated instantly. No need to update hundreds of user
+                     records!</pre></div></div>
+<div class="pdf-page" id="page-14"><div class="page-head">Page 14</div><div class="page-body"><pre>Chapter 7: Password Security
+
+Why &quot;password123&quot; is Terrible
+
+                     Analogy: You wouldn&#x27;t write your safe combination on a sticky note on
+                     the safe, right? Storing plain passwords is exactly that. Instead, we use
+                     a one-way transformation called &quot;hashing&quot; - like shredding a
+                     document. You can verify it matches the original, but you can&#x27;t
+                     un-shred it!
+
+The Golden Rules
+
+     * NEVER store plain passwords - Always hash them
+     * Use BCrypt - It&#x27;s intentionally SLOW (that&#x27;s good!)
+     * Salt automatically - BCrypt adds randomness so identical passwords look different
+
+How It Works
+
+             // When user CREATES password:
+             var hash = BCrypt.HashPassword(&quot;MySecret123&quot;);
+             // Stored: &quot;$2a$12$LQv3c1yqT...&quot; (unreadable gibberish)
+
+             // When user LOGS IN:
+             var isValid = BCrypt.Verify(&quot;MySecret123&quot;, storedHash);
+             // Returns true if it matches, false if not
+
+Why BCrypt is Slow (On Purpose!)
+
+Algorithm      Hashes per Second  Time to Crack
+
+MD5 (bad)      180 BILLION        ~10 hours
+
+BCrypt (good)  3                  70 million years
+
+If a hacker steals your database, they&#x27;d need 70 million years to crack BCrypt passwords. MD5?
+They&#x27;d be done by lunch.</pre></div></div>
+<div class="pdf-page" id="page-15"><div class="page-head">Page 15</div><div class="page-body"><pre>Chapter 8: Sessions
+
+Remembering Who You Are
+
+                     Analogy: At a festival, you show your ticket once to get a wristband.
+                     After that, you just flash your wristband to access areas. Sessions are
+                     digital wristbands - you log in once, get a token, and use it for all future
+                     requests!
+
+The Problem
+
+HTTP is &quot;stateless&quot; - each request is independent. The server has the memory of a goldfish!
+Without sessions, you&#x27;d need to send your password with EVERY click.
+
+The Solution: Session Tokens
+
+             1. Login -&gt; Server creates random token &quot;abc123&quot;
+                                 -&gt; Stores hash in database (never plain!)
+                                 -&gt; Sends token to browser in a cookie
+
+             2. Next request -&gt; Browser sends &quot;abc123&quot; automatically
+                                          -&gt; Server: &quot;Ah, that&#x27;s Luis! Here&#x27;s your data&quot;
+
+             3. Logout -&gt; Server marks token as invalid
+                               -&gt; Browser deletes cookie
+
+Cookie Security Settings
+
+Setting          What It Prevents
+HttpOnly         JavaScript can&#x27;t steal your cookie
+Secure           Only sent over HTTPS (encrypted)
+SameSite=Strict  Other websites can&#x27;t use your cookie</pre></div></div>
+<div class="pdf-page" id="page-16"><div class="page-head">Page 16</div><div class="page-body"><pre>Chapter 9: CSRF Protection
+
+Stopping Sneaky Attacks
+
+                     Analogy: Imagine a website pretends to be your bank, tricks you into
+                     clicking a button, and your REAL bank thinks it&#x27;s you because your
+                     cookies are automatically sent! CSRF (Cross-Site Request Forgery) is
+                     exactly this attack. Antiforgery tokens are like a secret handshake that
+                     proves the request is legit.
+
+How the Attack Works
+
+             1. You&#x27;re logged into your-bank.com (cookie saved)
+             2. You visit evil-site.com
+             3. Evil site has hidden form:
+
+                   &lt;form action=&quot;your-bank.com/transfer&quot;&gt;
+                      &lt;input name=&quot;amount&quot; value=&quot;10000&quot;&gt;
+                      &lt;input name=&quot;to&quot; value=&quot;hacker&quot;&gt;
+
+                   &lt;/form&gt;
+             4. Your browser sends your bank cookie automatically!
+             5. Bank thinks YOU made the transfer
+
+The Solution
+
+Antiforgery tokens are like a secret code that only YOUR website knows. Evil site can&#x27;t read it!
+
+             // Your real form has a secret token:
+             &lt;form method=&quot;post&quot;&gt;
+
+                    &lt;input type=&quot;hidden&quot; name=&quot;__RequestVerificationToken&quot; value=&quot;xyz789&quot;&gt;
+                    ...
+             &lt;/form&gt;
+
+             // Server checks: &quot;Does the token match?&quot;
+             // Real site: Yes -&gt; Process request
+             // Evil site: No token -&gt; BLOCKED!
+
+                     Key Point: Always use [ValidateAntiForgeryToken] on forms that DO
+                     something (transfer money, delete data, change settings). Read-only
+                     pages don&#x27;t need it.</pre></div></div>
+<div class="pdf-page" id="page-17"><div class="page-head">Page 17</div><div class="page-body"><pre>Chapter 10: Claims
+
+Your Digital ID Card
+
+                     Analogy: Your driver&#x27;s license has &quot;claims&quot; about you: Name, DOB,
+                     Address, whether you can drive motorcycles. Claims in .NET are the
+                     same - facts about a user. The [Authorize] attribute just checks if you
+                     have the right claims!
+
+What Are Claims?
+
+// Claims are just key-value pairs:
+
+new Claim(&quot;name&quot;, &quot;Luis&quot;)
+
+new Claim(&quot;email&quot;, &quot;luis@example.com&quot;)
+
+new Claim(&quot;role&quot;, &quot;Admin&quot;)   // Can have multiple!
+
+new Claim(&quot;role&quot;, &quot;Editor&quot;)  // &lt;- Another role
+
+new Claim(&quot;permission&quot;, &quot;users.delete&quot;) // Custom claims too!
+
+The Big Secret
+
+Key Point: You don&#x27;t need ASP.NET Identity! Many tutorials make
+you think you need all those AspNetUsers, AspNetRoles tables. Nope!
+[Authorize] and &lt;AuthorizeView&gt; just check Claims. You can build
+claims yourself from YOUR user system!
+
+// All authorization does is check claims:
+[Authorize(Roles = &quot;Admin&quot;)]
+// Translates to: &quot;Does user have a claim where type=role and value=Admin?&quot;
+
+user.IsInRole(&quot;Admin&quot;)
+// Same thing: checks for role claim
+
+// Build your own claims from your User:
+var claims = new List&lt;Claim&gt;
+{
+
+       new(ClaimTypes.Name, myUser.UserName),
+       new(ClaimTypes.Role, &quot;Admin&quot;), // One per role!
+       new(ClaimTypes.Role, &quot;Editor&quot;),
+};
+var identity = new ClaimsIdentity(claims, &quot;MyAuth&quot;);
+var principal = new ClaimsPrincipal(identity);
+// Now [Authorize] works!</pre></div></div>
+<div class="pdf-page" id="page-18"><div class="page-head">Page 18</div><div class="page-body"><pre>                 Part III: Blazor Magic
+
+Blazor-specific gotchas and solutions</pre></div></div>
+<div class="pdf-page" id="page-19"><div class="page-head">Page 19</div><div class="page-body"><pre>Chapter 11: Protected Storage
+
+Your Browser&#x27;s Secret Vault
+
+                     Analogy: Regular localStorage is like a filing cabinet anyone can
+                     open. ProtectedLocalStorage is a safety deposit box - encrypted and
+                     tamper-proof!
+
+             @inject ProtectedLocalStorage Storage
+
+             // Save (encrypted automatically)
+             await Storage.SetAsync(&quot;theme&quot;, &quot;dark&quot;);
+
+             // Load (decrypted automatically)
+             var result = await Storage.GetAsync&lt;string&gt;(&quot;theme&quot;);
+             if (result.Success)
+             {
+
+                    var theme = result.Value; // &quot;dark&quot;
+             }
+
+The Gotcha: Prerendering!
+
+Blazor Server first renders your page on the server (no browser yet!), then sends HTML to the
+browser. ProtectedLocalStorage needs the browser, so it CRASHES during this &quot;prerender&quot;
+phase!
+
+             // WRONG - Crashes during prerender!
+             protected override async Task OnInitializedAsync()
+             {
+
+                    var result = await Storage.GetAsync&lt;string&gt;(&quot;token&quot;);
+             }
+
+             // CORRECT - Wait for browser to be ready
+             protected override async Task OnAfterRenderAsync(bool firstRender)
+             {
+
+                    if (firstRender) // Only on FIRST render (browser ready!)
+                    {
+
+                            var result = await Storage.GetAsync&lt;string&gt;(&quot;token&quot;);
+                            StateHasChanged(); // Re-render with loaded data
+                    }
+             }
+
+                     Key Point: OnAfterRenderAsync is the ONLY safe place for
+                     browser-dependent stuff like localStorage, sessionStorage, or any
+                     JavaScript calls!</pre></div></div>
+<div class="pdf-page" id="page-20"><div class="page-head">Page 20</div><div class="page-body"><pre>Chapter 12: Localization
+
+Speaking Your User&#x27;s Language
+
+                     Analogy: Resource files are like phrase books. English book: &quot;Login&quot;
+                     = &quot;Login&quot;. Portuguese book: &quot;Login&quot; = &quot;Entrar&quot;. You write the KEY
+                     once, and .NET picks the right translation!
+
+Setup
+
+YourProject/
+
+|-- SharedResources.cs           # Empty &quot;marker&quot; class (in root!)
+
++-- Resources/
+
+       |-- SharedResources.resx  # English (default)
+
+       +-- SharedResources.pt-PT.resx # Portuguese
+
+Using It
+
+             @inject IStringLocalizer&lt;SharedResources&gt; L
+
+             &lt;MudButton&gt;@L[&quot;Login&quot;]&lt;/MudButton&gt;
+
+             // If user&#x27;s culture is &quot;en&quot; -&gt; &quot;Login&quot;
+             // If user&#x27;s culture is &quot;pt-PT&quot; -&gt; &quot;Entrar&quot;
+
+       Warning: Common Mistake: Putting SharedResources.cs INSIDE the
+       Resources folder. It must be in the PROJECT ROOT! .NET uses the
+       file location to find translations.</pre></div></div>
+<div class="pdf-page" id="page-21"><div class="page-head">Page 21</div><div class="page-body"><pre>Chapter 13: JavaScript Interop
+
+When C# Needs JS Help
+
+                     Analogy: Blazor runs C#, but sometimes you need JavaScript (DOM
+                     manipulation, browser APIs, third-party libraries). JS Interop is the
+                     bridge between the two worlds!
+
+@inject IJSRuntime JS
+
+// Call JavaScript from C#:
+var width = await JS.InvokeAsync&lt;int&gt;(&quot;getWindowWidth&quot;);
+
+// JavaScript side:
+window.getWindowWidth = function() {
+
+       return window.innerWidth;
+};
+
+The Gotcha (Again): Prerendering!
+
+Just like ProtectedLocalStorage, JS Interop needs the browser. No browser during prerender =
+crash!
+
+// WRONG                                                // CRASH
+protected override async Task OnInitializedAsync()
+{
+
+       await JS.InvokeVoidAsync(&quot;console.log&quot;, &quot;Hi!&quot;);
+}
+
+// CORRECT
+protected override async Task OnAfterRenderAsync(bool firstRender)
+{
+
+       if (firstRender)
+       {
+
+              await JS.InvokeVoidAsync(&quot;console.log&quot;, &quot;Hi!&quot;); // Works!
+       }
+}
+
+Blazor Server Timeline
+
+Phase 1: PRERENDER (Server)  -&gt; No JS available
+
+Phase 2: HTML sent to browser -&gt; Still no JS
+
+Phase 3: SignalR connects    -&gt; JS available!
+
+OnAfterRenderAsync fires here!</pre></div></div>
+<div class="pdf-page" id="page-22"><div class="page-head">Page 22</div><div class="page-body"><pre>                                         Cheat Sheets
+
+Security Must-Dos                             Not This
+                                              MD5, SHA, or plain text
+           Do This                            Store plain tokens
+             BCrypt for passwords             Skip CSRF protection
+             Hash session tokens              &quot;Email not found&quot; or &quot;Wrong password&quot;
+             [ValidateAntiForgeryToken]       Unlimited login attempts
+             &quot;Invalid credentials&quot;
+             Lockout after 5 fails
+
+Blazor Lifecycle                         Browser Ready? Use For
+
+             Method                      No   Load data from database
+             OnInitializedAsync
+             OnAfterRenderAsync          Yes  JS interop, localStorage
+             OnParametersSetAsync
+                                         No   React to parameter changes
+
+Quick Decisions
+
+If You Need To...                             Use This
+
+Share properties across entities              Base classes
+
+Report success/failure from services          ServiceResult pattern
+
+Import 50+ records fast                       BulkExtensions
+
+Make module work with different user types Adapter pattern
+
+Check if user can do something                Claims + HasPermission()</pre></div></div>
+<div class="pdf-page" id="page-23"><div class="page-head">Page 23</div><div class="page-body"><pre>Access browser storage safely  OnAfterRenderAsync
+
+You made it! These concepts might seem overwhelming now, but they&#x27;ll become second nature.
+The best way to learn? Build something! Start small, make mistakes, and iterate.
+
+Remember: Every expert was once a beginner. Keep coding!</pre></div></div>
+</article>
+<div class="takeaways"><h3>Key takeaways</h3><ul><li>Use base entity classes (BaseEntity with Id, CreatedAt) so adding UpdatedAt later is one edit instead of 20</li><li>Put each EF Core entity config in its own file, then call ApplyConfigurationsFromAssembly once</li><li>ServiceResult&lt;T&gt; with Success/Data/Errors lets services report failure without throwing or returning null</li><li>BCrypt is intentionally slow (3 hashes/sec vs MD5&#x27;s 180 billion) — that slowness is the security</li><li>[Authorize] is just checking claims — you don&#x27;t need ASP.NET Identity to build them yourself</li><li>Browser-only code (localStorage, JS interop) MUST live in OnAfterRenderAsync, not OnInitializedAsync, because of Blazor Server&#x27;s prerender phase</li></ul></div>
+<aside class="cross-refs"><h2>Cross-references</h2><div class="cross-ref-list"><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>service-result-pattern</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>ef-core-configuration</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>adapter-pattern</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>blazor-lifecycle</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>claims-authentication</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>bcrypt-passwords</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>csrf-protection</a></div></aside>
+<aside class="related"><h2>More in this category</h2><div class="related-grid"><a class="related-card" href="../../CORE/frontend/ag-grid-custom-cell-editor-js-prototypes.html"><div class="title">AG Grid Custom Cell Editor — JavaScript Prototypes &amp; DOM Fundamentals</div><div class="meta"><span class="badge">DOCX</span><span>1,261 words</span></div></a><a class="related-card" href="../../CORE/frontend/blazor-js-interop-instance-isolation.html"><div class="title">Blazor JS Interop — Static Events vs Instance-Isolated Callbacks</div><div class="meta"><span class="badge">MD</span><span>835 words</span></div></a><a class="related-card" href="../../CORE/frontend/reactive-login-svg-css-state-machine.html"><div class="title">Build a Reactive Login Page From Zero — SVG, CSS State Machine, JS</div><div class="meta"><span class="badge">HTML</span><span>3,752 words</span></div></a><a class="related-card" href="../../CORE/frontend/button-catalog-design-system.html"><div class="title">Catálogo de Botões Padrão</div><div class="meta"><span class="badge">HTML</span><span>48 words</span></div></a><a class="related-card" href="../../CORE/frontend/css-color-system-example.html"><div class="title">Exemplo Cores - CSS Color System Example</div><div class="meta"><span class="badge">HTML</span><span>62 words</span></div></a><a class="related-card" href="../../CORE/frontend/jquery-select2-aggrid-custom-editor.html"><div class="title">jQuery, Select2 and AG Grid Custom Editors/Filters - Method Breakdown</div><div class="meta"><span class="badge">DOCX</span><span>3,237 words</span></div></a></div></aside>
+</main>
+</div>
+<script>
+// ─── Active TOC item on scroll ────────────────────────────────────
+(function() {
+  const tocLinks = document.querySelectorAll('.toc-sidebar a[href^="#"]');
+  if (!tocLinks.length) return;
+  const headings = Array.from(document.querySelectorAll(
+    'article h1[id], article h2[id], article h3[id], article h4[id], .pdf-page[id]'
+  ));
+  if (!headings.length) return;
+  function setActive(id) {
+    tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+  }
+  let lastVisible = headings[0].id;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) lastVisible = e.target.id; });
+    setActive(lastVisible);
+  }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+  headings.forEach(h => observer.observe(h));
+  setActive(headings[0].id);
+})();
+
+// ─── Copy code buttons ────────────────────────────────────────────
+(function() {
+  document.querySelectorAll('article pre').forEach(pre => {
+    if (pre.closest('.diagram-box')) return;
+    if (pre.closest('.pdf-page')) return;
+    if (pre.parentElement && pre.parentElement.classList.contains('code-block')) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'code-block';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.type = 'button';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', () => {
+      const code = pre.querySelector('code') || pre;
+      const text = code.innerText;
+      const done = () => {
+        btn.textContent = 'Copied';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(() => {});
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+    });
+    wrap.appendChild(btn);
+  });
+})();
+
+// ─── Live filter (master + hub + category pages) ─────────────────
+(function() {
+  const search = document.getElementById('search-input');
+  if (!search) return;
+  const items = document.querySelectorAll('[data-search]');
+  function apply() {
+    const q = search.value.toLowerCase().trim();
+    items.forEach(el => {
+      const match = !q || el.dataset.search.includes(q);
+      el.style.display = match ? '' : 'none';
+    });
+    document.querySelectorAll('[data-search-parent]').forEach(parent => {
+      const visible = Array.from(parent.querySelectorAll('[data-search]'))
+        .some(el => el.style.display !== 'none');
+      parent.style.display = visible ? '' : 'none';
+    });
+  }
+  search.addEventListener('input', apply);
+})();
+</script>
+</body>
+</html>

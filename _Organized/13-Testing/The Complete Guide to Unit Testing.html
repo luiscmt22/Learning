@@ -1,0 +1,804 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Complete Guide to Unit Testing</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 13-Testing</div>
+  <h1>The Complete Guide to Unit Testing</h1>
+  <div class="meta">Source: <code>Microsoft_Fullstack/The Complete Guide to Unit Testing.docx</code> &middot; <a href="The Complete Guide to Unit Testing.docx">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<p>The Complete Guide to Unit Testing in .NET</p>
+<p>Table of Contents</p>
+<p>Introduction to Unit Testing</p>
+<p>Understanding the Fundamentals</p>
+<p>Setting Up Your Testing Environment</p>
+<p>Writing Your First Unit Test</p>
+<p>Test Organization and Best Practices</p>
+<p>Advanced Testing Techniques</p>
+<p>Mocking and Dependencies</p>
+<p>Running and Debugging Tests</p>
+<p>Test Coverage and Metrics</p>
+<p>Common Issues and Troubleshooting</p>
+<p>Chapter 1: Introduction to Unit Testing {#introduction}</p>
+<p>What is Unit Testing?</p>
+<p>Unit testing is the practice of testing individual units or components of your software in isolation. In .NET, a &quot;unit&quot; typically refers to a single method or function. The goal is to verify that each unit of code performs as designed.</p>
+<p>Why Unit Testing Matters</p>
+<p>Imagine building a car. You wouldn&#x27;t wait until the entire vehicle is assembled to test if the engine works. Similarly, unit testing allows you to verify that each piece of your code works correctly before integrating it into the larger system.</p>
+<p>Key Benefits:</p>
+<p>Early Bug Detection: Catch issues before they become expensive problems</p>
+<p>Documentation: Tests serve as living documentation of how your code should behave</p>
+<p>Refactoring Confidence: Make changes knowing your tests will catch any breaks</p>
+<p>Design Improvement: Writing testable code leads to better architecture</p>
+<p>The Testing Pyramid</p>
+<p>/\</p>
+<p>/  \</p>
+<p>/ UI \</p>
+<p>/Tests \</p>
+<p>/--------\</p>
+<p>/Integration\</p>
+<p>/   Tests    \</p>
+<p>/--------------\</p>
+<p>/  Unit Tests    \</p>
+<p>\________________/</p>
+<p>Unit tests form the foundation of the testing pyramid. They should be:</p>
+<p>Fast: Run in milliseconds</p>
+<p>Isolated: No external dependencies</p>
+<p>Repeatable: Same result every time</p>
+<p>Self-Validating: Pass or fail with no manual interpretation</p>
+<p>Chapter 2: Understanding the Fundamentals {#fundamentals}</p>
+<p>The AAA Pattern</p>
+<p>Every unit test follows the Arrange-Act-Assert (AAA) pattern:</p>
+<p>[Test]</p>
+<p>public void Calculator_Add_ReturnsSumOfTwoNumbers()</p>
+<p>{</p>
+<p>// Arrange - Set up the test data and environment</p>
+<p>var calculator = new Calculator();</p>
+<p>int a = 5;</p>
+<p>int b = 3;</p>
+<p>// Act - Execute the code being tested</p>
+<p>int result = calculator.Add(a, b);</p>
+<p>// Assert - Verify the outcome</p>
+<p>Assert.AreEqual(8, result);</p>
+<p>}</p>
+<p>Key Concepts</p>
+<p>Test Fixture: A class containing related tests</p>
+<p>[TestFixture]</p>
+<p>public class CalculatorTests</p>
+<p>{</p>
+<p>// Test methods go here</p>
+<p>}</p>
+<p>Test Method: An individual test</p>
+<p>[Test]</p>
+<p>public void TestMethodName()</p>
+<p>{</p>
+<p>// Test code</p>
+<p>}</p>
+<p>Assertions: Statements that verify expected outcomes</p>
+<p>Assert.AreEqual(expected, actual);</p>
+<p>Assert.IsTrue(condition);</p>
+<p>Assert.Throws&lt;ExceptionType&gt;(() =&gt; { /<em> code </em>/ });</p>
+<p>Testing Frameworks in .NET</p>
+<p>The .NET ecosystem offers several testing frameworks:</p>
+<p>NUnit: Popular, feature-rich, extensive assertion library</p>
+<p>xUnit: Modern, used by .NET Core team, parallel execution by default</p>
+<p>MSTest: Microsoft&#x27;s framework, excellent Visual Studio integration</p>
+<p>For this guide, we&#x27;ll primarily use NUnit, but the concepts apply to all frameworks.</p>
+<p>Chapter 3: Setting Up Your Testing Environment {#setup}</p>
+<p>Step-by-Step Setup Guide</p>
+<p>Step 1: Create Your Solution Structure</p>
+<p>A well-organized solution structure is crucial. Here&#x27;s the recommended layout:</p>
+<p>MySolution/</p>
+<p>├── src/</p>
+<p>│   └── MyProject/</p>
+<p>│       ├── MyProject.csproj</p>
+<p>│       └── Calculator.cs</p>
+<p>└── tests/</p>
+<p>└── MyProject.Tests/</p>
+<p>├── MyProject.Tests.csproj</p>
+<p>└── CalculatorTests.cs</p>
+<p>💡 Pro Tip: Always separate your test projects from your main code. Use the naming convention [ProjectName].Tests for clarity.</p>
+<p>Step 2: Create the Test Project</p>
+<p>Using Visual Studio:</p>
+<p>Right-click on your solution</p>
+<p>Select &quot;Add&quot; → &quot;New Project&quot;</p>
+<p>Choose &quot;NUnit Test Project&quot; (or &quot;Unit Test Project&quot; for MSTest)</p>
+<p>Name it YourProject.Tests</p>
+<p>Using .NET CLI:</p>
+<h1 id="navigate-to-your-solution-folder">Navigate to your solution folder</h1>
+<p>cd MySolution</p>
+<h1 id="create-the-test-project">Create the test project</h1>
+<p>dotnet new nunit -n MyProject.Tests -o tests/MyProject.Tests</p>
+<h1 id="add-to-solution">Add to solution</h1>
+<p>dotnet sln add tests/MyProject.Tests/MyProject.Tests.csproj</p>
+<p>Step 3: Add Project Reference</p>
+<p>Your test project needs to reference the project being tested:</p>
+<p>Using Visual Studio:</p>
+<p>Right-click on the test project</p>
+<p>Select &quot;Add&quot; → &quot;Project Reference&quot;</p>
+<p>Check the box next to your main project</p>
+<p>Using .NET CLI:</p>
+<p>cd tests/MyProject.Tests</p>
+<p>dotnet add reference ../../src/MyProject/MyProject.csproj</p>
+<p>Step 4: Install Required NuGet Packages</p>
+<p>Your test project needs these packages:</p>
+<p>&lt;PackageReference Include=&quot;NUnit&quot; Version=&quot;3.13.3&quot; /&gt;</p>
+<p>&lt;PackageReference Include=&quot;NUnit3TestAdapter&quot; Version=&quot;4.3.1&quot; /&gt;</p>
+<p>&lt;PackageReference Include=&quot;Microsoft.NET.Test.Sdk&quot; Version=&quot;17.4.1&quot; /&gt;</p>
+<p>Using Package Manager Console:</p>
+<p>Install-Package NUnit</p>
+<p>Install-Package NUnit3TestAdapter</p>
+<p>Install-Package Microsoft.NET.Test.Sdk</p>
+<p>⚠️ Important: The Microsoft.NET.Test.Sdk package is essential for test discovery in Visual Studio and dotnet test command.</p>
+<p>Chapter 4: Writing Your First Unit Test {#first-test}</p>
+<p>Creating the Code to Test</p>
+<p>Let&#x27;s start with a simple Calculator class:</p>
+<p>// src/MyProject/Calculator.cs</p>
+<p>namespace MyProject</p>
+<p>{</p>
+<p>public class Calculator</p>
+<p>{</p>
+<p>public int Add(int a, int b)</p>
+<p>{</p>
+<p>return a + b;</p>
+<p>}</p>
+<p>public int Subtract(int a, int b)</p>
+<p>{</p>
+<p>return a - b;</p>
+<p>}</p>
+<p>public int Divide(int a, int b)</p>
+<p>{</p>
+<p>if (b == 0)</p>
+<p>throw new ArgumentException(&quot;Cannot divide by zero&quot;);</p>
+<p>return a / b;</p>
+<p>}</p>
+<p>}</p>
+<p>}</p>
+<p>Writing Your First Test Class</p>
+<p>// tests/MyProject.Tests/CalculatorTests.cs</p>
+<p>using NUnit.Framework;</p>
+<p>using MyProject;</p>
+<p>namespace MyProject.Tests</p>
+<p>{</p>
+<p>[TestFixture]</p>
+<p>public class CalculatorTests</p>
+<p>{</p>
+<p>private Calculator _calculator;</p>
+<p>[SetUp]</p>
+<p>public void Setup()</p>
+<p>{</p>
+<p>_calculator = new Calculator();</p>
+<p>}</p>
+<p>[Test]</p>
+<p>public void Add_WhenGivenTwoPositiveNumbers_ReturnsCorrectSum()</p>
+<p>{</p>
+<p>// Arrange</p>
+<p>int a = 5;</p>
+<p>int b = 3;</p>
+<p>int expected = 8;</p>
+<p>// Act</p>
+<p>int result = _calculator.Add(a, b);</p>
+<p>// Assert</p>
+<p>Assert.AreEqual(expected, result);</p>
+<p>}</p>
+<p>}</p>
+<p>}</p>
+<p>Understanding Test Attributes</p>
+<p>[TestFixture]: Marks a class as containing tests</p>
+<p>[TestFixture]</p>
+<p>public class MyTests { }</p>
+<p>[SetUp]: Runs before each test</p>
+<p>[SetUp]</p>
+<p>public void Initialize()</p>
+<p>{</p>
+<p>// Prepare test environment</p>
+<p>}</p>
+<p>[TearDown]: Runs after each test</p>
+<p>[TearDown]</p>
+<p>public void Cleanup()</p>
+<p>{</p>
+<p>// Clean up resources</p>
+<p>}</p>
+<p>[Test]: Marks a method as a test</p>
+<p>[Test]</p>
+<p>public void MyTestMethod() { }</p>
+<p>Writing Multiple Test Cases</p>
+<p>Use [TestCase] for parameterized tests:</p>
+<p>[TestCase(5, 3, 8)]</p>
+<p>[TestCase(-5, 3, -2)]</p>
+<p>[TestCase(0, 0, 0)]</p>
+<p>[TestCase(100, -50, 50)]</p>
+<p>public void Add_VariousInputs_ReturnsCorrectSum(int a, int b, int expected)</p>
+<p>{</p>
+<p>// Act</p>
+<p>int result = _calculator.Add(a, b);</p>
+<p>// Assert</p>
+<p>Assert.AreEqual(expected, result);</p>
+<p>}</p>
+<p>Testing Exceptions</p>
+<p>[Test]</p>
+<p>public void Divide_WhenDividingByZero_ThrowsArgumentException()</p>
+<p>{</p>
+<p>// Arrange</p>
+<p>int a = 10;</p>
+<p>int b = 0;</p>
+<p>// Act &amp; Assert</p>
+<p>Assert.Throws&lt;ArgumentException&gt;(() =&gt; _calculator.Divide(a, b));</p>
+<p>}</p>
+<p>[Test]</p>
+<p>public void Divide_WhenDividingByZero_ThrowsWithCorrectMessage()</p>
+<p>{</p>
+<p>// Arrange</p>
+<p>int a = 10;</p>
+<p>int b = 0;</p>
+<p>// Act &amp; Assert</p>
+<p>var ex = Assert.Throws&lt;ArgumentException&gt;(() =&gt; _calculator.Divide(a, b));</p>
+<p>Assert.That(ex.Message, Is.EqualTo(&quot;Cannot divide by zero&quot;));</p>
+<p>}</p>
+<p>Chapter 5: Test Organization and Best Practices {#organization}</p>
+<p>Naming Conventions</p>
+<p>Good test names are crucial for understanding what went wrong when a test fails.</p>
+<p>Pattern: MethodName_StateUnderTest_ExpectedBehavior</p>
+<p>Examples:</p>
+<p>Add_WhenGivenTwoPositiveNumbers_ReturnsCorrectSum()</p>
+<p>Divide_WhenDividingByZero_ThrowsArgumentException()</p>
+<p>GetUser_WhenUserDoesNotExist_ReturnsNull()</p>
+<p>Test Organization Structure</p>
+<p>MyProject.Tests/</p>
+<p>├── Unit/</p>
+<p>│   ├── Services/</p>
+<p>│   │   ├── UserServiceTests.cs</p>
+<p>│   │   └── OrderServiceTests.cs</p>
+<p>│   └── Utilities/</p>
+<p>│       └── StringHelperTests.cs</p>
+<p>├── Integration/</p>
+<p>│   └── DatabaseTests.cs</p>
+<p>└── Helpers/</p>
+<p>└── TestDataBuilder.cs</p>
+<p>The F.I.R.S.T. Principles</p>
+<p>Fast: Tests should run quickly (milliseconds) Independent: Tests shouldn&#x27;t depend on each other Repeatable: Same result every time Self-Validating: Clear pass/fail result Timely: Written just before or after the code</p>
+<p>Common Assertions</p>
+<p>// Equality</p>
+<p>Assert.AreEqual(expected, actual);</p>
+<p>Assert.AreNotEqual(notExpected, actual);</p>
+<p>// Boolean</p>
+<p>Assert.IsTrue(condition);</p>
+<p>Assert.IsFalse(condition);</p>
+<p>// Null</p>
+<p>Assert.IsNull(obj);</p>
+<p>Assert.IsNotNull(obj);</p>
+<p>// Collections</p>
+<p>Assert.Contains(item, collection);</p>
+<p>Assert.IsEmpty(collection);</p>
+<p>CollectionAssert.AreEqual(expectedList, actualList);</p>
+<p>// Strings</p>
+<p>StringAssert.Contains(substring, fullString);</p>
+<p>StringAssert.StartsWith(prefix, fullString);</p>
+<p>// Exceptions</p>
+<p>Assert.Throws&lt;ExceptionType&gt;(() =&gt; { /<em> code </em>/ });</p>
+<p>Assert.DoesNotThrow(() =&gt; { /<em> code </em>/ });</p>
+<p>// Fluent Assertions (NUnit 3.x)</p>
+<p>Assert.That(actual, Is.EqualTo(expected));</p>
+<p>Assert.That(list, Has.Count.EqualTo(3));</p>
+<p>Assert.That(text, Does.Contain(&quot;substring&quot;));</p>
+<p>Fluent Assertions Library</p>
+<p>Fluent Assertions is a set of .NET extension methods that allow you to more naturally specify the expected outcome of a TDD or BDD-style unit test. It works with all major testing frameworks (xUnit, NUnit, MSTest).</p>
+<p>Installation</p>
+<p>dotnet add package FluentAssertions</p>
+<p>Basic Usage</p>
+<p>using FluentAssertions;</p>
+<p>using Xunit;</p>
+<p>public class CalculatorTests</p>
+<p>{</p>
+<p>[Fact]</p>
+<p>public void Add_WhenGivenTwoNumbers_ReturnsSum()</p>
+<p>{</p>
+<p>// Arrange</p>
+<p>var calculator = new Calculator();</p>
+<p>// Act</p>
+<p>var result = calculator.Add(5, 3);</p>
+<p>// Assert - Fluent style</p>
+<p>result.Should().Be(8);</p>
+<p>}</p>
+<p>}</p>
+<p>Comparison: Traditional vs Fluent Assertions</p>
+<p>// Traditional xUnit</p>
+<p>Assert.Equal(8, result);</p>
+<p>Assert.True(result &gt; 0);</p>
+<p>Assert.Contains(&quot;Hello&quot;, message);</p>
+<p>Assert.Throws&lt;ArgumentException&gt;(() =&gt; calculator.Divide(5, 0));</p>
+<p>// Fluent Assertions</p>
+<p>result.Should().Be(8);</p>
+<p>result.Should().BePositive();</p>
+<p>message.Should().Contain(&quot;Hello&quot;);</p>
+<p>calculator.Invoking(c =&gt; c.Divide(5, 0))</p>
+<p>.Should().Throw&lt;ArgumentException&gt;();</p>
+<p>Common Fluent Assertions</p>
+<p>// Numbers</p>
+<p>result.Should().Be(8);</p>
+<p>result.Should().BeGreaterThan(5);</p>
+<p>result.Should().BeInRange(5, 10);</p>
+<p>result.Should().BeApproximately(8.0, 0.1);</p>
+<p>// Strings</p>
+<p>name.Should().Be(&quot;John&quot;);</p>
+<p>name.Should().StartWith(&quot;J&quot;);</p>
+<p>name.Should().EndWith(&quot;hn&quot;);</p>
+<p>name.Should().Contain(&quot;oh&quot;);</p>
+<p>name.Should().HaveLength(4);</p>
+<p>name.Should().BeNullOrWhiteSpace();</p>
+<p>// Booleans</p>
+<p>isValid.Should().BeTrue();</p>
+<p>isValid.Should().BeFalse();</p>
+<p>// Collections</p>
+<p>list.Should().HaveCount(3);</p>
+<p>list.Should().Contain(item);</p>
+<p>list.Should().ContainSingle();</p>
+<p>list.Should().BeInAscendingOrder();</p>
+<p>list.Should().BeEquivalentTo(new[] { 1, 2, 3 });</p>
+<p>// Objects</p>
+<p>person.Should().BeEquivalentTo(expectedPerson);</p>
+<p>person.Should().BeOfType&lt;Employee&gt;();</p>
+<p>person.Name.Should().NotBeNull();</p>
+<p>// Exceptions</p>
+<p>action.Should().Throw&lt;InvalidOperationException&gt;()</p>
+<p>.WithMessage(&quot;Operation not allowed&quot;);</p>
+<p>// Async</p>
+<p>await asyncFunc.Should().CompleteWithinAsync(TimeSpan.FromSeconds(2));</p>
+<p>// Multiple assertions on same object</p>
+<p>result.Should()</p>
+<p>.BePositive()</p>
+<p>.And.BeLessThan(100)</p>
+<p>.And.Be(42);</p>
+<p>Why Use Fluent Assertions?</p>
+<p>Readability: Tests read like natural language</p>
+<p>Better Error Messages:</p>
+<p>// Traditional: Expected 8 but was 7// Fluent: Expected result to be 8, but found 7</p>
+<p>Discoverable API: IntelliSense guides you to available assertions</p>
+<p>Chainable: Multiple assertions can be chained together</p>
+<p>Framework Agnostic: Works with xUnit, NUnit, MSTest</p>
+<p>Advanced Fluent Assertions</p>
+<p>// Custom messages</p>
+<p>result.Should().Be(8, &quot;because we added 5 and 3&quot;);</p>
+<p>// Collection comparisons</p>
+<p>var actual = new[] { 1, 2, 3 };</p>
+<p>var expected = new[] { 3, 2, 1 };</p>
+<p>actual.Should().BeEquivalentTo(expected); // Order doesn&#x27;t matter</p>
+<p>// Object graph comparison</p>
+<p>var actualPerson = new Person { Name = &quot;John&quot;, Age = 30 };</p>
+<p>var expectedPerson = new Person { Name = &quot;John&quot;, Age = 30 };</p>
+<p>actualPerson.Should().BeEquivalentTo(expectedPerson);</p>
+<p>// Execution time assertions</p>
+<p>Action someAction = () =&gt; Thread.Sleep(100);</p>
+<p>someAction.ExecutionTime().Should().BeLessThan(TimeSpan.FromMilliseconds(200));</p>
+<p>// Event monitoring</p>
+<p>var subject = new Subject();</p>
+<p>using var monitor = subject.Monitor();</p>
+<p>subject.RaiseEvent();</p>
+<p>monitor.Should().Raise(&quot;SomeEvent&quot;);</p>
+<p>Chapter 6: Advanced Testing Techniques {#advanced}</p>
+<p>Data-Driven Tests</p>
+<p>Using TestCase:</p>
+<p>[TestCase(1, 1, 2)]</p>
+<p>[TestCase(2, 3, 5)]</p>
+<p>[TestCase(-1, 1, 0)]</p>
+<p>public void Add_MultipleScenarios_ReturnsCorrectSum(int a, int b, int expected)</p>
+<p>{</p>
+<p>var result = _calculator.Add(a, b);</p>
+<p>Assert.AreEqual(expected, result);</p>
+<p>}</p>
+<p>Using TestCaseSource:</p>
+<p>public class CalculatorTests</p>
+<p>{</p>
+<p>private static IEnumerable&lt;TestCaseData&gt; AddTestCases()</p>
+<p>{</p>
+<p>yield return new TestCaseData(1, 1, 2).SetName(&quot;PositiveNumbers&quot;);</p>
+<p>yield return new TestCaseData(-1, -1, -2).SetName(&quot;NegativeNumbers&quot;);</p>
+<p>yield return new TestCaseData(0, 0, 0).SetName(&quot;Zeros&quot;);</p>
+<p>}</p>
+<p>[TestCaseSource(nameof(AddTestCases))]</p>
+<p>public void Add_VariousInputs_ReturnsCorrectSum(int a, int b, int expected)</p>
+<p>{</p>
+<p>var result = _calculator.Add(a, b);</p>
+<p>Assert.AreEqual(expected, result);</p>
+<p>}</p>
+<p>}</p>
+<p>Testing Async Methods</p>
+<p>public class AsyncService</p>
+<p>{</p>
+<p>public async Task&lt;string&gt; GetDataAsync()</p>
+<p>{</p>
+<p>await Task.Delay(100);</p>
+<p>return &quot;Data&quot;;</p>
+<p>}</p>
+<p>}</p>
+<p>[Test]</p>
+<p>public async Task GetDataAsync_WhenCalled_ReturnsData()</p>
+<p>{</p>
+<p>// Arrange</p>
+<p>var service = new AsyncService();</p>
+<p>// Act</p>
+<p>var result = await service.GetDataAsync();</p>
+<p>// Assert</p>
+<p>Assert.AreEqual(&quot;Data&quot;, result);</p>
+<p>}</p>
+<p>Theory Tests (xUnit style in NUnit)</p>
+<p>[Theory]</p>
+<p>[TestCase(2, true)]</p>
+<p>[TestCase(3, false)]</p>
+<p>[TestCase(4, true)]</p>
+<p>public void IsEven_VariousNumbers_ReturnsCorrectResult(int number, bool expected)</p>
+<p>{</p>
+<p>var result = MathHelper.IsEven(number);</p>
+<p>Assert.AreEqual(expected, result);</p>
+<p>}</p>
+<p>Chapter 7: Mocking and Dependencies {#mocking}</p>
+<p>Introduction to Mocking</p>
+<p>When testing units in isolation, you need to replace dependencies with test doubles. The most popular mocking framework for .NET is Moq.</p>
+<p>Installing Moq</p>
+<p>&lt;PackageReference Include=&quot;Moq&quot; Version=&quot;4.18.4&quot; /&gt;</p>
+<p>Basic Mocking Example</p>
+<p>Consider a service with a dependency:</p>
+<p>public interface IEmailService</p>
+<p>{</p>
+<p>bool SendEmail(string to, string subject, string body);</p>
+<p>}</p>
+<p>public class UserService</p>
+<p>{</p>
+<p>private readonly IEmailService _emailService;</p>
+<p>public UserService(IEmailService emailService)</p>
+<p>{</p>
+<p>_emailService = emailService;</p>
+<p>}</p>
+<p>public bool RegisterUser(string email, string name)</p>
+<p>{</p>
+<p>// Registration logic...</p>
+<p>return _emailService.SendEmail(</p>
+<p>email,</p>
+<p>&quot;Welcome!&quot;,</p>
+<p>$&quot;Hello {name}, welcome to our service!&quot;);</p>
+<p>}</p>
+<p>}</p>
+<p>Testing with a mock:</p>
+<p>[Test]</p>
+<p>public void RegisterUser_WhenCalled_SendsWelcomeEmail()</p>
+<p>{</p>
+<p>// Arrange</p>
+<p>var mockEmailService = new Mock&lt;IEmailService&gt;();</p>
+<p>mockEmailService</p>
+<p>.Setup(x =&gt; x.SendEmail(It.IsAny&lt;string&gt;(), It.IsAny&lt;string&gt;(), It.IsAny&lt;string&gt;()))</p>
+<p>.Returns(true);</p>
+<p>var userService = new UserService(mockEmailService.Object);</p>
+<p>// Act</p>
+<p>var result = userService.RegisterUser(&quot;test@email.com&quot;, &quot;John&quot;);</p>
+<p>// Assert</p>
+<p>Assert.IsTrue(result);</p>
+<p>mockEmailService.Verify(x =&gt; x.SendEmail(</p>
+<p>&quot;test@email.com&quot;,</p>
+<p>&quot;Welcome!&quot;,</p>
+<p>It.Is&lt;string&gt;(body =&gt; body.Contains(&quot;John&quot;))),</p>
+<p>Times.Once);</p>
+<p>}</p>
+<p>Mock Setup Patterns</p>
+<p>// Return specific value</p>
+<p>mock.Setup(x =&gt; x.Method()).Returns(value);</p>
+<p>// Return different values on successive calls</p>
+<p>mock.SetupSequence(x =&gt; x.Method())</p>
+<p>.Returns(value1)</p>
+<p>.Returns(value2);</p>
+<p>// Throw exception</p>
+<p>mock.Setup(x =&gt; x.Method()).Throws&lt;InvalidOperationException&gt;();</p>
+<p>// Match specific arguments</p>
+<p>mock.Setup(x =&gt; x.Method(It.Is&lt;int&gt;(i =&gt; i &gt; 0))).Returns(true);</p>
+<p>// Callback</p>
+<p>mock.Setup(x =&gt; x.Method(It.IsAny&lt;string&gt;()))</p>
+<p>.Callback&lt;string&gt;(s =&gt; Console.WriteLine($&quot;Called with: {s}&quot;));</p>
+<p>// Async methods</p>
+<p>mock.Setup(x =&gt; x.AsyncMethod()).ReturnsAsync(value);</p>
+<p>Verification Patterns</p>
+<p>// Verify method was called</p>
+<p>mock.Verify(x =&gt; x.Method(), Times.Once);</p>
+<p>mock.Verify(x =&gt; x.Method(), Times.Never);</p>
+<p>mock.Verify(x =&gt; x.Method(), Times.AtLeastOnce);</p>
+<p>mock.Verify(x =&gt; x.Method(), Times.Exactly(3));</p>
+<p>// Verify with specific arguments</p>
+<p>mock.Verify(x =&gt; x.Method(&quot;specific value&quot;));</p>
+<p>// Verify property was set</p>
+<p>mock.VerifySet(x =&gt; x.Property = It.IsAny&lt;string&gt;());</p>
+<p>Chapter 8: Running and Debugging Tests {#running}</p>
+<p>Running Tests in Visual Studio</p>
+<p>Test Explorer Window:</p>
+<p>Open via Test → Test Explorer (or Ctrl+E, T)</p>
+<p>Build your solution to discover tests</p>
+<p>Use the toolbar to:</p>
+<p>Run all tests</p>
+<p>Run selected tests</p>
+<p>Debug tests</p>
+<p>Filter tests</p>
+<p>Keyboard Shortcuts:</p>
+<p>Ctrl+R, A: Run all tests</p>
+<p>Ctrl+R, T: Run tests in current context</p>
+<p>Ctrl+R, Ctrl+T: Debug tests in current context</p>
+<p>Running Tests via Command Line</p>
+<h1 id="run-all-tests-in-solution">Run all tests in solution</h1>
+<p>dotnet test</p>
+<h1 id="run-tests-in-specific-project">Run tests in specific project</h1>
+<p>dotnet test tests/MyProject.Tests/MyProject.Tests.csproj</p>
+<h1 id="run-with-detailed-output">Run with detailed output</h1>
+<p>dotnet test --logger &quot;console;verbosity=detailed&quot;</p>
+<h1 id="run-specific-tests-by-name">Run specific tests by name</h1>
+<p>dotnet test --filter &quot;FullyQualifiedName~CalculatorTests&quot;</p>
+<h1 id="run-tests-and-generate-coverage-report">Run tests and generate coverage report</h1>
+<p>dotnet test --collect:&quot;XPlat Code Coverage&quot;</p>
+<p>Debugging Tests</p>
+<p>Setting Breakpoints:</p>
+<p>Click in the margin next to the line you want to break on</p>
+<p>Right-click the test in Test Explorer</p>
+<p>Select &quot;Debug&quot;</p>
+<p>Debug Output:</p>
+<p>[Test]</p>
+<p>public void DebuggingExample()</p>
+<p>{</p>
+<p>var value = CalculateComplexValue();</p>
+<p>// Add debug output</p>
+<p>TestContext.WriteLine($&quot;Calculated value: {value}&quot;);</p>
+<p>Console.WriteLine($&quot;Console output: {value}&quot;);</p>
+<p>Assert.Greater(value, 0);</p>
+<p>}</p>
+<p>Continuous Testing</p>
+<p>Live Unit Testing (Visual Studio Enterprise):</p>
+<p>Automatically runs tests as you type</p>
+<p>Shows coverage indicators in the editor</p>
+<p>Enable via Test → Live Unit Testing → Start</p>
+<p>NCrunch (Third-party tool):</p>
+<p>Continuous testing tool</p>
+<p>Parallel test execution</p>
+<p>Inline coverage indicators</p>
+<p>Chapter 9: Test Coverage and Metrics {#coverage}</p>
+<p>Understanding Code Coverage</p>
+<p>Code coverage measures how much of your code is executed during tests. It&#x27;s a useful metric but shouldn&#x27;t be the only goal.</p>
+<p>Generating Coverage Reports</p>
+<p>Using dotnet CLI with Coverlet:</p>
+<h1 id="install-coverlet-tool">Install coverlet tool</h1>
+<p>dotnet tool install --global coverlet.console</p>
+<h1 id="run-tests-with-coverage">Run tests with coverage</h1>
+<p>dotnet test --collect:&quot;XPlat Code Coverage&quot;</p>
+<h1 id="generate-html-report-with-reportgenerator">Generate HTML report with ReportGenerator</h1>
+<p>dotnet tool install --global dotnet-reportgenerator-globaltool</p>
+<p>reportgenerator -reports:coverage.cobertura.xml -targetdir:coveragereport -reporttypes:Html</p>
+<p>Coverage Metrics</p>
+<p>Line Coverage: Percentage of lines executed</p>
+<p>Branch Coverage: Percentage of decision points tested</p>
+<p>Method Coverage: Percentage of methods called</p>
+<p>Best Practices for Coverage</p>
+<p>Good Coverage Targets:</p>
+<p>Unit tests: 80-90%</p>
+<p>Critical business logic: 95%+</p>
+<p>UI/Controllers: 60-70%</p>
+<p>Coverage Anti-patterns to Avoid:</p>
+<p>// Bad: Testing just for coverage</p>
+<p>[Test]</p>
+<p>public void Constructor_CreatesInstance()</p>
+<p>{</p>
+<p>var obj = new MyClass();</p>
+<p>Assert.IsNotNull(obj); // Not meaningful</p>
+<p>}</p>
+<p>// Good: Testing behavior</p>
+<p>[Test]</p>
+<p>public void Constructor_WithNullDependency_ThrowsArgumentNullException()</p>
+<p>{</p>
+<p>Assert.Throws&lt;ArgumentNullException&gt;(() =&gt; new MyClass(null));</p>
+<p>}</p>
+<p>Chapter 10: Common Issues and Troubleshooting {#troubleshooting}</p>
+<p>Issue 1: Tests Not Discovered</p>
+<p>Symptoms: Tests don&#x27;t appear in Test Explorer</p>
+<p>Solutions:</p>
+<p>Ensure test project references Microsoft.NET.Test.Sdk</p>
+<p>Clean and rebuild solution</p>
+<p>Check test method has [Test] attribute</p>
+<p>Verify test class has [TestFixture] attribute (NUnit)</p>
+<p>Ensure test methods are public and not static</p>
+<p>Issue 2: &quot;Could not load file or assembly&quot;</p>
+<p>Symptoms: Tests fail with assembly loading errors</p>
+<p>Solutions:</p>
+<p>&lt;!-- Add to test project .csproj --&gt;</p>
+<p>&lt;PropertyGroup&gt;</p>
+<p>&lt;CopyLocalLockFileAssemblies&gt;true&lt;/CopyLocalLockFileAssemblies&gt;</p>
+<p>&lt;/PropertyGroup&gt;</p>
+<p>Issue 3: Tests Pass Individually but Fail Together</p>
+<p>Symptoms: Tests pass when run alone but fail in groups</p>
+<p>Common Causes:</p>
+<p>Shared state between tests</p>
+<p>Static variables not reset</p>
+<p>Database/file system modifications</p>
+<p>Solution:</p>
+<p>[SetUp]</p>
+<p>public void Setup()</p>
+<p>{</p>
+<p>// Reset all state</p>
+<p>StaticClass.Reset();</p>
+<p>_database.Clear();</p>
+<p>}</p>
+<p>[TearDown]</p>
+<p>public void Teardown()</p>
+<p>{</p>
+<p>// Clean up resources</p>
+<p>_connection?.Dispose();</p>
+<p>}</p>
+<p>Issue 4: Flaky Tests</p>
+<p>Symptoms: Tests randomly pass or fail</p>
+<p>Common Causes:</p>
+<p>Time-dependent logic</p>
+<p>Random values</p>
+<p>External dependencies</p>
+<p>Race conditions</p>
+<p>Solutions:</p>
+<p>// Bad: Time-dependent</p>
+<p>public bool IsExpired()</p>
+<p>{</p>
+<p>return ExpiryDate &lt; DateTime.Now;</p>
+<p>}</p>
+<p>// Good: Inject time provider</p>
+<p>public bool IsExpired(IDateTimeProvider dateTimeProvider)</p>
+<p>{</p>
+<p>return ExpiryDate &lt; dateTimeProvider.Now;</p>
+<p>}</p>
+<p>Issue 5: Slow Tests</p>
+<p>Symptoms: Test suite takes too long to run</p>
+<p>Solutions:</p>
+<p>Mock external dependencies</p>
+<p>Use in-memory databases for integration tests</p>
+<p>Parallelize test execution</p>
+<p>Identify and optimize slow tests</p>
+<p>// Enable parallel execution in NUnit</p>
+<p>[assembly: Parallelizable(ParallelScope.Fixtures)]</p>
+<p>// Or per fixture</p>
+<p>[TestFixture]</p>
+<p>[Parallelizable(ParallelScope.All)]</p>
+<p>public class FastTests { }</p>
+<p>Appendix A: Quick Reference</p>
+<p>Test Attributes Cheat Sheet</p>
+<p>NUnit:</p>
+<p>[TestFixture] - Test class</p>
+<p>[Test] - Test method</p>
+<p>[SetUp] - Before each test</p>
+<p>[TearDown] - After each test</p>
+<p>[OneTimeSetUp] - Before all tests in class</p>
+<p>[OneTimeTearDown] - After all tests in class</p>
+<p>[TestCase] - Parameterized test</p>
+<p>[Ignore(&quot;Reason&quot;)] - Skip test</p>
+<p>xUnit:</p>
+<p>No attribute needed for test class</p>
+<p>[Fact] - Test method</p>
+<p>[Theory] - Parameterized test</p>
+<p>[InlineData] - Test data</p>
+<p>Constructor - Before each test</p>
+<p>IDisposable.Dispose() - After each test</p>
+<p>MSTest:</p>
+<p>[TestClass] - Test class</p>
+<p>[TestMethod] - Test method</p>
+<p>[TestInitialize] - Before each test</p>
+<p>[TestCleanup] - After each test</p>
+<p>[ClassInitialize] - Before all tests</p>
+<p>[ClassCleanup] - After all tests</p>
+<p>Common Commands</p>
+<h1 id="create-test-project">Create test project</h1>
+<p>dotnet new nunit -n MyProject.Tests</p>
+<h1 id="add-reference">Add reference</h1>
+<p>dotnet add reference ../MyProject/MyProject.csproj</p>
+<h1 id="install-packages">Install packages</h1>
+<p>dotnet add package NUnit</p>
+<p>dotnet add package Moq</p>
+<h1 id="run-tests">Run tests</h1>
+<p>dotnet test</p>
+<p>dotnet test --filter Category=Unit</p>
+<p>dotnet test --logger &quot;trx;LogFileName=results.trx&quot;</p>
+<h1 id="with-coverage">With coverage</h1>
+<p>dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover</p>
+<p>Appendix B: Resources and Further Reading</p>
+<p>Official Documentation</p>
+<p>NUnit Documentation</p>
+<p>xUnit Documentation</p>
+<p>MSTest Documentation</p>
+<p>Books</p>
+<p>&quot;The Art of Unit Testing&quot; by Roy Osherove</p>
+<p>&quot;Working Effectively with Legacy Code&quot; by Michael Feathers</p>
+<p>&quot;Test Driven Development: By Example&quot; by Kent Beck</p>
+<p>Tools</p>
+<p>Test Runners: ReSharper, NCrunch, Visual Studio Test Explorer</p>
+<p>Coverage Tools: Coverlet, dotCover, OpenCover</p>
+<p>Mocking Frameworks: Moq, NSubstitute, FakeItEasy</p>
+<p>Best Practices Articles</p>
+<p>Unit Testing Best Practices</p>
+<p>Naming Standards for Unit Tests</p>
+<p>Final Thoughts</p>
+<p>Unit testing is a skill that improves with practice. Start small, test the critical paths first, and gradually expand your test coverage. Remember that the goal isn&#x27;t 100% coverage, but rather confident, maintainable code.</p>
+<p>Key Takeaways:</p>
+<p>Write tests as you code, not after</p>
+<p>Keep tests simple and focused</p>
+<p>Use descriptive names</p>
+<p>Mock external dependencies</p>
+<p>Maintain your tests like production code</p>
+<p>Measure coverage but don&#x27;t obsess over it</p>
+<p>Happy testing! 🧪✅</p>
+</div>
+</body>
+</html>

@@ -1,0 +1,344 @@
+Build a Reactive Login Page — From Zero
+🐦 From Zero
+Foundations
+What we're building
+SVG — the canvas
+SVG shapes
+Paths & curves
+Grouping with <g>
+CSS Machine
+Selectors decoded
+The state machine
+Transform & transition
+JavaScript
+Event wiring
+Cursor math
+Done
+Build checklist
+From Zero — Intro Course
+Build a Reactive Login with Animated Characters
+Built from absolute zero. Every line of syntax explained before it's used. SVG coordinates, CSS selectors, state machines, vector math — nothing hand-waved.
+🧱 Prerequisite: basic HTML & CSS
+⏱ Read time: ~45 min
+🎯 Goal: understand every line
+1 Chapter 1
+SVG — a canvas you write in text
+SVG stands for Scalable Vector Graphics . It's an image format written in code — shapes described as coordinates, not pixels. Unlike a PNG, you can style and animate every part of it with CSS and JS.
+🗺️ Analogy
+Think of SVG like graph paper. You define a grid size, then describe where shapes go using X and Y coordinates. X goes right. Y goes down (opposite to school maths — remember this!).
+The opening tag — decoded
+<svg viewBox="0 0 280 370" xmlns="http://www.w3.org/2000/svg">
+<svg Opens an SVG element. Works like a <div> — a container — but the browser renders it as a drawing canvas.
+viewBox="0 0 280 370" Defines the internal coordinate grid. Format: minX minY width height . Our canvas starts at (0,0) and is 280 units wide × 370 units tall. These are not pixels — they're our own unit system. The SVG scales to fill whatever space CSS gives it.
+xmlns="..." Namespace declaration. Required when SVG lives inside HTML. Tells the browser how to parse it. Copy-paste it and never think about it again.
+💡 viewBox vs CSS width/height
+viewBox is the internal coordinate system. CSS width/height controls the rendered size on screen. A viewBox of 280 units displayed at 560px means 1 SVG unit = 2 pixels. This is how SVGs stay sharp at any size.
+How coordinates work
+Origin (0,0) is the top-left corner . X increases going right. Y increases going down .
+X →
+Y ↓
+(0,0)
+(110,80)
+(220,160)
+2 Chapter 2
+SVG shapes — the vocabulary
+Tag Key attributes What it draws
+<rect> x, y, width, height, rx Rectangle. rx rounds the corners — set to half the width for a pill shape.
+<circle> cx, cy, r Circle. cx/cy = center X and Y. r = radius.
+<ellipse> cx, cy, rx, ry Like circle but with separate horizontal and vertical radii. Good for egg shapes.
+<line> x1, y1, x2, y2 Straight line between two points. Needs stroke to be visible.
+<path> d Draw anything — curves, arcs, complex shapes. The d attribute is a mini drawing language (next chapter).
+Reading a circle — every attribute explained
+<circle cx="88" cy="118" r="16" fill="white"/>
+<circle id="pupil-l" cx="91" cy="121" r="7" fill="#111"/>
+cx="88" Center X — the circle's center is 88 units from the left of the SVG canvas.
+cy="118" Center Y — 118 units from the top. (Remember Y goes down, so bigger = lower.)
+r="16" Radius — 16 units outward from center. Diameter = 32 units wide.
+fill="white" Interior color. Accepts any CSS color: names, hex codes, rgb().
+id="pupil-l" Unique identifier. We'll use this later in JavaScript to move the pupil with the mouse. Without an ID you can't target it — add IDs now, not later.
+/> Self-closing tag — this element has no children, so we close it immediately. Same as writing <circle ...></circle> but shorter.
+✅ Why cx/cy instead of x/y?
+Rectangles use x/y for their top-left corner. Circles use cx/cy for their center — the "c" stands for center. If you want a circle at coordinate (100, 50), set cx="100" cy="50" . Makes positioning much more intuitive.
+Reading a rectangle (the character body)
+<rect x="58" y="34" width="92" height="232" rx="46" fill="#7C5CF6"/>
+x="58", y="34" The top-left corner of the rectangle starts at coordinate (58, 34).
+width="92" 92 units wide.
+height="232" 232 units tall — much taller than wide, creating a portrait shape.
+rx="46" Corner radius. Setting this to exactly half the width (92÷2 = 46) makes the top and bottom fully rounded — creating a pill/capsule body shape.
+fill="#7C5CF6" Hex color — the purple character color. Any CSS color works here.
+Try it — edit and run
+SVG Playground — Ctrl+Enter to run
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+<!-- Body -->
+<rect x="60" y="20" width="80" height="140" rx="40" fill="#7C5CF6"/>
+<!-- Left eyeball -->
+<circle cx="82" cy="80" r="14" fill="white"/>
+<!-- Left pupil (has id for JS later) -->
+<circle id="pupil-l" cx="84" cy="83" r="6" fill="#111"/>
+<!-- Right eyeball -->
+<circle cx="118" cy="80" r="14" fill="white"/>
+<!-- Right pupil -->
+<circle id="pupil-r" cx="120" cy="83" r="6" fill="#111"/>
+</svg>
+▶ Run
+3 Chapter 3
+SVG paths — drawing curves for faces
+The <path> element draws anything that isn't a basic shape. Its d attribute contains a sequence of drawing commands.
+The three commands you need
+Command Full name Syntax What it does
+M Move To M x y Lift the pen and place it at (x, y). No line drawn.
+L Line To L x y Draw a straight line from current position to (x, y).
+Q Quadratic Bézier Q cx cy x y Draw a curve. It bends toward the control point (cx,cy) then ends at (x,y). The control point is invisible — it just acts as "gravity" on the curve.
+Smile vs frown — it's just the control point
+/* Smile: control point BELOW the endpoints → curve dips down */
+d="M 35 72 Q 50 84 65 72"
+/* Frown: control point ABOVE the endpoints → curve arcs up */
+d="M 35 76 Q 50 66 65 76"
+M 35 72 Start the path at (35, 72) — left corner of the mouth.
+Q 50 84 Control point at (50, 84). Y=84 is lower than our endpoints Y=72 → the curve is pulled downward → smile shape.
+65 72 End point at (65, 72) — right corner. Same Y as start → symmetrical mouth.
+Frown Q 50 66 Control Y=66 is higher than endpoints Y=76 → curve arcs upward → frown. Same math, flipped direction.
+⚠️ Always add fill="none" to path mouths
+A path like a mouth has no filled interior — it's just a line. Without fill="none" , SVG fills the "phantom" closed shape with black, creating a weird dark triangle. Always pair open paths with fill="none" + stroke="color" + stroke-width .
+SVG
+copy
+<!-- Smile -->
+<path d = "M 35 72 Q 50 84 65 72"
+stroke = "white"
+stroke-width = "2.5"
+stroke-linecap = "round" ← rounds the line ends
+fill = "none" /> ← crucial! prevents black triangle
+<!-- Frown -->
+<path d = "M 35 76 Q 50 66 65 76"
+stroke = "white" stroke-width = "2.5"
+stroke-linecap = "round" fill = "none" />
+Try it — change the control point Y value
+Change the middle number in "Q 70 50" — try 25 for a frown, 75 for a big smile
+<svg viewBox="0 0 140 60" xmlns="http://www.w3.org/2000/svg">
+<rect x="5" y="5" width="130" height="50" rx="8" fill="#7C5CF6"/>
+<!-- Q control point: "M startX startY Q controlX controlY endX endY" -->
+<path d="M 30 35 Q 70 50 110 35"
+stroke="white" stroke-width="3"
+stroke-linecap="round" fill="none"/>
+</svg>
+▶ Run
+4 Chapter 4
+Grouping with <g> — the key to swappable expressions
+The <g> element is an invisible group. It lets you treat multiple shapes as one unit — apply a class, transform, or visibility to all of them at once.
+🗂️ Analogy
+Think of <g> like a folder. Hiding a folder hides everything inside it. Each expression (smile, frown, squint) is one folder. We show one folder at a time based on the current state.
+SVG — expression groups
+copy
+<!-- Each expression is its own group -->
+<g class = "face-neutral" > <!-- visible by default -->
+<circle cx = "82" cy = "80" r = "14" fill = "white" />
+<circle id = "pupil-l" cx = "84" cy = "83" r = "6" fill = "#111" />
+<path d = "M 72 110 Q 100 122 128 110" stroke = "white" stroke-width = "2.5" fill = "none" />
+</g>
+<g class = "face-smile" > <!-- hidden until s-email-ok -->
+<path d = "M 68 80 Q 82 70 96 80" stroke = "white" stroke-width = "3" fill = "none" />
+<path d = "M 104 80 Q 118 70 132 80" stroke = "white" stroke-width = "3" fill = "none" />
+<path d = "M 68 110 Q 100 130 132 110" stroke = "white" stroke-width = "3" fill = "none" />
+</g>
+<!-- Arms come LAST = render on top of the face -->
+<g class = "arm-left" >
+<rect x = "50" y = "150" width = "24" height = "50" rx = "12" fill = "#6A4EE0" />
+</g>
+💡 SVG render order — later = on top
+SVG renders elements in document order — elements written later appear on top. Arms must be written after the face groups so they render on top and cover the eyes correctly. If you put arms first, they'd render behind the eyes.
+5 Chapter 5
+CSS selectors — fully decoded
+The entire visual system runs on one CSS pattern. Let's dissect it completely before using it.
+Quick selector reference
+Selector Targets Example
+#foo Element with id="foo" #app → <div id="app">
+.bar Any element with class="bar" .face-smile → anything with that class
+a b (space) Any b that lives inside a (descendant) div p → any <p> anywhere inside a <div>
+a.b (no space) Element that is a AND also has class b div.active → a div with class="active"
+The state machine selector — hover to understand
+#app
+.s-email-ok
+.face-smile
+{ display: block; }
+#app
+Find the element with id="app" — our root container that wraps everything.
+.s-email-ok
+But only when it also has the class s-email-ok . No space means "same element must match both." This is the state condition.
+space
+The space is the descendant combinator — "now look inside the previous match." Find anything matching the next selector anywhere inside it.
+.face-smile
+Any element with class face-smile nested inside the previous match.
+display: block
+Make it visible. This rule only fires when ALL conditions are simultaneously true.
+💡 Read it in plain English
+"Find the element with id 'app' that currently has the class 's-email-ok'. Inside it, find anything with class 'face-smile'. Make it visible."
+The moment JS changes #app 's class to something else, this selector stops matching → smile disappears. No JS required to hide it. CSS reacts automatically.
+Why higher specificity wins
+CSS has a scoring system for when two rules conflict. The more specific rule always wins:
+Selector part Points Our example
+ID (#foo) +100 #app = 100
+Class (.foo) +10 .s-email-ok = 10, .face-smile = 10
+Element (div, p) +1 none used here
+So #app.s-email-ok .face-smile = 120 points, vs the default .face-smile { display:none } = 10 points. The state rule always wins. No !important needed — specificity handles it.
+6 Chapter 6
+The CSS State Machine — assembled
+One class on one element controls everything. CSS watches and reacts. JS only ever changes that one class.
+🚦 Analogy — traffic lights
+A traffic light doesn't blend between colors. It has a state (Red / Amber / Green) and the active state determines what's shown. Our characters work exactly the same way. The state is the class on #app . CSS is the wiring.
+CSS — full state machine
+copy
+/* ── Step 1: hide all non-default faces ── */
+. face-smile , . face-frown ,
+. face-squint , . face-peek { display : none; }
+. face-neutral { display : block; }
+/* ── Step 2: each state reveals its face ── */
+#app . s-email-ok . face-neutral { display : none; }
+#app . s-email-ok . face-smile { display : block; }
+#app . s-email-bad . face-neutral { display : none; }
+#app . s-email-bad . face-frown { display : block; }
+#app . s-password . face-neutral { display : none; }
+#app . s-password . face-squint { display : block; }
+#app . s-peek . face-neutral { display : none; }
+#app . s-peek . face-peek { display : block; }
+/* ── Step 3: arm positions per state ── */
+#app . s-password . arm-left ,
+#app . s-password . arm-right { transform : translateY( -190px ); }
+#app . s-peek . arm-left { transform : translateY( -190px ); }
+#app . s-peek . arm-right { transform : translateY( -80px ); }
+/* ── Step 4: success and error animations ── */
+#app . s-success . face-neutral { display : none; }
+#app . s-success . face-smile { display : block; }
+#app . s-success . c-body { animation : bounce 0.8s ease both; }
+#app . s-error . face-neutral { display : none; }
+#app . s-error . face-frown { display : block; }
+#app . s-error . c-body { animation : shake 0.5s ease both; }
+Live demo — click each state
+CSS State Machine
+s-idle
+s-email
+s-email-ok
+s-email-bad
+👀 Waiting...
+7 Chapter 7
+Transform & transition — moving the arms
+transform: translateY()
+#app.s-password .arm-left {
+transform: translateY(-190px);
+}
+transform CSS property that moves, rotates, or scales an element without affecting layout. Other elements don't reflow around the moving element.
+translateY(-190px) Move along the Y axis by -190px. Negative = upward. The exact value needs tuning for your SVG — use DevTools to live-edit it until hands cover eyes.
+⚠️ The SVG transform gotcha — important
+In regular HTML, transform-origin: center pivots from the element's own center. In SVG, the default origin is (0,0) — the top-left corner of the entire SVG canvas . Rotating an arm would spin it around the wrong point entirely.
+Fix: add transform-box: fill-box to any SVG element you want to transform. This makes it behave like an HTML element — pivoting from its own bounding box.
+CSS — the critical two lines
+copy
+.arm-left , .arm-right {
+transform-box : fill-box; /* 🔑 pivot from own bounding box */
+transform-origin : center top; /* pivot point = top = "shoulder" */
+transform : translateY( 0 ); /* default position: arms at rest */
+transition : transform 0.5s cubic-bezier ( 0.34 , 1.56 , 0.64 , 1 );
+}
+/* ↑ spring curve — explained below */
+The spring curve — decoded
+transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+transform Which CSS property to animate. Only animates when this property changes value.
+0.5s Duration — the animation takes half a second.
+cubic-bezier(...) The easing curve — controls how speed changes over the animation. Defined by two control points: (x1,y1) and (x2,y2).
+Y values > 1 Y values outside the 0–1 range create overshoot — the arm flies slightly past its target then snaps back. That's the spring feeling. ease = boring. This curve = alive.
+Explore any curve visually at cubic-bezier.com — type values and watch the graph.
+8 Chapter 8
+JavaScript — event wiring
+JS has one job: listen to user actions, call setState() . No direct style changes. No DOM manipulation. Just class switching.
+const app = document.getElementById('app');
+const emailInp = document.getElementById('emailInp');
+const setState = s => { app.className = 's-' + s; };
+getElementById Finds an element by its id attribute. Returns the live DOM element — you can read its value, add listeners, etc.
+app.className A string containing the element's current CSS classes. Setting it replaces all existing classes. So app.className = 's-email-ok' removes the old class and sets the new one in one assignment.
+'s-' + s String concatenation. If s is 'email-ok' , this produces 's-email-ok' . The prefix avoids naming collisions with other CSS classes.
+addEventListener — the event system
+emailInp.addEventListener('focus', () => {
+setState('email');
+});
+emailInp.addEventListener('input', () => {
+const ok = validEmail(emailInp.value);
+setState(ok ? 'email-ok' : 'email');
+});
+emailInp.addEventListener('blur', () => {
+if (!emailInp.value) setState('idle');
+else if (emailOk) setState('email-ok');
+else setState('email-bad');
+});
+addEventListener(event, fn) Attaches a callback function to fire whenever the named event occurs on this element. Multiple listeners can be attached — they don't replace each other.
+'focus' Fires when the input gains focus — user clicks into it or tabs to it.
+'input' Fires on every keystroke while typing. Gives you the updated value immediately — unlike 'change' which only fires when focus leaves.
+'blur' Fires when the input loses focus — user clicks elsewhere or presses Tab.
+() => { } Arrow function — a compact way to write an anonymous function. Runs each time the event fires.
+ok ? 'email-ok' : 'email' Ternary operator — shorthand for if/else. If ok is true → returns 'email-ok', else → returns 'email'.
+💡 Why 'input' not 'keydown'?
+keydown fires before the browser updates the input value. So reading emailInp.value inside it gives you the text before the key was pressed — always one character behind. input fires after the value is updated. Always use input for live validation.
+9 Chapter 9
+Cursor tracking — the vector math
+Problem 1 — two coordinate systems
+Mouse position comes in screen pixels. SVG pupils live in SVG units. They're different scales. We must convert.
+const svg = document.querySelector('.char-panel svg');
+const rect = svg.getBoundingClientRect(); // screen position
+const vb = svg.viewBox.baseVal; // SVG units
+const scaleX = vb.width / rect.width; // SVG units per pixel
+const scaleY = vb.height / rect.height;
+// Convert mouse from screen pixels → SVG units
+const mxSvg = (e.clientX - rect.left) * scaleX;
+const mySvg = (e.clientY - rect.top) * scaleY;
+getBoundingClientRect() Returns the element's on-screen box: { left, top, width, height } in screen pixels. Live — updates if the window resizes.
+svg.viewBox.baseVal The SVG's internal coordinate system. baseVal.width and baseVal.height are the viewBox dimensions in SVG units.
+scaleX = 280 / 330px If the SVG renders at 330px wide but has a 280-unit viewBox, then 1 pixel = 0.85 SVG units. This ratio is our conversion factor.
+e.clientX - rect.left Converts "distance from browser left edge" to "distance from SVG left edge." Subtracting the SVG's offset gives mouse position relative to the SVG.
+* scaleX Applies the scale factor. Result is in SVG units — the same coordinate system as our pupil positions.
+Problem 2 — keeping pupils inside the eyeball
+If the pupil followed the mouse directly, it'd fly outside the white eyeball. We clamp the movement to a max radius using vector math:
+🐕 Analogy — dog on a leash
+The pupil is a dog. The eye center is a post. The radius is the leash length. The dog can roam freely within leash range, but can't go further. The math finds "where on the leash is the dog right now?"
+const dx = mxSvg - ox; // how far right is the mouse from eye center?
+const dy = mySvg - oy; // how far down?
+const dist = Math.sqrt(dx*dx + dy*dy); // straight-line distance (Pythagoras)
+const clamp = Math.min(dist, range) / dist; // 0.0 → 1.0
+el.setAttribute('cx', ox + dx * clamp);
+el.setAttribute('cy', oy + dy * clamp);
+dx, dy The vector from eye center to mouse — how far in each axis direction. A "vector" just means a direction with a magnitude.
+Math.sqrt(dx*dx + dy*dy) Pythagoras' theorem: a²+b²=c². Gives the actual straight-line distance from eye center to mouse. E.g. if dx=3 and dy=4, distance = √(9+16) = 5.
+Math.min(dist, range) / dist If mouse is close (dist < range): result = 1.0 → pupil goes exactly to mouse position. If mouse is far (dist > range): result = range/dist < 1.0 → pupil is clamped to the edge of the circle. Elegant: one line handles both cases.
+ox + dx * clamp Start at eye center (ox, oy), move toward the mouse (dx, dy), but only by the clamped fraction. Result is the new pupil position.
+setAttribute('cx', ...) Directly updates the SVG circle's cx attribute live. This bypasses CSS — the change is immediate. It's one of the few cases where we write to the DOM directly instead of through state classes.
+See it live — move your mouse here
+Vector clamp demo — purple ring = max radius (the "leash")
+Gate tracking by state
+JS
+copy
+// Only track when characters can "see"
+const TRACKING = new Set ([ 's-idle' , 's-email' , 's-email-ok' ]);
+document. addEventListener ( 'mousemove' , e => {
+if (!TRACKING. has (app.className)) {
+// Reset pupils to center when eyes are covered
+pupils. forEach (p => {
+p.el. setAttribute ( 'cx' , p.ox);
+p.el. setAttribute ( 'cy' , p.oy);
+});
+return ; // early exit — skip the tracking math
+}
+// ... coordinate mapping + clamp math here
+});
+💡 Why a Set instead of an array?
+Set.has() is O(1) — instant lookup regardless of size. Array.includes() is O(n) — it scans from the start. For an event firing 60 times per second (mousemove), tiny optimizations like this matter. Use Sets for membership checks, arrays for ordered sequences.
+🏁 Finish line
+Build checklist
+✓ SVG canvas. Create <svg viewBox="0 0 W H"> . Draw a body with <rect rx="..."> . Verify it renders.
+✓ Eyes. Two white <circle> for eyeballs. Two dark pupils — give each an id now. Don't skip the IDs.
+✓ Expressions in groups. Wrap each face in a <g class="face-X"> . Arms as <g class="arm-X"> . Arms go last in the HTML so they render on top.
+✓ CSS defaults. Hide all non-neutral faces. Add transform-box: fill-box + transform-origin + transition to arms.
+✓ CSS state machine. One block per state. #app.s-X .face-Y { display: block } . Arm transforms per state.
+✓ Form HTML. Two inputs, checkbox, two buttons. Unique id on every input.
+→ JS events. Email: focus / input / blur → setState. Password: focus / blur → setState. Toggle: flip type + setState.
+→ Cursor tracking. mousemove → convert coordinates → clamp to radius → setAttribute on pupils. Gate with TRACKING Set.
+→ Tune values. Use DevTools live CSS editing to find the right translateY for arms. Tweak bezier curve until arms feel springy.
+→ Polish. bounce + shake keyframes for success/error. Body lean on email focus. Check render order if arms appear behind eyes.
+🎯 The one thing to take away
+The whole system is: one class on one element → CSS reacts → JS only switches that class. If you ever find yourself writing JS that sets style.display or style.transform directly on multiple elements, stop. That's a sign you're missing a CSS state. Keep JS dumb. Keep CSS declarative. That's the pattern that scales.

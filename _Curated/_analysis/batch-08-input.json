@@ -1,0 +1,74 @@
+[
+  {
+    "src_rel": "Education/Basics/CSharp_Generics_Guide.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\Basics\\CSharp_Generics_Guide.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__Basics__CSharp_Generics_Guide.md.txt",
+    "word_count": 4388,
+    "category_legacy": "01-Basics"
+  },
+  {
+    "src_rel": "Education/31-Strategy-Pattern-Pluggable-Algorithms.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\31-Strategy-Pattern-Pluggable-Algorithms.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__31-Strategy-Pattern-Pluggable-Algorithms.html.txt",
+    "word_count": 3360,
+    "category_legacy": "02-Architecture-and-Patterns"
+  },
+  {
+    "src_rel": "Education/30-SemaphoreSlim-Controlled-Access.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\30-SemaphoreSlim-Controlled-Access.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__30-SemaphoreSlim-Controlled-Access.html.txt",
+    "word_count": 2487,
+    "category_legacy": "08-Concurrency-and-Async"
+  },
+  {
+    "src_rel": "Education/16-SignalR-Chat-System.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\16-SignalR-Chat-System.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__16-SignalR-Chat-System.html.txt",
+    "word_count": 1701,
+    "category_legacy": "09-Realtime-SignalR"
+  },
+  {
+    "src_rel": "Education/FactoryFloor/ENG/FactoryFloorProductionSystemInfoGraphic.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\FactoryFloor\\ENG\\FactoryFloorProductionSystemInfoGraphic.pdf",
+    "src_ext": ".pdf",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__FactoryFloor__ENG__FactoryFloorProductionSystemInfoGraphic.pdf.txt",
+    "word_count": 1384,
+    "category_legacy": "16-Domain-Examples-FactoryFloor"
+  },
+  {
+    "src_rel": "CookieHandlingBlazorServerApplications.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\CookieHandlingBlazorServerApplications.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\CookieHandlingBlazorServerApplications.docx.txt",
+    "word_count": 1184,
+    "category_legacy": "03-Blazor"
+  },
+  {
+    "src_rel": "Education/04-Authorization-Architecture.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\04-Authorization-Architecture.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__04-Authorization-Architecture.md.txt",
+    "word_count": 538,
+    "category_legacy": "06-Auth-and-Identity"
+  },
+  {
+    "src_rel": "Education/login.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\login.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__login.html.txt",
+    "word_count": 27,
+    "category_legacy": "06-Auth-and-Identity"
+  }
+]

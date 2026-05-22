@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SemaphoreSlim — Controlled Access & Async Locking</title>
+    <style>
+        :root{--bg:#1a1a2e;--surface:#16213e;--surface2:#0f3460;--accent:#e94560;--accent2:#533483;--text:#eee;--text-muted:#aab;--success:#4ecca3;--warning:#f0a500;--code-bg:#0d1117;--border:#333}*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;padding:2rem;max-width:900px;margin:0 auto}h1{text-align:center;font-size:2.2rem;margin-bottom:.5rem;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}.subtitle{text-align:center;color:var(--text-muted);margin-bottom:3rem;font-size:1.1rem}h2{color:var(--accent);font-size:1.6rem;margin:2.5rem 0 1rem 0;padding-bottom:.3rem;border-bottom:2px solid var(--accent)}h3{color:var(--success);font-size:1.2rem;margin:1.8rem 0 .8rem 0}h4{color:var(--warning);font-size:1.05rem;margin:1.2rem 0 .5rem 0}p{margin-bottom:1rem}pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1.2rem;overflow-x:auto;margin:1rem 0;font-size:.9rem;line-height:1.5}code{font-family:'Cascadia Code','Fira Code','Consolas',monospace;font-size:.9rem}p code,li code{background:var(--code-bg);padding:.15rem .4rem;border-radius:4px;border:1px solid var(--border)}.keyword{color:#569cd6}.type{color:#4ec9b0}.string{color:#ce9178}.comment{color:#6a9955}.method{color:#dcdcaa}.number{color:#b5cea8}.param{color:#9cdcfe}.callout{border-radius:8px;padding:1.2rem 1.5rem;margin:1.5rem 0;border-left:4px solid}.callout-metaphor{background:rgba(83,52,131,.2);border-color:var(--accent2)}.callout-metaphor::before{content:"Metaphor";display:block;font-weight:bold;color:var(--accent2);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}.callout-english{background:rgba(78,204,163,.1);border-color:var(--success)}.callout-english::before{content:"Read It Like English";display:block;font-weight:bold;color:var(--success);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}.callout-warning{background:rgba(240,165,0,.1);border-color:var(--warning)}.callout-warning::before{content:"Common Confusion";display:block;font-weight:bold;color:var(--warning);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}.callout-rule{background:rgba(233,69,96,.1);border-color:var(--accent)}.callout-rule::before{content:"Golden Rule";display:block;font-weight:bold;color:var(--accent);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}ul,ol{margin:.5rem 0 1rem 1.5rem}li{margin-bottom:.3rem}table{width:100%;border-collapse:collapse;margin:1rem 0}th,td{border:1px solid var(--border);padding:.6rem 1rem;text-align:left}th{background:var(--surface2);color:var(--success)}td{background:var(--surface)}.diagram{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1.5rem;margin:1.5rem 0;font-family:'Cascadia Code',monospace;font-size:.85rem;line-height:1.6;white-space:pre;overflow-x:auto}
+    </style>
+</head>
+<body>
+<div style="background:rgba(7,9,15,0.94);border-bottom:1px solid #1f2940;padding:12px 24px;font:13px/1.4 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;position:fixed;top:0;left:0;right:0;z-index:99999;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);display:flex;align-items:center;gap:10px;color:#94a3bf;box-sizing:border-box;min-height:48px;"><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;">Learning</a><span style="color:#5f6b86;">›</span><a href="../_Hub.html" style="color:#94a3bf;text-decoration:none;">CORE</a><span style="color:#5f6b86;">›</span><a href="_Category.html" style="color:#94a3bf;text-decoration:none;">Concurrency &amp; Performance</a><span style="color:#5f6b86;">›</span><span style="color:#e9eef8;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">SemaphoreSlim: Controlled Access and Async Locking</span><a href="semaphoreslim-async-locking.html" download style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">↓ Download</a><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">All docs</a></div><div style="height:48px;"></div><div style="background:linear-gradient(135deg,#0a0e1a 0%,#11182a 100%);border:1px solid #1f2940;border-radius:14px;padding:24px 28px;margin:20px;font:15px/1.7 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;color:#e9eef8;box-shadow:0 12px 40px rgba(0,0,0,0.35);"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.6px;color:#6aa6ff;font-weight:600;margin-bottom:8px;">▸ Curated · Concept · Concurrency</div><div style="font-size:24px;font-weight:700;color:#e9eef8;margin-bottom:10px;letter-spacing:-0.02em;line-height:1.2;">SemaphoreSlim: Controlled Access and Async Locking</div><div style="font-size:16px;color:#94a3bf;margin-bottom:18px;line-height:1.5;">SemaphoreSlim is the async-friendly lock primitive you must use whenever your critical section contains an await — a role lock() fundamentally cannot fill.</div><div style="font-style:italic;border-left:3px solid #6aa6ff;padding:6px 0 6px 16px;margin:14px 0;color:#e9eef8;">You wrote lock(obj) { await DoWork(); }, the compiler screamed CS1996, and you &#x27;fixed&#x27; it by moving the await just outside the brace. Congratulations — you just built a race condition with extra steps.</div><div style="background:rgba(106,166,255,0.06);border:1px solid rgba(106,166,255,0.20);border-radius:10px;padding:14px 18px;margin:14px 0;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#6aa6ff;margin-bottom:6px;font-weight:600;">Executive summary</div><div style="font-size:14px;color:#e9eef8;line-height:1.6;">This tutorial explains why the C# lock statement cannot contain await (because lock is thread-affine and await can resume on a different thread), and shows how SemaphoreSlim(1,1) replaces it as an async-safe mutex while SemaphoreSlim(N,N) doubles as a rate limiter for things like external API calls, PDF generation pools, and bulk DB operations. It walks through a real race condition in GivingCare&#x27;s GlobalChatService.InitializeAsync, shows the WaitAsync/try-finally/Release pattern, covers timeouts and cancellation, and closes with a decision tree for picking between lock, SemaphoreSlim, ConcurrentDictionary, and no synchronisation at all.</div></div><div style="background:rgba(184,106,255,0.06);border:1px solid rgba(184,106,255,0.25);border-radius:10px;padding:14px 18px;margin:14px 0;display:flex;gap:12px;"><div style="font-size:20px;flex-shrink:0;">💡</div><div style="flex:1;font-size:14px;color:#e9eef8;line-height:1.6;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#b86aff;margin-bottom:4px;font-weight:700;">Metaphor</div>SemaphoreSlim is a parking garage with exactly N spots. WaitAsync() pulls up to the entrance and either drives in (spot available) or idles outside until one frees up — crucially, your engine isn&#x27;t running while you wait (async, not blocking). Release() is backing out. Forget to back out once and that spot is lost forever; forget twice and the whole garage quietly seals itself shut.</div></div><div style="margin-top:14px;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#5f6b86;margin-bottom:8px;font-weight:600;">Key concepts</div><div><span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">async mutex</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">thread affinity</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">WaitAsync</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">try/finally release</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">rate limiting</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">concurrent permits</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">IDisposable semaphore lifecycle</span></div></div><div style="margin-top:18px;padding-top:14px;border-top:1px solid #1f2940;font-size:11px;color:#5f6b86;">↑ Curated overlay added by render_curated.py · the original document follows below</div></div>
+
+<h1>SemaphoreSlim — Controlled Access & Async Locking</h1>
+<p class="subtitle">Tutorial #30 — The async-friendly bouncer that keeps your concurrent code safe</p>
+
+<!-- ================================================================== -->
+<h2>1. What Is SemaphoreSlim?</h2>
+
+<p>
+    <code>SemaphoreSlim</code> is a lightweight synchronization primitive that <strong>limits the number of threads
+    (or async tasks) that can access a resource concurrently</strong>. It lives in
+    <code>System.Threading</code> and is the go-to tool for async-safe locking in .NET.
+</p>
+
+<div class="callout callout-metaphor">
+    SemaphoreSlim is like a parking garage with a limited number of spots.
+    <code>WaitAsync()</code> drives in (if there's space) or waits at the entrance.
+    <code>Release()</code> drives out, freeing a spot for the next car.
+</div>
+
+<p>The constructor takes two numbers:</p>
+
+<pre><code><span class="comment">// SemaphoreSlim(initialCount, maxCount)</span>
+
+<span class="keyword">var</span> <span class="param">mutex</span> = <span class="keyword">new</span> <span class="type">SemaphoreSlim</span>(<span class="number">1</span>, <span class="number">1</span>);   <span class="comment">// Mutex: only 1 at a time (async-friendly lock)</span>
+<span class="keyword">var</span> <span class="param">throttle</span> = <span class="keyword">new</span> <span class="type">SemaphoreSlim</span>(<span class="number">3</span>, <span class="number">3</span>); <span class="comment">// Allow 3 concurrent accessors</span>
+<span class="keyword">var</span> <span class="param">gate</span> = <span class="keyword">new</span> <span class="type">SemaphoreSlim</span>(<span class="number">0</span>, <span class="number">1</span>);     <span class="comment">// Starts closed (0 permits), max 1 — useful for signaling</span></code></pre>
+
+<ul>
+    <li><code>SemaphoreSlim(1, 1)</code> = <strong>mutex</strong> (only 1 at a time) — the async-friendly version of <code>lock()</code></li>
+    <li><code>SemaphoreSlim(3, 3)</code> = allow 3 concurrent accessors — rate limiting / parallelism control</li>
+    <li><code>initialCount</code> = how many permits are available right now</li>
+    <li><code>maxCount</code> = the maximum permits that can ever exist</li>
+</ul>
+
+<div class="callout callout-english">
+    <code>new SemaphoreSlim(3, 3)</code> reads as: "Create a gate that allows at most 3 through at a time,
+    starting with 3 available spots."
+</div>
+
+<!-- ================================================================== -->
+<h2>2. Why Not Just Use lock()?</h2>
+
+<p>
+    The <code>lock</code> statement is the simplest synchronization tool in C#. But it has a
+    <strong>fatal limitation</strong>: it cannot contain <code>await</code> statements.
+</p>
+
+<h3>The Problem: lock() + await = Compiler Error</h3>
+
+<pre><code><span class="comment">// BROKEN — C# compiler error CS1996</span>
+<span class="keyword">lock</span> (<span class="param">_lockObject</span>)
+{
+    <span class="keyword">await</span> <span class="method">DoAsyncWork</span>();  <span class="comment">// ERROR: cannot await in lock body</span>
+}</code></pre>
+
+<p>
+    The C# compiler flat-out refuses this. Why? Because <code>lock()</code> is thread-affine — it tracks
+    <em>which thread</em> owns the lock. But <code>await</code> can resume on a <em>different thread</em>,
+    so the lock would be released by a thread that never acquired it. The compiler prevents this chaos.
+</p>
+
+<h3>The Workaround That Fails</h3>
+
+<pre><code><span class="comment">// WORKS BUT DANGEROUS — releases lock across await</span>
+<span class="keyword">lock</span> (<span class="param">_lockObject</span>)
+{
+    <span class="param">_isInitialized</span> = <span class="keyword">true</span>;
+}
+<span class="keyword">await</span> <span class="method">DoAsyncWork</span>();  <span class="comment">// lock released, another thread can enter!</span></code></pre>
+
+<p>
+    Putting the <code>await</code> outside the lock "works" syntactically but defeats the entire purpose.
+    The lock is released before the async work completes, so another thread can enter the critical
+    section while the first thread is still doing its work.
+</p>
+
+<h3>GivingCare Has This Exact Problem</h3>
+
+<p>Two services in the codebase use <code>lock()</code> with async methods, creating a race condition window:</p>
+
+<h4>GlobalChatService.cs — The Race Condition</h4>
+
+<pre><code><span class="keyword">private readonly</span> <span class="type">object</span> <span class="param">_lockObject</span> = <span class="keyword">new</span>();
+
+<span class="keyword">public async</span> <span class="type">Task</span> <span class="method">InitializeAsync</span>(<span class="keyword">int</span> <span class="param">userId</span>)
+{
+    <span class="keyword">lock</span> (<span class="param">_lockObject</span>)
+    {
+        <span class="keyword">if</span> (<span class="param">_isInitialized</span> && <span class="param">_currentUserId</span> == <span class="param">userId</span>) <span class="keyword">return</span>;
+        <span class="param">_currentUserId</span> = <span class="param">userId</span>;
+    }
+    <span class="comment">// ^^^ Lock released! Another thread can enter InitializeAsync here!</span>
+    <span class="keyword">await</span> <span class="method">CreateHubConnection</span>();
+    <span class="keyword">await</span> <span class="method">ConnectAsync</span>();
+    <span class="param">_isInitialized</span> = <span class="keyword">true</span>;  <span class="comment">// Too late — second thread already past the lock check</span>
+}</code></pre>
+
+<p>
+    <strong>GlobalNotificationService.cs</strong> has the same pattern and the same problem.
+</p>
+
+<p>What can go wrong?</p>
+<ol>
+    <li>Thread A enters the lock, sets <code>_currentUserId</code>, exits the lock</li>
+    <li>Thread B enters the lock (it's released!), also sets <code>_currentUserId</code>, exits</li>
+    <li>Both threads call <code>CreateHubConnection()</code> simultaneously</li>
+    <li>You get two hub connections, resource leaks, and unpredictable behavior</li>
+</ol>
+
+<div class="callout callout-warning">
+    <code>lock()</code> and <code>SemaphoreSlim(1,1)</code> do the same thing conceptually — mutual exclusion.
+    The difference: <code>lock()</code> cannot contain <code>await</code>. <code>SemaphoreSlim</code> can.
+    If your critical section has ANY async calls, you <strong>MUST</strong> use <code>SemaphoreSlim</code>.
+</div>
+
+<!-- ================================================================== -->
+<h2>3. The Fix: SemaphoreSlim(1, 1) as Async Mutex</h2>
+
+<p>Here is the corrected version of <code>GlobalChatService.InitializeAsync</code>:</p>
+
+<pre><code><span class="keyword">private readonly</span> <span class="type">SemaphoreSlim</span> <span class="param">_initLock</span> = <span class="keyword">new</span>(<span class="number">1</span>, <span class="number">1</span>);
+
+<span class="keyword">public async</span> <span class="type">Task</span> <span class="method">InitializeAsync</span>(<span class="keyword">int</span> <span class="param">userId</span>)
+{
+    <span class="keyword">await</span> <span class="param">_initLock</span>.<span class="method">WaitAsync</span>();  <span class="comment">// Await-friendly! Blocks until available.</span>
+    <span class="keyword">try</span>
+    {
+        <span class="keyword">if</span> (<span class="param">_isInitialized</span> && <span class="param">_currentUserId</span> == <span class="param">userId</span>) <span class="keyword">return</span>;
+        <span class="param">_currentUserId</span> = <span class="param">userId</span>;
+
+        <span class="keyword">await</span> <span class="method">CreateHubConnection</span>();  <span class="comment">// Safe! Still holding the semaphore.</span>
+        <span class="keyword">await</span> <span class="method">ConnectAsync</span>();
+        <span class="param">_isInitialized</span> = <span class="keyword">true</span>;
+    }
+    <span class="keyword">finally</span>
+    {
+        <span class="param">_initLock</span>.<span class="method">Release</span>();  <span class="comment">// ALWAYS release, even on exception.</span>
+    }
+}</code></pre>
+
+<div class="callout callout-rule">
+    <strong>ALWAYS</strong> <code>Release()</code> in a <code>finally</code> block. If you forget, the semaphore
+    count stays at 0 forever — every future <code>WaitAsync()</code> will deadlock.
+</div>
+
+<p>Why this works:</p>
+<ul>
+    <li><code>WaitAsync()</code> is itself an <code>async</code> method — it yields the thread while waiting, no blocking</li>
+    <li>Unlike <code>lock()</code>, it is not thread-affine — you can <code>await</code> inside it safely</li>
+    <li>The <code>try/finally</code> ensures the semaphore is released even if <code>CreateHubConnection</code> or <code>ConnectAsync</code> throws</li>
+    <li>Thread B calling <code>WaitAsync()</code> will wait asynchronously until Thread A's <code>Release()</code></li>
+</ul>
+
+<!-- ================================================================== -->
+<h2>4. How SemaphoreSlim Works Internally</h2>
+
+<p>Let's trace through what happens when two threads compete for a <code>SemaphoreSlim(1, 1)</code>:</p>
+
+<div class="diagram">SemaphoreSlim(1, 1) — starts with 1 permit
+════════════════════════════════════════════════════
+
+Thread A: WaitAsync() ──→ gets permit     (count: 1 → 0)
+Thread B: WaitAsync() ──→ no permits, WAITS...
+
+Thread A: [does async work...]
+Thread A: [await CreateHubConnection()]
+Thread A: [await ConnectAsync()]
+
+Thread A: Release()   ──→ count back to 1 (count: 0 → 1)
+
+Thread B: ──→ gets permit (count: 1 → 0), continues
+Thread B: [does async work...]
+Thread B: Release()   ──→ count back to 1 (count: 0 → 1)</div>
+
+<p>Key points:</p>
+<ul>
+    <li>The <strong>count</strong> tracks available permits (not waiting threads)</li>
+    <li><code>WaitAsync()</code> decrements the count. If count reaches 0, the caller waits.</li>
+    <li><code>Release()</code> increments the count. If anyone is waiting, the next in line wakes up.</li>
+    <li>Waiting is <strong>async</strong> — the thread is freed back to the thread pool while waiting</li>
+</ul>
+
+<!-- ================================================================== -->
+<h2>5. SemaphoreSlim(N, N) — Rate Limiting / Parallelism Control</h2>
+
+<p>
+    The real power of <code>SemaphoreSlim</code> over <code>lock()</code> is that it's not limited to
+    mutual exclusion. You can allow <strong>N concurrent accessors</strong>:
+</p>
+
+<pre><code><span class="comment">// Allow max 3 concurrent API calls</span>
+<span class="keyword">private readonly</span> <span class="type">SemaphoreSlim</span> <span class="param">_apiThrottle</span> = <span class="keyword">new</span>(<span class="number">3</span>, <span class="number">3</span>);
+
+<span class="keyword">public async</span> <span class="type">Task</span>&lt;<span class="type">Result</span>&gt; <span class="method">CallExternalApiAsync</span>()
+{
+    <span class="keyword">await</span> <span class="param">_apiThrottle</span>.<span class="method">WaitAsync</span>();
+    <span class="keyword">try</span>
+    {
+        <span class="keyword">return await</span> <span class="param">_httpClient</span>.<span class="method">GetAsync</span>(<span class="param">url</span>);
+    }
+    <span class="keyword">finally</span>
+    {
+        <span class="param">_apiThrottle</span>.<span class="method">Release</span>();
+    }
+}</code></pre>
+
+<p>This is perfect for:</p>
+<ul>
+    <li>External API rate limits (e.g., "max 5 requests per second")</li>
+    <li>Database connection pooling (e.g., "max 10 concurrent queries")</li>
+    <li>File I/O throttling (e.g., "max 2 concurrent file writes")</li>
+</ul>
+
+<div class="diagram">SemaphoreSlim(3, 3) — starts with 3 permits
+════════════════════════════════════════════════════
+
+Thread A: WaitAsync() ──→ permit (count: 3 → 2)
+Thread B: WaitAsync() ──→ permit (count: 2 → 1)
+Thread C: WaitAsync() ──→ permit (count: 1 → 0)
+Thread D: WaitAsync() ──→ WAITS... (all 3 permits taken)
+
+  [A, B, C all doing work concurrently...]
+
+Thread A: Release()   ──→ (count: 0 → 1)
+Thread D: ──→ gets permit  (count: 1 → 0), continues
+
+  [B, C, D all doing work concurrently...]</div>
+
+<p>
+    Notice that three threads run concurrently at all times. The fourth thread waits only until
+    one of the first three finishes — then it immediately picks up the freed permit.
+</p>
+
+<!-- ================================================================== -->
+<h2>6. SemaphoreSlim with Timeout</h2>
+
+<p>
+    In production systems, you don't always want to wait forever. <code>WaitAsync</code> accepts
+    a timeout, returning <code>true</code> if the permit was acquired and <code>false</code> if the
+    timeout expired:
+</p>
+
+<pre><code><span class="keyword">if</span> (<span class="keyword">await</span> <span class="param">_semaphore</span>.<span class="method">WaitAsync</span>(<span class="type">TimeSpan</span>.<span class="method">FromSeconds</span>(<span class="number">5</span>)))
+{
+    <span class="keyword">try</span>
+    {
+        <span class="comment">// Got access within 5 seconds — do work</span>
+        <span class="keyword">await</span> <span class="method">DoProtectedWorkAsync</span>();
+    }
+    <span class="keyword">finally</span>
+    {
+        <span class="param">_semaphore</span>.<span class="method">Release</span>();
+    }
+}
+<span class="keyword">else</span>
+{
+    <span class="comment">// Couldn't get access within 5 seconds — handle gracefully</span>
+    <span class="keyword">return</span> <span class="type">ServiceResult</span>.<span class="method">Failure</span>(<span class="string">"Service busy, try again later"</span>);
+}</code></pre>
+
+<p>Important nuance: <strong>only call <code>Release()</code> if <code>WaitAsync</code> returned <code>true</code></strong>.
+If it returned <code>false</code>, you never acquired the permit, so releasing would add an extra permit
+and break the count.</p>
+
+<pre><code><span class="comment">// WRONG — releases even when we didn't acquire!</span>
+<span class="keyword">await</span> <span class="param">_semaphore</span>.<span class="method">WaitAsync</span>(<span class="type">TimeSpan</span>.<span class="method">FromSeconds</span>(<span class="number">5</span>));
+<span class="keyword">try</span> { <span class="keyword">await</span> <span class="method">DoWork</span>(); }
+<span class="keyword">finally</span> { <span class="param">_semaphore</span>.<span class="method">Release</span>(); }  <span class="comment">// BUG if WaitAsync timed out!</span>
+
+<span class="comment">// CORRECT — only release if acquired</span>
+<span class="keyword">var</span> <span class="param">acquired</span> = <span class="keyword">await</span> <span class="param">_semaphore</span>.<span class="method">WaitAsync</span>(<span class="type">TimeSpan</span>.<span class="method">FromSeconds</span>(<span class="number">5</span>));
+<span class="keyword">try</span>
+{
+    <span class="keyword">if</span> (!<span class="param">acquired</span>) <span class="keyword">return</span> <span class="type">ServiceResult</span>.<span class="method">Failure</span>(<span class="string">"Timeout"</span>);
+    <span class="keyword">await</span> <span class="method">DoWork</span>();
+}
+<span class="keyword">finally</span>
+{
+    <span class="keyword">if</span> (<span class="param">acquired</span>) <span class="param">_semaphore</span>.<span class="method">Release</span>();
+}</code></pre>
+
+<!-- ================================================================== -->
+<h2>7. The Complete Synchronization Toolkit</h2>
+
+<p>Where does <code>SemaphoreSlim</code> fit among other .NET synchronization primitives?</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Primitive</th>
+            <th>Async-Safe?</th>
+            <th>Max Concurrent</th>
+            <th>Use Case</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code>lock()</code></td>
+            <td>NO</td>
+            <td>1</td>
+            <td>Simple sync-only critical sections</td>
+        </tr>
+        <tr>
+            <td><code>SemaphoreSlim(1,1)</code></td>
+            <td>YES</td>
+            <td>1</td>
+            <td>Async mutex (initialization, single-writer)</td>
+        </tr>
+        <tr>
+            <td><code>SemaphoreSlim(N,N)</code></td>
+            <td>YES</td>
+            <td>N</td>
+            <td>Rate limiting, parallelism control</td>
+        </tr>
+        <tr>
+            <td><code>ConcurrentDictionary</code></td>
+            <td>YES (built-in)</td>
+            <td>Unlimited reads</td>
+            <td>Thread-safe key-value store</td>
+        </tr>
+        <tr>
+            <td><code>Monitor</code> (lock)</td>
+            <td>NO</td>
+            <td>1</td>
+            <td>Same as lock() (explicit API)</td>
+        </tr>
+    </tbody>
+</table>
+
+<p>Decision flow:</p>
+<ul>
+    <li>Need to protect async code? &rarr; <code>SemaphoreSlim</code></li>
+    <li>Need to protect sync-only code? &rarr; <code>lock()</code> (simpler, lighter)</li>
+    <li>Need a thread-safe dictionary? &rarr; <code>ConcurrentDictionary</code> (built-in atomicity)</li>
+    <li>No shared mutable state? &rarr; No synchronization needed</li>
+</ul>
+
+<!-- ================================================================== -->
+<h2>8. Common Patterns in Web Apps</h2>
+
+<h3>Pattern 1: Singleton Service Initialization</h3>
+
+<p>This is the exact pattern GlobalChatService and GlobalNotificationService need:</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">GlobalChatService</span> : <span class="type">IAsyncDisposable</span>
+{
+    <span class="keyword">private readonly</span> <span class="type">SemaphoreSlim</span> <span class="param">_initLock</span> = <span class="keyword">new</span>(<span class="number">1</span>, <span class="number">1</span>);
+    <span class="keyword">private</span> <span class="type">HubConnection</span>? <span class="param">_hubConnection</span>;
+    <span class="keyword">private bool</span> <span class="param">_isInitialized</span>;
+
+    <span class="keyword">public async</span> <span class="type">Task</span> <span class="method">EnsureInitializedAsync</span>(<span class="keyword">int</span> <span class="param">userId</span>)
+    {
+        <span class="keyword">await</span> <span class="param">_initLock</span>.<span class="method">WaitAsync</span>();
+        <span class="keyword">try</span>
+        {
+            <span class="keyword">if</span> (<span class="param">_isInitialized</span>) <span class="keyword">return</span>;
+            <span class="param">_hubConnection</span> = <span class="keyword">new</span> <span class="type">HubConnectionBuilder</span>()
+                .<span class="method">WithUrl</span>(<span class="string">$"/chatHub?userId={userId}"</span>)
+                .<span class="method">Build</span>();
+            <span class="keyword">await</span> <span class="param">_hubConnection</span>.<span class="method">StartAsync</span>();
+            <span class="param">_isInitialized</span> = <span class="keyword">true</span>;
+        }
+        <span class="keyword">finally</span>
+        {
+            <span class="param">_initLock</span>.<span class="method">Release</span>();
+        }
+    }
+}</code></pre>
+
+<h3>Pattern 2: External API Rate Limiting</h3>
+
+<pre><code><span class="keyword">public class</span> <span class="type">ExternalApiService</span>
+{
+    <span class="comment">// The external API allows max 5 concurrent requests</span>
+    <span class="keyword">private readonly</span> <span class="type">SemaphoreSlim</span> <span class="param">_throttle</span> = <span class="keyword">new</span>(<span class="number">5</span>, <span class="number">5</span>);
+
+    <span class="keyword">public async</span> <span class="type">Task</span>&lt;<span class="type">string</span>&gt; <span class="method">FetchDataAsync</span>(<span class="keyword">string</span> <span class="param">endpoint</span>)
+    {
+        <span class="keyword">await</span> <span class="param">_throttle</span>.<span class="method">WaitAsync</span>();
+        <span class="keyword">try</span>
+        {
+            <span class="keyword">return await</span> <span class="param">_httpClient</span>.<span class="method">GetStringAsync</span>(<span class="param">endpoint</span>);
+        }
+        <span class="keyword">finally</span>
+        {
+            <span class="param">_throttle</span>.<span class="method">Release</span>();
+        }
+    }
+}</code></pre>
+
+<h3>Pattern 3: File Write Serialization</h3>
+
+<pre><code><span class="keyword">public class</span> <span class="type">LogFileService</span>
+{
+    <span class="comment">// Only one writer at a time to prevent file corruption</span>
+    <span class="keyword">private readonly</span> <span class="type">SemaphoreSlim</span> <span class="param">_fileLock</span> = <span class="keyword">new</span>(<span class="number">1</span>, <span class="number">1</span>);
+
+    <span class="keyword">public async</span> <span class="type">Task</span> <span class="method">AppendLogAsync</span>(<span class="keyword">string</span> <span class="param">message</span>)
+    {
+        <span class="keyword">await</span> <span class="param">_fileLock</span>.<span class="method">WaitAsync</span>();
+        <span class="keyword">try</span>
+        {
+            <span class="keyword">await</span> <span class="type">File</span>.<span class="method">AppendAllTextAsync</span>(<span class="param">_logPath</span>, <span class="param">message</span> + <span class="string">"\n"</span>);
+        }
+        <span class="keyword">finally</span>
+        {
+            <span class="param">_fileLock</span>.<span class="method">Release</span>();
+        }
+    }
+}</code></pre>
+
+<h3>Pattern 4: Database Bulk Operation Throttling</h3>
+
+<pre><code><span class="comment">// Process 1000 records but only 10 DB operations at a time</span>
+<span class="keyword">var</span> <span class="param">throttle</span> = <span class="keyword">new</span> <span class="type">SemaphoreSlim</span>(<span class="number">10</span>, <span class="number">10</span>);
+
+<span class="keyword">var</span> <span class="param">tasks</span> = <span class="param">records</span>.<span class="method">Select</span>(<span class="keyword">async</span> <span class="param">record</span> =>
+{
+    <span class="keyword">await</span> <span class="param">throttle</span>.<span class="method">WaitAsync</span>();
+    <span class="keyword">try</span>
+    {
+        <span class="keyword">await using var</span> <span class="param">context</span> = <span class="param">_contextFactory</span>.<span class="method">CreateCompanyContext</span>(<span class="param">companyDb</span>);
+        <span class="keyword">await</span> <span class="method">ProcessRecordAsync</span>(<span class="param">context</span>, <span class="param">record</span>);
+    }
+    <span class="keyword">finally</span>
+    {
+        <span class="param">throttle</span>.<span class="method">Release</span>();
+    }
+});
+
+<span class="keyword">await</span> <span class="type">Task</span>.<span class="method">WhenAll</span>(<span class="param">tasks</span>);</code></pre>
+
+<h3>Pattern 5: Resource Pool Management</h3>
+
+<pre><code><span class="comment">// Limit concurrent PDF generation (memory-intensive)</span>
+<span class="keyword">private readonly</span> <span class="type">SemaphoreSlim</span> <span class="param">_pdfPool</span> = <span class="keyword">new</span>(<span class="number">2</span>, <span class="number">2</span>);
+
+<span class="keyword">public async</span> <span class="type">Task</span>&lt;<span class="keyword">byte</span>[]&gt; <span class="method">GeneratePdfAsync</span>(<span class="type">ReportData</span> <span class="param">data</span>)
+{
+    <span class="keyword">await</span> <span class="param">_pdfPool</span>.<span class="method">WaitAsync</span>();
+    <span class="keyword">try</span>
+    {
+        <span class="keyword">return await</span> <span class="param">_pdfBuilder</span>.<span class="method">BuildAsync</span>(<span class="param">data</span>);
+    }
+    <span class="keyword">finally</span>
+    {
+        <span class="param">_pdfPool</span>.<span class="method">Release</span>();
+    }
+}</code></pre>
+
+<!-- ================================================================== -->
+<h2>9. Disposal and Cleanup</h2>
+
+<p>
+    <code>SemaphoreSlim</code> implements <code>IDisposable</code>. If your service owns a semaphore
+    and that service has a lifetime (like a Singleton or a scoped service), dispose it properly:
+</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">MyService</span> : <span class="type">IDisposable</span>
+{
+    <span class="keyword">private readonly</span> <span class="type">SemaphoreSlim</span> <span class="param">_lock</span> = <span class="keyword">new</span>(<span class="number">1</span>, <span class="number">1</span>);
+
+    <span class="keyword">public async</span> <span class="type">Task</span> <span class="method">DoWorkAsync</span>()
+    {
+        <span class="keyword">await</span> <span class="param">_lock</span>.<span class="method">WaitAsync</span>();
+        <span class="keyword">try</span>
+        {
+            <span class="comment">// protected work...</span>
+        }
+        <span class="keyword">finally</span>
+        {
+            <span class="param">_lock</span>.<span class="method">Release</span>();
+        }
+    }
+
+    <span class="keyword">public void</span> <span class="method">Dispose</span>()
+    {
+        <span class="param">_lock</span>.<span class="method">Dispose</span>();
+    }
+}</code></pre>
+
+<p>For async disposal (e.g., with <code>IAsyncDisposable</code>):</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">MyService</span> : <span class="type">IAsyncDisposable</span>
+{
+    <span class="keyword">private readonly</span> <span class="type">SemaphoreSlim</span> <span class="param">_lock</span> = <span class="keyword">new</span>(<span class="number">1</span>, <span class="number">1</span>);
+
+    <span class="keyword">public async</span> <span class="type">ValueTask</span> <span class="method">DisposeAsync</span>()
+    {
+        <span class="comment">// Wait for any in-progress operation to finish before disposing</span>
+        <span class="keyword">await</span> <span class="param">_lock</span>.<span class="method">WaitAsync</span>();
+        <span class="keyword">try</span>
+        {
+            <span class="comment">// Cleanup resources...</span>
+        }
+        <span class="keyword">finally</span>
+        {
+            <span class="param">_lock</span>.<span class="method">Release</span>();
+            <span class="param">_lock</span>.<span class="method">Dispose</span>();
+        }
+    }
+}</code></pre>
+
+<p>
+    Note: Disposing a <code>SemaphoreSlim</code> while threads are waiting on it will throw
+    <code>ObjectDisposedException</code> on those waiting threads. Make sure all work is complete before disposal.
+</p>
+
+<!-- ================================================================== -->
+<h2>10. When NOT to Use SemaphoreSlim</h2>
+
+<p>
+    <code>SemaphoreSlim</code> is powerful, but it's not always the right tool. Here's when to pick something else:
+</p>
+
+<h3>For simple non-async synchronization &rarr; use lock()</h3>
+
+<pre><code><span class="comment">// This is purely synchronous — lock() is simpler and lighter</span>
+<span class="keyword">private readonly</span> <span class="type">object</span> <span class="param">_sync</span> = <span class="keyword">new</span>();
+<span class="keyword">private int</span> <span class="param">_counter</span>;
+
+<span class="keyword">public void</span> <span class="method">Increment</span>()
+{
+    <span class="keyword">lock</span> (<span class="param">_sync</span>)
+    {
+        <span class="param">_counter</span>++;  <span class="comment">// No async, no await — lock() is fine</span>
+    }
+}</code></pre>
+
+<h3>For thread-safe collections &rarr; use ConcurrentDictionary</h3>
+
+<pre><code><span class="comment">// Don't wrap a regular Dictionary with SemaphoreSlim</span>
+<span class="comment">// Use ConcurrentDictionary instead — it has built-in atomicity</span>
+<span class="keyword">private readonly</span> <span class="type">ConcurrentDictionary</span>&lt;<span class="keyword">string</span>, <span class="type">UserSession</span>&gt; <span class="param">_sessions</span> = <span class="keyword">new</span>();
+
+<span class="param">_sessions</span>.<span class="method">TryAdd</span>(<span class="param">key</span>, <span class="param">session</span>);          <span class="comment">// Atomic</span>
+<span class="param">_sessions</span>.<span class="method">GetOrAdd</span>(<span class="param">key</span>, <span class="param">createFunc</span>);     <span class="comment">// Atomic</span>
+<span class="param">_sessions</span>.<span class="method">AddOrUpdate</span>(<span class="param">key</span>, <span class="param">add</span>, <span class="param">update</span>); <span class="comment">// Atomic</span></code></pre>
+
+<h3>For immutable data &rarr; no synchronization needed</h3>
+
+<pre><code><span class="comment">// Immutable objects are inherently thread-safe</span>
+<span class="keyword">private readonly</span> <span class="type">ImmutableList</span>&lt;<span class="keyword">string</span>&gt; <span class="param">_permissions</span> = <span class="type">ImmutableList</span>&lt;<span class="keyword">string</span>&gt;.<span class="param">Empty</span>;
+
+<span class="comment">// "Modifying" creates a new list — the original is never changed</span>
+<span class="keyword">var</span> <span class="param">updated</span> = <span class="param">_permissions</span>.<span class="method">Add</span>(<span class="string">"CanEdit"</span>);  <span class="comment">// New object, no contention</span></code></pre>
+
+<h3>For per-request data &rarr; no sharing = no contention</h3>
+
+<pre><code><span class="comment">// Scoped services in Blazor Server get a new instance per circuit</span>
+<span class="comment">// No two users share this instance — no synchronization needed</span>
+<span class="keyword">public class</span> <span class="type">UserDashboardService</span>  <span class="comment">// Registered as Scoped</span>
+{
+    <span class="keyword">private</span> <span class="type">List</span>&lt;<span class="type">Notification</span>&gt; <span class="param">_notifications</span> = <span class="keyword">new</span>();
+
+    <span class="keyword">public void</span> <span class="method">AddNotification</span>(<span class="type">Notification</span> <span class="param">n</span>)
+    {
+        <span class="param">_notifications</span>.<span class="method">Add</span>(<span class="param">n</span>);  <span class="comment">// Safe — only one circuit uses this instance</span>
+    }
+}</code></pre>
+
+<p>The decision tree:</p>
+
+<div class="diagram">Do I need synchronization?
+│
+├── Is data shared between threads/tasks?
+│   ├── NO  → No synchronization needed (per-request, immutable)
+│   └── YES → Continue...
+│
+├── Do I need a thread-safe collection?
+│   ├── YES → ConcurrentDictionary / ConcurrentQueue / etc.
+│   └── NO  → Continue...
+│
+├── Does the critical section contain await?
+│   ├── YES → SemaphoreSlim (the ONLY option)
+│   └── NO  → lock() (simpler, lighter)
+│
+└── Do I need to allow N concurrent accessors?
+    ├── YES → SemaphoreSlim(N, N)
+    └── NO  → SemaphoreSlim(1, 1) or lock()</div>
+
+<!-- ================================================================== -->
+<h2>Quick Reference</h2>
+
+<pre><code><span class="comment">// === ASYNC MUTEX (1 at a time) ===</span>
+<span class="keyword">private readonly</span> <span class="type">SemaphoreSlim</span> <span class="param">_lock</span> = <span class="keyword">new</span>(<span class="number">1</span>, <span class="number">1</span>);
+
+<span class="keyword">await</span> <span class="param">_lock</span>.<span class="method">WaitAsync</span>();           <span class="comment">// Acquire (blocks if unavailable)</span>
+<span class="keyword">try</span> { <span class="comment">/* work */</span> }
+<span class="keyword">finally</span> { <span class="param">_lock</span>.<span class="method">Release</span>(); }      <span class="comment">// Release (ALWAYS in finally)</span>
+
+<span class="comment">// === RATE LIMITER (N at a time) ===</span>
+<span class="keyword">private readonly</span> <span class="type">SemaphoreSlim</span> <span class="param">_throttle</span> = <span class="keyword">new</span>(<span class="number">5</span>, <span class="number">5</span>);
+
+<span class="comment">// === WITH TIMEOUT ===</span>
+<span class="keyword">if</span> (<span class="keyword">await</span> <span class="param">_lock</span>.<span class="method">WaitAsync</span>(<span class="type">TimeSpan</span>.<span class="method">FromSeconds</span>(<span class="number">5</span>)))
+{
+    <span class="keyword">try</span> { <span class="comment">/* work */</span> }
+    <span class="keyword">finally</span> { <span class="param">_lock</span>.<span class="method">Release</span>(); }
+}
+<span class="keyword">else</span> { <span class="comment">/* timeout — handle gracefully */</span> }
+
+<span class="comment">// === WITH CANCELLATION ===</span>
+<span class="keyword">await</span> <span class="param">_lock</span>.<span class="method">WaitAsync</span>(<span class="param">cancellationToken</span>);
+
+<span class="comment">// === CHECK STATE ===</span>
+<span class="keyword">int</span> <span class="param">available</span> = <span class="param">_lock</span>.<span class="param">CurrentCount</span>;  <span class="comment">// How many permits available right now</span>
+
+<span class="comment">// === CLEANUP ===</span>
+<span class="param">_lock</span>.<span class="method">Dispose</span>();                     <span class="comment">// When service is disposed</span></code></pre>
+
+</body>
+</html>

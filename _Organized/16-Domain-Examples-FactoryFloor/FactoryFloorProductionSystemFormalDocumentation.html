@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FactoryFloorProductionSystemFormalDocumentation</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 16-Domain-Examples-FactoryFloor</div>
+  <h1>FactoryFloorProductionSystemFormalDocumentation</h1>
+  <div class="meta">Source: <code>Education/FactoryFloor/ENG/FactoryFloorProductionSystemFormalDocumentation.docx</code> &middot; <a href="FactoryFloorProductionSystemFormalDocumentation.docx">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<p>Factory Floor Production System - Technical Documentation</p>
+<p>Table of Contents</p>
+<p>System Overview</p>
+<p>Architecture</p>
+<p>Component Documentation</p>
+<p>Service Layer</p>
+<p>Data Models</p>
+<p>API Reference</p>
+<p>State Management</p>
+<p>Integration Points</p>
+<p>Security</p>
+<p>Performance Considerations</p>
+<p>System Overview</p>
+<p>Purpose</p>
+<p>The Factory Floor Production System is a real-time manufacturing execution system (MES) designed to track production orders, material consumption, and inventory movements in a manufacturing environment.</p>
+<p>Key Features</p>
+<p>Real-time production order management</p>
+<p>Material consumption tracking with variance analysis</p>
+<p>Automated stock movement generation</p>
+<p>Historical consumption pattern analysis</p>
+<p>Multi-machine production support</p>
+<p>Integration with Primavera ERP system</p>
+<p>Technology Stack</p>
+<p>Frontend: Blazor Server (.NET 8)</p>
+<p>UI Framework: MudBlazor</p>
+<p>Backend: ASP.NET Core</p>
+<p>Database: Entity Framework Core</p>
+<p>External Integration: Primavera ERP</p>
+<p>Architecture</p>
+<p>System Architecture Diagram</p>
+<p>┌─────────────────────────────────────────────────────────┐</p>
+<p>│                   Presentation Layer                    │</p>
+<p>│  ┌──────────────┐  ┌───────────────────────────┐        │</p>
+<p>│  │Factory_New   │  │MaterialConsumptionModal   │        │</p>
+<p>│  │   (.razor)   │  │       (.razor)            │        │</p>
+<p>│  └──────┬───────┘  └────────────┬──────────────┘        │</p>
+<p>└─────────┼───────────────────────┼───────────────────────┘</p>
+<p>│                       │</p>
+<p>┌─────────▼───────────────────────▼──────────────────────┐</p>
+<p>│                    Service Layer                       │</p>
+<p>│  ┌─────────────────────────────────────────────────┐   │</p>
+<p>│  │         IFactoryFloorService                    │   │</p>
+<p>│  │         FactoryFloorService                     │   │</p>
+<p>│  └─────────────────┬───────────────────────────────┘   │</p>
+<p>└────────────────────┼───────────────────────────────────┘</p>
+<p>│</p>
+<p>┌────────────────────▼────────────────────────────────────┐</p>
+<p>│                  Data Access Layer                      │</p>
+<p>│  ┌──────────────────┐  ┌────────────────────────┐       │</p>
+<p>│  │BioBragaContext   │  │IPrimaveraRepository    │       │</p>
+<p>│  │(Entity Framework)│  │(ERP Integration)       │       │</p>
+<p>│  └──────────────────┘  └────────────────────────┘       │</p>
+<p>└─────────────────────────────────────────────────────────┘</p>
+<p>Design Patterns</p>
+<p>Repository Pattern: Data access abstraction</p>
+<p>Service Layer Pattern: Business logic encapsulation</p>
+<p>Dependency Injection: IoC container for loose coupling</p>
+<p>Unit of Work: Transaction management via EF Core</p>
+<p>Component Documentation</p>
+<p>Factory_New.razor</p>
+<p>Purpose</p>
+<p>Main production floor interface providing real-time visualization of production orders and control mechanisms.</p>
+<p>Component Structure</p>
+<p>@page &quot;/factory_new&quot;</p>
+<p>@page &quot;/factory_new/{maquinaid}&quot;</p>
+<p>@layout FactoryLayout</p>
+<p>Key Properties</p>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Property</th>
+<th>Type</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>maquinaid</td>
+<td>string?</td>
+<td>Route parameter for machine filtering</td>
+</tr>
+<tr>
+<td>CurrentWorker</td>
+<td>CrmUtilizador?</td>
+<td>Cascading parameter for authenticated worker</td>
+</tr>
+<tr>
+<td>allProductionOrders</td>
+<td>List&lt;OrdemProducao&gt;</td>
+<td>Complete order collection</td>
+</tr>
+<tr>
+<td>filteredProductionOrders</td>
+<td>List&lt;OrdemProducao&gt;</td>
+<td>Machine-filtered orders</td>
+</tr>
+<tr>
+<td>selectedMachine</td>
+<td>CrmEquipamento?</td>
+<td>Currently selected machine</td>
+</tr>
+<tr>
+<td>todayStats</td>
+<td>ProductionStatsDto?</td>
+<td>Today&#x27;s production metrics</td>
+</tr>
+</tbody></table></div>
+<p>Lifecycle Methods</p>
+<p>OnInitializedAsync()</p>
+<p>protected override async Task OnInitializedAsync()</p>
+<p>{</p>
+<p>await LoadInitialData();</p>
+<p>isDataLoaded = true;</p>
+<p>}</p>
+<p>Loads machines and production orders</p>
+<p>Sets initial data loaded flag</p>
+<p>OnParametersSetAsync()</p>
+<p>protected override async Task OnParametersSetAsync()</p>
+<p>Handles URL parameter changes</p>
+<p>Manages browser navigation (back/forward)</p>
+<p>Updates filtered data based on machine selection</p>
+<p>Key Methods</p>
+<p>SelectMachine(string? machineId)</p>
+<p>Updates URL for bookmarkability</p>
+<p>Filters orders locally without server roundtrip</p>
+<p>Updates production statistics</p>
+<p>RequestPinForAction(OrdemProducao order, ProductionAction action)</p>
+<p>Opens PIN authentication dialog</p>
+<p>Validates worker credentials</p>
+<p>Executes production action upon successful authentication</p>
+<p>ExecuteProductionAction(OrdemProducao order, ProductionAction action)</p>
+<p>Processes Start/Pause/Stop actions</p>
+<p>Opens material consumption modal for Pause/Stop</p>
+<p>Updates order status via service layer</p>
+<p>MaterialConsumptionModal.razor</p>
+<p>Purpose</p>
+<p>Modal dialog for recording actual material consumption and production quantities.</p>
+<p>Key Features</p>
+<p>Dynamic material loading based on production quantity</p>
+<p>Real-time variance calculation</p>
+<p>Historical consumption pattern display</p>
+<p>Stock availability validation</p>
+<p>Multi-step submission progress indicator</p>
+<p>Component Properties</p>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Property</th>
+<th>Type</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>OrdemProducao</td>
+<td>OrdemProducao?</td>
+<td>Production order being processed</td>
+</tr>
+<tr>
+<td>WorkerId</td>
+<td>int</td>
+<td>Authenticated worker ID</td>
+</tr>
+<tr>
+<td>QuantityProduced</td>
+<td>decimal</td>
+<td>Actual production quantity</td>
+</tr>
+<tr>
+<td>Waste</td>
+<td>decimal</td>
+<td>Waste/scrap quantity</td>
+</tr>
+<tr>
+<td>Materials</td>
+<td>List&lt;MaterialConsumptionDto&gt;</td>
+<td>Material consumption list</td>
+</tr>
+</tbody></table></div>
+<p>Material Loading Strategy</p>
+<p>private async Task OnQuantityProducedChanged(decimal value)</p>
+<p>{</p>
+<p>// Debounce mechanism with 1.5s delay</p>
+<p>_loadMaterialsCts?.Cancel();</p>
+<p>_loadMaterialsCts = new CancellationTokenSource();</p>
+<p>await Task.Delay(1500, token);</p>
+<p>if (!token.IsCancellationRequested)</p>
+<p>await LoadMaterials();</p>
+<p>}</p>
+<p>Submission Process</p>
+<p>Validate data</p>
+<p>Update order quantities</p>
+<p>Generate stock movements</p>
+<p>Register material consumption</p>
+<p>Send to Primavera ERP</p>
+<p>Finalize transaction</p>
+<p>Progress Tracking</p>
+<p>private async Task UpdateProgress(int step, string message)</p>
+<p>{</p>
+<p>CurrentStepNumber = step;</p>
+<p>CurrentStep = message;</p>
+<p>StateHasChanged();</p>
+<p>await Task.Yield(); // Allow UI update</p>
+<p>}</p>
+<p>Service Layer</p>
+<p>IFactoryFloorService Interface</p>
+<p>Core Operations</p>
+<p>Production Order Management</p>
+<p>Task&lt;List&lt;OrdemProducao&gt;&gt; GetProductionOrdersAsync(string? maquinaId = null);</p>
+<p>Task&lt;OrdemProducao?&gt; GetProductionOrderByIdAsync(int orderId, BioBragaContext? existingContext = null);</p>
+<p>Production Control</p>
+<p>Task&lt;(bool success, string message)&gt; StartProductionAsync(int orderId, int userId);</p>
+<p>Task&lt;(bool success, string message)&gt; PauseProductionAsync(int orderId, int userId);</p>
+<p>Task&lt;(bool success, string message)&gt; EndProductionAsync(int orderId, int userId);</p>
+<p>Material Management</p>
+<p>Task&lt;List&lt;MaterialConsumptionDto&gt;&gt; GetMaterialsForProductionAsync(int orderId, decimal quantityProduced);</p>
+<p>Task&lt;(bool success, string message)&gt; RegisterProductionAsync(</p>
+<p>int orderId, int userId, decimal quantityProduced,</p>
+<p>decimal waste, List&lt;MaterialConsumptionDto&gt; actualConsumption);</p>
+<p>FactoryFloorService Implementation</p>
+<p>Dependency Injection</p>
+<p>public FactoryFloorService(</p>
+<p>IDbContextFactory&lt;BioBragaContext&gt; contextFactory,</p>
+<p>IPrimaveraRepository primaveraRepo,</p>
+<p>ILogger&lt;FactoryFloorService&gt; logger,</p>
+<p>IConfiguration configuration)</p>
+<p>Material Calculation Algorithm</p>
+<p>GetMaterialsForProductionAsync Logic</p>
+<p>// Core calculation for proportional material consumption</p>
+<p>var totalPlannedForOrder = mat.gf.Quantidade ?? 0;</p>
+<p>var orderQuantity = order.Quantidade ?? 1;</p>
+<p>var perUnitQuantity = totalPlannedForOrder / orderQuantity;</p>
+<p>var proportionalQty = Math.Round(perUnitQuantity * quantityProduced, 6);</p>
+<p>// Historical average consideration</p>
+<p>decimal? suggestedQty = null;</p>
+<p>if (mat.gf.QuantidadeMedia.HasValue &amp;&amp; mat.gf.QuantidadeMedia.Value &gt; 0)</p>
+<p>{</p>
+<p>suggestedQty = Math.Round(mat.gf.QuantidadeMedia.Value * quantityProduced, 6);</p>
+<p>}</p>
+<p>Transaction Management</p>
+<p>RegisterProductionAsync Transaction Flow</p>
+<p>using var transaction = await context.Database.BeginTransactionAsync();</p>
+<p>try</p>
+<p>{</p>
+<p>// 1. Update order quantities</p>
+<p>order.QuantidadeFeita += quantityProduced;</p>
+<p>order.QuantidadeFalta -= quantityProduced;</p>
+<p>// 2. Update consumption tracking</p>
+<p>gastoFase.QuantidadeConsumida += material.ActualQuantity;</p>
+<p>gastoFase.NumeroProducoes++;</p>
+<p>// 3. Generate stock movements</p>
+<p>await GenerateStockMovementsAsync(...);</p>
+<p>// 4. Commit transaction</p>
+<p>await transaction.CommitAsync();</p>
+<p>}</p>
+<p>catch</p>
+<p>{</p>
+<p>await transaction.RollbackAsync();</p>
+<p>throw;</p>
+<p>}</p>
+<p>Stock Movement Generation</p>
+<p>Document Generation Pattern</p>
+<p>Stock Entry (ENTSTOCK): Records finished goods</p>
+<p>Stock Exit (SAIDASTOCK): Records material consumption</p>
+<p>Waste Document (DESP): Records production waste</p>
+<p>private async Task GenerateStockEntryAsync(</p>
+<p>BioBragaContext context,</p>
+<p>OrdemProducao order,</p>
+<p>int userId,</p>
+<p>decimal quantity)</p>
+<p>{</p>
+<p>// Document header creation</p>
+<p>var doc = new CrmDocumento</p>
+<p>{</p>
+<p>Tipodocumentoid = tipoDoc.Id,</p>
+<p>Numero = await GetNextDocumentNumber(),</p>
+<p>Data = DateTime.Now,</p>
+<p>DocumentoOrdemFabrico = order.op.Id</p>
+<p>};</p>
+<p>// Document lines for product and reference</p>
+<p>}</p>
+<p>Data Models</p>
+<p>Core DTOs</p>
+<p>MaterialConsumptionDto</p>
+<p>public class MaterialConsumptionDto</p>
+<p>{</p>
+<p>public int GastosFaseId { get; set; }</p>
+<p>public int? ArtigoId { get; set; }</p>
+<p>public string ArtigoNome { get; set; }</p>
+<p>public string ArtigoCodigo { get; set; }</p>
+<p>public string Unidade { get; set; }</p>
+<p>// Quantities</p>
+<p>public decimal PlannedQuantity { get; set; }</p>
+<p>public decimal ActualQuantity { get; set; }</p>
+<p>public decimal Stock { get; set; }</p>
+<p>// Variance Analysis</p>
+<p>public decimal Variance =&gt; ActualQuantity - PlannedQuantity;</p>
+<p>public decimal VariancePercentage =&gt;</p>
+<p>PlannedQuantity != 0 ? (Variance / PlannedQuantity) * 100 : 0;</p>
+<p>// Historical Data</p>
+<p>public decimal? HistoricalAverage { get; set; }</p>
+<p>public decimal? TotalConsumed { get; set; }</p>
+<p>public int? ProductionCount { get; set; }</p>
+<p>}</p>
+<p>ProductionStatsDto</p>
+<p>public class ProductionStatsDto</p>
+<p>{</p>
+<p>public decimal? TotalProduced { get; set; }</p>
+<p>public decimal? TotalPending { get; set; }</p>
+<p>}</p>
+<p>Entity Models</p>
+<p>OrdemProducao (Composite Model)</p>
+<p>public class OrdemProducao</p>
+<p>{</p>
+<p>public CrmOrdemProducao op { get; set; }</p>
+<p>public CrmDocumentoDetalhe docline { get; set; }</p>
+<p>public CrmDocumento doc { get; set; }</p>
+<p>public CrmArtigo artigo { get; set; }</p>
+<p>public List&lt;ComponenteProd&gt; ListaComponentes { get; set; }</p>
+<p>}</p>
+<p>API Reference</p>
+<p>Service Registration</p>
+<p>// Program.cs</p>
+<p>services.AddScoped&lt;IFactoryFloorService, FactoryFloorService&gt;();</p>
+<p>services.AddDbContextFactory&lt;BioBragaContext&gt;(options =&gt;</p>
+<p>options.UseSqlServer(connectionString));</p>
+<p>Endpoint Patterns</p>
+<p>/factory_new - General production view</p>
+<p>/factory_new/{maquinaid} - Machine-specific view</p>
+<p>State Management</p>
+<p>Component State Flow</p>
+<p>User Action → Component Event → Service Call → Database Update → UI Refresh</p>
+<p>↑                                                              ↓</p>
+<p>└──────────────── StateHasChanged() ←─────────────────────────┘</p>
+<p>Cascading Parameters</p>
+<p>[CascadingParameter] public CrmUtilizador? CurrentWorker { get; set; }</p>
+<p>[CascadingParameter] public EventCallback&lt;CrmUtilizador?&gt; OnWorkerChanged { get; set; }</p>
+<p>State Persistence</p>
+<p>URL-based state for machine selection</p>
+<p>Session-based worker authentication</p>
+<p>Database-persisted production state</p>
+<p>Integration Points</p>
+<p>Primavera ERP Integration</p>
+<p>await _primaveraRepo.SendMovimentacaoStock(doc, lines);</p>
+<p>Database Context Management</p>
+<p>// Context reuse pattern for transactions</p>
+<p>var shouldDisposeContext = existingContext == null;</p>
+<p>var context = existingContext ?? await _contextFactory.CreateDbContextAsync();</p>
+<p>try</p>
+<p>{</p>
+<p>// Operations</p>
+<p>}</p>
+<p>finally</p>
+<p>{</p>
+<p>if (shouldDisposeContext)</p>
+<p>await context.DisposeAsync();</p>
+<p>}</p>
+<p>Security</p>
+<p>Authentication Flow</p>
+<p>PIN-based worker authentication</p>
+<p>Hashed PIN storage (Utils.Hash(pin))</p>
+<p>Active user validation</p>
+<p>Action-level authentication requirements</p>
+<p>Authorization Checks</p>
+<p>if (CurrentWorker == null) return;</p>
+<p>if (worker != null &amp;&amp; worker.Isactive != true) return null;</p>
+<p>Audit Trail</p>
+<p>All actions logged with user ID and timestamp</p>
+<p>Production logs stored in CrmOrdemProducaoLog</p>
+<p>Document creation tracked with Criadopor field</p>
+<p>Performance Considerations</p>
+<p>Optimization Strategies</p>
+<p>Debouncing</p>
+<p>// 1.5-second debounce for material loading</p>
+<p>await Task.Delay(1500, token);</p>
+<p>Eager Loading</p>
+<p>var query = from op in context.CrmOrdemProducaos</p>
+<p>join docDetail in context.CrmDocumentoDetalhes...</p>
+<p>// Multiple joins for complete data</p>
+<p>Local Filtering</p>
+<p>private void FilterOrdersByMachine()</p>
+<p>{</p>
+<p>// Client-side filtering to avoid server roundtrip</p>
+<p>filteredProductionOrders = allProductionOrders</p>
+<p>.Where(o =&gt; o.op.Equipamentoid.ToString() == maquinaid)</p>
+<p>.ToList();</p>
+<p>}</p>
+<p>Scalability Considerations</p>
+<p>Database connection pooling via IDbContextFactory</p>
+<p>Asynchronous operations throughout</p>
+<p>Transaction scope minimization</p>
+<p>Indexed database queries on frequently accessed fields</p>
+<p>Monitoring Points</p>
+<p>Production order query performance</p>
+<p>Material calculation response time</p>
+<p>Stock movement generation duration</p>
+<p>Primavera integration latency</p>
+<p>Error Handling</p>
+<p>Service Layer Pattern</p>
+<p>try</p>
+<p>{</p>
+<p>// Operation</p>
+<p>return (true, &quot;Success message&quot;);</p>
+<p>}</p>
+<p>catch (Exception ex)</p>
+<p>{</p>
+<p>_logger.LogError(ex, &quot;Error description&quot;);</p>
+<p>return (false, $&quot;Error message: {ex.Message}&quot;);</p>
+<p>}</p>
+<p>UI Error Feedback</p>
+<p>Snackbar.Add($&quot;Error message&quot;, Severity.Error);</p>
+<p>Deployment Considerations</p>
+<p>Configuration Requirements</p>
+<p>Connection strings for BioBraga database</p>
+<p>Primavera API endpoints</p>
+<p>Logging configuration</p>
+<p>Image storage path configuration</p>
+<p>Environment Variables</p>
+<p>{</p>
+<p>&quot;ConnectionStrings&quot;: {</p>
+<p>&quot;DefaultConnection&quot;: &quot;Server=...;Database=BioBraga;...&quot;</p>
+<p>},</p>
+<p>&quot;Primavera&quot;: {</p>
+<p>&quot;ApiEndpoint&quot;: &quot;https://...&quot;</p>
+<p>}</p>
+<p>}</p>
+<p>Health Checks</p>
+<p>Database connectivity</p>
+<p>Primavera API availability</p>
+<p>Service layer responsiveness</p>
+<p>Maintenance and Support</p>
+<p>Logging Strategy</p>
+<p>Structured logging with correlation IDs</p>
+<p>Performance metrics for key operations</p>
+<p>Error tracking with stack traces</p>
+<p>User action audit trail</p>
+<p>Database Maintenance</p>
+<p>Regular index optimization</p>
+<p>Archive historical production logs</p>
+<p>Stock level reconciliation procedures</p>
+<p>Cleanup of cancelled/completed orders</p>
+<p>Version Control</p>
+<p>Semantic versioning for releases</p>
+<p>Database migration scripts</p>
+<p>Backward compatibility considerations</p>
+<p>Feature flag implementation for gradual rollouts</p>
+</div>
+</body>
+</html>

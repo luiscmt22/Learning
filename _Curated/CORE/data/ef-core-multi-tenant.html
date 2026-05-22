@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EF Core - Multi-Tenant Database Pattern</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a2e; color: #e0e0e0; padding: 40px; line-height: 1.7; max-width: 1100px; margin: 0 auto; }
+        h1 { color: #7e6fff; margin-bottom: 8px; font-size: 28px; }
+        .subtitle { color: #888; margin-bottom: 32px; font-size: 14px; }
+
+        .toc { background: #16213e; border-radius: 12px; padding: 24px; margin-bottom: 32px; }
+        .toc h2 { color: #a99bff; margin-bottom: 12px; font-size: 18px; }
+        .toc a { color: #7e6fff; text-decoration: none; display: block; padding: 4px 0; font-size: 14px; }
+        .toc a:hover { color: #a99bff; text-decoration: underline; }
+
+        .section { background: #16213e; border-radius: 12px; padding: 24px; margin-bottom: 24px; border-left: 4px solid #7e6fff; }
+        .section h2 { color: #a99bff; margin-bottom: 16px; font-size: 20px; }
+        .section h3 { color: #ccc; margin: 20px 0 8px; font-size: 16px; }
+        .section p { font-size: 14px; color: #bbb; margin: 8px 0; }
+
+        .note { background: #1a1a3e; border-left: 3px solid #ffb545; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 13px; color: #ccc; }
+        .note strong { color: #ffb545; }
+        .info { background: #1a2a3e; border-left: 3px solid #4a86ff; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 13px; color: #ccc; }
+        .info strong { color: #4a86ff; }
+        .success { background: #1a2a1a; border-left: 3px solid #3dcb6c; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 13px; color: #ccc; }
+        .success strong { color: #3dcb6c; }
+        .warning { background: #2a1a1a; border-left: 3px solid #ff3f5f; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 13px; color: #ccc; }
+        .warning strong { color: #ff3f5f; }
+        .concept { background: #1a1a3e; border-left: 3px solid #ab47bc; padding: 16px; border-radius: 0 8px 8px 0; margin: 16px 0; font-size: 14px; color: #ddd; }
+        .concept strong { color: #ce93d8; }
+
+        pre { background: #0f0f23; border-radius: 8px; padding: 16px; overflow-x: auto; margin: 12px 0; font-size: 13px; }
+        code { font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace; }
+        .keyword { color: #569cd6; }
+        .string { color: #ce9178; }
+        .comment { color: #6a9955; }
+        .function { color: #dcdcaa; }
+        .number { color: #b5cea8; }
+        .type { color: #4ec9b0; }
+        .placeholder { color: #ff79c6; font-style: italic; }
+        .param { color: #9cdcfe; }
+
+        table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+        th { background: #0f0f23; color: #7e6fff; text-align: left; padding: 10px 14px; font-size: 13px; }
+        td { padding: 10px 14px; border-bottom: 1px solid #1a1a3e; font-size: 13px; }
+        tr:hover td { background: #1a1a3e; }
+
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+        .tag-concept { background: #2a1a3a; color: #ce93d8; }
+        .tag-code { background: #1a2a1a; color: #3dcb6c; }
+        .tag-cli { background: #1a2a3e; color: #4a86ff; }
+        .tag-runtime { background: #2a2a1a; color: #ffb545; }
+
+        .diagram { background: #0f0f23; border-radius: 8px; padding: 24px; margin: 16px 0; font-family: 'Cascadia Code', monospace; font-size: 13px; line-height: 1.8; white-space: pre; overflow-x: auto; }
+        .diagram .arrow { color: #7e6fff; }
+        .diagram .box { color: #4ec9b0; }
+        .diagram .label { color: #ce9178; }
+        .diagram .highlight { color: #ffb545; }
+
+        .step-number { display: inline-block; width: 28px; height: 28px; line-height: 28px; text-align: center; border-radius: 50%; background: #7e6fff; color: #fff; font-weight: 700; font-size: 14px; margin-right: 8px; }
+
+        .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+        .comparison > div { background: #0f0f23; border-radius: 8px; padding: 16px; }
+        .comparison h4 { margin-bottom: 8px; font-size: 14px; }
+        .comparison .wrong h4 { color: #ff3f5f; }
+        .comparison .right h4 { color: #3dcb6c; }
+        @media (max-width: 768px) { .comparison { grid-template-columns: 1fr; } body { padding: 16px; } }
+    </style>
+</head>
+<body>
+<div style="background:rgba(7,9,15,0.94);border-bottom:1px solid #1f2940;padding:12px 24px;font:13px/1.4 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;position:fixed;top:0;left:0;right:0;z-index:99999;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);display:flex;align-items:center;gap:10px;color:#94a3bf;box-sizing:border-box;min-height:48px;"><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;">Learning</a><span style="color:#5f6b86;">›</span><a href="../_Hub.html" style="color:#94a3bf;text-decoration:none;">CORE</a><span style="color:#5f6b86;">›</span><a href="_Category.html" style="color:#94a3bf;text-decoration:none;">Data &amp; Persistence</a><span style="color:#5f6b86;">›</span><span style="color:#e9eef8;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">EF Core Multi-Tenant Database Pattern</span><a href="ef-core-multi-tenant.html" download style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">↓ Download</a><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">All docs</a></div><div style="height:48px;"></div><div style="background:linear-gradient(135deg,#0a0e1a 0%,#11182a 100%);border:1px solid #1f2940;border-radius:14px;padding:24px 28px;margin:20px;font:15px/1.7 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;color:#e9eef8;box-shadow:0 12px 40px rgba(0,0,0,0.35);"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.6px;color:#6aa6ff;font-weight:600;margin-bottom:8px;">▸ Curated · Concept · Data</div><div style="font-size:24px;font-weight:700;color:#e9eef8;margin-bottom:10px;letter-spacing:-0.02em;line-height:1.2;">EF Core Multi-Tenant Database Pattern</div><div style="font-size:16px;color:#94a3bf;margin-bottom:18px;line-height:1.5;">A single DbContext class can serve many tenant databases by taking the database name as a constructor parameter and resolving the connection string dynamically in OnConfiguring.</div><div style="font-style:italic;border-left:3px solid #6aa6ff;padding:6px 0 6px 16px;margin:14px 0;color:#e9eef8;">Your boss just sold the SaaS to its 50th customer and each one wants their data in a separate database for compliance. The naive approach would be 50 context classes - one per tenant. That way madness lies. Here&#x27;s the pattern that turns 50 classes into 1 class and makes adding the 51st tenant a two-line config change.</div><div style="background:rgba(106,166,255,0.06);border:1px solid rgba(106,166,255,0.20);border-radius:10px;padding:14px 18px;margin:14px 0;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#6aa6ff;margin-bottom:6px;font-weight:600;">Executive summary</div><div style="font-size:14px;color:#e9eef8;line-height:1.6;">This tutorial teaches the database-per-tenant pattern using ONE DynamicCompanyContext class whose OnConfiguring method resolves a different connection string based on a companyKey constructor parameter. It covers the full lifecycle: abstract BaseContext with shared DbSets, concrete DynamicCompanyContext, IDesignTimeDbContextFactory for CLI tooling, separate migration folders for auth vs tenant contexts, runtime tenant provisioning via MigrateAsync, and a reusable TenantMigrator utility wired into Program.cs with a --migrate-tenants CLI flag.</div></div><div style="background:rgba(184,106,255,0.06);border:1px solid rgba(184,106,255,0.25);border-radius:10px;padding:14px 18px;margin:14px 0;display:flex;gap:12px;"><div style="font-size:20px;flex-shrink:0;">💡</div><div style="flex:1;font-size:14px;color:#e9eef8;line-height:1.6;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#b86aff;margin-bottom:4px;font-weight:700;">Metaphor</div>Imagine a locksmith who makes one universal lock body but cuts different keys. The lock body (DynamicCompanyContext) is identical everywhere - same tumblers, same shape. The key (companyKey) is what determines which door it opens. You don&#x27;t need a different locksmith for every building, and adding a new building just means cutting one more key. Your appsettings.json is the key-cutting template, and TenantMigrator.MigrateAllTenantsAsync is the locksmith going around to every door to make sure they all still fit after a security upgrade.</div></div><div style="margin-top:14px;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#5f6b86;margin-bottom:8px;font-weight:600;">Key concepts</div><div><span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">database-per-tenant</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">DynamicCompanyContext</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">IDesignTimeDbContextFactory</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">MigrateAsync vs EnsureCreatedAsync</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">two migration histories</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">connection string resolution</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">TenantMigrator</span></div></div><div style="margin-top:18px;padding-top:14px;border-top:1px solid #1f2940;font-size:11px;color:#5f6b86;">↑ Curated overlay added by render_curated.py · the original document follows below</div></div>
+
+    <h1>EF Core - Multi-Tenant Database Pattern</h1>
+    <p class="subtitle">How to use ONE DbContext class to manage MULTIPLE databases | The "Database-per-Tenant" pattern with EF Core</p>
+
+    <!-- TOC -->
+    <div class="toc">
+        <h2>Contents</h2>
+        <a href="#problem">1. The Problem — Why Not One Context Per Database?</a>
+        <a href="#solution">2. The Solution — Dynamic Connection String</a>
+        <a href="#architecture">3. Architecture Overview</a>
+        <a href="#base-context">4. The Base Context (Abstract)</a>
+        <a href="#dynamic-context">5. The Dynamic Context (Concrete)</a>
+        <a href="#factory">6. The Context Factory (Runtime)</a>
+        <a href="#config">7. Configuration (appsettings.json)</a>
+        <a href="#design-time">8. Design-Time Factories (EF CLI Tools)</a>
+        <a href="#migrations">9. Migrations — Creating & Applying</a>
+        <a href="#provisioning">10. Provisioning New Tenants at Runtime</a>
+        <a href="#tenant-migrator">11. The TenantMigrator Utility</a>
+        <a href="#lifecycle">12. Full Lifecycle — From Zero to Multi-Tenant</a>
+        <a href="#gotchas">13. Common Gotchas & Pitfalls</a>
+        <a href="#commands">14. EF Core CLI Command Reference</a>
+    </div>
+
+    <!-- 1. The Problem -->
+    <div class="section" id="problem">
+        <h2>1. The Problem <span class="tag tag-concept">concept</span></h2>
+
+        <p>Imagine you have a SaaS app where each company gets its own database (for data isolation, compliance, or just cleanliness). You need:</p>
+
+        <table>
+            <thead><tr><th>Database</th><th>Purpose</th></tr></thead>
+            <tbody>
+                <tr><td><code>AuthDatabase</code></td><td>Central: users, companies, roles, permissions</td></tr>
+                <tr><td><code>DefaultCompany</code></td><td>Tenant A: employees, jobs, attendance, CRM data</td></tr>
+                <tr><td><code>TestCompany</code></td><td>Tenant B: same tables, different data</td></tr>
+                <tr><td><code>ClientXYZ</code></td><td>Tenant C: same tables, different data</td></tr>
+            </tbody>
+        </table>
+
+        <p>All tenant databases have the <strong>exact same schema</strong> (same tables, same columns, same indexes). The only difference is which server/database they connect to.</p>
+
+        <div class="comparison">
+            <div class="wrong">
+                <h4>The Wrong Way (what you'd instinctively do)</h4>
+<pre><code><span class="comment">// One class per database — DON'T DO THIS</span>
+<span class="keyword">public class</span> <span class="type">DefaultCompanyContext</span> : <span class="type">DbContext</span> { ... }
+<span class="keyword">public class</span> <span class="type">TestCompanyContext</span> : <span class="type">DbContext</span> { ... }
+<span class="keyword">public class</span> <span class="type">ClientXYZContext</span> : <span class="type">DbContext</span> { ... }
+<span class="comment">// 100 tenants = 100 identical classes?!</span></code></pre>
+            </div>
+            <div class="right">
+                <h4>The Right Way (dynamic connection)</h4>
+<pre><code><span class="comment">// ONE class for ALL tenants</span>
+<span class="keyword">public class</span> <span class="type">DynamicCompanyContext</span> : <span class="type">BaseContext</span>
+{
+    <span class="keyword">public</span> <span class="function">DynamicCompanyContext</span>(<span class="param">config</span>, <span class="string">"DefaultCompany"</span>) { }
+    <span class="keyword">public</span> <span class="function">DynamicCompanyContext</span>(<span class="param">config</span>, <span class="string">"TestCompany"</span>) { }
+    <span class="keyword">public</span> <span class="function">DynamicCompanyContext</span>(<span class="param">config</span>, <span class="string">"ClientXYZ"</span>) { }
+    <span class="comment">// Same class, different parameter!</span>
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="concept"><strong>Key Insight:</strong> A DbContext is just a connection to a database + a description of tables. If all tenants have the same tables, you only need ONE class. The connection string is the only thing that changes — and that can be a constructor parameter.</div>
+    </div>
+
+    <!-- 2. The Solution -->
+    <div class="section" id="solution">
+        <h2>2. The Solution — Dynamic Connection String <span class="tag tag-concept">concept</span></h2>
+
+        <p>A DbContext decides which database to connect to in a method called <code>OnConfiguring</code>. Normally this is hardcoded. But we can make it <strong>dynamic</strong>:</p>
+
+<pre><code><span class="keyword">protected override void</span> <span class="function">OnConfiguring</span>(<span class="type">DbContextOptionsBuilder</span> <span class="param">optionsBuilder</span>)
+{
+    <span class="comment">// _companyDatabase is set in the constructor: "DefaultCompany", "TestCompany", etc.</span>
+    <span class="keyword">var</span> <span class="param">connectionString</span> = <span class="function">ResolveConnectionString</span>(_configuration, <span class="param">_companyDatabase</span>);
+    <span class="comment">//                                                   ↑ this changes per instance!</span>
+    <span class="param">optionsBuilder</span>.<span class="function">UseSqlServer</span>(<span class="param">connectionString</span>);
+}</code></pre>
+
+        <p>So when you write:</p>
+
+<pre><code><span class="keyword">new</span> <span class="type">DynamicCompanyContext</span>(config, <span class="string">"DefaultCompany"</span>)  <span class="comment">→ connects to DefaultCompany DB</span>
+<span class="keyword">new</span> <span class="type">DynamicCompanyContext</span>(config, <span class="string">"TestCompany"</span>)     <span class="comment">→ connects to TestCompany DB</span>
+<span class="keyword">new</span> <span class="type">DynamicCompanyContext</span>(config, <span class="string">"ClientXYZ"</span>)      <span class="comment">→ connects to ClientXYZ DB</span></code></pre>
+
+        <p>Same class. Same tables. Different database. That's the entire pattern.</p>
+    </div>
+
+    <!-- 3. Architecture -->
+    <div class="section" id="architecture">
+        <h2>3. Architecture Overview <span class="tag tag-concept">concept</span></h2>
+
+        <div class="diagram"><span class="box">┌─────────────────────────────────────────────────────────────┐</span>
+<span class="box">│</span>                        <span class="highlight">appsettings.json</span>                       <span class="box">│</span>
+<span class="box">│</span>  <span class="label">Server: "136.144.249.153"</span>                                   <span class="box">│</span>
+<span class="box">│</span>  <span class="label">AuthDatabase: "AuthDatabase"</span>                                <span class="box">│</span>
+<span class="box">│</span>  <span class="label">Companies:</span>                                                  <span class="box">│</span>
+<span class="box">│</span>    <span class="label">DefaultCompany → "DefaultCompany"</span>                         <span class="box">│</span>
+<span class="box">│</span>    <span class="label">TestCompany    → "TestCompany"</span>                            <span class="box">│</span>
+<span class="box">└──────────────────────┬──────────────────────────────────────┘</span>
+                       <span class="arrow">│</span>
+          <span class="arrow">┌────────────┴────────────┐</span>
+          <span class="arrow">▼</span>                         <span class="arrow">▼</span>
+<span class="box">┌──────────────────┐</span>  <span class="box">┌──────────────────────────────┐</span>
+<span class="box">│</span> <span class="highlight">BaseControle</span>     <span class="box">│</span>  <span class="box">│</span> <span class="highlight">DynamicCompanyContext</span>         <span class="box">│</span>
+<span class="box">│</span> <span class="highlight">Context</span>          <span class="box">│</span>  <span class="box">│</span> <span class="label">(extends BaseContext)</span>         <span class="box">│</span>
+<span class="box">│</span>                  <span class="box">│</span>  <span class="box">│</span>                              <span class="box">│</span>
+<span class="box">│</span> <span class="label">Fixed DB:</span>        <span class="box">│</span>  <span class="box">│</span> <span class="label">Dynamic DB based on key:</span>     <span class="box">│</span>
+<span class="box">│</span> <span class="label">"AuthDatabase"</span>   <span class="box">│</span>  <span class="box">│</span> <span class="label">"DefaultCompany"</span>             <span class="box">│</span>
+<span class="box">│</span>                  <span class="box">│</span>  <span class="box">│</span> <span class="label">"TestCompany"</span>                <span class="box">│</span>
+<span class="box">│</span> <span class="label">Tables:</span>          <span class="box">│</span>  <span class="box">│</span> <span class="label">"AnyFutureClient"</span>            <span class="box">│</span>
+<span class="box">│</span> <span class="label">- Users</span>          <span class="box">│</span>  <span class="box">│</span>                              <span class="box">│</span>
+<span class="box">│</span> <span class="label">- Companies</span>      <span class="box">│</span>  <span class="box">│</span> <span class="label">Tables (same in ALL tenants):</span><span class="box">│</span>
+<span class="box">│</span> <span class="label">- SystemRoles</span>    <span class="box">│</span>  <span class="box">│</span> <span class="label">- Employees</span>                  <span class="box">│</span>
+<span class="box">│</span> <span class="label">- AuditLogs</span>      <span class="box">│</span>  <span class="box">│</span> <span class="label">- Departments</span>                <span class="box">│</span>
+<span class="box">│</span> <span class="label">- Holidays</span>       <span class="box">│</span>  <span class="box">│</span> <span class="label">- Attendance</span>                 <span class="box">│</span>
+<span class="box">│</span> <span class="label">- Geography</span>      <span class="box">│</span>  <span class="box">│</span> <span class="label">- Jobs, CRM, Stock, etc.</span>     <span class="box">│</span>
+<span class="box">└──────────────────┘</span>  <span class="box">└──────────────────────────────┘</span>
+   <span class="arrow">↓</span>                      <span class="arrow">↓              ↓</span>
+<span class="box">┌──────────┐</span>        <span class="box">┌──────────┐  ┌──────────┐</span>
+<span class="box">│</span><span class="highlight">AuthDatabase</span><span class="box">│</span>      <span class="box">│</span><span class="highlight">Default</span>   <span class="box">│  │</span><span class="highlight">Test</span>      <span class="box">│</span>
+<span class="box">│</span>  <span class="label">(SQL DB)</span> <span class="box">│</span>        <span class="box">│</span><span class="highlight">Company</span>   <span class="box">│  │</span><span class="highlight">Company</span>   <span class="box">│</span>
+<span class="box">│</span>          <span class="box">│</span>        <span class="box">│</span>  <span class="label">(SQL DB)</span> <span class="box">│  │</span>  <span class="label">(SQL DB)</span> <span class="box">│</span>
+<span class="box">└──────────┘</span>        <span class="box">└──────────┘  └──────────┘</span></div>
+    </div>
+
+    <!-- 4. Base Context -->
+    <div class="section" id="base-context">
+        <h2>4. The Base Context (Abstract) <span class="tag tag-code">code</span></h2>
+
+        <p>The <strong>abstract</strong> base class defines ALL the DbSets (tables) and how to build connection strings. It can't be instantiated directly — child classes must provide the database name.</p>
+
+<pre><code><span class="keyword">public abstract class</span> <span class="type">BaseContext</span> : <span class="type">DbContext</span>
+{
+    <span class="keyword">protected readonly</span> <span class="type">IConfiguration</span> <span class="param">_configuration</span>;
+    <span class="keyword">protected</span> <span class="type">string</span> <span class="param">_companyDatabase</span>;  <span class="comment">// ← THE KEY: which DB to connect to</span>
+
+    <span class="comment">// All tenant tables defined here (same for every tenant)</span>
+    <span class="keyword">public virtual</span> <span class="type">DbSet</span>&lt;<span class="type">Employee</span>&gt; Employees { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public virtual</span> <span class="type">DbSet</span>&lt;<span class="type">Department</span>&gt; Departments { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public virtual</span> <span class="type">DbSet</span>&lt;<span class="type">Attendance</span>&gt; Attendances { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="keyword">public virtual</span> <span class="type">DbSet</span>&lt;<span class="type">Job</span>&gt; Jobs { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    <span class="comment">// ... hundreds more DbSets ...</span>
+
+    <span class="keyword">protected override void</span> <span class="function">OnConfiguring</span>(<span class="type">DbContextOptionsBuilder</span> <span class="param">optionsBuilder</span>)
+    {
+        <span class="keyword">if</span> (!<span class="param">optionsBuilder</span>.IsConfigured && <span class="param">_configuration</span> != <span class="keyword">null</span>)
+        {
+            <span class="comment">// Build connection string using _companyDatabase as the lookup key</span>
+            <span class="keyword">var</span> <span class="param">connectionString</span> = <span class="function">ResolveConnectionString</span>(<span class="param">_configuration</span>, <span class="param">_companyDatabase</span>);
+            <span class="param">optionsBuilder</span>.<span class="function">UseSqlServer</span>(<span class="param">connectionString</span>);
+        }
+    }
+
+    <span class="keyword">protected static string</span> <span class="function">ResolveConnectionString</span>(<span class="type">IConfiguration</span> <span class="param">config</span>, <span class="type">string</span> <span class="param">companyKey</span>)
+    {
+        <span class="comment">// 1. Read the Companies dictionary from appsettings</span>
+        <span class="keyword">var</span> <span class="param">dbOptions</span> = <span class="param">config</span>.<span class="function">GetSection</span>(<span class="string">"Client:Database"</span>).<span class="function">Get</span>&lt;<span class="type">DatabaseOptions</span>&gt;();
+
+        <span class="comment">// 2. Look up the company key → get database name</span>
+        <span class="keyword">var</span> <span class="param">company</span> = <span class="param">dbOptions</span>.Companies[<span class="param">companyKey</span>];
+        <span class="comment">//  "DefaultCompany" → { Database: "DefaultCompany" }</span>
+        <span class="comment">//  "TestCompany"    → { Database: "TestCompany" }</span>
+
+        <span class="comment">// 3. Build the connection string</span>
+        <span class="keyword">return</span> <span class="string">$"Server={dbOptions.Server};Database={company.Database};..."</span>;
+    }
+}</code></pre>
+
+        <div class="concept"><strong>Why abstract?</strong> We never want to instantiate <code>BaseContext</code> directly — it has no idea which database to connect to. It's a blueprint. Only child classes that set <code>_companyDatabase</code> can be used.</div>
+    </div>
+
+    <!-- 5. Dynamic Context -->
+    <div class="section" id="dynamic-context">
+        <h2>5. The Dynamic Context (Concrete) <span class="tag tag-code">code</span></h2>
+
+        <p>This is the actual class you instantiate. It's almost comically small — ALL it does is pass the company key to the base class:</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">DynamicCompanyContext</span> : <span class="type">BaseContext</span>
+{
+    <span class="keyword">public</span> <span class="function">DynamicCompanyContext</span>(<span class="type">IConfiguration</span> <span class="param">configuration</span>, <span class="type">string</span> <span class="param">companyKey</span>)
+        : <span class="keyword">base</span>(<span class="param">configuration</span>)
+    {
+        <span class="param">_companyDatabase</span> = <span class="param">companyKey</span>;  <span class="comment">// That's it. That's the whole class.</span>
+    }
+}</code></pre>
+
+        <p>Three lines of real code. The <code>companyKey</code> flows into <code>_companyDatabase</code> which <code>OnConfiguring</code> uses to build the connection string. Everything else is inherited from <code>BaseContext</code>.</p>
+
+        <div class="info"><strong>Think of it like a car key:</strong> The car (BaseContext) is always the same — same engine, same seats, same features. The key (companyKey) just tells it which parking spot (database) to go to.</div>
+    </div>
+
+    <!-- 6. Factory -->
+    <div class="section" id="factory">
+        <h2>6. The Context Factory (Runtime) <span class="tag tag-runtime">runtime</span></h2>
+
+        <p>Services don't create contexts directly — they use a factory. This centralizes context creation and makes it easy to inject:</p>
+
+<pre><code><span class="keyword">public interface</span> <span class="type">IDbContextFactoryService</span>
+{
+    <span class="comment">// Always connects to the central auth database</span>
+    <span class="type">BaseControleContext</span> <span class="function">CreateBaseControleContext</span>();
+
+    <span class="comment">// Connects to any tenant database by key</span>
+    <span class="type">BaseContext</span> <span class="function">CreateCompanyContext</span>(<span class="type">string</span> <span class="param">companyDatabase</span>);
+}
+
+<span class="keyword">public class</span> <span class="type">DbContextFactoryService</span> : <span class="type">IDbContextFactoryService</span>
+{
+    <span class="keyword">private readonly</span> <span class="type">IConfiguration</span> <span class="param">_configuration</span>;
+
+    <span class="keyword">public</span> <span class="type">BaseControleContext</span> <span class="function">CreateBaseControleContext</span>()
+    {
+        <span class="keyword">return new</span> <span class="type">BaseControleContext</span>(<span class="param">_configuration</span>);
+    }
+
+    <span class="keyword">public</span> <span class="type">BaseContext</span> <span class="function">CreateCompanyContext</span>(<span class="type">string</span> <span class="param">companyDatabase</span>)
+    {
+        <span class="comment">// Same class, different key → different database</span>
+        <span class="keyword">return new</span> <span class="type">DynamicCompanyContext</span>(<span class="param">_configuration</span>, <span class="param">companyDatabase</span>);
+    }
+}</code></pre>
+
+        <h3>How services use it</h3>
+
+<pre><code><span class="keyword">public class</span> <span class="type">EmployeeService</span>
+{
+    <span class="keyword">private readonly</span> <span class="type">IDbContextFactoryService</span> <span class="param">_contextFactory</span>;
+
+    <span class="keyword">public async</span> Task&lt;List&lt;<span class="type">Employee</span>&gt;&gt; <span class="function">GetAllAsync</span>(<span class="type">string</span> <span class="param">companyDatabase</span>)
+    {
+        <span class="comment">// Creates a context pointing to the right tenant DB</span>
+        <span class="keyword">await using var</span> <span class="param">context</span> = <span class="param">_contextFactory</span>.<span class="function">CreateCompanyContext</span>(<span class="param">companyDatabase</span>);
+        <span class="comment">// companyDatabase = "DefaultCompany" → queries DefaultCompany DB</span>
+        <span class="comment">// companyDatabase = "TestCompany"    → queries TestCompany DB</span>
+
+        <span class="keyword">return await</span> <span class="param">context</span>.Employees.<span class="function">ToListAsync</span>();
+    }
+}</code></pre>
+
+        <div class="note"><strong>Where does companyDatabase come from?</strong> The authenticated user's session stores which company they selected. The Razor page passes <code>CompanyDatabase</code> (from <code>AuthenticatedComponentBase</code>) down to every service call.</div>
+    </div>
+
+    <!-- 7. Config -->
+    <div class="section" id="config">
+        <h2>7. Configuration (appsettings.json) <span class="tag tag-code">code</span></h2>
+
+<pre><code>{
+  <span class="string">"Client"</span>: {
+    <span class="string">"Database"</span>: {
+      <span class="string">"Server"</span>: <span class="string">"<span class="placeholder">your-server-ip</span>"</span>,
+      <span class="string">"AuthDatabase"</span>: <span class="string">"AuthDatabase"</span>,           <span class="comment">// ← BaseControleContext always uses this</span>
+      <span class="string">"DefaultCompanyDatabase"</span>: <span class="string">"DefaultCompany"</span>, <span class="comment">// ← fallback for design-time tools</span>
+      <span class="string">"Username"</span>: <span class="string">"<span class="placeholder">sa</span>"</span>,
+      <span class="string">"Password"</span>: <span class="string">"<span class="placeholder">your-password</span>"</span>,
+      <span class="string">"Companies"</span>: {                              <span class="comment">// ← tenant dictionary</span>
+        <span class="string">"DefaultCompany"</span>: {                        <span class="comment">// ← key used in code</span>
+          <span class="string">"Database"</span>: <span class="string">"DefaultCompany"</span>              <span class="comment">// ← actual SQL DB name</span>
+        },
+        <span class="string">"TestCompany"</span>: {
+          <span class="string">"Database"</span>: <span class="string">"TestCompany"</span>
+        },
+        <span class="string">"FutureClient"</span>: {                          <span class="comment">// ← just add entries here!</span>
+          <span class="string">"Database"</span>: <span class="string">"FutureClientDb"</span>,
+          <span class="string">"Server"</span>: <span class="string">"<span class="placeholder">different-server</span>"</span>            <span class="comment">// ← can even override server per tenant!</span>
+        }
+      }
+    }
+  }
+}</code></pre>
+
+        <div class="success"><strong>Adding a new tenant is just config:</strong> Add a new entry to Companies, provision the database (see section 10), and it's live. No code changes, no new context classes, no redeployment needed.</div>
+    </div>
+
+    <!-- 8. Design-Time -->
+    <div class="section" id="design-time">
+        <h2>8. Design-Time Factories (EF CLI Tools) <span class="tag tag-cli">CLI tooling</span></h2>
+
+        <p>Here's the tricky part. When you run <code>dotnet ef migrations add</code>, EF needs to <strong>instantiate your context</strong> to inspect the model. But there's no DI container, no HTTP request, no user session — it's just a command-line tool.</p>
+
+        <p>EF can auto-instantiate contexts with a <strong>parameterless constructor</strong> or <code>DbContextOptions</code>. But our <code>DynamicCompanyContext</code> requires <code>(IConfiguration, string)</code> — EF has no idea what to pass.</p>
+
+        <p>The solution: <code>IDesignTimeDbContextFactory&lt;T&gt;</code> — a factory that tells EF exactly how to create the context at design time:</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">DynamicCompanyContextFactory</span> : <span class="type">IDesignTimeDbContextFactory</span>&lt;<span class="type">DynamicCompanyContext</span>&gt;
+{
+    <span class="keyword">public</span> <span class="type">DynamicCompanyContext</span> <span class="function">CreateDbContext</span>(<span class="type">string</span>[] <span class="param">args</span>)
+    {
+        <span class="comment">// Build configuration manually (no DI available)</span>
+        <span class="keyword">var</span> <span class="param">configuration</span> = <span class="keyword">new</span> <span class="type">ConfigurationBuilder</span>()
+            .<span class="function">SetBasePath</span>(<span class="type">Directory</span>.<span class="function">GetCurrentDirectory</span>())
+            .<span class="function">AddJsonFile</span>(<span class="string">"appsettings.json"</span>)
+            .<span class="function">Build</span>();
+
+        <span class="comment">// Always target DefaultCompany for migrations</span>
+        <span class="keyword">var</span> <span class="param">defaultCompany</span> = <span class="param">configuration</span>[<span class="string">"Client:Database:DefaultCompanyDatabase"</span>] ?? <span class="string">"DefaultCompany"</span>;
+
+        <span class="keyword">return new</span> <span class="type">DynamicCompanyContext</span>(<span class="param">configuration</span>, <span class="param">defaultCompany</span>);
+    }
+}</code></pre>
+
+        <div class="concept"><strong>Important:</strong> This factory is ONLY used by <code>dotnet ef</code> CLI tools. At runtime, the app uses <code>DbContextFactoryService</code> instead. The design-time factory always targets <code>DefaultCompany</code> — but the migration files it generates work for ALL tenants since they share the same schema.</div>
+
+        <h3>When is this factory called?</h3>
+        <table>
+            <thead><tr><th>Command</th><th>Uses Factory?</th><th>Why?</th></tr></thead>
+            <tbody>
+                <tr><td><code>dotnet ef migrations add</code></td><td>Yes</td><td>Needs to inspect the model to generate migration code</td></tr>
+                <tr><td><code>dotnet ef database update</code></td><td>Yes</td><td>Needs to connect to apply migrations</td></tr>
+                <tr><td><code>dotnet ef migrations list</code></td><td>Yes</td><td>Needs to connect to check __EFMigrationsHistory</td></tr>
+                <tr><td><code>dotnet run</code> (your app)</td><td>No</td><td>Uses DI and DbContextFactoryService instead</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 9. Migrations -->
+    <div class="section" id="migrations">
+        <h2>9. Migrations — Creating & Applying <span class="tag tag-cli">CLI</span></h2>
+
+        <h3>Two separate migration histories</h3>
+        <p>Since we have two different context types (auth + tenant), we need two migration folders:</p>
+
+<pre><code>Migrations/
+├── Auth/                          <span class="comment">← BaseControleContext migrations</span>
+│   ├── 20260306_InitialCreate.cs
+│   └── BaseControleContextModelSnapshot.cs
+└── Company/                       <span class="comment">← DynamicCompanyContext migrations</span>
+    ├── 20260306_InitialCreate.cs
+    └── DynamicCompanyContextModelSnapshot.cs</code></pre>
+
+        <h3>Creating a migration (generates code files)</h3>
+<pre><code><span class="comment"># Auth context — central database</span>
+dotnet ef migrations add <span class="placeholder">MigrationName</span> --context BaseControleContext --output-dir Migrations/Auth
+
+<span class="comment"># Company context — tenant databases</span>
+dotnet ef migrations add <span class="placeholder">MigrationName</span> --context DynamicCompanyContext --output-dir Migrations/Company</code></pre>
+
+        <h3>Applying migrations (creates/updates the database)</h3>
+<pre><code><span class="comment"># Creates AuthDatabase + applies all migrations + seeds data</span>
+dotnet ef database update --context BaseControleContext
+
+<span class="comment"># Creates DefaultCompany DB + applies all migrations + seeds data</span>
+<span class="comment"># (uses the design-time factory, which targets DefaultCompany)</span>
+dotnet ef database update --context DynamicCompanyContext</code></pre>
+
+        <div class="warning"><strong>Limitation:</strong> <code>dotnet ef database update</code> only targets the ONE database that the design-time factory points to (<code>DefaultCompany</code>). To apply the same migration to <code>TestCompany</code>, you need the runtime approach — see section 10.</div>
+
+        <h3>Rolling back a migration</h3>
+<pre><code><span class="comment"># Remove the last migration (if not yet applied to DB)</span>
+dotnet ef migrations remove --context DynamicCompanyContext
+
+<span class="comment"># Revert DB to a specific migration</span>
+dotnet ef database update <span class="placeholder">PreviousMigrationName</span> --context DynamicCompanyContext</code></pre>
+    </div>
+
+    <!-- 10. Provisioning -->
+    <div class="section" id="provisioning">
+        <h2>10. Provisioning New Tenants at Runtime <span class="tag tag-runtime">runtime</span></h2>
+
+        <p>This is where the magic happens. To create a <strong>new tenant database</strong>, you don't need any CLI tools. You just:</p>
+
+        <p><span class="step-number">1</span> Add the tenant to <code>appsettings.json</code> (the Companies dictionary)</p>
+        <p><span class="step-number">2</span> Create a <code>DynamicCompanyContext</code> pointing to that new key</p>
+        <p><span class="step-number">3</span> Call <code>MigrateAsync()</code></p>
+
+<pre><code><span class="comment">// This is ALL the code needed to create a new tenant database:</span>
+
+<span class="keyword">await using var</span> <span class="param">context</span> = <span class="keyword">new</span> <span class="type">DynamicCompanyContext</span>(<span class="param">configuration</span>, <span class="string">"TestCompany"</span>);
+<span class="keyword">await</span> <span class="param">context</span>.Database.<span class="function">MigrateAsync</span>();
+
+<span class="comment">// Done. The database now exists with all tables, indexes, and seed data.</span></code></pre>
+
+        <h3>What MigrateAsync() does under the hood</h3>
+
+<pre><code><span class="comment">// Step 1: Checks if the database exists</span>
+<span class="comment">//   → If not: CREATE DATABASE [TestCompany]</span>
+
+<span class="comment">// Step 2: Checks for __EFMigrationsHistory table</span>
+<span class="comment">//   → If not: CREATE TABLE [__EFMigrationsHistory]</span>
+
+<span class="comment">// Step 3: Reads which migrations have been applied</span>
+<span class="comment">//   → SELECT MigrationId FROM __EFMigrationsHistory</span>
+
+<span class="comment">// Step 4: Compares with migrations in the code (Migrations/Company/)</span>
+<span class="comment">//   → Finds pending migrations</span>
+
+<span class="comment">// Step 5: Applies each pending migration in order</span>
+<span class="comment">//   → CREATE TABLE, CREATE INDEX, INSERT seed data, etc.</span>
+
+<span class="comment">// Step 6: Records each applied migration</span>
+<span class="comment">//   → INSERT INTO __EFMigrationsHistory (MigrationId, ProductVersion)</span></code></pre>
+
+        <h3>EnsureCreatedAsync() vs MigrateAsync()</h3>
+        <table>
+            <thead><tr><th>Method</th><th>Creates DB?</th><th>Creates Tables?</th><th>Tracks Migrations?</th><th>Runs Seed Data?</th><th>Use When?</th></tr></thead>
+            <tbody>
+                <tr><td><code>EnsureCreatedAsync()</code></td><td>Yes</td><td>Yes</td><td>No</td><td>No</td><td>Quick throwaway / testing</td></tr>
+                <tr><td><code>MigrateAsync()</code></td><td>Yes</td><td>Yes</td><td>Yes</td><td>Yes</td><td>Production / real apps</td></tr>
+            </tbody>
+        </table>
+
+        <div class="warning"><strong>Never mix them!</strong> If you use <code>EnsureCreatedAsync()</code> on a DB, future <code>MigrateAsync()</code> calls may fail because there's no migration history. Always use <code>MigrateAsync()</code> for real work.</div>
+    </div>
+
+    <!-- 11. Tenant Migrator -->
+    <div class="section" id="tenant-migrator">
+        <h2>11. The TenantMigrator Utility <span class="tag tag-code">code</span></h2>
+
+        <p>A reusable helper that provisions any tenant from config:</p>
+
+<pre><code><span class="keyword">public static class</span> <span class="type">TenantMigrator</span>
+{
+    <span class="comment">/// Provisions a single tenant database.</span>
+    <span class="keyword">public static async</span> <span class="type">Task</span> <span class="function">MigrateTenantAsync</span>(<span class="type">IConfiguration</span> <span class="param">config</span>, <span class="type">string</span> <span class="param">companyKey</span>)
+    {
+        <span class="keyword">await using var</span> <span class="param">context</span> = <span class="keyword">new</span> <span class="type">DynamicCompanyContext</span>(<span class="param">config</span>, <span class="param">companyKey</span>);
+        <span class="keyword">await</span> <span class="param">context</span>.Database.<span class="function">MigrateAsync</span>();
+    }
+
+    <span class="comment">/// Provisions ALL tenants from Client:Database:Companies.</span>
+    <span class="keyword">public static async</span> <span class="type">Task</span> <span class="function">MigrateAllTenantsAsync</span>(<span class="type">IConfiguration</span> <span class="param">config</span>)
+    {
+        <span class="keyword">var</span> <span class="param">companies</span> = <span class="param">config</span>.<span class="function">GetSection</span>(<span class="string">"Client:Database:Companies"</span>).<span class="function">GetChildren</span>();
+
+        <span class="keyword">foreach</span> (<span class="keyword">var</span> <span class="param">company</span> <span class="keyword">in</span> <span class="param">companies</span>)
+            <span class="keyword">await</span> <span class="function">MigrateTenantAsync</span>(<span class="param">config</span>, <span class="param">company</span>.Key);
+    }
+}</code></pre>
+
+        <h3>Wired into Program.cs with a CLI flag</h3>
+<pre><code><span class="comment">// At the end of Program.cs, before app.Run():</span>
+<span class="keyword">if</span> (<span class="param">args</span>.<span class="function">Contains</span>(<span class="string">"--migrate-tenants"</span>))
+{
+    <span class="keyword">await</span> <span class="type">TenantMigrator</span>.<span class="function">MigrateAllTenantsAsync</span>(<span class="param">app</span>.Configuration);
+    <span class="keyword">return</span>; <span class="comment">// Exit after migration</span>
+}
+
+<span class="param">app</span>.<span class="function">Run</span>();</code></pre>
+
+        <h3>Usage from command line</h3>
+<pre><code><span class="comment"># Provision all tenant databases from config</span>
+dotnet run -- --migrate-tenants
+
+<span class="comment"># Output:</span>
+<span class="comment"># Provisioning tenant database: DefaultCompany (key: DefaultCompany)</span>
+<span class="comment"># Tenant 'DefaultCompany' is ready.</span>
+<span class="comment"># Provisioning tenant database: TestCompany (key: TestCompany)</span>
+<span class="comment"># Tenant 'TestCompany' is ready.</span></code></pre>
+
+        <div class="success"><strong>This is idempotent:</strong> Running it multiple times is safe. <code>MigrateAsync()</code> only applies <strong>pending</strong> migrations. If the database is already up to date, it does nothing.</div>
+    </div>
+
+    <!-- 12. Lifecycle -->
+    <div class="section" id="lifecycle">
+        <h2>12. Full Lifecycle — From Zero to Multi-Tenant <span class="tag tag-concept">concept</span></h2>
+
+        <h3>Initial Setup (one time)</h3>
+        <p><span class="step-number">1</span> Configure <code>appsettings.json</code> with server, auth DB name, and tenant entries</p>
+        <p><span class="step-number">2</span> Create design-time factories (<code>IDesignTimeDbContextFactory&lt;T&gt;</code>)</p>
+        <p><span class="step-number">3</span> Generate initial migrations:</p>
+<pre><code>dotnet ef migrations add InitialCreate --context BaseControleContext --output-dir Migrations/Auth
+dotnet ef migrations add InitialCreate --context DynamicCompanyContext --output-dir Migrations/Company</code></pre>
+        <p><span class="step-number">4</span> Apply auth DB migration:</p>
+<pre><code>dotnet ef database update --context BaseControleContext</code></pre>
+        <p><span class="step-number">5</span> Provision all tenants:</p>
+<pre><code>dotnet run -- --migrate-tenants</code></pre>
+
+        <h3>Adding a New Tenant (ongoing)</h3>
+        <p><span class="step-number">1</span> Add entry to <code>appsettings.json</code> Companies dictionary</p>
+        <p><span class="step-number">2</span> Run <code>dotnet run -- --migrate-tenants</code> (or call <code>TenantMigrator.MigrateTenantAsync</code> from an admin page)</p>
+        <p>That's it. No code changes.</p>
+
+        <h3>Schema Changes (adding tables/columns)</h3>
+        <p><span class="step-number">1</span> Modify your models / DbSets / configurations</p>
+        <p><span class="step-number">2</span> Generate a new migration:</p>
+<pre><code>dotnet ef migrations add <span class="placeholder">AddNewFeature</span> --context DynamicCompanyContext --output-dir Migrations/Company</code></pre>
+        <p><span class="step-number">3</span> Apply to ALL tenants:</p>
+<pre><code>dotnet run -- --migrate-tenants
+<span class="comment"># MigrateAsync() applies only the NEW migration to each tenant</span></code></pre>
+    </div>
+
+    <!-- 13. Gotchas -->
+    <div class="section" id="gotchas">
+        <h2>13. Common Gotchas & Pitfalls</h2>
+
+        <table>
+            <thead><tr><th>Gotcha</th><th>Why it Happens</th><th>Solution</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>"Unable to create DbContext" during <code>dotnet ef</code></td>
+                    <td>No parameterless constructor and no design-time factory</td>
+                    <td>Create an <code>IDesignTimeDbContextFactory&lt;T&gt;</code></td>
+                </tr>
+                <tr>
+                    <td><code>dotnet ef database update</code> only updates one tenant</td>
+                    <td>CLI tools use the design-time factory which targets one DB</td>
+                    <td>Use <code>MigrateAsync()</code> at runtime for other tenants</td>
+                </tr>
+                <tr>
+                    <td>Migrations fail with "table already exists"</td>
+                    <td>Used <code>EnsureCreatedAsync()</code> before <code>MigrateAsync()</code></td>
+                    <td>Never mix them. Always use <code>MigrateAsync()</code></td>
+                </tr>
+                <tr>
+                    <td>Tenant A has migration X but tenant B doesn't</td>
+                    <td>Forgot to run <code>--migrate-tenants</code> after adding migration</td>
+                    <td>Always provision ALL tenants after generating migrations</td>
+                </tr>
+                <tr>
+                    <td>Central tables (Users, Companies) appearing in tenant DB</td>
+                    <td>EF discovered them via navigation properties</td>
+                    <td>Use <code>modelBuilder.Ignore&lt;T&gt;()</code> in BaseContext.OnModelCreating</td>
+                </tr>
+                <tr>
+                    <td>Connection string not found for company key</td>
+                    <td>Company key doesn't match any entry in Companies dictionary</td>
+                    <td>Ensure appsettings has the exact key used in code</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 14. Commands -->
+    <div class="section" id="commands">
+        <h2>14. EF Core CLI Command Reference <span class="tag tag-cli">CLI</span></h2>
+
+        <table>
+            <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+            <tbody>
+                <tr><td><code>dotnet ef migrations add <em>Name</em> --context <em>Ctx</em> --output-dir <em>Dir</em></code></td><td>Generates migration code files from model changes</td></tr>
+                <tr><td><code>dotnet ef migrations remove --context <em>Ctx</em></code></td><td>Deletes the last migration (if not applied to DB)</td></tr>
+                <tr><td><code>dotnet ef migrations list --context <em>Ctx</em></code></td><td>Shows all migrations and which are applied</td></tr>
+                <tr><td><code>dotnet ef database update --context <em>Ctx</em></code></td><td>Applies all pending migrations to the database</td></tr>
+                <tr><td><code>dotnet ef database update <em>MigrationName</em> --context <em>Ctx</em></code></td><td>Migrates up/down to a specific migration</td></tr>
+                <tr><td><code>dotnet ef database drop --context <em>Ctx</em></code></td><td>Drops the database (asks for confirmation)</td></tr>
+                <tr><td><code>dotnet ef dbcontext info --context <em>Ctx</em></code></td><td>Shows context info (provider, database name)</td></tr>
+                <tr><td><code>dotnet ef migrations script --context <em>Ctx</em></code></td><td>Generates a SQL script instead of applying directly</td></tr>
+                <tr><td><code>dotnet ef migrations script --idempotent --context <em>Ctx</em></code></td><td>Generates a safe SQL script that checks before applying</td></tr>
+            </tbody>
+        </table>
+
+        <div class="note"><strong>Pro tip:</strong> Use <code>--verbose</code> on any command to see the SQL being generated. Use <code>migrations script --idempotent</code> for production deployments where you want to review the SQL before running it.</div>
+    </div>
+
+</body>
+</html>

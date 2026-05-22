@@ -1,0 +1,431 @@
+[
+  {
+    "src_rel": "Education/Basics/CSharp_Generics_Guide.pdf",
+    "title": "Generics in C#: A Comprehensive Guide",
+    "doc_type": "core-concept",
+    "topic_family": "language",
+    "domain": null,
+    "topic_slug": "csharp-generics-comprehensive",
+    "complexity": "intermediate",
+    "one_line_summary": "A full tour of C# generics from the pre-generics pain of ArrayList boxing to advanced topics like reification, variance, constraints, and reflection over open generic types.",
+    "executive_summary": "This is an end-to-end reference on C# generics that starts with the historical motivation (boxing penalties and lost type safety in object-based collections) and walks through generic classes, methods, interfaces, constraints, variance, static members per constructed type, reflection, and idiomatic patterns like Repository, Factory, Specification, and Result. Its standout insight is the contrast between Java's type erasure and C#'s reification — the CLR preserves generic type information at runtime, which is why frameworks like EF Core, DI containers, and serializers can do the things they do. The guide closes with practical usage in EF Core, open-generic DI registration, and Blazor @typeparam components.",
+    "key_concepts": [
+      "type parameters",
+      "reification vs type erasure",
+      "generic constraints",
+      "covariance and contravariance",
+      "boxing and unboxing",
+      "open vs closed generic types",
+      "type inference"
+    ],
+    "prerequisites": [
+      "C# classes and interfaces",
+      "basic OOP inheritance",
+      "value types vs reference types"
+    ],
+    "builds_toward": [
+      "dependency-injection-open-generics",
+      "ef-core-generic-repository",
+      "specification-pattern",
+      "blazor-generic-components"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": false,
+    "tutorial_structure": null,
+    "suggested_metaphor": "Generics are like a pasta machine with swappable dies. The machine itself is one design — feed dough in and turn the crank — but you snap a different die on top and out comes spaghetti, rigatoni, or fettuccine. The List<T> class is that one machine; List<int> and List<Employee> are the pasta shapes you get when you choose the die. Boxing in the old ArrayList world was like shoving every noodle into an unlabelled tupperware and then guessing what shape it was when you opened it later.",
+    "suggested_intro_hook": "In 2004, you couldn't put an integer in a .NET collection without boxing it onto the heap and unboxing it on the way out — a tax you paid in every tight loop. Then C# 2.0 shipped, and suddenly the List<int> you wrote was literally a different type in memory than List<string>. This guide explains what that actually means and why it's still the most impactful feature to understand in modern .NET.",
+    "what_it_teaches": "How generics work at the language level, runtime level (reification), and idiomatic level (patterns). It covers every constraint flavour, the variance rules, how static state is per-constructed-type, and how to use reflection to build generic types dynamically.",
+    "key_takeaways": [
+      "C# generics are reified at runtime, not erased — the CLR knows the exact type arguments and can generate specialised value-type code without boxing",
+      "Constraints are promises to the compiler about what T can do, which unlocks operations like CompareTo, new T(), or casting to null",
+      "Covariance (out) is safe when T only leaves the type; contravariance (in) is safe when T only enters the type; anything else must be invariant",
+      "Static fields in a generic class are per constructed type — Counter<int>.Count and Counter<string>.Count are independent slots",
+      "Open generic registrations let DI containers resolve IRepository<T> for any T with a single line of configuration"
+    ],
+    "cross_references": [
+      "csharp-language-features",
+      "dependency-injection",
+      "ef-core-repository-pattern",
+      "specification-pattern",
+      "blazor-generic-components",
+      "reflection-and-metadata"
+    ],
+    "quality_notes": "Dense, well-structured, and genuinely comprehensive. Covers historical context, syntax, constraints, variance, reflection, and ecosystem usage — unusual for a single document to hit all of those without becoming shallow. Code samples are realistic and include the patterns a .NET developer will actually encounter. Minor formatting artifacts from PDF extraction (line breaks inside code blocks) but readable.",
+    "reading_difficulty_minutes": 35,
+    "is_part_of_series": false,
+    "series_name": null
+  },
+  {
+    "src_rel": "JScript/JS_Select2&CustomMethods.pdf",
+    "title": "Select2 & Custom AG Grid Methods: JavaScript Breakdown",
+    "doc_type": "core-concept",
+    "topic_family": "frontend",
+    "domain": null,
+    "topic_slug": "js-select2-ag-grid-custom-components",
+    "complexity": "beginner",
+    "one_line_summary": "A line-by-line tour of three JavaScript building blocks — initializing Select2 with jQuery, a custom AG Grid cell editor, and a custom AG Grid text filter — with Portuguese localisation and a running critique of the editor's focus bugs.",
+    "executive_summary": "The document decomposes three JavaScript routines used in a legacy Blazor/jQuery hybrid app. The first explains initializeSelect2 and the jQuery document-ready pattern — why $.fn.select2 is guarded before use, why jQuery(document).ready wraps initialisation, and the modern ES6 alternatives. The second is a full dissection of a CustomSelectEditor class for AG Grid (prototype methods: init, getGui, afterGuiAttached, getValue, destroy, isPopup, onKeyDown) including four annotated bugs around dropdownParent, event propagation, and the global $('.select2-search__field') selector that steals focus across instances. The third walks through a CustomTextFilter with AG Grid styling, Portuguese labels, and a full filter-state lifecycle (init, doesFilterPass, getModel, setModel, event handlers).",
+    "key_concepts": [
+      "jQuery document ready pattern",
+      "Select2 initialization",
+      "AG Grid cell editor lifecycle",
+      "AG Grid custom filter component",
+      "prototype-based JavaScript classes",
+      "event propagation and focus management"
+    ],
+    "prerequisites": [
+      "basic JavaScript",
+      "DOM manipulation",
+      "jQuery fundamentals"
+    ],
+    "builds_toward": [
+      "ag-grid-integration",
+      "blazor-js-interop",
+      "ui-component-patterns"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": false,
+    "tutorial_structure": null,
+    "suggested_metaphor": "AG Grid's cell editor contract is like a relay race. AG Grid hands you the baton at init, watches you run the lap inside the cell with afterGuiAttached, takes the baton back with getValue, and finally retires you at destroy. If you don't return the baton cleanly — because you stopPropagation on every click or grab focus with a global selector — the next runner trips and the whole race looks glitchy.",
+    "suggested_intro_hook": "Why does clicking a dropdown in one row sometimes steal the keyboard focus from a dropdown in another row? Because somewhere deep in the cell editor, someone wrote $('.select2-search__field').focus() — and that selector doesn't care which row you're in. This doc walks you through exactly that kind of mistake, among others.",
+    "what_it_teaches": "How to read and write Select2 initialization safely, how AG Grid's cell-editor lifecycle fits together, how to build a custom AG Grid text filter that follows the expected contract (getModel/setModel/doesFilterPass), and what pitfalls make custom editors feel buggy (over-broad event stopping, global selectors, focus races).",
+    "key_takeaways": [
+      "Always guard optional libraries ($.fn.select2 === undefined) before calling into them — fail fast with a clear error instead of a mysterious crash",
+      "jQuery(document).ready(function($) {...}) gives you an explicit, conflict-proof $ scoped to your block, even if another library has stolen the global $",
+      "AG Grid cell editors follow a strict lifecycle: init -> getGui -> afterGuiAttached -> getValue -> destroy; each method has a specific job and skipping one creates weird bugs",
+      "Global jQuery selectors like $('.select2-search__field') inside a per-row component are a focus-stealing footgun — always scope to the instance",
+      "Custom AG Grid filters must implement isFilterActive, doesFilterPass, getModel, setModel as a matched set; missing one breaks state persistence"
+    ],
+    "cross_references": [
+      "jquery-fundamentals",
+      "ag-grid-custom-components",
+      "blazor-js-interop",
+      "event-propagation-dom"
+    ],
+    "quality_notes": "Extremely pedagogical and methodical — every line of code gets a what/why explanation. The running critique of bugs in the CustomSelectEditor is particularly valuable. The content is beginner-friendly but covers enough AG Grid lifecycle detail to be useful for intermediate devs. Content is bilingual (Portuguese UI strings with English explanations).",
+    "reading_difficulty_minutes": 20,
+    "is_part_of_series": false,
+    "series_name": null
+  },
+  {
+    "src_rel": "Education/27-Base-Entity-Abstractions-Soft-Delete.html",
+    "title": "Base Entity Abstractions & Soft Delete",
+    "doc_type": "core-concept",
+    "topic_family": "data",
+    "domain": null,
+    "topic_slug": "ef-core-base-entity-abstractions-soft-delete",
+    "complexity": "intermediate",
+    "one_line_summary": "A layered inheritance tree (BaseEntity -> BaseAuditableEntity -> BaseSoftDeletableEntity) combined with IAuditable/ISoftDeletable interfaces and EF Core HasQueryFilter to give 45+ domain models audit tracking and soft delete with zero per-entity boilerplate.",
+    "executive_summary": "This tutorial shows how to use abstract base classes as nesting dolls — each level adds fields without re-declaring what came before — so every entity in a large codebase inherits an Id, four audit fields, and three soft-delete fields without copy-paste. The twist is pairing the base classes with IAuditable and ISoftDeletable interfaces so EF Core interceptors can pattern-match against any entity type and stamp audit data automatically. The second half walks through HasQueryFilter (global soft-delete filter), the HashSet<Type> blocklist pattern for preventing central-only configs from leaking into tenant contexts in a multi-context setup, modelBuilder.Ignore<T>() for orphan navigation types, and a global cascade-delete disable that forces services to handle deletion order explicitly.",
+    "key_concepts": [
+      "abstract base entities",
+      "IAuditable and ISoftDeletable interfaces",
+      "EF Core HasQueryFilter",
+      "soft delete pattern",
+      "ApplyConfigurationsFromAssembly",
+      "multi-context blocklist pattern",
+      "global cascade delete disable"
+    ],
+    "prerequisites": [
+      "EF Core basics",
+      "C# inheritance",
+      "interfaces and polymorphism"
+    ],
+    "builds_toward": [
+      "ef-core-interceptors",
+      "audit-trail-system",
+      "multi-tenancy-ef-core",
+      "domain-driven-design-entities"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": null,
+    "suggested_metaphor": "The base class hierarchy is a set of Russian nesting dolls. The smallest doll is BaseEntity — it just has an ID, nothing else. Open it and inside sits BaseAuditableEntity, which adds 'who created/modified me' fields. Open that and you find BaseSoftDeletableEntity with 'am I pretending to be deleted?' on top. The biggest doll contains all the others — its 8 properties come from 3 levels of inheritance — but the class file only declares the 3 new ones. Change the innermost doll, every outer one updates automatically.",
+    "suggested_intro_hook": "Forty-five entity classes, each needing the same eight properties. You could paste them in 45 times and pray nobody mistypes 'CreatedAt'. Or you could build a three-level inheritance chain that gives every domain model audit tracking and soft delete for free — with one interceptor that doesn't know any of them by name. This is how.",
+    "what_it_teaches": "How to structure a .NET domain model so that common concerns (ID, audit, soft delete) live in base classes and interfaces, how EF Core's HasQueryFilter makes soft delete invisible to business code, how ApplyConfigurationsFromAssembly auto-discovers IEntityTypeConfiguration classes, and how a blocklist pattern keeps multi-database configurations from crossing contexts.",
+    "key_takeaways": [
+      "Inherit from the most specific base you actually need — BaseEntity for lookup tables, BaseAuditableEntity for append-only, BaseSoftDeletableEntity for business records",
+      "Interfaces (IAuditable, ISoftDeletable) are what interceptors pattern-match against — the base classes provide reuse, the interfaces provide polymorphism",
+      "HasQueryFilter(e => !e.IsDeleted) applies globally to every query including .Include() chains; use .IgnoreQueryFilters() only in admin/recovery code",
+      "Disable cascade delete globally (DeleteBehavior.NoAction) to prevent mass-deletion accidents — services should handle deletion order explicitly",
+      "In multi-context setups, a HashSet<Type> blocklist fed to ApplyConfigurationsFromAssembly's predicate cleanly prevents central-only configurations from being applied to tenant contexts"
+    ],
+    "cross_references": [
+      "ef-core-interceptors",
+      "ef-core-fluent-configuration",
+      "multi-tenancy-patterns",
+      "audit-trail-implementation",
+      "csharp-inheritance"
+    ],
+    "quality_notes": "Excellent. Clear progression from why to how, covers the full ecosystem (base classes, interfaces, configurations, interceptors, cascade prevention), and the step-by-step 'Creating a New Entity' section ties the whole thing to a concrete workflow. The nesting-dolls metaphor is already in the source — my metaphor preserves that but adds the 'change the innermost doll' dynamic aspect.",
+    "reading_difficulty_minutes": 22,
+    "is_part_of_series": true,
+    "series_name": "Education tutorials (numbered 01-27+)"
+  },
+  {
+    "src_rel": "Adding-New-Category.html",
+    "title": "Adding a New Category to Furnor",
+    "doc_type": "applied-implementation",
+    "topic_family": null,
+    "domain": "furnor-category-system",
+    "topic_slug": "furnor-adding-new-category",
+    "complexity": "beginner",
+    "one_line_summary": "A five-file recipe for adding new product categories to Furnor's configuration-driven category system, where two registries (MasterDataProvider and CategoryConfigRegistry) drive automatic discovery in everything else.",
+    "executive_summary": "This is a step-by-step developer recipe for the Furnor metallic furniture manufacturing system, showing exactly which five files need to change to add a new category (e.g. ArticleType with values PA/PI/MP) and which files need zero changes because they discover the category via reflection/registry. The core insight is the dual-registry split: DefaultMasterDataProvider drives the Article Wizard's field selection, while CategoryConfigRegistry drives the CRUD management UI AND auto-registers entity types into BaseContext.OnModelCreating. The tutorial covers both flat categories and hierarchical parent/child ones, includes a complete ArticleType example, and ends with a 'common mistakes' troubleshooting table.",
+    "key_concepts": [
+      "configuration-driven architecture",
+      "CategoryBase inheritance",
+      "dual registry pattern",
+      "generic EF Core DbSet access",
+      "EF Core auto-registration via reflection",
+      "parent/child category hierarchy"
+    ],
+    "prerequisites": [
+      "EF Core migrations",
+      "C# inheritance",
+      "basic Blazor"
+    ],
+    "builds_toward": [
+      "furnor-article-wizard",
+      "furnor-product-catalog",
+      "configuration-driven-crud"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": false,
+    "tutorial_structure": {
+      "why_it_exists": "Furnor is a metallic furniture manufacturer, and its product catalog lives or dies by category metadata — article type, material, finish, thickness, etc. In a naive design, adding a new category means touching ten files: a DbSet, a DbContext configuration, a form, a grid, a wizard step, a service method. Someone in this codebase decided that was unacceptable and built a registry-driven system where CategoryService talks to context.Set<T>() generically, BaseContext auto-registers entity types from the registry, and grid/wizard components iterate over configs at runtime. The tutorial exists so that anyone — not just the original author — can add a new category in five files and twenty minutes without touching the 'engine room'.",
+      "what_it_does": "Walks the developer through five exact changes: (1) create an entity class inheriting CategoryBase in Models/Artigo/Entities/Categories.cs; (2) register it in DefaultMasterDataProvider.GetConfigs() so the article wizard knows about it; (3) register it in CategoryConfigRegistry.RegisterAllConfigs() so the CRUD UI at /artigo/categorias shows it AND BaseContext auto-creates the table; (4) add a code property (e.g. ArticleTypeCode) to the Article entity, matching ProductPropertyName; (5) generate and apply an EF Core migration. Both flat and hierarchical variants are shown, with a full ArticleType (PA/PI/MP) example at the end.",
+      "how_it_works": "The trick is that the two registries are the single sources of truth. DefaultMasterDataProvider is read by the Article Wizard to know which fields to show in template selection. CategoryConfigRegistry is read twice — once by GenericCategoryManager.razor to render a CRUD page for any category (columns, required fields, hierarchy awareness) and once by BaseContext.OnModelCreating to call modelBuilder.Entity<T>() for every registered entity type. CategoryService uses generic EF Core calls (context.Add, context.FindAsync, context.Set<T>()) so it never needs to know the concrete type. The ProductPropertyName in the registry is the contract that ties Article.ArticleTypeCode to the category; if those strings don't match, articles save with null codes. The developer only touches five files because everything else either uses reflection or reads the registry at startup."
+    },
+    "suggested_metaphor": "Adding a new category in Furnor is like adding a new channel to a cable TV box. You don't rewire the TV, the remote, or the wall socket — you just plug a new channel card into the box, tell the guide software 'channel 11 is TipoArtigo', and everything that reads the guide (the TV menu, the remote's search, the DVR recording scheduler) picks it up automatically. If you forget to update the guide, the channel exists but nobody can find it.",
+    "suggested_intro_hook": "What if adding a brand new product category to a 45-table manufacturing system took five files, not fifty? That's the promise of the registry-driven pattern Furnor uses — and the trap, because if your ProductPropertyName string doesn't match your Article.cs property name, your articles silently save with null codes and nobody notices until a report comes back empty.",
+    "what_it_teaches": "How a registry-driven pattern turns 'add a category' from a schema-level change into a configuration change, what files are mandatory vs optional in Furnor's system, and how to avoid the common mistakes (string-matching property names, DisplayOrder conflicts, forgotten migrations).",
+    "key_takeaways": [
+      "The Furnor category system has two registries — DefaultMasterDataProvider (wizard) and CategoryConfigRegistry (CRUD + auto-registration) — and they must agree on displayName",
+      "ProductPropertyName is a brittle string contract that MUST match the Article.cs property name exactly or articles save with null category codes",
+      "CategoryBase inheritance + context.Set<T>() generics means CategoryService never needs to know concrete types — only the registry does",
+      "Hierarchical categories use the parent's CODE as foreign key, not the ID, which keeps category swaps simple",
+      "BaseContext.OnModelCreating auto-registers entity types from the registry so a DbSet property is optional, not required"
+    ],
+    "cross_references": [
+      "furnor-article-system",
+      "configuration-driven-architecture",
+      "ef-core-generic-repository",
+      "categorybase-pattern",
+      "ef-core-migrations"
+    ],
+    "quality_notes": "Excellent as a developer recipe — reads exactly like a well-written internal runbook. Has the three things you want in this kind of doc: an exact file list, a common-mistakes table, and a complete worked example. One quirk: mixes Portuguese UI labels ('Codigo', 'Descricao') with English code comments, which is typical for the Furnor codebase but can confuse first-time readers.",
+    "reading_difficulty_minutes": 15,
+    "is_part_of_series": false,
+    "series_name": null
+  },
+  {
+    "src_rel": "Education/10-Web-Fundamentals.md",
+    "title": "Web Fundamentals for .NET Developers",
+    "doc_type": "core-concept",
+    "topic_family": "web",
+    "domain": null,
+    "topic_slug": "web-fundamentals-kestrel-static-files",
+    "complexity": "beginner",
+    "one_line_summary": "A practical primer on how a Blazor Server app serves content: static vs dynamic, wwwroot conventions, Kestrel's place in the stack, browser caching, cache busting, and the ordered middleware pipeline.",
+    "executive_summary": "This tutorial grounds the web mental model for a .NET developer who has been writing Blazor Server code without fully understanding the infrastructure underneath. It covers six topics: (1) the static/dynamic distinction — files served byte-for-byte vs content generated by C# at request time; (2) the wwwroot folder as the only publicly accessible folder and the files that must never live there; (3) Kestrel as an in-process web server that binds to ports inside your application, often behind a reverse proxy in production; (4) why browsers cache and the Cache-Control/ETag/Last-Modified headers; (5) three cache-busting strategies (query string, content hash, asp-append-version); (6) the middleware pipeline and why ordering UseStaticFiles before UseAuthentication is the difference between public CSS and login-gated CSS.",
+    "key_concepts": [
+      "static vs dynamic content",
+      "wwwroot folder",
+      "Kestrel web server",
+      "browser caching (Cache-Control, ETag)",
+      "cache busting",
+      "ASP.NET Core middleware pipeline",
+      "reverse proxy"
+    ],
+    "prerequisites": [
+      "basic HTTP concepts",
+      "what a web browser does",
+      "any ASP.NET Core exposure"
+    ],
+    "builds_toward": [
+      "blazor-server-fundamentals",
+      "aspnet-core-middleware-deep-dive",
+      "deployment-and-hosting"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": null,
+    "suggested_metaphor": "ASP.NET Core's middleware pipeline is like the airport security and customs line for your request. UseHttpsRedirection is the pre-check gate (wrong lane? redirected). UseStaticFiles is the express lane for frequent flyers (a recognised file? go straight through, skip everything else). UseRouting figures out which terminal you're headed to. UseAuthentication checks your passport. UseAuthorization checks if your visa covers this country. MapBlazorHub is the plane itself. Put the passport check before the express lane and suddenly everyone — even tourists trying to see the public airport map — has to show ID.",
+    "suggested_intro_hook": "Why does a CSS change take a hard refresh to show up? Why does moving app.UseAuthentication() one line up in Program.cs suddenly require login to see your favicon? And what, actually, is Kestrel — a program? A process? A service? A piece of your .exe? This doc answers all three in one sitting.",
+    "what_it_teaches": "How a Blazor Server request actually flows from a browser URL to rendered HTML, what lives in wwwroot and what doesn't, why caching is both a performance win and a bug farm, and how to reason about middleware order.",
+    "key_takeaways": [
+      "wwwroot is the ONLY folder publicly accessible by default — appsettings.json, .cs files, and connection strings must live outside it",
+      "Kestrel isn't a separate program; it's a web server that runs inside your .exe, bound to specific ports, usually sitting behind a reverse proxy in production",
+      "Browser caching is keyed on URL, so 'cache busting' is literally the art of changing the URL (via ?v=N, content-hashed filenames, or asp-append-version) whenever the content changes",
+      "Middleware order matters — UseStaticFiles must come before UseAuthentication, or your CSS requires a login",
+      "UseStaticFiles short-circuits the pipeline when it finds a file, which is why static requests never reach your routing logic"
+    ],
+    "cross_references": [
+      "aspnet-core-middleware",
+      "blazor-server-lifecycle",
+      "http-protocol-basics",
+      "deployment-reverse-proxy",
+      "static-file-security"
+    ],
+    "quality_notes": "Well-organised, beginner-friendly, and usefully opinionated (the middleware order warning is exactly the kind of thing you only learn by getting burned). ASCII diagrams render well as HTML. Good balance of table/code/prose. Could go deeper on Cache-Control directives or ETag validation but that's intentional scope-limiting.",
+    "reading_difficulty_minutes": 12,
+    "is_part_of_series": true,
+    "series_name": "Education tutorials (numbered 01-27+)"
+  },
+  {
+    "src_rel": "Education/08-Agnostic-Schedule-Conflict-Detection.md",
+    "title": "Agnostic Schedule Conflict Detection",
+    "doc_type": "core-concept",
+    "topic_family": "patterns",
+    "domain": null,
+    "topic_slug": "schedule-conflict-strategy-pattern",
+    "complexity": "intermediate",
+    "one_line_summary": "Using the Strategy pattern with DI's IEnumerable<T> injection to build an entity-agnostic schedule conflict detector that can handle Employees, Equipment, Vehicles, and future types without modifying existing code.",
+    "executive_summary": "This is a case study in applying the Strategy pattern to eliminate entity-coupling in a schedule conflict system. The starting point is a JobConflictService tightly bound to Employees — adding Equipment scheduling would mean copy-pasting the entire service. The fix is a two-layer abstraction: an IScheduleEntry interface both JobSchedule and JobEquipmentSchedule implement (normalising their different foreign key names via an EntityId computed property), and an IScheduleConflictStrategy interface keyed by an EntityType string ('Employee', 'Equipment'). A facade ScheduleConflictDetector receives IEnumerable<IScheduleConflictStrategy> from DI and routes calls to the matching strategy. Adding a new entity type becomes a four-step registration exercise that never touches the facade. The doc explicitly maps each SOLID principle to its role in the design.",
+    "key_concepts": [
+      "Strategy pattern",
+      "Open/Closed Principle",
+      "IEnumerable<T> DI injection",
+      "interface segregation",
+      "facade pattern",
+      "entity-agnostic design"
+    ],
+    "prerequisites": [
+      "dependency injection basics",
+      "C# interfaces",
+      "SOLID principles"
+    ],
+    "builds_toward": [
+      "solid-principles",
+      "plugin-architecture",
+      "di-registration-patterns",
+      "domain-driven-scheduling"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": null,
+    "suggested_metaphor": "The Strategy pattern here is like a multilingual call center. The facade (ScheduleConflictDetector) is the front desk operator who doesn't speak any of the languages. When an 'Employee' call comes in, the operator routes it to the Portuguese-speaking agent; an 'Equipment' call goes to the Spanish-speaking one. Adding Vietnamese support doesn't mean retraining the operator — you just hire another agent and hang their language placard on the wall. The operator still reads placards the same way. This is Open/Closed in physical form.",
+    "suggested_intro_hook": "The fastest way to spot a Strategy pattern opportunity? Look for a switch statement that grows every time a new type is added to the domain. This doc starts with exactly such a switch — and ends with a detector that can handle Vehicles without anyone touching the original code, because the DI container handles the branching for you.",
+    "what_it_teaches": "How to refactor a type-coupled service into a family of interchangeable strategies, how IEnumerable<T> DI injection lets you register any number of strategies without touching their consumer, and how a common IScheduleEntry interface lets unrelated entities (JobSchedule and JobEquipmentSchedule) share conflict logic.",
+    "key_takeaways": [
+      "A common interface (IScheduleEntry) lets you write overlap logic once regardless of whether the entity is an Employee, Equipment, or Vehicle",
+      "Registering multiple implementations of the same interface with DI lets you inject them as IEnumerable<T> — the facade iterates to find the right one by EntityType",
+      "The Strategy pattern replaces switch statements with polymorphism, making Open/Closed compliance a compile-time guarantee",
+      "A [NotMapped] EntityId computed property lets you keep the real FK name (EmployeeId, EquipmentId) while still exposing a unified interface contract",
+      "Adding a new entity type is a four-file change that never touches the facade: new schedule model, new strategy, DI registration, new constant"
+    ],
+    "cross_references": [
+      "solid-principles",
+      "dependency-injection",
+      "interface-segregation-principle",
+      "open-closed-principle",
+      "factory-floor-scheduling"
+    ],
+    "quality_notes": "Strong. Starts with pain (the before code), maps each SOLID principle to the solution, shows both interfaces and concrete registrations, and ends with a 'how to add a Vehicle' walkthrough. The ASCII architecture diagram is clear. The single weak spot is that the doc says 'entity-agnostic' but the strategies still need to know their concrete schedule tables — it's the facade that's agnostic, not the strategies.",
+    "reading_difficulty_minutes": 14,
+    "is_part_of_series": true,
+    "series_name": "Education tutorials (numbered 01-27+)"
+  },
+  {
+    "src_rel": "Education/01-Understanding-Clean-Architecture.md",
+    "title": "Understanding Clean Architecture",
+    "doc_type": "core-concept",
+    "topic_family": "patterns",
+    "domain": null,
+    "topic_slug": "clean-architecture-hrmodule-basics",
+    "complexity": "beginner",
+    "one_line_summary": "A three-layer view of Clean Architecture (UI -> Service -> Data) applied to HRModule, with concrete Blazor examples of what belongs where and a ServiceResult<T> pattern as the return contract between layers.",
+    "executive_summary": "This is a short introduction to Clean Architecture tuned for a Blazor Server codebase (HRModule). It explains the three-layer model — UI displays and calls services, services hold all business logic, data is only touched by services — and contrasts 'good' and 'bad' Blazor components side-by-side. The second half introduces the ServiceResult<T> wrapper as a unified return type (Success bool, Message string, Data T) so UI code can branch on result.Success without needing try/catch or sentinel return values. The payoff is testability: a service with no UI dependencies can be unit-tested with a mock DbContext. The doc closes with a mistakes table (LINQ in Razor, DbContext in component, validation in UI, bloated @code blocks).",
+    "key_concepts": [
+      "layered architecture",
+      "separation of concerns",
+      "ServiceResult<T> pattern",
+      "dependency direction",
+      "Blazor service injection",
+      "unit testability"
+    ],
+    "prerequisites": [
+      "C# basics",
+      "Blazor components basics",
+      "dependency injection"
+    ],
+    "builds_toward": [
+      "dependency-injection-advanced",
+      "unit-testing-services",
+      "ef-core-context-per-request",
+      "hexagonal-architecture"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": null,
+    "suggested_metaphor": "Clean Architecture is like a restaurant. The UI is the waiter — takes the order, delivers the food, smiles at the customer, never cooks. The service layer is the chef — knows every recipe, handles the heat, decides substitutions, returns the plate or a 'we're out of salmon' apology. The data layer is the pantry and fridge — only the chef goes in. Put a customer in the kitchen (LINQ in Razor) and you get chaos. Make the waiter cook (validation in UI) and you get burnt toast and a legal liability.",
+    "suggested_intro_hook": "Why does putting LINQ in a Razor component feel good in the moment and terrible six months later? Because the component becomes a 300-line frankenclass that can't be tested, can't be reused, and breaks every time a business rule changes. Clean Architecture is the discipline that makes the short-term pain of writing a service method pay off every single time you edit the feature later.",
+    "what_it_teaches": "Which code belongs in UI vs service vs data, what ServiceResult<T> looks like in practice, why this separation makes code testable and maintainable, and a set of common anti-patterns to avoid in Blazor components.",
+    "key_takeaways": [
+      "UI components should never touch DbContext, validate business rules, or use LINQ directly — delegate to a service",
+      "Business logic lives in services and ONLY in services — if you're validating in two places, you're about to drift",
+      "ServiceResult<T> is a unified return contract that lets UI code branch on Success without try/catch or null checks",
+      "The testability win is real: a service with no UI dependencies can be unit-tested with a mocked DbContext and no browser",
+      "The same service can power Blazor UI, API endpoints, and background jobs — because it has no UI-specific code inside it"
+    ],
+    "cross_references": [
+      "dependency-injection",
+      "unit-testing",
+      "blazor-server-fundamentals",
+      "ef-core-dbcontext-lifetime",
+      "service-result-pattern"
+    ],
+    "quality_notes": "Short but effective. Good-vs-bad side-by-side code samples are the strongest part. The 'Why This Matters' section concretely answers the three obvious questions (testability, maintainability, reusability). For a '01-' intro document it's appropriately minimal — doesn't try to cover hexagonal, onion, or DDD, just the practical three-layer split.",
+    "reading_difficulty_minutes": 8,
+    "is_part_of_series": true,
+    "series_name": "Education tutorials (numbered 01-27+)"
+  },
+  {
+    "src_rel": "Identity/IdentityRoadmap.pdf",
+    "title": "Identity Roadmap",
+    "doc_type": "applied-implementation",
+    "topic_family": null,
+    "domain": "identity-project",
+    "topic_slug": "identity-project-roadmap",
+    "complexity": "unknown",
+    "one_line_summary": "A roadmap document for the Identity project — content could not be extracted, so only filename and path are available.",
+    "executive_summary": "This PDF lives under the Identity/ folder of the learning library and is named IdentityRoadmap.pdf. The file's text layer could not be extracted (has_text=false, word_count=0), which typically means it's either a scanned image PDF or an image-only export. Based on its name and folder, it almost certainly describes a planned or in-progress development roadmap for the Identity project — the personal role-based authorization system the developer is building. Without the text content, no deeper analysis is possible; the reader should be directed to open the PDF directly to see its content.",
+    "key_concepts": [
+      "roadmap",
+      "identity project",
+      "authentication",
+      "authorization"
+    ],
+    "prerequisites": [],
+    "builds_toward": [
+      "identity-project-role-based-authorization",
+      "identity-project-architecture"
+    ],
+    "has_code_examples": false,
+    "has_diagrams_or_visuals": false,
+    "tutorial_structure": {
+      "why_it_exists": "Inferred from context — the Identity project is the developer's role-based authorization system, and a roadmap document typically exists to capture milestones, planned features, and sequencing decisions. Without text extraction we cannot verify which of these it actually addresses.",
+      "what_it_does": "Unknown. Filename suggests a planning/roadmap artifact for the Identity project, which would typically list phases, features, dependencies, and target dates. The file is stored as a PDF under the Identity/ directory, which is where the developer keeps Identity-project documentation.",
+      "how_it_works": "Cannot be determined without text extraction. The PDF appears to be image-only (scanned or exported from an image source), so OCR would be needed to recover the content. The existence of the PDF at Identity/IdentityRoadmap.pdf is all that can be confirmed."
+    },
+    "suggested_metaphor": "A treasure map where the ink has faded — the chest is labelled 'Identity Project', the compass points roughly north, and you know there's something important at the destination, but the steps between here and there are unreadable until you find a better copy.",
+    "suggested_intro_hook": "Every project has a roadmap PDF buried somewhere. This one exists, but the text layer didn't survive whatever export chain produced it — so consider this a placeholder until the real file can be re-extracted or re-rendered with selectable text.",
+    "what_it_teaches": "Cannot determine without extractable content. Likely: the planned phases and milestones of the Identity project.",
+    "key_takeaways": [
+      "Document exists at Identity/IdentityRoadmap.pdf but text could not be extracted",
+      "Filename and folder strongly suggest a roadmap for the personal Identity/authorization project",
+      "Needs OCR or re-export with a text layer before meaningful analysis is possible"
+    ],
+    "cross_references": [
+      "identity-project-role-based-authorization",
+      "identity-project-architecture",
+      "authentication-fundamentals",
+      "authorization-patterns"
+    ],
+    "quality_notes": "Cannot be assessed — PDF text layer is missing (has_text=false, word_count=0). The file is most likely a scanned or image-based PDF. Recommendation: re-export the source document with selectable text, or run OCR, so this roadmap can be properly indexed into the learning library.",
+    "reading_difficulty_minutes": 0,
+    "is_part_of_series": false,
+    "series_name": null
+  }
+]

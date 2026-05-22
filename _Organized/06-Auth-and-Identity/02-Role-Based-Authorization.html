@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>02-Role-Based-Authorization</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 06-Auth-and-Identity</div>
+  <h1>02-Role-Based-Authorization</h1>
+  <div class="meta">Source: <code>Education/02-Role-Based-Authorization.md</code> &middot; <a href="02-Role-Based-Authorization.md">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<h1 id="role-based-authorization-explained">Role-Based Authorization Explained</h1>
+<h2 id="the-old-way-boolean-flags">The Old Way (Boolean Flags)</h2>
+<p>Previously, roles were stored as boolean flags directly on the User:</p>
+<pre><code class="lang-csharp"><span class="cmt">// OLD - Don&#x27;t do this anymore</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">CrmUtilizador</span>
+{
+    <span class="kw">public</span> <span class="kw">bool</span> <span class="type">IsSuperAdmin</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public</span> <span class="kw">bool</span> <span class="type">Isadmin</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public</span> <span class="kw">bool</span> <span class="type">Ismanager</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+}
+
+<span class="cmt">// Check was simple but inflexible</span>
+<span class="kw">if</span> (user.<span class="type">Isadmin</span>) { ... }</code></pre>
+<h3 id="problems-with-boolean-flags">Problems with Boolean Flags</h3>
+<ol>
+<li><strong>No hierarchy</strong>: Can&#x27;t easily check &quot;admin or above&quot;</li>
+<li><strong>Hard to extend</strong>: Adding new roles requires schema changes</li>
+<li><strong>No audit trail</strong>: Can&#x27;t track who assigned roles</li>
+<li><strong>Multiple roles</strong>: User could be both admin and manager (inconsistent)</li>
+</ol>
+<h2 id="the-new-way-database-roles">The New Way (Database Roles)</h2>
+<h3 id="role-table">Role Table</h3>
+<pre><code class="lang-sql">SystemRole
+├── Id: 1, Code: &#x27;SUPER_ADMIN&#x27;, Level: 100
+├── Id: 2, Code: &#x27;ADMIN&#x27;, Level: 80
+├── Id: 3, Code: &#x27;MANAGER&#x27;, Level: 60
+└── Id: 4, Code: &#x27;USER&#x27;, Level: 40</code></pre>
+<h3 id="user-role-assignment">User-Role Assignment</h3>
+<pre><code class="lang-sql">UserSystemRole
+├── UserId: 123, RoleId: 2 (Admin)
+├── UserId: 456, RoleId: 3 (Manager)
+└── UserId: 789, RoleId: 4 (User)</code></pre>
+<h3 id="benefits">Benefits</h3>
+<ol>
+<li><strong>Hierarchical checks</strong>: <code class="il">Level &gt;= 80</code> means &quot;Admin or above&quot;</li>
+<li><strong>Extensible</strong>: Add new roles without code changes</li>
+<li><strong>Audit trail</strong>: Track when/who assigned roles</li>
+<li><strong>Single role</strong>: Each user has one highest role</li>
+</ol>
+<h2 id="how-it-works-in-code">How It Works in Code</h2>
+<h3 id="1-service-layer">1. Service Layer</h3>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">AuthorizationService</span> : <span class="type">IAuthorizationService</span>
+{
+    <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="type">UserRole</span>&gt; <span class="type">GetUserRoleAsync</span>(<span class="kw">int</span> userId)
+    {
+        <span class="kw">var</span> assignment = <span class="kw">await</span> _context.<span class="type">UserSystemRoles</span>
+            .<span class="type">Include</span>(usr =&gt; usr.<span class="type">Role</span>)
+            .<span class="type">Where</span>(usr =&gt; usr.<span class="type">UserId</span> == userId &amp;&amp; usr.<span class="type">IsActive</span>)
+            .<span class="type">OrderByDescending</span>(usr =&gt; usr.<span class="type">Role</span>.<span class="type">Level</span>)
+            .<span class="type">FirstOrDefaultAsync</span>();
+
+        <span class="kw">if</span> (assignment?.<span class="type">Role</span> == <span class="kw">null</span>) <span class="kw">return</span> <span class="type">UserRole</span>.<span class="type">Regular</span>;
+
+        <span class="kw">return</span> assignment.<span class="type">Role</span>.<span class="type">Level</span> <span class="kw">switch</span>
+        {
+            &gt;= <span class="num">100</span> =&gt; <span class="type">UserRole</span>.<span class="type">SuperAdmin</span>,
+            &gt;= <span class="num">80</span> =&gt; <span class="type">UserRole</span>.<span class="type">Admin</span>,
+            &gt;= <span class="num">60</span> =&gt; <span class="type">UserRole</span>.<span class="type">Manager</span>,
+            _ =&gt; <span class="type">UserRole</span>.<span class="type">Regular</span>
+        };
+    }
+}</code></pre>
+<h3 id="2-base-component">2. Base Component</h3>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">AuthenticatedComponentBase</span> : <span class="type">ComponentBase</span>
+{
+    [<span class="type">Inject</span>] <span class="kw">protected</span> <span class="type">IAuthorizationService</span> <span class="type">AuthorizationService</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+
+    <span class="kw">protected</span> <span class="type">UserRole</span> <span class="type">CurrentUserRole</span> { <span class="kw">get</span>; <span class="kw">private</span> <span class="kw">set</span>; }
+    <span class="kw">protected</span> <span class="kw">int</span> <span class="type">RoleLevel</span> { <span class="kw">get</span>; <span class="kw">private</span> <span class="kw">set</span>; }
+
+    <span class="cmt">// Convenience properties</span>
+    <span class="kw">protected</span> <span class="kw">bool</span> <span class="type">IsSuperAdmin</span> =&gt; <span class="type">RoleLevel</span> &gt;= <span class="num">100</span>;
+    <span class="kw">protected</span> <span class="kw">bool</span> <span class="type">IsAdminOrAbove</span> =&gt; <span class="type">RoleLevel</span> &gt;= <span class="num">80</span>;
+    <span class="kw">protected</span> <span class="kw">bool</span> <span class="type">IsManagerOrAbove</span> =&gt; <span class="type">RoleLevel</span> &gt;= <span class="num">60</span>;
+
+    <span class="kw">protected</span> <span class="kw">override</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">OnInitializedAsync</span>()
+    {
+        <span class="type">CurrentUserRole</span> = <span class="kw">await</span> <span class="type">AuthorizationService</span>.<span class="type">GetUserRoleAsync</span>(<span class="type">UserId</span>);
+        <span class="type">RoleLevel</span> = (<span class="kw">int</span>)<span class="type">CurrentUserRole</span>;
+    }
+}</code></pre>
+<h3 id="3-page-usage">3. Page Usage</h3>
+<pre><code class="lang-razor">@inherits <span class="type">AuthenticatedComponentBase</span>
+
+<span class="kw">@if</span> (<span class="type">IsSuperAdmin</span>)
+{
+    &lt;<span class="type">MudButton</span> <span class="type">Color</span>=<span class="str">&quot;Color.Error&quot;</span>&gt;<span class="type">Delete</span> <span class="type">System</span>&lt;/<span class="type">MudButton</span>&gt;
+}
+
+<span class="kw">@if</span> (<span class="type">IsAdminOrAbove</span>)
+{
+    &lt;<span class="type">MudButton</span>&gt;<span class="type">Manage</span> <span class="type">Users</span>&lt;/<span class="type">MudButton</span>&gt;
+}
+
+<span class="kw">@if</span> (<span class="type">IsManagerOrAbove</span>)
+{
+    &lt;<span class="type">MudButton</span>&gt;<span class="type">View</span> <span class="type">Team</span> <span class="type">Reports</span>&lt;/<span class="type">MudButton</span>&gt;
+}
+
+&lt;!-- <span class="type">All</span> authenticated users can see <span class="kw">this</span> --&gt;
+&lt;<span class="type">MudButton</span>&gt;<span class="type">My</span> <span class="type">Profile</span>&lt;/<span class="type">MudButton</span>&gt;</code></pre>
+<h2 id="role-assignment-rules">Role Assignment Rules</h2>
+<pre><code class="lang-text">Super Admin can create:  Super Admin, Admin, Manager, User
+Admin can create:        Manager, User
+Manager can create:      User
+User can create:         Nothing</code></pre>
+<pre><code class="lang-csharp"><span class="cmt">// In AuthorizationService</span>
+<span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">CanAssignRoleAsync</span>(<span class="kw">int</span> assignerId, <span class="type">UserRole</span> targetRole)
+{
+    <span class="kw">var</span> assignerRole = <span class="kw">await</span> <span class="type">GetUserRoleAsync</span>(assignerId);
+
+    <span class="kw">return</span> assignerRole <span class="kw">switch</span>
+    {
+        <span class="type">UserRole</span>.<span class="type">SuperAdmin</span> =&gt; <span class="kw">true</span>, <span class="cmt">// Can assign any</span>
+        <span class="type">UserRole</span>.<span class="type">Admin</span> =&gt; targetRole &lt;= <span class="type">UserRole</span>.<span class="type">Manager</span>,
+        <span class="type">UserRole</span>.<span class="type">Manager</span> =&gt; targetRole == <span class="type">UserRole</span>.<span class="type">Regular</span>,
+        _ =&gt; <span class="kw">false</span>
+    };
+}</code></pre>
+<h2 id="migration-checklist">Migration Checklist</h2>
+<p>When updating code from boolean flags to role checks:</p>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Old Pattern</th>
+<th>New Pattern</th>
+</tr></thead><tbody>
+<tr>
+<td><code class="il">user.IsSuperAdmin</code></td>
+<td><code class="il">IsSuperAdmin</code> (base class)</td>
+</tr>
+<tr>
+<td><code class="il">user.Isadmin == true</code></td>
+<td><code class="il">IsAdminOrAbove</code> (base class)</td>
+</tr>
+<tr>
+<td><code class="il">user.Ismanager</code></td>
+<td><code class="il">IsManagerOrAbove</code> (base class)</td>
+</tr>
+<tr>
+<td>Direct DB query for admin</td>
+<td>Query <code class="il">UserSystemRoles</code> with <code class="il">Level &gt;= 80</code></td>
+</tr>
+</tbody></table></div>
+</div>
+</body>
+</html>

@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Background Services & Smart Scheduling — The Night Watchmen of Your Application</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --surface: #16213e;
+            --surface2: #0f3460;
+            --accent: #e94560;
+            --accent2: #533483;
+            --text: #eee;
+            --text-muted: #aab;
+            --success: #4ecca3;
+            --warning: #f0a500;
+            --code-bg: #0d1117;
+            --border: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+
+        h2 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin: 2.5rem 0 1rem 0;
+            padding-bottom: 0.3rem;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        h3 {
+            color: var(--success);
+            font-size: 1.2rem;
+            margin: 1.8rem 0 0.8rem 0;
+        }
+
+        h4 {
+            color: var(--warning);
+            font-size: 1.05rem;
+            margin: 1.2rem 0 0.5rem 0;
+        }
+
+        p { margin-bottom: 1rem; }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.2rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        code {
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9rem;
+        }
+
+        p code, li code {
+            background: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .keyword { color: #569cd6; }
+        .type { color: #4ec9b0; }
+        .string { color: #ce9178; }
+        .comment { color: #6a9955; }
+        .method { color: #dcdcaa; }
+        .number { color: #b5cea8; }
+        .param { color: #9cdcfe; }
+
+        .callout {
+            border-radius: 8px;
+            padding: 1.2rem 1.5rem;
+            margin: 1.5rem 0;
+            border-left: 4px solid;
+        }
+
+        .callout-metaphor {
+            background: rgba(83, 52, 131, 0.2);
+            border-color: var(--accent2);
+        }
+        .callout-metaphor::before {
+            content: "Metaphor";
+            display: block;
+            font-weight: bold;
+            color: var(--accent2);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-english {
+            background: rgba(78, 204, 163, 0.1);
+            border-color: var(--success);
+        }
+        .callout-english::before {
+            content: "Read It Like English";
+            display: block;
+            font-weight: bold;
+            color: var(--success);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-warning {
+            background: rgba(240, 165, 0, 0.1);
+            border-color: var(--warning);
+        }
+        .callout-warning::before {
+            content: "Common Confusion";
+            display: block;
+            font-weight: bold;
+            color: var(--warning);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-rule {
+            background: rgba(233, 69, 96, 0.1);
+            border-color: var(--accent);
+        }
+        .callout-rule::before {
+            content: "Golden Rule";
+            display: block;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        ul, ol {
+            margin: 0.5rem 0 1rem 1.5rem;
+        }
+
+        li { margin-bottom: 0.3rem; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 0.6rem 1rem;
+            text-align: left;
+        }
+
+        th {
+            background: var(--surface2);
+            color: var(--success);
+        }
+
+        td { background: var(--surface); }
+
+        .diagram {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'Cascadia Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            white-space: pre;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Background Services & Smart Scheduling</h1>
+<p class="subtitle">Tutorial #21 — The Night Watchmen of Your Application</p>
+
+<!-- ================================================================== -->
+<h2>1. What Are Background Services?</h2>
+
+<p>
+    Every web application has work that should not happen inside an HTTP request. Sending birthday notifications,
+    auto-closing forgotten attendance records, cleaning up old data, polling email servers — these are all tasks
+    that need to run <strong>independently</strong> of any user clicking a button. In .NET, we call these
+    <strong>background services</strong>.
+</p>
+
+<div class="callout callout-metaphor">
+    A background service is like a night watchman — they patrol the building on a schedule, but a
+    <em>smart</em> watchman goes straight to the wing where the alarm just triggered instead of walking the
+    whole building every hour.
+</div>
+
+<p>The recipe is simple — three ingredients:</p>
+
+<ol>
+    <li>Inherit from <code><span class="type">BackgroundService</span></code> (which implements <code>IHostedService</code>)</li>
+    <li>Override <code><span class="method">ExecuteAsync</span>(<span class="type">CancellationToken</span> <span class="param">stoppingToken</span>)</code></li>
+    <li>Register with <code><span class="param">builder</span>.Services.<span class="method">AddHostedService</span>&lt;<span class="type">T</span>&gt;()</code></li>
+</ol>
+
+<p>
+    They start when the application starts, and stop when the application shuts down. The
+    <code><span class="param">stoppingToken</span></code> is how .NET tells your service "the app is shutting down,
+    please finish what you're doing."
+</p>
+
+<pre><code><span class="comment">// The simplest possible background service</span>
+<span class="keyword">public class</span> <span class="type">MyBackgroundService</span> : <span class="type">BackgroundService</span>
+{
+    <span class="keyword">protected override async</span> <span class="type">Task</span> <span class="method">ExecuteAsync</span>(<span class="type">CancellationToken</span> <span class="param">stoppingToken</span>)
+    {
+        <span class="keyword">while</span> (!<span class="param">stoppingToken</span>.IsCancellationRequested)
+        {
+            <span class="comment">// Do some work...</span>
+            <span class="keyword">await</span> <span class="type">Task</span>.<span class="method">Delay</span>(<span class="type">TimeSpan</span>.<span class="method">FromMinutes</span>(<span class="number">5</span>), <span class="param">stoppingToken</span>);
+        }
+    }
+}</code></pre>
+
+<div class="diagram">
+  Application Lifecycle
+  =====================
+
+  App Starts
+     |
+     v
+  Host calls ExecuteAsync() on ALL registered BackgroundServices
+     |
+     +--> AutoCheckOutBackgroundService.ExecuteAsync()   [runs in parallel]
+     +--> NotificationSchedulerService.ExecuteAsync()    [runs in parallel]
+     +--> NotificationCleanupService.ExecuteAsync()      [runs in parallel]
+     +--> EmailPollingBackgroundService.ExecuteAsync()    [runs in parallel]
+     +--> EmployeeDayScheduleExtensionService.ExecuteAsync()  [runs in parallel]
+     +--> ChatCleanupService.ExecuteAsync()              [runs in parallel]
+     |
+     |  ... all running concurrently, each on their own schedule ...
+     |
+  App Shutdown Signal (Ctrl+C, IIS recycle, etc.)
+     |
+     v
+  stoppingToken is cancelled --> each service exits its loop gracefully
+</div>
+
+<!-- ================================================================== -->
+<h2>2. The 6 Background Services in GivingCare</h2>
+
+<p>GivingCare runs six background services, each with a different scheduling strategy:</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Service</th>
+            <th>Purpose</th>
+            <th>Strategy</th>
+            <th>Interval</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code>AutoCheckOutBackgroundService</code></td>
+            <td>Auto-close forgotten attendance records</td>
+            <td>Event-driven (smart)</td>
+            <td>Dynamic</td>
+        </tr>
+        <tr>
+            <td><code>EmailPollingBackgroundService</code></td>
+            <td>Check IMAP for new emails</td>
+            <td>Config-driven</td>
+            <td>1-5 min</td>
+        </tr>
+        <tr>
+            <td><code>NotificationSchedulerService</code></td>
+            <td>Birthday/expiry notifications</td>
+            <td>Daily @ 08:00</td>
+            <td>Once/day</td>
+        </tr>
+        <tr>
+            <td><code>NotificationCleanupService</code></td>
+            <td>Delete old/expired notifications</td>
+            <td>Fixed interval</td>
+            <td>Every 6h</td>
+        </tr>
+        <tr>
+            <td><code>EmployeeDayScheduleExtensionService</code></td>
+            <td>Extend rolling schedule windows</td>
+            <td>Daily @ 03:00</td>
+            <td>Once/day</td>
+        </tr>
+        <tr>
+            <td><code>ChatCleanupService</code></td>
+            <td>Delete old chat messages</td>
+            <td>Fixed interval</td>
+            <td>Every 12h</td>
+        </tr>
+    </tbody>
+</table>
+
+<p>
+    Notice that these fall into three distinct patterns. Understanding when to use each pattern is the key
+    insight of this tutorial.
+</p>
+
+<!-- ================================================================== -->
+<h2>3. Three Scheduling Patterns</h2>
+
+<!-- Pattern A -->
+<h3>Pattern A: Smart / Event-Driven (AutoCheckOut)</h3>
+
+<p>
+    This is the most sophisticated pattern. Instead of blindly polling every N minutes, the service
+    <strong>calculates exactly when the next work is due</strong> and sleeps until that moment.
+    When there is nothing pending, it falls back to a reasonable polling interval.
+</p>
+
+<p>Here is the full <code>AutoCheckOutBackgroundService</code> — our gold-standard example:</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">AutoCheckOutBackgroundService</span> : <span class="type">BackgroundService</span>
+{
+    <span class="keyword">private readonly</span> <span class="type">IServiceProvider</span> <span class="param">_serviceProvider</span>;
+    <span class="keyword">private readonly</span> <span class="type">ILogger</span>&lt;<span class="type">AutoCheckOutBackgroundService</span>&gt; <span class="param">_logger</span>;
+    <span class="keyword">private static readonly</span> <span class="type">TimeSpan</span> <span class="param">FallbackInterval</span> = <span class="type">TimeSpan</span>.<span class="method">FromMinutes</span>(<span class="number">10</span>);
+    <span class="keyword">private static readonly</span> <span class="type">TimeSpan</span> <span class="param">MinCheckInterval</span> = <span class="type">TimeSpan</span>.<span class="method">FromSeconds</span>(<span class="number">30</span>);
+
+    <span class="keyword">public</span> <span class="method">AutoCheckOutBackgroundService</span>(
+        <span class="type">IServiceProvider</span> <span class="param">serviceProvider</span>,
+        <span class="type">ILogger</span>&lt;<span class="type">AutoCheckOutBackgroundService</span>&gt; <span class="param">logger</span>)
+    {
+        <span class="param">_serviceProvider</span> = <span class="param">serviceProvider</span>;
+        <span class="param">_logger</span> = <span class="param">logger</span>;
+    }
+
+    <span class="keyword">protected override async</span> <span class="type">Task</span> <span class="method">ExecuteAsync</span>(<span class="type">CancellationToken</span> <span class="param">stoppingToken</span>)
+    {
+        <span class="param">_logger</span>.<span class="method">LogInformation</span>(<span class="string">"AutoCheckOutBackgroundService started"</span>);
+
+        <span class="comment">// Initial delay to allow app startup</span>
+        <span class="keyword">await</span> <span class="type">Task</span>.<span class="method">Delay</span>(<span class="type">TimeSpan</span>.<span class="method">FromSeconds</span>(<span class="number">30</span>), <span class="param">stoppingToken</span>);
+
+        <span class="keyword">while</span> (!<span class="param">stoppingToken</span>.IsCancellationRequested)
+        {
+            <span class="keyword">try</span>
+            {
+                <span class="keyword">await</span> <span class="method">ProcessAutoCheckOutCycleAsync</span>(<span class="param">stoppingToken</span>);
+            }
+            <span class="keyword">catch</span> (<span class="type">OperationCanceledException</span>) <span class="keyword">when</span> (<span class="param">stoppingToken</span>.IsCancellationRequested)
+            {
+                <span class="keyword">break</span>; <span class="comment">// Graceful shutdown</span>
+            }
+            <span class="keyword">catch</span> (<span class="type">Exception</span> <span class="param">ex</span>)
+            {
+                <span class="param">_logger</span>.<span class="method">LogError</span>(<span class="param">ex</span>, <span class="string">"Error in auto-checkout cycle. Retrying in {Interval}..."</span>, <span class="param">FallbackInterval</span>);
+                <span class="keyword">await</span> <span class="type">Task</span>.<span class="method">Delay</span>(<span class="param">FallbackInterval</span>, <span class="param">stoppingToken</span>);
+            }
+        }
+
+        <span class="param">_logger</span>.<span class="method">LogInformation</span>(<span class="string">"AutoCheckOutBackgroundService stopped"</span>);
+    }
+}</code></pre>
+
+<h4>The Core Cycle: ProcessAutoCheckOutCycleAsync</h4>
+
+<p>This method does three things each cycle: create a scope, iterate all tenant databases, and calculate when to wake up next.</p>
+
+<pre><code><span class="keyword">private async</span> <span class="type">Task</span> <span class="method">ProcessAutoCheckOutCycleAsync</span>(<span class="type">CancellationToken</span> <span class="param">stoppingToken</span>)
+{
+    <span class="keyword">using var</span> <span class="param">scope</span> = <span class="param">_serviceProvider</span>.<span class="method">CreateScope</span>();
+    <span class="keyword">var</span> <span class="param">autoCheckOutService</span> = <span class="param">scope</span>.ServiceProvider.<span class="method">GetRequiredService</span>&lt;<span class="type">IAutoCheckOutService</span>&gt;();
+
+    <span class="comment">// Get all company databases that have auto-checkout enabled</span>
+    <span class="keyword">var</span> <span class="param">databases</span> = <span class="keyword">await</span> <span class="param">autoCheckOutService</span>.<span class="method">GetCompanyDatabasesWithAutoCheckOutAsync</span>();
+
+    <span class="keyword">if</span> (<span class="param">databases</span>.Count == <span class="number">0</span>)
+    {
+        <span class="param">_logger</span>.<span class="method">LogDebug</span>(<span class="string">"No company databases found. Waiting {Interval}..."</span>, <span class="param">FallbackInterval</span>);
+        <span class="keyword">await</span> <span class="type">Task</span>.<span class="method">Delay</span>(<span class="param">FallbackInterval</span>, <span class="param">stoppingToken</span>);
+        <span class="keyword">return</span>;
+    }
+
+    <span class="comment">// Process due checkouts and find next scheduled time</span>
+    <span class="type">DateTime</span>? <span class="param">earliestNextCheckout</span> = <span class="keyword">null</span>;
+
+    <span class="keyword">foreach</span> (<span class="keyword">var</span> <span class="param">database</span> <span class="keyword">in</span> <span class="param">databases</span>)
+    {
+        <span class="keyword">if</span> (<span class="param">stoppingToken</span>.IsCancellationRequested) <span class="keyword">break</span>;
+
+        <span class="keyword">try</span>
+        {
+            <span class="comment">// Process any due checkouts for this tenant</span>
+            <span class="keyword">await</span> <span class="method">ProcessDueCheckoutsForDatabaseAsync</span>(<span class="param">autoCheckOutService</span>, <span class="param">database</span>, <span class="param">stoppingToken</span>);
+
+            <span class="comment">// Get next scheduled checkout for this database</span>
+            <span class="keyword">var</span> <span class="param">nextCheckout</span> = <span class="keyword">await</span> <span class="param">autoCheckOutService</span>.<span class="method">GetNextAutoCheckOutTimeAsync</span>(<span class="param">database</span>);
+            <span class="keyword">if</span> (<span class="param">nextCheckout</span>.HasValue)
+            {
+                <span class="keyword">if</span> (!<span class="param">earliestNextCheckout</span>.HasValue || <span class="param">nextCheckout</span>.Value &lt; <span class="param">earliestNextCheckout</span>.Value)
+                {
+                    <span class="param">earliestNextCheckout</span> = <span class="param">nextCheckout</span>.Value;
+                }
+            }
+        }
+        <span class="keyword">catch</span> (<span class="type">Exception</span> <span class="param">ex</span>)
+        {
+            <span class="param">_logger</span>.<span class="method">LogWarning</span>(<span class="param">ex</span>, <span class="string">"Error processing auto-checkout for database {Database}"</span>, <span class="param">database</span>);
+        }
+    }
+
+    <span class="comment">// Wait for next scheduled checkout or fallback interval</span>
+    <span class="keyword">var</span> <span class="param">waitTime</span> = <span class="method">CalculateWaitTime</span>(<span class="param">earliestNextCheckout</span>);
+    <span class="param">_logger</span>.<span class="method">LogDebug</span>(<span class="string">"Next auto-checkout check in {WaitTime} (next scheduled: {NextTime})"</span>,
+        <span class="param">waitTime</span>, <span class="param">earliestNextCheckout</span>?.<span class="method">ToString</span>(<span class="string">"HH:mm:ss"</span>) ?? <span class="string">"none"</span>);
+
+    <span class="keyword">await</span> <span class="type">Task</span>.<span class="method">Delay</span>(<span class="param">waitTime</span>, <span class="param">stoppingToken</span>);
+}</code></pre>
+
+<h4>Per-Database Processing</h4>
+
+<p>Each tenant database is processed independently. If one fails, the others still get processed:</p>
+
+<pre><code><span class="keyword">private async</span> <span class="type">Task</span> <span class="method">ProcessDueCheckoutsForDatabaseAsync</span>(
+    <span class="type">IAutoCheckOutService</span> <span class="param">autoCheckOutService</span>,
+    <span class="type">string</span> <span class="param">database</span>,
+    <span class="type">CancellationToken</span> <span class="param">stoppingToken</span>)
+{
+    <span class="keyword">var</span> <span class="param">candidates</span> = <span class="keyword">await</span> <span class="param">autoCheckOutService</span>.<span class="method">GetAutoCheckOutCandidatesAsync</span>(<span class="param">database</span>);
+
+    <span class="keyword">if</span> (<span class="param">candidates</span>.Count == <span class="number">0</span>) <span class="keyword">return</span>;
+
+    <span class="param">_logger</span>.<span class="method">LogInformation</span>(<span class="string">"Found {Count} auto-checkout candidates for {Database}"</span>,
+        <span class="param">candidates</span>.Count, <span class="param">database</span>);
+
+    <span class="keyword">foreach</span> (<span class="keyword">var</span> <span class="param">candidate</span> <span class="keyword">in</span> <span class="param">candidates</span>)
+    {
+        <span class="keyword">if</span> (<span class="param">stoppingToken</span>.IsCancellationRequested) <span class="keyword">break</span>;
+
+        <span class="keyword">try</span>
+        {
+            <span class="keyword">var</span> <span class="param">result</span> = <span class="keyword">await</span> <span class="param">autoCheckOutService</span>.<span class="method">ProcessAutoCheckOutAsync</span>(
+                <span class="param">candidate</span>.AttendanceId, <span class="param">database</span>);
+
+            <span class="keyword">if</span> (<span class="param">result</span>.Success)
+                <span class="param">_logger</span>.<span class="method">LogInformation</span>(<span class="string">"Auto-checkout completed: {Employee} (Attendance {Id})"</span>,
+                    <span class="param">candidate</span>.EmployeeName, <span class="param">candidate</span>.AttendanceId);
+            <span class="keyword">else</span>
+                <span class="param">_logger</span>.<span class="method">LogWarning</span>(<span class="string">"Auto-checkout failed for {Employee}: {Message}"</span>,
+                    <span class="param">candidate</span>.EmployeeName, <span class="param">result</span>.Message);
+        }
+        <span class="keyword">catch</span> (<span class="type">Exception</span> <span class="param">ex</span>)
+        {
+            <span class="param">_logger</span>.<span class="method">LogError</span>(<span class="param">ex</span>, <span class="string">"Error processing auto-checkout for Attendance {Id}"</span>,
+                <span class="param">candidate</span>.AttendanceId);
+        }
+    }
+}</code></pre>
+
+<h4>The Smart Part: CalculateWaitTime</h4>
+
+<pre><code><span class="keyword">private</span> <span class="type">TimeSpan</span> <span class="method">CalculateWaitTime</span>(<span class="type">DateTime</span>? <span class="param">nextScheduledCheckout</span>)
+{
+    <span class="keyword">if</span> (!<span class="param">nextScheduledCheckout</span>.HasValue)
+    {
+        <span class="keyword">return</span> <span class="param">FallbackInterval</span>; <span class="comment">// Nothing pending? Check again in 10 minutes</span>
+    }
+
+    <span class="keyword">var</span> <span class="param">now</span> = <span class="type">DateTime</span>.Now;
+    <span class="keyword">var</span> <span class="param">delay</span> = <span class="param">nextScheduledCheckout</span>.Value - <span class="param">now</span>;
+
+    <span class="comment">// If checkout is due now or in the past, use minimum interval</span>
+    <span class="keyword">if</span> (<span class="param">delay</span> &lt;= <span class="type">TimeSpan</span>.Zero)
+    {
+        <span class="keyword">return</span> <span class="param">MinCheckInterval</span>; <span class="comment">// 30 seconds</span>
+    }
+
+    <span class="comment">// Add small buffer (30s) to ensure we're past the scheduled time</span>
+    <span class="param">delay</span> = <span class="param">delay</span>.<span class="method">Add</span>(<span class="type">TimeSpan</span>.<span class="method">FromSeconds</span>(<span class="number">30</span>));
+
+    <span class="comment">// Cap at fallback interval to ensure regular checks</span>
+    <span class="keyword">if</span> (<span class="param">delay</span> > <span class="param">FallbackInterval</span>)
+    {
+        <span class="keyword">return</span> <span class="param">FallbackInterval</span>;
+    }
+
+    <span class="keyword">return</span> <span class="param">delay</span>;
+}</code></pre>
+
+<div class="callout callout-english">
+    <code>CalculateWaitTime</code> reads as: "When is the next thing due? Wait until then. Nothing pending?
+    Check again in 10 minutes. Already overdue? Check in 30 seconds. Due in 45 minutes? Wait 45 minutes plus
+    a 30-second buffer."
+</div>
+
+<h4>Visualizing the Smart Schedule</h4>
+
+<div class="diagram">
+Time:     10:00       10:30       11:15            11:25       12:00
+            |           |           |                |           |
+            v           v           v                v           v
+         Service     Process     Process          No more     Fallback:
+         starts,     checkout.   checkout.        pending.    check in
+         queries     Query next  Query next       Return      10 min
+         next due    --> 11:15   --> none          FallbackInterval
+         --> 10:30
+
+         Wait 30min  Wait 45min  Wait 10min                   Wait 10min
+         (dynamic!)  (dynamic!)  (fallback!)                   (fallback!)
+
+Compared to fixed 5-minute polling:
+         10:00  10:05  10:10  10:15  10:20  10:25  10:30 ...
+           |      |      |      |      |      |      |
+           v      v      v      v      v      v      v
+         check  check  check  check  check  check  WORK!
+
+Smart:    3 wake-ups to process 2 checkouts
+Fixed:    7+ wake-ups to process 2 checkouts (and the work still waits!)
+</div>
+
+<!-- Pattern B -->
+<h3>Pattern B: Daily Scheduled (NotificationScheduler + ScheduleExtension)</h3>
+
+<p>
+    Some work only needs to run once per day. Birthday notifications make no sense to check every 5 minutes —
+    a birthday either is today or it is not. For these, we calculate the delay until a specific target time
+    and sleep until then.
+</p>
+
+<h4>NotificationSchedulerService (runs at 08:00)</h4>
+
+<pre><code><span class="keyword">private static readonly</span> <span class="type">TimeSpan</span> <span class="param">ScheduledTime</span> = <span class="keyword">new</span>(<span class="number">8</span>, <span class="number">0</span>, <span class="number">0</span>); <span class="comment">// 08:00</span>
+
+<span class="keyword">protected override async</span> <span class="type">Task</span> <span class="method">ExecuteAsync</span>(<span class="type">CancellationToken</span> <span class="param">stoppingToken</span>)
+{
+    <span class="param">_logger</span>.<span class="method">LogInformation</span>(<span class="string">"NotificationSchedulerService started"</span>);
+
+    <span class="comment">// Initial delay to allow app startup</span>
+    <span class="keyword">await</span> <span class="type">Task</span>.<span class="method">Delay</span>(<span class="type">TimeSpan</span>.<span class="method">FromSeconds</span>(<span class="number">30</span>), <span class="param">stoppingToken</span>);
+
+    <span class="keyword">while</span> (!<span class="param">stoppingToken</span>.IsCancellationRequested)
+    {
+        <span class="keyword">try</span>
+        {
+            <span class="keyword">var</span> <span class="param">now</span> = <span class="type">DateTime</span>.Now;
+            <span class="keyword">var</span> <span class="param">targetTime</span> = <span class="keyword">new</span> <span class="type">DateTime</span>(
+                <span class="param">now</span>.Year, <span class="param">now</span>.Month, <span class="param">now</span>.Day,
+                <span class="param">ScheduledTime</span>.Hours, <span class="param">ScheduledTime</span>.Minutes, <span class="number">0</span>);
+
+            <span class="comment">// If we've passed today's scheduled time, wait until tomorrow</span>
+            <span class="keyword">if</span> (<span class="param">now</span> > <span class="param">targetTime</span>)
+                <span class="param">targetTime</span> = <span class="param">targetTime</span>.<span class="method">AddDays</span>(<span class="number">1</span>);
+
+            <span class="keyword">var</span> <span class="param">delay</span> = <span class="param">targetTime</span> - <span class="param">now</span>;
+            <span class="param">_logger</span>.<span class="method">LogInformation</span>(<span class="string">"Next notification schedule check at {Time} (in {Delay})"</span>,
+                <span class="param">targetTime</span>.<span class="method">ToString</span>(<span class="string">"dd/MM/yyyy HH:mm"</span>), <span class="param">delay</span>);
+
+            <span class="keyword">await</span> <span class="type">Task</span>.<span class="method">Delay</span>(<span class="param">delay</span>, <span class="param">stoppingToken</span>);
+            <span class="keyword">await</span> <span class="method">ProcessDailyNotificationsAsync</span>(<span class="param">stoppingToken</span>);
+        }
+        <span class="keyword">catch</span> (<span class="type">OperationCanceledException</span>) <span class="keyword">when</span> (<span class="param">stoppingToken</span>.IsCancellationRequested)
+        {
+            <span class="keyword">break</span>;
+        }
+        <span class="keyword">catch</span> (<span class="type">Exception</span> <span class="param">ex</span>)
+        {
+            <span class="param">_logger</span>.<span class="method">LogError</span>(<span class="param">ex</span>, <span class="string">"Error in notification scheduler. Retrying in 1 hour..."</span>);
+            <span class="keyword">await</span> <span class="type">Task</span>.<span class="method">Delay</span>(<span class="type">TimeSpan</span>.<span class="method">FromHours</span>(<span class="number">1</span>), <span class="param">stoppingToken</span>);
+        }
+    }
+
+    <span class="param">_logger</span>.<span class="method">LogInformation</span>(<span class="string">"NotificationSchedulerService stopped"</span>);
+}</code></pre>
+
+<h4>EmployeeDayScheduleExtensionService (runs at 03:00)</h4>
+
+<p>The same pattern, but at 03:00 — chosen deliberately as an off-peak hour when no users are active:</p>
+
+<pre><code><span class="keyword">private static readonly</span> <span class="type">TimeSpan</span> <span class="param">ScheduledTime</span> = <span class="keyword">new</span>(<span class="number">3</span>, <span class="number">0</span>, <span class="number">0</span>); <span class="comment">// 03:00 (off-peak)</span>
+
+<span class="keyword">protected override async</span> <span class="type">Task</span> <span class="method">ExecuteAsync</span>(<span class="type">CancellationToken</span> <span class="param">stoppingToken</span>)
+{
+    <span class="param">_logger</span>.<span class="method">LogInformation</span>(<span class="string">"EmployeeDayScheduleExtensionService started"</span>);
+    <span class="keyword">await</span> <span class="type">Task</span>.<span class="method">Delay</span>(<span class="type">TimeSpan</span>.<span class="method">FromMinutes</span>(<span class="number">2</span>), <span class="param">stoppingToken</span>); <span class="comment">// Longer initial delay</span>
+
+    <span class="keyword">while</span> (!<span class="param">stoppingToken</span>.IsCancellationRequested)
+    {
+        <span class="keyword">try</span>
+        {
+            <span class="keyword">var</span> <span class="param">now</span> = <span class="type">DateTime</span>.Now;
+            <span class="keyword">var</span> <span class="param">targetTime</span> = <span class="keyword">new</span> <span class="type">DateTime</span>(<span class="param">now</span>.Year, <span class="param">now</span>.Month, <span class="param">now</span>.Day,
+                <span class="param">ScheduledTime</span>.Hours, <span class="param">ScheduledTime</span>.Minutes, <span class="number">0</span>);
+
+            <span class="keyword">if</span> (<span class="param">now</span> > <span class="param">targetTime</span>)
+                <span class="param">targetTime</span> = <span class="param">targetTime</span>.<span class="method">AddDays</span>(<span class="number">1</span>);
+
+            <span class="keyword">var</span> <span class="param">delay</span> = <span class="param">targetTime</span> - <span class="param">now</span>;
+            <span class="keyword">await</span> <span class="type">Task</span>.<span class="method">Delay</span>(<span class="param">delay</span>, <span class="param">stoppingToken</span>);
+            <span class="keyword">await</span> <span class="method">ExtendAllCompaniesAsync</span>(<span class="param">stoppingToken</span>);
+        }
+        <span class="keyword">catch</span> (<span class="type">OperationCanceledException</span>) <span class="keyword">when</span> (<span class="param">stoppingToken</span>.IsCancellationRequested)
+        { <span class="keyword">break</span>; }
+        <span class="keyword">catch</span> (<span class="type">Exception</span> <span class="param">ex</span>)
+        {
+            <span class="param">_logger</span>.<span class="method">LogError</span>(<span class="param">ex</span>, <span class="string">"Error in schedule extension service. Retrying in 1 hour..."</span>);
+            <span class="keyword">await</span> <span class="type">Task</span>.<span class="method">Delay</span>(<span class="type">TimeSpan</span>.<span class="method">FromHours</span>(<span class="number">1</span>), <span class="param">stoppingToken</span>);
+        }
+    }
+}</code></pre>
+
+<p>The target-time calculation is the key insight:</p>
+
+<div class="diagram">
+Current time: 10:30 AM on March 17
+
+Target:  08:00 on March 17     <-- Already passed!
+         now > targetTime      --> targetTime.AddDays(1)
+New target: 08:00 on March 18
+Delay:   21 hours 30 minutes
+
+Current time: 06:45 AM on March 18
+
+Target:  08:00 on March 18     <-- Still in the future
+         now < targetTime      --> use as-is
+Delay:   1 hour 15 minutes
+
+Current time: 08:00 AM on March 18
+         --> Service wakes up, does work
+         --> Loop restarts, calculates next target: 08:00 March 19
+</div>
+
+<!-- Pattern C -->
+<h3>Pattern C: Fixed Interval (NotificationCleanup + ChatCleanup)</h3>
+
+<p>
+    The simplest pattern. Do the work, sleep for a fixed time, repeat. No intelligence, no calculation —
+    just a metronome. This is perfect for maintenance tasks where exact timing does not matter.
+</p>
+
+<h4>NotificationCleanupService (every 6 hours)</h4>
+
+<pre><code><span class="keyword">public class</span> <span class="type">NotificationCleanupService</span> : <span class="type">BackgroundService</span>
+{
+    <span class="keyword">private readonly</span> <span class="type">IServiceProvider</span> <span class="param">_serviceProvider</span>;
+    <span class="keyword">private readonly</span> <span class="type">ILogger</span>&lt;<span class="type">NotificationCleanupService</span>&gt; <span class="param">_logger</span>;
+    <span class="keyword">private readonly</span> <span class="type">TimeSpan</span> <span class="param">_period</span> = <span class="type">TimeSpan</span>.<span class="method">FromHours</span>(<span class="number">6</span>);
+
+    <span class="keyword">protected override async</span> <span class="type">Task</span> <span class="method">ExecuteAsync</span>(<span class="type">CancellationToken</span> <span class="param">stoppingToken</span>)
+    {
+        <span class="keyword">while</span> (!<span class="param">stoppingToken</span>.IsCancellationRequested)
+        {
+            <span class="keyword">try</span>
+            {
+                <span class="keyword">await</span> <span class="method">DoCleanupWork</span>();
+                <span class="keyword">await</span> <span class="type">Task</span>.<span class="method">Delay</span>(<span class="param">_period</span>, <span class="param">stoppingToken</span>);
+            }
+            <span class="keyword">catch</span> (<span class="type">Exception</span> <span class="param">ex</span>)
+            {
+                <span class="param">_logger</span>.<span class="method">LogError</span>(<span class="param">ex</span>, <span class="string">"Erro durante a limpeza de notificacoes"</span>);
+                <span class="keyword">await</span> <span class="type">Task</span>.<span class="method">Delay</span>(<span class="type">TimeSpan</span>.<span class="method">FromMinutes</span>(<span class="number">30</span>), <span class="param">stoppingToken</span>); <span class="comment">// Retry fallback</span>
+            }
+        }
+    }
+
+    <span class="keyword">private async</span> <span class="type">Task</span> <span class="method">DoCleanupWork</span>()
+    {
+        <span class="keyword">using var</span> <span class="param">scope</span> = <span class="param">_serviceProvider</span>.<span class="method">CreateScope</span>();
+        <span class="keyword">var</span> <span class="param">notificationService</span> = <span class="param">scope</span>.ServiceProvider
+            .<span class="method">GetRequiredService</span>&lt;<span class="type">INotificationService</span>&gt;();
+
+        <span class="keyword">try</span>
+        {
+            <span class="keyword">var</span> <span class="param">expiredDeleted</span> = <span class="keyword">await</span> <span class="param">notificationService</span>.<span class="method">DeleteExpiredNotificationsAsync</span>();
+            <span class="keyword">await</span> <span class="param">notificationService</span>.<span class="method">CleanupInactiveConnectionsAsync</span>();
+            <span class="param">_logger</span>.<span class="method">LogInformation</span>(
+                <span class="string">"Cleanup completed. Expired notifications removed: {Count}"</span>, <span class="param">expiredDeleted</span>);
+        }
+        <span class="keyword">catch</span> (<span class="type">Exception</span> <span class="param">ex</span>)
+        {
+            <span class="param">_logger</span>.<span class="method">LogError</span>(<span class="param">ex</span>, <span class="string">"Error during cleanup execution"</span>);
+        }
+    }
+}</code></pre>
+
+<h4>ChatCleanupService (every 12 hours)</h4>
+
+<pre><code><span class="keyword">public class</span> <span class="type">ChatCleanupService</span> : <span class="type">BackgroundService</span>
+{
+    <span class="keyword">private readonly</span> <span class="type">IServiceProvider</span> <span class="param">_serviceProvider</span>;
+    <span class="keyword">private readonly</span> <span class="type">ILogger</span>&lt;<span class="type">ChatCleanupService</span>&gt; <span class="param">_logger</span>;
+    <span class="keyword">private readonly</span> <span class="type">TimeSpan</span> <span class="param">_period</span> = <span class="type">TimeSpan</span>.<span class="method">FromHours</span>(<span class="number">12</span>);
+
+    <span class="keyword">protected override async</span> <span class="type">Task</span> <span class="method">ExecuteAsync</span>(<span class="type">CancellationToken</span> <span class="param">stoppingToken</span>)
+    {
+        <span class="keyword">while</span> (!<span class="param">stoppingToken</span>.IsCancellationRequested)
+        {
+            <span class="keyword">try</span>
+            {
+                <span class="keyword">await</span> <span class="method">DoCleanupWork</span>();
+                <span class="keyword">await</span> <span class="type">Task</span>.<span class="method">Delay</span>(<span class="param">_period</span>, <span class="param">stoppingToken</span>);
+            }
+            <span class="keyword">catch</span> (<span class="type">OperationCanceledException</span>) <span class="keyword">when</span> (<span class="param">stoppingToken</span>.IsCancellationRequested)
+            { <span class="keyword">break</span>; }
+            <span class="keyword">catch</span> (<span class="type">Exception</span> <span class="param">ex</span>)
+            {
+                <span class="param">_logger</span>.<span class="method">LogError</span>(<span class="param">ex</span>, <span class="string">"Error during chat cleanup"</span>);
+                <span class="keyword">await</span> <span class="type">Task</span>.<span class="method">Delay</span>(<span class="type">TimeSpan</span>.<span class="method">FromMinutes</span>(<span class="number">30</span>), <span class="param">stoppingToken</span>);
+            }
+        }
+    }
+
+    <span class="keyword">private async</span> <span class="type">Task</span> <span class="method">DoCleanupWork</span>()
+    {
+        <span class="keyword">using var</span> <span class="param">scope</span> = <span class="param">_serviceProvider</span>.<span class="method">CreateScope</span>();
+        <span class="keyword">var</span> <span class="param">chatService</span> = <span class="param">scope</span>.ServiceProvider.<span class="method">GetRequiredService</span>&lt;<span class="type">IChatService</span>&gt;();
+
+        <span class="keyword">var</span> <span class="param">deletedCount</span> = <span class="keyword">await</span> <span class="param">chatService</span>.<span class="method">DeleteOldMessagesAsync</span>(<span class="number">30</span>); <span class="comment">// older than 30 days</span>
+        <span class="param">_logger</span>.<span class="method">LogInformation</span>(<span class="string">"Chat cleanup completed. Messages deleted: {Count}"</span>, <span class="param">deletedCount</span>);
+    }
+}</code></pre>
+
+<!-- Bonus: Pattern D -->
+<h3>Bonus Pattern: Config-Driven (EmailPolling)</h3>
+
+<p>
+    The <code>EmailPollingBackgroundService</code> is a hybrid. It uses a fixed interval, but the interval
+    is read from the database — each company can configure how often their email accounts are polled.
+    The service uses the <em>shortest</em> interval across all companies as its global cycle time.
+</p>
+
+<pre><code><span class="keyword">public class</span> <span class="type">EmailPollingBackgroundService</span> : <span class="type">BackgroundService</span>
+{
+    <span class="keyword">private static readonly</span> <span class="type">TimeSpan</span> <span class="param">MinInterval</span> = <span class="type">TimeSpan</span>.<span class="method">FromMinutes</span>(<span class="number">1</span>);
+    <span class="keyword">private static readonly</span> <span class="type">TimeSpan</span> <span class="param">DefaultInterval</span> = <span class="type">TimeSpan</span>.<span class="method">FromMinutes</span>(<span class="number">5</span>);
+
+    <span class="keyword">protected override async</span> <span class="type">Task</span> <span class="method">ExecuteAsync</span>(<span class="type">CancellationToken</span> <span class="param">stoppingToken</span>)
+    {
+        <span class="keyword">await</span> <span class="type">Task</span>.<span class="method">Delay</span>(<span class="type">TimeSpan</span>.<span class="method">FromSeconds</span>(<span class="number">30</span>), <span class="param">stoppingToken</span>); <span class="comment">// Initial delay</span>
+
+        <span class="keyword">while</span> (!<span class="param">stoppingToken</span>.IsCancellationRequested)
+        {
+            <span class="keyword">var</span> <span class="param">nextInterval</span> = <span class="param">DefaultInterval</span>;
+
+            <span class="keyword">try</span>
+            {
+                <span class="comment">// PollAllCompaniesAsync returns the minimum interval from all companies</span>
+                <span class="param">nextInterval</span> = <span class="keyword">await</span> <span class="method">PollAllCompaniesAsync</span>(<span class="param">stoppingToken</span>);
+            }
+            <span class="keyword">catch</span> (<span class="type">Exception</span> <span class="param">ex</span>) <span class="keyword">when</span> (<span class="param">ex</span> <span class="keyword">is not</span> <span class="type">OperationCanceledException</span>)
+            {
+                <span class="param">_logger</span>.<span class="method">LogError</span>(<span class="param">ex</span>, <span class="string">"Unhandled error in email polling cycle"</span>);
+            }
+
+            <span class="comment">// Enforce minimum interval to prevent runaway polling</span>
+            <span class="keyword">if</span> (<span class="param">nextInterval</span> &lt; <span class="param">MinInterval</span>)
+                <span class="param">nextInterval</span> = <span class="param">MinInterval</span>;
+
+            <span class="keyword">await</span> <span class="type">Task</span>.<span class="method">Delay</span>(<span class="param">nextInterval</span>, <span class="param">stoppingToken</span>);
+        }
+    }
+}</code></pre>
+
+<p>Inside <code>PollAllCompaniesAsync</code>, each company's configured monitoring interval is read:</p>
+
+<pre><code><span class="comment">// Get the minimum interval from active monitored accounts</span>
+<span class="keyword">var</span> <span class="param">minAccountInterval</span> = <span class="keyword">await</span> <span class="param">companyContext</span>.<span class="method">Set</span>&lt;<span class="type">EmailAccount</span>&gt;()
+    .<span class="method">AsNoTracking</span>()
+    .<span class="method">Where</span>(<span class="param">a</span> => <span class="param">a</span>.IsActive && <span class="param">a</span>.MonitoringEnabled)
+    .<span class="method">MinAsync</span>(<span class="param">a</span> => (<span class="type">int</span>?)<span class="param">a</span>.MonitoringIntervalMinutes, <span class="param">ct</span>);
+
+<span class="keyword">var</span> <span class="param">companyInterval</span> = <span class="type">TimeSpan</span>.<span class="method">FromMinutes</span>(<span class="param">minAccountInterval</span>.Value);
+<span class="keyword">if</span> (<span class="param">companyInterval</span> &lt; <span class="param">globalMinInterval</span>)
+    <span class="param">globalMinInterval</span> = <span class="param">companyInterval</span>; <span class="comment">// The shortest interval wins</span></code></pre>
+
+<!-- ================================================================== -->
+<h2>4. Critical Pattern: IServiceProvider.CreateScope()</h2>
+
+<p>
+    This is the single most important technical detail about background services. If you get this wrong,
+    your service will crash at runtime.
+</p>
+
+<div class="callout callout-warning">
+    <code>BackgroundService</code> is registered as <code>AddHostedService</code> but it is actually a
+    <strong>singleton</strong>. You CANNOT inject scoped services (<code>DbContext</code>,
+    <code>IMyService</code>, etc.) directly into the constructor — you must create a scope first.
+</div>
+
+<h3>Why This Matters</h3>
+
+<p>
+    In .NET, services have <strong>lifetimes</strong>. A <code>DbContext</code> is typically registered as
+    <em>Scoped</em> — meaning one instance per HTTP request. But a background service has no HTTP request.
+    It is a singleton that lives for the entire application lifetime. If you inject a scoped service into a
+    singleton, the scoped service would live forever too, leading to stale data, memory leaks, and connection
+    pool exhaustion.
+</p>
+
+<div class="diagram">
+Wrong: Direct injection (will throw at startup or leak resources)
+=================================================================
+BackgroundService (singleton)
+  |
+  +-- constructor injects IMyService (scoped)   <-- BOOM! InvalidOperationException
+  +-- constructor injects CompanyContext (scoped) <-- BOOM! Same problem
+
+
+Correct: Manual scope creation (every background service does this)
+===================================================================
+BackgroundService (singleton)
+  |
+  +-- constructor injects IServiceProvider (singleton) <-- OK!
+  |
+  +-- each cycle:
+      |
+      +-- using var scope = _serviceProvider.CreateScope();
+      |     |
+      |     +-- var service = scope.ServiceProvider.GetRequiredService&lt;IMyService&gt;();
+      |     +-- var context = scope.ServiceProvider.GetRequiredService&lt;CompanyContext&gt;();
+      |     |
+      |     +-- // service and context live only for this scope
+      |     +-- // scope is disposed at the end of the using block
+      |
+      +-- scope disposed --> DbContext disposed --> connections returned to pool
+</div>
+
+<p>Every single background service in GivingCare follows this exact pattern:</p>
+
+<pre><code><span class="keyword">private async</span> <span class="type">Task</span> <span class="method">DoWork</span>()
+{
+    <span class="keyword">using var</span> <span class="param">scope</span> = <span class="param">_serviceProvider</span>.<span class="method">CreateScope</span>();
+    <span class="keyword">var</span> <span class="param">myService</span> = <span class="param">scope</span>.ServiceProvider.<span class="method">GetRequiredService</span>&lt;<span class="type">IMyService</span>&gt;();
+    <span class="keyword">var</span> <span class="param">contextFactory</span> = <span class="param">scope</span>.ServiceProvider.<span class="method">GetRequiredService</span>&lt;<span class="type">IDbContextFactoryService</span>&gt;();
+
+    <span class="comment">// Now use these services safely</span>
+    <span class="keyword">await</span> <span class="param">myService</span>.<span class="method">DoSomethingAsync</span>();
+    <span class="comment">// When scope is disposed, all scoped services are cleaned up</span>
+}</code></pre>
+
+<!-- ================================================================== -->
+<h2>5. Error Handling & Resilience</h2>
+
+<p>
+    A background service that crashes kills the entire application. This is why error handling in background
+    services must be <strong>paranoid</strong>. GivingCare uses a three-layer try/catch pattern.
+</p>
+
+<h3>The Three Layers</h3>
+
+<pre><code><span class="keyword">protected override async</span> <span class="type">Task</span> <span class="method">ExecuteAsync</span>(<span class="type">CancellationToken</span> <span class="param">stoppingToken</span>)
+{
+    <span class="keyword">while</span> (!<span class="param">stoppingToken</span>.IsCancellationRequested)
+    {
+        <span class="keyword">try</span> <span class="comment">// LAYER 1 (outer): Catches OperationCanceledException for graceful shutdown</span>
+        {
+            <span class="keyword">await</span> <span class="method">ProcessCycleAsync</span>(<span class="param">stoppingToken</span>);
+        }
+        <span class="keyword">catch</span> (<span class="type">OperationCanceledException</span>) <span class="keyword">when</span> (<span class="param">stoppingToken</span>.IsCancellationRequested)
+        {
+            <span class="keyword">break</span>; <span class="comment">// App is shutting down — exit gracefully</span>
+        }
+        <span class="keyword">catch</span> (<span class="type">Exception</span> <span class="param">ex</span>) <span class="comment">// LAYER 2 (middle): Full cycle crash — retry with backoff</span>
+        {
+            <span class="param">_logger</span>.<span class="method">LogError</span>(<span class="param">ex</span>, <span class="string">"Error in cycle. Retrying..."</span>);
+            <span class="keyword">await</span> <span class="type">Task</span>.<span class="method">Delay</span>(<span class="param">FallbackInterval</span>, <span class="param">stoppingToken</span>);
+        }
+    }
+}
+
+<span class="keyword">private async</span> <span class="type">Task</span> <span class="method">ProcessCycleAsync</span>(<span class="type">CancellationToken</span> <span class="param">stoppingToken</span>)
+{
+    <span class="keyword">foreach</span> (<span class="keyword">var</span> <span class="param">database</span> <span class="keyword">in</span> <span class="param">databases</span>)
+    {
+        <span class="keyword">try</span> <span class="comment">// LAYER 3 (inner): Per-database/per-item — log and continue</span>
+        {
+            <span class="keyword">await</span> <span class="method">ProcessDatabaseAsync</span>(<span class="param">database</span>);
+        }
+        <span class="keyword">catch</span> (<span class="type">Exception</span> <span class="param">ex</span>)
+        {
+            <span class="param">_logger</span>.<span class="method">LogWarning</span>(<span class="param">ex</span>, <span class="string">"Error for {Database}. Continuing..."</span>, <span class="param">database</span>);
+            <span class="comment">// DON'T rethrow — continue to next database</span>
+        }
+    }
+}</code></pre>
+
+<div class="callout callout-rule">
+    Always handle <code>OperationCanceledException</code> and check <code>stoppingToken</code>. A service
+    that does not respect cancellation is a service that hangs your app on shutdown.
+</div>
+
+<h3>Error Recovery Intervals</h3>
+
+<table>
+    <thead>
+        <tr>
+            <th>Failure Level</th>
+            <th>AutoCheckOut</th>
+            <th>NotificationScheduler</th>
+            <th>Cleanup Services</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Full cycle crash</td>
+            <td>Retry in 10 min</td>
+            <td>Retry in 1 hour</td>
+            <td>Retry in 30 min</td>
+        </tr>
+        <tr>
+            <td>Single database</td>
+            <td>Log warning, continue</td>
+            <td>Log warning, continue</td>
+            <td>N/A (single DB)</td>
+        </tr>
+        <tr>
+            <td>Single item</td>
+            <td>Log error, continue</td>
+            <td>Log warning, continue</td>
+            <td>N/A</td>
+        </tr>
+    </tbody>
+</table>
+
+<p>
+    The key principle: <strong>failures at a lower level must never cascade upward</strong>. If one employee's
+    auto-checkout fails, the other 49 employees must still be processed. If one company database is unreachable,
+    the other 10 companies must still be served.
+</p>
+
+<!-- ================================================================== -->
+<h2>6. Multi-Tenant Awareness</h2>
+
+<p>
+    GivingCare is a multi-tenant application. Each company has its own database. Background services must
+    iterate through <strong>all</strong> company databases — they cannot just process one.
+</p>
+
+<h3>Getting the List of Company Databases</h3>
+
+<pre><code><span class="keyword">private async</span> <span class="type">Task</span>&lt;<span class="type">List</span>&lt;<span class="type">string</span>&gt;&gt; <span class="method">GetCompanyDatabasesAsync</span>(
+    <span class="type">IDbContextFactoryService</span> <span class="param">contextFactory</span>)
+{
+    <span class="keyword">try</span>
+    {
+        <span class="keyword">await using var</span> <span class="param">baseContext</span> = <span class="param">contextFactory</span>.<span class="method">CreateBaseControleContext</span>();
+
+        <span class="keyword">return await</span> <span class="param">baseContext</span>.Companies
+            .<span class="method">Where</span>(<span class="param">e</span> => <span class="param">e</span>.DatabaseName != <span class="keyword">null</span>)
+            .<span class="method">Select</span>(<span class="param">e</span> => <span class="param">e</span>.DatabaseName!)
+            .<span class="method">Distinct</span>()
+            .<span class="method">ToListAsync</span>();
+    }
+    <span class="keyword">catch</span> (<span class="type">Exception</span> <span class="param">ex</span>)
+    {
+        <span class="param">_logger</span>.<span class="method">LogError</span>(<span class="param">ex</span>, <span class="string">"Error getting company databases"</span>);
+        <span class="keyword">return new</span> <span class="type">List</span>&lt;<span class="type">string</span>&gt;();
+    }
+}</code></pre>
+
+<h3>The Multi-Tenant Processing Pattern</h3>
+
+<div class="diagram">
+BaseControle Database (central)
+  |
+  +-- Companies table
+       |
+       +-- Company "Acme"   --> Database: "Acme_GivingCare"
+       +-- Company "Beta"   --> Database: "Beta_GivingCare"
+       +-- Company "Gamma"  --> Database: "Gamma_GivingCare"
+
+Background Service Cycle:
+  |
+  +-- Get all company databases from BaseControle
+  |
+  +-- foreach database:
+       |
+       +-- try:
+       |    +-- Create DynamicCompanyContext(database)
+       |    +-- Process all items for this company
+       |    +-- Dispose context
+       |
+       +-- catch:
+            +-- Log warning
+            +-- Continue to NEXT database (never stop the loop!)
+</div>
+
+<p>
+    This is exactly what <code>AutoCheckOutBackgroundService</code> does with
+    <code>GetCompanyDatabasesWithAutoCheckOutAsync()</code> and what
+    <code>NotificationSchedulerService</code> does with its <code>GetCompanyDatabasesAsync()</code>.
+    Each service gets the list of tenants, then processes each one independently within its own try/catch.
+</p>
+
+<!-- ================================================================== -->
+<h2>7. The Initial Delay Pattern</h2>
+
+<p>
+    Every background service in GivingCare starts with a deliberate delay before beginning its work.
+    This is a critical pattern that prevents a category of startup failures.
+</p>
+
+<pre><code><span class="keyword">protected override async</span> <span class="type">Task</span> <span class="method">ExecuteAsync</span>(<span class="type">CancellationToken</span> <span class="param">stoppingToken</span>)
+{
+    <span class="comment">// Wait for the application to fully start before doing any work</span>
+    <span class="keyword">await</span> <span class="type">Task</span>.<span class="method">Delay</span>(<span class="type">TimeSpan</span>.<span class="method">FromSeconds</span>(<span class="number">30</span>), <span class="param">stoppingToken</span>);
+
+    <span class="comment">// Now the app is ready — start the work loop</span>
+    <span class="keyword">while</span> (!<span class="param">stoppingToken</span>.IsCancellationRequested) { ... }
+}</code></pre>
+
+<h3>Why Is This Necessary?</h3>
+
+<p>
+    <code>ExecuteAsync</code> is called <strong>during application startup</strong>, before the HTTP pipeline
+    is fully configured. At that point:
+</p>
+
+<ul>
+    <li>Database migrations may not have completed yet</li>
+    <li>Other services might not be fully initialized</li>
+    <li>SignalR hubs might not be mapped yet</li>
+    <li>The Kestrel web server might not be listening yet</li>
+</ul>
+
+<p>If a background service immediately tries to query the database or send a SignalR message, it will fail.
+    The initial delay gives everything time to settle.</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Service</th>
+            <th>Initial Delay</th>
+            <th>Reason</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>AutoCheckOutBackgroundService</td>
+            <td>30 seconds</td>
+            <td>Standard — needs DB access quickly for attendance</td>
+        </tr>
+        <tr>
+            <td>EmailPollingBackgroundService</td>
+            <td>30 seconds</td>
+            <td>Standard — needs DB + IMAP connectivity</td>
+        </tr>
+        <tr>
+            <td>NotificationSchedulerService</td>
+            <td>30 seconds</td>
+            <td>Standard — then sleeps until 08:00 anyway</td>
+        </tr>
+        <tr>
+            <td>EmployeeDayScheduleExtensionService</td>
+            <td>2 minutes</td>
+            <td>Longer — not urgent, waits for 03:00</td>
+        </tr>
+        <tr>
+            <td>NotificationCleanupService</td>
+            <td>None (immediate)</td>
+            <td>Simple cleanup — tolerates early failure via catch</td>
+        </tr>
+        <tr>
+            <td>ChatCleanupService</td>
+            <td>None (immediate)</td>
+            <td>Simple cleanup — same reason</td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- ================================================================== -->
+<h2>8. Registration in Program.cs</h2>
+
+<p>All six services are registered in <code>Program.cs</code> using <code>AddHostedService</code>:</p>
+
+<pre><code><span class="comment">// ---- Attendance ----</span>
+<span class="param">builder</span>.Services.<span class="method">AddHostedService</span>&lt;<span class="type">AutoCheckOutBackgroundService</span>&gt;();
+
+<span class="comment">// ---- HR Scheduling ----</span>
+<span class="param">builder</span>.Services.<span class="method">AddHostedService</span>&lt;<span class="type">EmployeeDayScheduleExtensionService</span>&gt;();
+
+<span class="comment">// ---- Notifications ----</span>
+<span class="param">builder</span>.Services.<span class="method">AddHostedService</span>&lt;<span class="type">NotificationCleanupService</span>&gt;();
+<span class="param">builder</span>.Services.<span class="method">AddHostedService</span>&lt;<span class="type">NotificationSchedulerService</span>&gt;();
+
+<span class="comment">// ---- Email ----</span>
+<span class="param">builder</span>.Services.<span class="method">AddHostedService</span>&lt;<span class="type">EmailPollingBackgroundService</span>&gt;();
+
+<span class="comment">// ---- Chat ----</span>
+<span class="param">builder</span>.Services.<span class="method">AddHostedService</span>&lt;<span class="type">ChatCleanupService</span>&gt;();</code></pre>
+
+<p>
+    Notice they are scattered throughout <code>Program.cs</code>, grouped by feature area — not lumped
+    together. This matches the principle that each feature owns its registrations.
+</p>
+
+<div class="callout callout-warning">
+    Despite the name <code>AddHostedService</code>, the DI lifetime is <strong>singleton</strong>.
+    The framework creates exactly one instance and calls <code>ExecuteAsync</code> once on it.
+    That is why you need the scope pattern from Section 4 — you are inside a singleton.
+</div>
+
+<!-- ================================================================== -->
+<h2>9. When to Use Each Pattern</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Use Case</th>
+            <th>Pattern</th>
+            <th>Why</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>"Do X when Y is due"</td>
+            <td>Smart / Event-driven</td>
+            <td>No wasted cycles. Wakes up exactly when needed.</td>
+        </tr>
+        <tr>
+            <td>"Do X once per day at 3am"</td>
+            <td>Daily scheduled</td>
+            <td>Predictable, runs during off-peak hours.</td>
+        </tr>
+        <tr>
+            <td>"Clean up old data periodically"</td>
+            <td>Fixed interval</td>
+            <td>Does not need precision. Simplicity wins.</td>
+        </tr>
+        <tr>
+            <td>"Process a queue ASAP"</td>
+            <td>Minimum-interval polling</td>
+            <td>Responsiveness matters. Floor prevents runaway.</td>
+        </tr>
+        <tr>
+            <td>"Poll an external system"</td>
+            <td>Config-driven interval</td>
+            <td>Users control the pace. Adapts per-tenant.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>Decision Flowchart</h3>
+
+<div class="diagram">
+Does the work have a KNOWN due time?
+  |
+  +-- YES --> Can you query "when is the next one due?"
+  |             |
+  |             +-- YES --> Pattern A: Smart/Event-driven (AutoCheckOut)
+  |             |
+  |             +-- NO --> Pattern B: Daily scheduled at a fixed time
+  |
+  +-- NO --> Does timing precision matter?
+              |
+              +-- YES --> Is the interval user-configurable?
+              |             |
+              |             +-- YES --> Config-driven (EmailPolling)
+              |             +-- NO  --> Fixed interval with short period
+              |
+              +-- NO --> Pattern C: Fixed interval (Cleanup services)
+</div>
+
+<!-- ================================================================== -->
+<h2>10. Building a New Background Service</h2>
+
+<p>Here is a complete template with all the proper patterns applied. Copy this when creating a new service.</p>
+
+<pre><code><span class="keyword">using</span> Microsoft.Extensions.Hosting;
+<span class="keyword">using</span> Microsoft.Extensions.Logging;
+
+<span class="keyword">namespace</span> <span class="type">GivingCare.Services.MyFeature</span>;
+
+<span class="comment">/// &lt;summary&gt;</span>
+<span class="comment">/// Background service that [describe what it does].</span>
+<span class="comment">/// Uses [Pattern A/B/C] scheduling.</span>
+<span class="comment">/// &lt;/summary&gt;</span>
+<span class="keyword">public class</span> <span class="type">MyFeatureBackgroundService</span> : <span class="type">BackgroundService</span>
+{
+    <span class="keyword">private readonly</span> <span class="type">IServiceProvider</span> <span class="param">_serviceProvider</span>;
+    <span class="keyword">private readonly</span> <span class="type">ILogger</span>&lt;<span class="type">MyFeatureBackgroundService</span>&gt; <span class="param">_logger</span>;
+
+    <span class="comment">// Configuration constants</span>
+    <span class="keyword">private static readonly</span> <span class="type">TimeSpan</span> <span class="param">FallbackInterval</span> = <span class="type">TimeSpan</span>.<span class="method">FromMinutes</span>(<span class="number">10</span>);
+    <span class="keyword">private static readonly</span> <span class="type">TimeSpan</span> <span class="param">InitialDelay</span> = <span class="type">TimeSpan</span>.<span class="method">FromSeconds</span>(<span class="number">30</span>);
+
+    <span class="keyword">public</span> <span class="method">MyFeatureBackgroundService</span>(
+        <span class="type">IServiceProvider</span> <span class="param">serviceProvider</span>,
+        <span class="type">ILogger</span>&lt;<span class="type">MyFeatureBackgroundService</span>&gt; <span class="param">logger</span>)
+    {
+        <span class="param">_serviceProvider</span> = <span class="param">serviceProvider</span>;
+        <span class="param">_logger</span> = <span class="param">logger</span>;
+    }
+
+    <span class="keyword">protected override async</span> <span class="type">Task</span> <span class="method">ExecuteAsync</span>(<span class="type">CancellationToken</span> <span class="param">stoppingToken</span>)
+    {
+        <span class="param">_logger</span>.<span class="method">LogInformation</span>(<span class="string">"MyFeatureBackgroundService started"</span>);
+
+        <span class="comment">// Step 1: Initial delay to allow app startup</span>
+        <span class="keyword">await</span> <span class="type">Task</span>.<span class="method">Delay</span>(<span class="param">InitialDelay</span>, <span class="param">stoppingToken</span>);
+
+        <span class="comment">// Step 2: Main loop</span>
+        <span class="keyword">while</span> (!<span class="param">stoppingToken</span>.IsCancellationRequested)
+        {
+            <span class="keyword">try</span>
+            {
+                <span class="keyword">await</span> <span class="method">ProcessCycleAsync</span>(<span class="param">stoppingToken</span>);
+            }
+            <span class="keyword">catch</span> (<span class="type">OperationCanceledException</span>) <span class="keyword">when</span> (<span class="param">stoppingToken</span>.IsCancellationRequested)
+            {
+                <span class="keyword">break</span>; <span class="comment">// Graceful shutdown — exit the loop</span>
+            }
+            <span class="keyword">catch</span> (<span class="type">Exception</span> <span class="param">ex</span>)
+            {
+                <span class="comment">// Full cycle crash — log and retry after fallback interval</span>
+                <span class="param">_logger</span>.<span class="method">LogError</span>(<span class="param">ex</span>, <span class="string">"Error in cycle. Retrying in {Interval}..."</span>, <span class="param">FallbackInterval</span>);
+                <span class="keyword">await</span> <span class="type">Task</span>.<span class="method">Delay</span>(<span class="param">FallbackInterval</span>, <span class="param">stoppingToken</span>);
+            }
+        }
+
+        <span class="param">_logger</span>.<span class="method">LogInformation</span>(<span class="string">"MyFeatureBackgroundService stopped"</span>);
+    }
+
+    <span class="keyword">private async</span> <span class="type">Task</span> <span class="method">ProcessCycleAsync</span>(<span class="type">CancellationToken</span> <span class="param">stoppingToken</span>)
+    {
+        <span class="comment">// Step 3: Create a scope to resolve scoped services</span>
+        <span class="keyword">using var</span> <span class="param">scope</span> = <span class="param">_serviceProvider</span>.<span class="method">CreateScope</span>();
+        <span class="keyword">var</span> <span class="param">contextFactory</span> = <span class="param">scope</span>.ServiceProvider
+            .<span class="method">GetRequiredService</span>&lt;<span class="type">IDbContextFactoryService</span>&gt;();
+        <span class="keyword">var</span> <span class="param">myService</span> = <span class="param">scope</span>.ServiceProvider
+            .<span class="method">GetRequiredService</span>&lt;<span class="type">IMyService</span>&gt;();
+
+        <span class="comment">// Step 4: Get all company databases</span>
+        <span class="keyword">await using var</span> <span class="param">baseContext</span> = <span class="param">contextFactory</span>.<span class="method">CreateBaseControleContext</span>();
+        <span class="keyword">var</span> <span class="param">databases</span> = <span class="keyword">await</span> <span class="param">baseContext</span>.Companies
+            .<span class="method">Where</span>(<span class="param">c</span> => <span class="param">c</span>.DatabaseName != <span class="keyword">null</span>)
+            .<span class="method">Select</span>(<span class="param">c</span> => <span class="param">c</span>.DatabaseName!)
+            .<span class="method">Distinct</span>()
+            .<span class="method">ToListAsync</span>(<span class="param">stoppingToken</span>);
+
+        <span class="comment">// Step 5: Process each tenant independently</span>
+        <span class="keyword">foreach</span> (<span class="keyword">var</span> <span class="param">database</span> <span class="keyword">in</span> <span class="param">databases</span>)
+        {
+            <span class="keyword">if</span> (<span class="param">stoppingToken</span>.IsCancellationRequested) <span class="keyword">break</span>;
+
+            <span class="keyword">try</span>
+            {
+                <span class="keyword">await</span> <span class="param">myService</span>.<span class="method">ProcessAsync</span>(<span class="param">database</span>);
+                <span class="param">_logger</span>.<span class="method">LogDebug</span>(<span class="string">"Processed {Database} successfully"</span>, <span class="param">database</span>);
+            }
+            <span class="keyword">catch</span> (<span class="type">Exception</span> <span class="param">ex</span>)
+            {
+                <span class="comment">// Per-database failure — log and continue to next tenant</span>
+                <span class="param">_logger</span>.<span class="method">LogWarning</span>(<span class="param">ex</span>, <span class="string">"Error processing {Database}. Continuing..."</span>, <span class="param">database</span>);
+            }
+        }
+
+        <span class="comment">// Step 6: Wait before next cycle</span>
+        <span class="keyword">await</span> <span class="type">Task</span>.<span class="method">Delay</span>(<span class="param">FallbackInterval</span>, <span class="param">stoppingToken</span>);
+    }
+}</code></pre>
+
+<h3>Registration Checklist</h3>
+
+<p>After creating the service, register it in <code>Program.cs</code>:</p>
+
+<pre><code><span class="comment">// In Program.cs, near the relevant feature's other registrations</span>
+<span class="param">builder</span>.Services.<span class="method">AddHostedService</span>&lt;<span class="type">MyFeatureBackgroundService</span>&gt;();</code></pre>
+
+<p>And that is it. The host will start your service automatically on application startup.</p>
+
+<!-- ================================================================== -->
+<h2>Summary: The Complete Picture</h2>
+
+<div class="diagram">
+GivingCare Background Services Architecture
+=============================================
+
+  Program.cs
+     |
+     +-- AddHostedService&lt;AutoCheckOutBackgroundService&gt;()
+     |     Pattern A: Smart/Event-driven
+     |     Waits for exact next checkout time
+     |     Falls back to 10-minute polling
+     |
+     +-- AddHostedService&lt;EmailPollingBackgroundService&gt;()
+     |     Pattern D: Config-driven interval
+     |     Reads interval from each company's DB config
+     |     Minimum 1 min, default 5 min
+     |
+     +-- AddHostedService&lt;NotificationSchedulerService&gt;()
+     |     Pattern B: Daily scheduled at 08:00
+     |     Birthdays, document expiry, contract expiry
+     |
+     +-- AddHostedService&lt;NotificationCleanupService&gt;()
+     |     Pattern C: Fixed every 6 hours
+     |     Deletes expired notifications + stale connections
+     |
+     +-- AddHostedService&lt;EmployeeDayScheduleExtensionService&gt;()
+     |     Pattern B: Daily scheduled at 03:00
+     |     Extends rolling schedule windows by 3 months
+     |
+     +-- AddHostedService&lt;ChatCleanupService&gt;()
+           Pattern C: Fixed every 12 hours
+           Deletes chat messages older than 30 days
+
+All services share:
+  - IServiceProvider for scope creation (Section 4)
+  - Three-layer error handling (Section 5)
+  - Multi-tenant database iteration (Section 6)
+  - Initial startup delay (Section 7)
+</div>
+
+<p>Key takeaways:</p>
+
+<ul>
+    <li><strong>Pattern A (Smart)</strong>: Use when you can query "when is the next thing due?" — eliminates
+        wasted cycles entirely</li>
+    <li><strong>Pattern B (Daily)</strong>: Use for once-a-day tasks — calculate delay until target time, sleep,
+        execute, loop</li>
+    <li><strong>Pattern C (Fixed)</strong>: Use for maintenance tasks where exact timing does not matter — the
+        simplest and most readable pattern</li>
+    <li><strong>Pattern D (Config-driven)</strong>: Use when the interval should be controllable per tenant or
+        per configuration</li>
+    <li><strong>Always create a scope</strong> before resolving scoped services — this is the single most common
+        mistake in background services</li>
+    <li><strong>Never let an exception crash the loop</strong> — catch at every level, log, and continue</li>
+    <li><strong>Always respect stoppingToken</strong> — check it in loops and pass it to <code>Task.Delay</code></li>
+</ul>
+
+</body>
+</html>

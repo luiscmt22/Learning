@@ -1,0 +1,529 @@
+Tutorial #29 — Validator Pipeline: Chain of Responsibility & Strategy Pattern
+Tutorial #29 — Validator Pipeline
+Chain of Responsibility & Strategy Pattern in GivingCare
+1. The Problem: Monolithic Validation
+Imagine a service method that validates whether an employee can check in. Without any design pattern, you end up with a single method that does everything :
+// BAD: One giant method that validates everything
+public ( bool CanCheckIn, string ? BlockReason) CanPerformCheckIn (
+CheckInContext context ,
+bool locationObtained )
+{
+// Check 1: Already checked in?
+if ( context .HasActiveCheckIn)
+return ( false , "Already checked in" );
+// Check 2: Has a schedule?
+if ( context .IsJobBound)
+{
+if ( context .TodayJobSchedules.Count == 0 )
+return ( false , "No job schedule" );
+// ... 20 more lines of schedule resolution ...
+}
+else
+{
+// ... 40 more lines for non-job-bound employees ...
+}
+// Check 3: Too early?
+var scheduled = GetScheduledStartTime ( context );
+if (scheduled.HasValue)
+{
+var earliest = scheduled.Value. AddMinutes (-tolerance);
+if (DateTime.Now < earliest)
+return ( false , $"Too early. Check in from {earliest:HH:mm}" );
+}
+// Check 4: Geolocation?
+if ( context .RequiresGeolocation)
+{
+if (! locationObtained )
+return ( false , "Getting location..." );
+if (! context .IsWithinGeofence)
+return ( false , "Outside authorized area" );
+}
+return ( true , null );
+}
+This method has four responsibilities . Adding a fifth check means modifying this method (violating Open/Closed Principle ). Testing any single check requires setting up the entire context. And if two developers add checks at the same time, they get merge conflicts.
+The clean alternative: separate each check into its own class , then run them in a pipeline.
+2. Chain of Responsibility Pattern
+Instead of one method with four if blocks, we create four validator classes . A service loops through them in order. The first failure stops the chain.
+Request --> [ActiveCheckIn] --> [ScheduleSource] --> [TimeWindow] --> [Geolocation] --> Allowed
+Order=10 Order=20 Order=30 Order=40
+"Already checked in" "No schedule" "Too early" "Outside geofence"
+(stops here) (stops here) (stops here) (stops here)
+Each validator answers one question. If the answer is "fail", the pipeline stops immediately and returns the failure message. If all four pass, the check-in is allowed.
+The validator pipeline is like airport security. You go through checkpoints in order: ticket check, ID verification, bag scan, metal detector. If any checkpoint fails, you're stopped. You don't get to skip to the metal detector.
+3. The Interface — ICheckInValidator
+Every check-in validator implements this interface. It lives at Services/CheckIn/Validators/ICheckInValidator.cs :
+public interface ICheckInValidator
+{
+/// Execution order (lower = earlier). Allows pipeline ordering.
+int Order { get ; }
+/// Validates the check-in context. Returns Ok or Fail with message.
+CheckInValidationResult Validate ( CheckInContext context , CheckInValidationOptions options );
+}
+Two properties, one method. That's it. The Order property determines the validator's position in the pipeline. The Validate method receives the context (all the data loaded about the employee's schedule, attendance, location) and returns a result.
+The Result Record
+public record CheckInValidationResult ( bool IsValid, string ? Message)
+{
+public static CheckInValidationResult Ok () => new ( true , null );
+public static CheckInValidationResult Fail ( string message ) => new ( false , message );
+}
+A record with two static factory methods. Validators return either CheckInValidationResult.Ok() or CheckInValidationResult.Fail("reason") . Clean, unambiguous, no exceptions for control flow.
+The Options Record
+public record CheckInValidationOptions (
+bool LocationObtained,
+int EarlyCheckInToleranceMinutes
+);
+Configuration values that come from AttendanceSettings are bundled into this options record so each validator has access to them without needing to inject the settings service directly.
+4. The Four Check-In Validators
+4.1 ActiveCheckInValidator (Order = 10)
+The simplest validator. Blocks double check-ins.
+public class ActiveCheckInValidator : ICheckInValidator
+{
+public int Order => 10 ;
+public CheckInValidationResult Validate ( CheckInContext context , CheckInValidationOptions options )
+{
+if ( context .HasActiveCheckIn)
+return CheckInValidationResult . Fail ( "Ja tem um check-in ativo. Faca check-out primeiro." );
+return CheckInValidationResult . Ok ();
+}
+}
+One property, one check. If the employee already has an active check-in (no checkout yet), block them. Otherwise, pass.
+4.2 ScheduleSourceValidator (Order = 20)
+The most complex validator. Resolves which schedule the employee should check into.
+public class ScheduleSourceValidator : ICheckInValidator
+{
+public int Order => 20 ;
+public CheckInValidationResult Validate ( CheckInContext context , CheckInValidationOptions options )
+{
+return context .IsJobBound
+? ValidateJobBound ( context )
+: ValidateNonJobBound ( context , options );
+}
+private CheckInValidationResult ValidateJobBound ( CheckInContext context )
+{
+// Job-bound employee MUST have at least one JobSchedule today
+if ( context .TodayJobSchedules.Count == 0 )
+return CheckInValidationResult . Fail ( "Sem agendamento de obra para hoje" );
+// All schedules already used?
+if ( context .NextAvailableJobSchedule == null )
+return CheckInValidationResult . Fail ( "Ja completou todos os turnos agendados para hoje" );
+context .ResolvedSource = ScheduleSourceType .JobSchedule;
+return CheckInValidationResult . Ok ();
+}
+private CheckInValidationResult ValidateNonJobBound (
+CheckInContext context , CheckInValidationOptions options )
+{
+var now = DateTime.Now;
+var hasEmployeeSchedule = context .TodayEmployeeSchedule != null
+&& ! context .HasUsedEmployeeSchedule;
+var hasJobSchedule = context .NextAvailableJobSchedule != null ;
+// Get time windows for both schedules
+var employeeWindow = hasEmployeeSchedule
+? GetEmployeeScheduleWindow ( context , options ) : null ;
+var jobWindow = hasJobSchedule
+? GetJobScheduleWindow ( context , options ) : null ;
+// Case 1: Both schedules exist - pick based on current time
+if (hasEmployeeSchedule && hasJobSchedule)
+{
+if (employeeWindow != null && IsWithinWindow (now, employeeWindow.Value))
+{
+context .ResolvedSource = ScheduleSourceType .EmployeeSchedule;
+return CheckInValidationResult . Ok ();
+}
+if (jobWindow != null && IsWithinWindow (now, jobWindow.Value))
+{
+context .ResolvedSource = ScheduleSourceType .JobSchedule;
+return CheckInValidationResult . Ok ();
+}
+// Not in either window - pick the next upcoming one
+// (TimeWindowValidator will show "too early" if needed)
+}
+// Case 2: Only JobSchedule
+if (hasJobSchedule)
+{ context .ResolvedSource = ScheduleSourceType .JobSchedule; return CheckInValidationResult . Ok (); }
+// Case 3: Only EmployeeSchedule
+if (hasEmployeeSchedule)
+{ context .ResolvedSource = ScheduleSourceType .EmployeeSchedule; return CheckInValidationResult . Ok (); }
+// Case 4: Free check-in (no schedule at all)
+if ( context .HasNoSchedule)
+{ context .ResolvedSource = ScheduleSourceType .Free; return CheckInValidationResult . Ok (); }
+return CheckInValidationResult . Fail ( "Ja completou o turno de hoje" );
+}
+}
+This validator has a side effect : it sets context.ResolvedSource . The next validators (TimeWindow, Geolocation) depend on knowing which schedule was resolved. This is intentional -- the context acts as shared state flowing through the pipeline.
+4.3 TimeWindowValidator (Order = 30)
+Checks if it's too early to check in based on the resolved schedule.
+public class TimeWindowValidator : ICheckInValidator
+{
+public int Order => 30 ;
+public CheckInValidationResult Validate ( CheckInContext context , CheckInValidationOptions options )
+{
+// Free shifts have no time constraint
+if ( context .ResolvedSource == ScheduleSourceType .Free)
+return CheckInValidationResult . Ok ();
+var scheduledStart = GetScheduledStartTime ( context );
+if (!scheduledStart.HasValue)
+return CheckInValidationResult . Ok ();
+var earliestAllowed = CalculateEarliestAllowed (scheduledStart.Value, options );
+if (DateTime.Now < earliestAllowed)
+return CheckInValidationResult . Fail (
+$"Demasiado cedo. Pode fazer check-in a partir das {earliestAllowed:HH:mm}" );
+return CheckInValidationResult . Ok ();
+}
+private DateTime CalculateEarliestAllowed (
+TimeSpan scheduledStart , CheckInValidationOptions options )
+{
+return DateTime.Today
+. Add ( scheduledStart )
+. AddMinutes (- options .EarlyCheckInToleranceMinutes);
+}
+private TimeSpan ? GetScheduledStartTime ( CheckInContext context )
+{
+return context .ResolvedSource switch
+{
+ScheduleSourceType .JobSchedule =>
+context .NextAvailableJobSchedule?.CheckInTime,
+ScheduleSourceType .EmployeeSchedule =>
+GetEmployeeScheduleStart ( context ),
+_ => null
+};
+}
+}
+Notice how this validator depends on the output of ScheduleSourceValidator (it reads context.ResolvedSource ). This is why ordering matters -- Order 30 runs after Order 20.
+4.4 GeolocationValidator (Order = 40)
+Validates that the employee is within the geofence (if required).
+public class GeolocationValidator : ICheckInValidator
+{
+public int Order => 40 ;
+public CheckInValidationResult Validate ( CheckInContext context , CheckInValidationOptions options )
+{
+// Skip if geolocation not required for this employee
+if (! context .RequiresGeolocation)
+return CheckInValidationResult . Ok ();
+// Location not yet obtained (still acquiring GPS)
+if (! options .LocationObtained)
+return CheckInValidationResult . Fail ( "A obter localizacao..." );
+// No valid geofence target (Location/Job missing coordinates)
+if (! context .TargetLatitude.HasValue || ! context .TargetLongitude.HasValue)
+return CheckInValidationResult . Fail (
+"Localizacao de trabalho sem coordenadas GPS configuradas" );
+// Outside geofence
+if (! context .IsWithinGeofence)
+{
+var distanceOutside = context .DistanceToLocation - context .GeofenceRadius;
+return CheckInValidationResult . Fail (
+$"Fora da area autorizada ({distanceOutside:F0}m fora)" );
+}
+return CheckInValidationResult . Ok ();
+}
+}
+This is the last gate. If geolocation is required and the employee is outside the geofence, the check-in is blocked. The message even tells them how many meters they are outside.
+5. The Service That Chains Them
+The CheckInValidationService receives all validators via dependency injection, orders them, and runs them sequentially:
+public class CheckInValidationService : ICheckInValidationService
+{
+private readonly IEnumerable < ICheckInValidator > _validators ;
+private readonly AttendanceConfiguration _config ;
+private readonly ILogger < CheckInValidationService > _logger ;
+public CheckInValidationService (
+// ... other dependencies ...
+IEnumerable < ICheckInValidator > validators ,
+AttendanceConfiguration config ,
+ILogger < CheckInValidationService > logger )
+{
+// Sort validators ONCE in the constructor
+_validators = validators . OrderBy (v => v.Order);
+_config = config ;
+_logger = logger ;
+}
+public ( bool CanCheckIn, string ? BlockReason) CanPerformCheckIn (
+CheckInContext context ,
+bool locationObtained )
+{
+var options = new CheckInValidationOptions (
+LocationObtained: locationObtained ,
+EarlyCheckInToleranceMinutes: _config .EarlyCheckInToleranceMinutes
+);
+// Run validators in order - first failure stops the chain
+foreach ( var validator in _validators )
+{
+var result = validator. Validate ( context , options);
+if (!result.IsValid)
+{
+_logger . LogDebug (
+"Check-in blocked by {Validator}: {Reason}" ,
+validator. GetType ().Name,
+result.Message);
+return ( false , result.Message);
+}
+}
+return ( true , null );
+}
+}
+_validators.OrderBy(v => v.Order) reads as: "Sort the validators by their priority, then run them one by one. Stop at the first failure."
+The key insight: this foreach loop never changes . When you add a new validator, this method stays exactly the same. That is the Open/Closed Principle in action -- open for extension (new validators), closed for modification (this loop).
+6. The Check-Out Pipeline (Same Pattern, Different Rules)
+Check-out uses the exact same pattern but with a different interface and different validators. The interface at Services/CheckOut/Validators/ICheckOutValidator.cs :
+public interface ICheckOutValidator
+{
+int Order { get ; }
+CheckOutValidationResult Validate ( CheckOutContext context , CheckOutValidationOptions options );
+}
+public record CheckOutValidationResult ( bool IsValid, string ? Message)
+{
+public static CheckOutValidationResult Ok () => new ( true , null );
+public static CheckOutValidationResult Fail ( string message ) => new ( false , message );
+}
+public record CheckOutValidationOptions (
+bool LocationObtained,
+decimal Latitude,
+decimal Longitude
+);
+Three Check-Out Validators
+AttendanceExistsValidator (Order = 10)
+public class AttendanceExistsValidator : ICheckOutValidator
+{
+public int Order => 10 ;
+public CheckOutValidationResult Validate ( CheckOutContext context , CheckOutValidationOptions options )
+{
+if ( context .Attendance == null )
+return CheckOutValidationResult . Fail ( "Registo de assiduidade nao encontrado." );
+if ( context .IsAlreadyCheckedOut)
+return CheckOutValidationResult . Fail (
+$"Ja fez check-out as {context.Attendance.CheckOutTime:HH:mm}." );
+return CheckOutValidationResult . Ok ();
+}
+}
+BreakStatusValidator (Order = 20)
+public class BreakStatusValidator : ICheckOutValidator
+{
+public int Order => 20 ;
+public CheckOutValidationResult Validate ( CheckOutContext context , CheckOutValidationOptions options )
+{
+if ( context .IsOnBreak)
+return CheckOutValidationResult . Fail ( "Termine a pausa antes de fazer check-out." );
+return CheckOutValidationResult . Ok ();
+}
+}
+GeolocationValidator (Order = 30) -- The Interesting One
+public class GeolocationValidator : ICheckOutValidator
+{
+private readonly IGeofenceService _geofenceService ;
+public GeolocationValidator ( IGeofenceService geofenceService )
+{
+_geofenceService = geofenceService ;
+}
+public int Order => 30 ;
+public CheckOutValidationResult Validate ( CheckOutContext context , CheckOutValidationOptions options )
+{
+if (! context .RequiresGeolocation)
+{
+context .IsValidLocation = true ;
+return CheckOutValidationResult . Ok ();
+}
+if (! options .LocationObtained)
+return CheckOutValidationResult . Fail ( "A obter localizacao..." );
+if (! context .TargetLatitude.HasValue || ! context .TargetLongitude.HasValue)
+{
+context .IsValidLocation = false ;
+context .GeofenceMessage = "Localizacao sem coordenadas GPS" ;
+return CheckOutValidationResult . Ok (); // <-- ALLOWS checkout!
+}
+var distance = _geofenceService . CalculateDistance (
+options .Latitude, options .Longitude,
+context .TargetLatitude.Value, context .TargetLongitude.Value);
+context .Distance = ( decimal )distance;
+context .IsValidLocation = distance <= context .GeofenceRadius;
+// ALWAYS returns Ok() -- just records if outside geofence for audit
+return CheckOutValidationResult . Ok ();
+}
+}
+Key difference from check-in: The check-out geolocation validator always returns Ok() . It records whether the employee was inside or outside the geofence (populating context.IsValidLocation and context.Distance ), but it never blocks the check-out. This is a business rule: you should always be able to leave work, even if your GPS is wrong. The audit trail records the discrepancy.
+The CheckOutValidationService chains them with the exact same foreach loop:
+public ( bool CanCheckOut, string ? BlockReason) CanPerformCheckOut (
+CheckOutContext context ,
+CheckOutValidationOptions options )
+{
+foreach ( var validator in _validators )
+{
+var result = validator. Validate ( context , options );
+if (!result.IsValid)
+return ( false , result.Message);
+}
+return ( true , null );
+}
+7. DI Registration -- How It All Connects
+In Program.cs , all validators are registered for the same interface :
+// Check-in validators (SOLID: each validator has one responsibility)
+builder.Services. AddTransient < ICheckInValidator , ActiveCheckInValidator >();
+builder.Services. AddTransient < ICheckInValidator , ScheduleSourceValidator >();
+builder.Services. AddTransient < ICheckInValidator , TimeWindowValidator >();
+builder.Services. AddTransient < ICheckInValidator , GeolocationValidator >();
+// Check-out validators (SOLID: each validator has one responsibility)
+builder.Services. AddTransient < ICheckOutValidator , AttendanceExistsValidator >();
+builder.Services. AddTransient < ICheckOutValidator , BreakStatusValidator >();
+builder.Services. AddTransient < ICheckOutValidator , GeolocationValidator >();
+The magic: when you register multiple implementations for the same interface, .NET DI collects them all into IEnumerable<T> . So when CheckInValidationService asks for IEnumerable<ICheckInValidator> , it receives all four validators automatically.
+Why AddTransient ? Validators are cheap, stateless objects. They are created fresh each time they are needed, with no shared state between requests. This is the recommended DI lifetime for validators and resolvers that participate in pipelines.
+8. Strategy Pattern -- Schedule Conflict Detection
+While the Chain of Responsibility pattern runs all validators in sequence , the Strategy pattern picks one implementation based on a key. GivingCare uses this for schedule conflict detection, where employees and equipment use different database tables and different conflict rules.
+The Strategy Interface
+public interface IScheduleConflictStrategy
+{
+/// The entity type this strategy handles (e.g., "Employee", "Equipment")
+string EntityType { get ; }
+/// Detects scheduling conflicts for an entity on a specific date
+Task < List < ScheduleConflict >> GetScheduleConflictsAsync (
+int entityId , DateTime date , string companyDatabase );
+/// Gets detailed conflict analysis for a specific schedule
+Task < DetailedConflictInfo > GetDetailedConflictsAsync (
+int entityId , DateTime scheduleDate , DateTime endDate ,
+TimeSpan startTime , TimeSpan endTime ,
+int ? excludeScheduleId , string companyDatabase ,
+ConflictSourceType ? excludeSourceType = null );
+/// Checks if adding a new schedule would create a conflict
+Task < bool > WouldCreateConflictAsync ( /* ... */ );
+/// Advanced time-based overlap detection for cross-midnight shifts
+Task < bool > HasTimeOverlapAsync ( /* ... */ );
+/// Calculates total hours scheduled for a date
+Task < decimal > CalculateDailyHoursAsync ( /* ... */ );
+}
+The Router (ScheduleConflictDetector)
+public class ScheduleConflictDetector : IScheduleConflictDetector
+{
+private readonly IEnumerable < IScheduleConflictStrategy > _strategies ;
+private readonly ILogger < ScheduleConflictDetector > _logger ;
+public ScheduleConflictDetector (
+IEnumerable < IScheduleConflictStrategy > strategies ,
+ILogger < ScheduleConflictDetector > logger )
+{
+_strategies = strategies ;
+_logger = logger ;
+}
+public async Task < List < ScheduleConflict >> GetScheduleConflictsAsync (
+string entityType , int entityId ,
+DateTime date , string companyDatabase )
+{
+var strategy = GetStrategy ( entityType );
+return await strategy. GetScheduleConflictsAsync ( entityId , date , companyDatabase );
+}
+/// Gets the appropriate strategy for the entity type.
+private IScheduleConflictStrategy GetStrategy ( string entityType )
+{
+var strategy = _strategies . FirstOrDefault (s =>
+s.EntityType. Equals ( entityType , StringComparison .OrdinalIgnoreCase));
+if (strategy == null )
+{
+_logger . LogError (
+"No conflict detection strategy registered for: {EntityType}" ,
+entityType );
+throw new ArgumentException (
+$"No conflict detection strategy registered for: {entityType}" );
+}
+return strategy;
+}
+}
+Two Strategies
+EmployeeScheduleConflictStrategy ( EntityType = "Employee" ) queries JobSchedule and EmployeeDaySchedule tables, checks approved leave requests, and handles feature flags (Jobs module, Scheduling module).
+EquipmentScheduleConflictStrategy ( EntityType = "Equipment" ) queries JobEquipmentSchedule table. Simpler because equipment does not have leave requests or employee day schedules.
+Registered in Program.cs :
+// Schedule Conflict Detection (Agnostic - Strategy Pattern)
+builder.Services. AddScoped < IScheduleConflictStrategy , EmployeeScheduleConflictStrategy >();
+builder.Services. AddScoped < IScheduleConflictStrategy , EquipmentScheduleConflictStrategy >();
+builder.Services. AddScoped < IScheduleConflictDetector , ScheduleConflictDetector >();
+Same IEnumerable<T> trick as validators. But instead of running all strategies, the detector picks one by matching EntityType .
+Caller: "Check conflicts for Employee #42 on March 18"
+ScheduleConflictDetector
+|
++--> GetStrategy("Employee")
+| |
+| +--> EmployeeScheduleConflictStrategy EquipmentScheduleConflictStrategy strategy.GetScheduleConflictsAsync(42, date, db)
+Caller: "Check conflicts for Equipment #7 on March 18"
+ScheduleConflictDetector
+|
++--> GetStrategy("Equipment")
+| |
+| +--> EmployeeScheduleConflictStrategy EquipmentScheduleConflictStrategy strategy.GetScheduleConflictsAsync(7, date, db)
+9. Chain vs Strategy -- When to Use Which
+Pattern
+Use When
+How It Works
+GivingCare Example
+Chain of Responsibility
+Multiple sequential checks, any can veto
+Ordered pipeline, first failure stops
+Check-in/out validators
+Strategy
+Different algorithms for different contexts
+Router picks one based on type/key
+Employee vs Equipment conflict detection
+Chain: "Run ALL of these in order. Any one can say no." -- Validators, middleware, approval workflows.
+Strategy: "Run ONE of these based on a key." -- Entity-specific logic, export formats, calculation algorithms.
+Both patterns use the same DI mechanism ( IEnumerable<T> ), but the consumption is different:
+Chain: foreach (var v in _validators) { ... } -- iterates all
+Strategy: _strategies.FirstOrDefault(s => s.EntityType == key) -- picks one
+10. Adding a New Validator
+Suppose you need a new rule: employees on probation cannot check in to jobs rated as "high risk." Here is the complete process:
+Step 1: Create the validator class
+public class ProbationRiskValidator : ICheckInValidator
+{
+public int Order => 25 ; // After ScheduleSource(20), before TimeWindow(30)
+public CheckInValidationResult Validate (
+CheckInContext context ,
+CheckInValidationOptions options )
+{
+if (! context .Employee.IsOnProbation)
+return CheckInValidationResult . Ok ();
+if ( context .ResolvedSource != ScheduleSourceType .JobSchedule)
+return CheckInValidationResult . Ok ();
+if ( context .NextAvailableJobSchedule?.Job?.RiskLevel == "High" )
+return CheckInValidationResult . Fail (
+"Employees on probation cannot work high-risk jobs" );
+return CheckInValidationResult . Ok ();
+}
+}
+Step 2: Register in Program.cs
+builder.Services. AddTransient < ICheckInValidator , ProbationRiskValidator >();
+Step 3: Done.
+There is no step 3. The pipeline auto-discovers the new validator because it is registered as ICheckInValidator . The CheckInValidationService did not change. The other validators did not change. The foreach loop picks it up, sorts it by Order = 25 , and it runs between ScheduleSource and TimeWindow.
+BEFORE: [ActiveCheckIn=10] --> [ScheduleSource=20] --> [TimeWindow=30] --> [Geolocation=40]
+AFTER: [ActiveCheckIn=10] --> [ScheduleSource=20] --> [ProbationRisk=25] --> [TimeWindow=30] --> [Geolocation=40]
+^
+New! Inserted at 25.
+Order = 10, 20, 30, 40 -- not 1, 2, 3, 4. The gaps are intentional. They let you insert a new validator at Order = 15 between existing ones without renumbering. This is the same convention used in BASIC line numbers, middleware pipelines, and database seed scripts.
+Each validator does ONE thing. If you find yourself writing "and also check..." inside a validator, you need a new validator. The ProbationRiskValidator checks probation + risk level -- that is one concern. If you also wanted to check certification, that would be a separate CertificationValidator .
+Summary
+The validator pipeline is one of the cleanest patterns in the GivingCare codebase. It uses three ingredients:
+An interface with an Order property and a Validate method
+Multiple implementations , each doing one thing
+DI registration via IEnumerable<T> , so the service gets all validators automatically
+The result: validation logic that is easy to test (each validator in isolation), easy to extend (add a class, register it), and impossible to accidentally break (existing validators never change).
+File
+Purpose
+Services/CheckIn/Validators/ICheckInValidator.cs
+Interface + Result + Options records
+Services/CheckIn/Validators/ActiveCheckInValidator.cs
+Order=10: blocks double check-ins
+Services/CheckIn/Validators/ScheduleSourceValidator.cs
+Order=20: resolves Job vs Employee vs Free
+Services/CheckIn/Validators/TimeWindowValidator.cs
+Order=30: checks timing tolerance
+Services/CheckIn/Validators/GeolocationValidator.cs
+Order=40: validates geofence
+Services/CheckIn/CheckInValidationService.cs
+The service that chains all check-in validators
+Services/CheckOut/Validators/ICheckOutValidator.cs
+Check-out interface + Result + Options
+Services/CheckOut/Validators/AttendanceExistsValidator.cs
+Order=10: attendance must exist
+Services/CheckOut/Validators/BreakStatusValidator.cs
+Order=20: must end break first
+Services/CheckOut/Validators/GeolocationValidator.cs
+Order=30: records location, never blocks
+Services/CheckOut/CheckOutValidationService.cs
+The service that chains all check-out validators
+Services/Core/Scheduling/ConflictDetection/IScheduleConflictStrategy.cs
+Strategy interface with EntityType routing key
+Services/Core/Scheduling/ConflictDetection/ScheduleConflictDetector.cs
+Router that picks one strategy per entity type
+Program.cs
+DI registration for all validators and strategies

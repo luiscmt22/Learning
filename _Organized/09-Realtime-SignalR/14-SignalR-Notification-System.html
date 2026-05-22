@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>14-SignalR-Notification-System</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 09-Realtime-SignalR</div>
+  <h1>14-SignalR-Notification-System</h1>
+  <div class="meta">Source: <code>Education/14-SignalR-Notification-System.md</code> &middot; <a href="14-SignalR-Notification-System.md">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<h1 id="signalr-real-time-communication-part-2-notification-system">SignalR Real-Time Communication Part 2: Notification System</h1>
+<blockquote><strong>Level</strong>: Intermediate to Advanced<br><strong>Topic</strong>: Building a comprehensive notification system with SignalR<br><strong>Prerequisites</strong>: <a href="11-SignalR-Real-Time-Communication.md" target="_blank">11-SignalR-Real-Time-Communication.md</a></blockquote>
+<h2 id="overview">Overview</h2>
+<p>In Part 1, we covered the basics of SignalR with the Attendance Hub. Now we&#x27;ll explore a more complex use case: a comprehensive notification system that supports multiple targeting strategies.</p>
+<h3 id="what-we-built">What We Built</h3>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Feature</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Multi-Target Notifications</strong></td>
+<td>Send to Users, Groups, Departments, Jobs, Employee Roles</td>
+</tr>
+<tr>
+<td><strong>Cross-Database Resolution</strong></td>
+<td>Resolve targets from per-company databases</td>
+</tr>
+<tr>
+<td><strong>Real-Time Delivery</strong></td>
+<td>Instant notification via SignalR</td>
+</tr>
+<tr>
+<td><strong>Persistent Storage</strong></td>
+<td>Notifications saved for offline users</td>
+</tr>
+</tbody></table></div>
+<h2 id="architecture-overview">Architecture Overview</h2>
+<h3 id="why-two-hubs">Why Two Hubs?</h3>
+<p>We have two separate SignalR hubs for different purposes:</p>
+<div class="diagram-box"><pre>AttendanceHub
+├── Purpose: Real-time attendance events
+├── Events: CheckIn, CheckOut, AttendanceUpdate
+└── Groups: CompanyAttendance_{id}, TeamAttendance_{id}_{teamId}
+
+NotificationHub
+├── Purpose: Push notifications to users
+├── Events: ReceiveNotification, NotificationMarkedRead
+└── Groups: User_{id}, All, Admins, Company_{id}, UserGroup_{gid}_{eid}
+            Dept_{eid}_{did}, Job_{eid}_{jid}, Role_{eid}_{rid}</pre></div>
+<h3 id="the-notification-flow">The Notification Flow</h3>
+<div class="diagram-box"><pre>┌─────────────────────────────────────────────────────────────────────────────┐
+│                           NOTIFICATION FLOW                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                               │
+│  1. Admin sends notification (EnvioGlobal.razor)                             │
+│                    │                                                          │
+│                    ▼                                                          │
+│  2. NotificationService receives request                                      │
+│                    │                                                          │
+│     ┌──────────────┴──────────────┐                                          │
+│     │                             │                                          │
+│     ▼                             ▼                                          │
+│  3a. Save to Database      3b. Resolve Targets                               │
+│     (BaseControleContext)       (NotificationTargetResolver)                 │
+│                    │                             │                           │
+│                    │             ┌───────────────┴───────────────┐           │
+│                    │             │                               │           │
+│                    │        Query Company DB            Query Central DB     │
+│                    │        (Employees by Dept)        (Users by Linkage)    │
+│                    │             │                               │           │
+│                    │             └───────────────┬───────────────┘           │
+│                    │                             │                           │
+│                    │                             ▼                           │
+│                    │                     User IDs Resolved                   │
+│                    │                             │                           │
+│                    └──────────────┬──────────────┘                           │
+│                                   │                                          │
+│                                   ▼                                          │
+│  4. NotificationHubService.SendNotificationToUserAsync()                     │
+│                                   │                                          │
+│                                   ▼                                          │
+│  5. SignalR pushes to connected clients                                      │
+│                                   │                                          │
+│              ┌────────────────────┼────────────────────┐                     │
+│              │                    │                    │                     │
+│              ▼                    ▼                    ▼                     │
+│         User A (online)     User B (online)     User C (offline)            │
+│         Receives instantly  Receives instantly  Sees on next login          │
+│                                                                               │
+└─────────────────────────────────────────────────────────────────────────────┘</pre></div>
+<h2 id="why-do-we-need-a-controller">Why Do We Need a Controller?</h2>
+<p>The <code class="il">NotificationController</code> provides REST API endpoints. But if Blazor components can inject <code class="il">INotificationService</code> directly, why do we need it?</p>
+<h3 id="use-cases-for-the-controller">Use Cases for the Controller</h3>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Use Case</th>
+<th>Why Controller?</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>External Systems</strong></td>
+<td>CI/CD pipelines, external apps send notifications via HTTP</td>
+</tr>
+<tr>
+<td><strong>Mobile Apps</strong></td>
+<td>Mobile clients use REST API, not SignalR directly</td>
+</tr>
+<tr>
+<td><strong>Background Jobs</strong></td>
+<td>Scheduled tasks run server-side without UI</td>
+</tr>
+<tr>
+<td><strong>Testing</strong></td>
+<td>Easy to test with Postman/Swagger</td>
+</tr>
+<tr>
+<td><strong>Microservices</strong></td>
+<td>Other services can trigger notifications</td>
+</tr>
+</tbody></table></div>
+<h3 id="controller-vs-direct-service-call">Controller vs Direct Service Call</h3>
+<div class="diagram-box"><pre>┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                               │
+│  BLAZOR UI                                                                    │
+│  (EnvioGlobal.razor)                                                         │
+│         │                                                                     │
+│         │ @inject INotificationService                                       │
+│         │                                                                     │
+│         └─────────────────────────┐                                          │
+│                                   │                                          │
+│                                   ▼                                          │
+│  ┌─────────────────────────────────────────────────────────────────┐        │
+│  │               INotificationService                              │        │
+│  │                                                                 │        │
+│  │  SendNotificationToDepartmentAsync()                            │        │
+│  │  SendNotificationToJobAsync()                                   │        │
+│  │  SendNotificationToMultipleTargetsAsync()                       │        │
+│  │  ...                                                            │        │
+│  └─────────────────────────────────────────────────────────────────┘        │
+│                                   ▲                                          │
+│                                   │                                          │
+│         ┌─────────────────────────┘                                          │
+│         │                                                                     │
+│  EXTERNAL (API)                                                               │
+│  (Mobile App, CI/CD)                                                         │
+│         │                                                                     │
+│         │ POST /api/notification/send-to-department                          │
+│         │                                                                     │
+│         └─────► NotificationController ─────┘                                │
+│                                                                               │
+└─────────────────────────────────────────────────────────────────────────────┘</pre></div>
+<p><strong>Rule of Thumb:</strong></p>
+<ul>
+<li><strong>Inside Blazor</strong>: Inject <code class="il">INotificationService</code> directly</li>
+<li><strong>Outside Blazor</strong>: Use the REST API (Controller)</li>
+</ul>
+<h2 id="signalr-groups-in-notifications">SignalR Groups in Notifications</h2>
+<h3 id="group-naming-convention">Group Naming Convention</h3>
+<p>We use a consistent naming pattern for SignalR groups:</p>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Target Type</th>
+<th>Pattern</th>
+<th>Example</th>
+</tr></thead><tbody>
+<tr>
+<td>All users</td>
+<td><code class="il">All</code></td>
+<td><code class="il">All</code></td>
+</tr>
+<tr>
+<td>Admins</td>
+<td><code class="il">Admins</code></td>
+<td><code class="il">Admins</code></td>
+</tr>
+<tr>
+<td>Company</td>
+<td><code class="il">Company_{id}</code></td>
+<td><code class="il">Company_1</code></td>
+</tr>
+<tr>
+<td>User Group</td>
+<td><code class="il">UserGroup_{groupId}_{empresaId}</code></td>
+<td><code class="il">UserGroup_5_1</code></td>
+</tr>
+<tr>
+<td>Department</td>
+<td><code class="il">Dept_{empresaId}_{deptId}</code></td>
+<td><code class="il">Dept_1_3</code></td>
+</tr>
+<tr>
+<td>Job</td>
+<td><code class="il">Job_{empresaId}_{jobId}</code></td>
+<td><code class="il">Job_1_42</code></td>
+</tr>
+<tr>
+<td>Employee Role</td>
+<td><code class="il">Role_{empresaId}_{roleId}</code></td>
+<td><code class="il">Role_1_7</code></td>
+</tr>
+<tr>
+<td>Individual User</td>
+<td><code class="il">User_{userId}</code></td>
+<td><code class="il">User_123</code></td>
+</tr>
+</tbody></table></div>
+<h3 id="auto-joining-groups">Auto-Joining Groups</h3>
+<p>When a user connects to the NotificationHub, they automatically join relevant groups:</p>
+<pre><code class="lang-csharp"><span class="cmt">// NotificationHub.cs</span>
+<span class="kw">public</span> <span class="kw">override</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">OnConnectedAsync</span>()
+{
+    <span class="kw">var</span> userId = <span class="type">GetUserId</span>();
+
+    <span class="cmt">// Always join personal group</span>
+    <span class="kw">await</span> <span class="type">Groups</span>.<span class="type">AddToGroupAsync</span>(<span class="type">Context</span>.<span class="type">ConnectionId</span>, $<span class="str">&quot;User_{userId}&quot;</span>);
+
+    <span class="cmt">// Join &quot;All&quot; group</span>
+    <span class="kw">await</span> <span class="type">Groups</span>.<span class="type">AddToGroupAsync</span>(<span class="type">Context</span>.<span class="type">ConnectionId</span>, <span class="str">&quot;All&quot;</span>);
+
+    <span class="cmt">// Join admin group if applicable</span>
+    <span class="kw">if</span> (<span class="kw">await</span> _notificationService.<span class="type">IsUserAdminAsync</span>(userId))
+    {
+        <span class="kw">await</span> <span class="type">Groups</span>.<span class="type">AddToGroupAsync</span>(<span class="type">Context</span>.<span class="type">ConnectionId</span>, <span class="str">&quot;Admins&quot;</span>);
+    }
+
+    <span class="cmt">// Join company groups</span>
+    <span class="kw">var</span> companies = <span class="kw">await</span> _notificationService.<span class="type">GetUserCompaniesAsync</span>(userId);
+    <span class="kw">foreach</span> (<span class="kw">var</span> company <span class="kw">in</span> companies)
+    {
+        <span class="kw">await</span> <span class="type">Groups</span>.<span class="type">AddToGroupAsync</span>(<span class="type">Context</span>.<span class="type">ConnectionId</span>, $<span class="str">&quot;Company_{company.Id}&quot;</span>);
+    }
+
+    <span class="cmt">// Join user groups</span>
+    <span class="cmt">// ... and so on for departments, jobs, roles</span>
+}</code></pre>
+<h2 id="cross-database-resolution">Cross-Database Resolution</h2>
+<h3 id="the-challenge">The Challenge</h3>
+<p>Our architecture uses multiple databases:</p>
+<div class="diagram-box"><pre>┌─────────────────────────────────────────────────────────────────────────────┐
+│                           DATABASE ARCHITECTURE                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                               │
+│  ┌─────────────────────────────────┐                                         │
+│  │    LoginDatabase (Central)      │                                         │
+│  │    - BaseControleContext        │                                         │
+│  │                                 │                                         │
+│  │    Tables:                      │                                         │
+│  │    - CRM_UTILIZADOR (Users)     │                                         │
+│  │    - CRM_EMPRESA (Companies)    │                                         │
+│  │    - NOTIFICATIONS              │  ◄─── Notifications stored here        │
+│  │    - USER_EMPLOYEE_LINKAGE      │  ◄─── Maps Users ↔ Employees           │
+│  └─────────────────────────────────┘                                         │
+│                                                                               │
+│  ┌─────────────────────┐  ┌─────────────────────┐  ┌─────────────────────┐  │
+│  │   CompanyA_DB       │  │   CompanyB_DB       │  │   CompanyC_DB       │  │
+│  │   - Employees       │  │   - Employees       │  │   - Employees       │  │
+│  │   - Departments     │  │   - Departments     │  │   - Departments     │  │
+│  │   - Jobs            │  │   - Jobs            │  │   - Jobs            │  │
+│  │   - EmployeeRoles   │  │   - EmployeeRoles   │  │   - EmployeeRoles   │  │
+│  └─────────────────────┘  └─────────────────────┘  └─────────────────────┘  │
+│                                                                               │
+└─────────────────────────────────────────────────────────────────────────────┘</pre></div>
+<p><strong>Problem:</strong> When someone sends a notification to &quot;IT Department&quot;, how do we find the actual users?</p>
+<h3 id="the-solution-notificationtargetresolver">The Solution: NotificationTargetResolver</h3>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">interface</span> <span class="type">INotificationTargetResolver</span>
+{
+    <span class="cmt">// Resolve targets to user IDs (the magic!)</span>
+    <span class="type">Task</span>&lt;<span class="type">List</span>&lt;<span class="kw">int</span>&gt;&gt; <span class="type">GetUserIdsForDepartmentAsync</span>(<span class="kw">int</span> departmentId, <span class="kw">string</span> companyDatabase);
+    <span class="type">Task</span>&lt;<span class="type">List</span>&lt;<span class="kw">int</span>&gt;&gt; <span class="type">GetUserIdsForJobAsync</span>(<span class="kw">int</span> jobId, <span class="kw">string</span> companyDatabase);
+    <span class="type">Task</span>&lt;<span class="type">List</span>&lt;<span class="kw">int</span>&gt;&gt; <span class="type">GetUserIdsForEmployeeRoleAsync</span>(<span class="kw">int</span> roleId, <span class="kw">string</span> companyDatabase);
+
+    <span class="cmt">// Check if user belongs to target</span>
+    <span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">IsUserInDepartmentAsync</span>(<span class="kw">int</span> userId, <span class="kw">int</span> departmentId, <span class="kw">string</span> companyDatabase);
+
+    <span class="cmt">// Get names for UI display</span>
+    <span class="type">Task</span>&lt;<span class="kw">string</span>?&gt; <span class="type">GetDepartmentNameAsync</span>(<span class="kw">int</span> departmentId, <span class="kw">string</span> companyDatabase);
+}</code></pre>
+<h3 id="resolution-flow-example">Resolution Flow Example</h3>
+<div class="diagram-box"><pre>Send to &quot;IT Department&quot; (ID: 3, Company: CompanyA_DB)
+                │
+                ▼
+NotificationTargetResolver.GetUserIdsForDepartmentAsync(3, &quot;CompanyA_DB&quot;)
+                │
+                ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STEP 1: Query Company Database                                               │
+│                                                                               │
+│  SELECT Id FROM CrmFuncionarios                                               │
+│  WHERE DepartamentoId = 3 AND IsActive = 1                                   │
+│                                                                               │
+│  Result: Employee IDs [101, 102, 103]                                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+                │
+                ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STEP 2: Query Central Database (UserEmployeeLinkage)                        │
+│                                                                               │
+│  SELECT UserId FROM UserEmployeeLinkage                                       │
+│  WHERE EmployeeId IN (101, 102, 103)                                         │
+│    AND CompanyDatabase = &#x27;CompanyA_DB&#x27;                                       │
+│    AND IsActive = 1                                                          │
+│                                                                               │
+│  Result: User IDs [5, 8, 12]                                                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+                │
+                ▼
+Send notification to Users 5, 8, 12</pre></div>
+<h2 id="complete-implementation-example">Complete Implementation Example</h2>
+<h3 id="sending-to-a-department">Sending to a Department</h3>
+<p>Here&#x27;s the full flow when an admin sends a notification to the IT Department:</p>
+<p><strong>1. UI (EnvioGlobal.razor)</strong></p>
+<pre><code class="lang-razor">@inject <span class="type">INotificationService</span> <span class="type">NotificationService</span>
+@inject <span class="type">INotificationTargetResolver</span> <span class="type">TargetResolver</span>
+
+&lt;!-- <span class="type">Admin</span> selects <span class="type">Department</span> tab, picks <span class="str">&quot;IT Department&quot;</span> --&gt;
+
+@code {
+    <span class="kw">private</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">SendNotification</span>()
+    {
+        <span class="kw">var</span> request = <span class="kw">new</span> <span class="type">NotificationToMultipleTargetsDto</span>
+        {
+            <span class="type">EmpresaId</span> = _selectedEmpresaId,
+            <span class="type">CompanyDatabase</span> = _companyDatabase,
+            <span class="type">Title</span> = _notificationTitle,
+            <span class="type">Message</span> = _notificationMessage,
+            <span class="type">Type</span> = _notificationType,
+            <span class="type">DepartmentIds</span> = <span class="kw">new</span> <span class="type">List</span>&lt;<span class="kw">int</span>&gt; { <span class="num">3</span> }  <span class="cmt">// IT Department</span>
+        };
+
+        <span class="kw">await</span> <span class="type">NotificationService</span>.<span class="type">SendNotificationToMultipleTargetsAsync</span>(
+            request,
+            <span class="type">UserSession</span>.<span class="type">User</span>.<span class="type">Id</span>);
+    }
+}</code></pre>
+<p><strong>2. Service (NotificationService.cs)</strong></p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">SendNotificationToMultipleTargetsAsync</span>(
+    <span class="type">NotificationToMultipleTargetsDto</span> request,
+    <span class="kw">int</span>? fromUserId)
+{
+    <span class="cmt">// Collect all unique user IDs from all target types</span>
+    <span class="kw">var</span> allUserIds = <span class="kw">new</span> <span class="type">HashSet</span>&lt;<span class="kw">int</span>&gt;();
+
+    <span class="cmt">// Resolve department targets</span>
+    <span class="kw">if</span> (request.<span class="type">DepartmentIds</span>?.<span class="type">Any</span>() == <span class="kw">true</span>)
+    {
+        <span class="kw">foreach</span> (<span class="kw">var</span> deptId <span class="kw">in</span> request.<span class="type">DepartmentIds</span>)
+        {
+            <span class="kw">var</span> userIds = <span class="kw">await</span> _targetResolver.<span class="type">GetUserIdsForDepartmentAsync</span>(
+                deptId, request.<span class="type">CompanyDatabase</span>);
+            <span class="kw">foreach</span> (<span class="kw">var</span> id <span class="kw">in</span> userIds) allUserIds.<span class="type">Add</span>(id);
+        }
+    }
+
+    <span class="cmt">// ... resolve other target types ...</span>
+
+    <span class="cmt">// Create notification for each user</span>
+    <span class="kw">foreach</span> (<span class="kw">var</span> userId <span class="kw">in</span> allUserIds)
+    {
+        <span class="cmt">// Save to database</span>
+        <span class="kw">var</span> notification = <span class="kw">new</span> <span class="type">Notification</span> { <span class="cmt">/* ... */</span> };
+        _context.<span class="type">Notifications</span>.<span class="type">Add</span>(notification);
+
+        <span class="cmt">// Push via SignalR</span>
+        <span class="kw">await</span> _hubService.<span class="type">SendNotificationToUserAsync</span>(userId, notificationDto);
+    }
+
+    <span class="kw">await</span> _context.<span class="type">SaveChangesAsync</span>();
+    <span class="kw">return</span> <span class="kw">true</span>;
+}</code></pre>
+<p><strong>3. SignalR Push (NotificationHubService.cs)</strong></p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">SendNotificationToUserAsync</span>(<span class="kw">int</span> userId, <span class="type">NotificationDto</span> notification)
+{
+    <span class="kw">await</span> _hubContext.<span class="type">Clients</span>
+        .<span class="type">Group</span>($<span class="str">&quot;User_{userId}&quot;</span>)
+        .<span class="type">SendAsync</span>(<span class="str">&quot;ReceiveNotification&quot;</span>, notification);
+}</code></pre>
+<p><strong>4. Client Receives (NotificationBadge.razor)</strong></p>
+<pre><code class="lang-razor">@code {
+    <span class="kw">protected</span> <span class="kw">override</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">OnInitializedAsync</span>()
+    {
+        _hubConnection.<span class="type">On</span>&lt;<span class="type">NotificationDto</span>&gt;(<span class="str">&quot;ReceiveNotification&quot;</span>, <span class="kw">async</span> (notification) =&gt;
+        {
+            <span class="cmt">// Update badge count</span>
+            _unreadCount++;
+
+            <span class="cmt">// Show toast for important notifications</span>
+            <span class="kw">if</span> (notification.<span class="type">Type</span> == <span class="str">&quot;Error&quot;</span> || notification.<span class="type">Type</span> == <span class="str">&quot;Warning&quot;</span>)
+            {
+                <span class="type">Snackbar</span>.<span class="type">Add</span>(notification.<span class="type">Title</span>, <span class="type">Severity</span>.<span class="type">Warning</span>);
+            }
+
+            <span class="type">StateHasChanged</span>();
+        });
+    }
+}</code></pre>
+<h2 id="database-schema">Database Schema</h2>
+<h3 id="new-tables-and-columns">New Tables and Columns</h3>
+<pre><code class="lang-sql">-- Added to NOTIFICATIONS table
+ALTER TABLE NOTIFICATIONS ADD TO_DEPARTMENT_ID INT NULL;
+ALTER TABLE NOTIFICATIONS ADD TO_JOB_ID INT NULL;
+ALTER TABLE NOTIFICATIONS ADD TO_EMPLOYEE_ROLE_ID INT NULL;
+ALTER TABLE NOTIFICATIONS ADD COMPANY_DATABASE NVARCHAR(100) NULL;
+
+-- New junction table for multi-target notifications
+CREATE TABLE NOTIFICATION_TARGETS (
+    ID INT IDENTITY(1,1) PRIMARY KEY,
+    NOTIFICATION_ID INT NOT NULL,
+    TARGET_TYPE NVARCHAR(20) NOT NULL,  -- &#x27;Department&#x27;, &#x27;Job&#x27;, &#x27;EmployeeRole&#x27;, &#x27;UserGroup&#x27;
+    TARGET_ID INT NOT NULL,
+    CREATED_AT DATETIME2 DEFAULT GETDATE(),
+
+    INDEX IX_NotificationTargets_NotificationId (NOTIFICATION_ID),
+    INDEX IX_NotificationTargets_Lookup (TARGET_TYPE, TARGET_ID)
+);</code></pre>
+<h3 id="why-junction-table-instead-of-json-arrays">Why Junction Table Instead of JSON Arrays?</h3>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>JSON Arrays</th>
+<th>Junction Table</th>
+</tr></thead><tbody>
+<tr>
+<td>Can&#x27;t index</td>
+<td>Fully indexable</td>
+</tr>
+<tr>
+<td>Slow JSON parsing</td>
+<td>Fast SQL joins</td>
+</tr>
+<tr>
+<td>No query optimization</td>
+<td>Query optimizer works</td>
+</tr>
+<tr>
+<td>Violates 1NF</td>
+<td>Proper normalization</td>
+</tr>
+</tbody></table></div>
+<h2 id="best-practices">Best Practices</h2>
+<h3 id="1-always-validate-targets-before-sending">1. Always Validate Targets Before Sending</h3>
+<pre><code class="lang-csharp"><span class="kw">var</span> userIds = <span class="kw">await</span> _targetResolver.<span class="type">GetUserIdsForDepartmentAsync</span>(deptId, companyDb);
+<span class="kw">if</span> (!userIds.<span class="type">Any</span>())
+{
+    _logger.<span class="type">LogWarning</span>(<span class="str">&quot;Department {DeptId} has no linked users&quot;</span>, deptId);
+    <span class="kw">return</span> <span class="kw">false</span>;
+}</code></pre>
+<h3 id="2-log-all-notification-sends">2. Log All Notification Sends</h3>
+<pre><code class="lang-csharp">_logger.<span class="type">LogInformation</span>(
+    <span class="str">&quot;Notification sent to {Count} users for Department {DeptId}&quot;</span>,
+    userIds.<span class="type">Count</span>, deptId);</code></pre>
+<h3 id="3-handle-offline-users-gracefully">3. Handle Offline Users Gracefully</h3>
+<ul>
+<li>Notifications are saved to database first</li>
+<li>Users see them on next login</li>
+<li>SignalR push is best-effort</li>
+</ul>
+<h3 id="4-set-reasonable-expiration-dates">4. Set Reasonable Expiration Dates</h3>
+<pre><code class="lang-csharp"><span class="kw">var</span> notification = <span class="kw">new</span> <span class="type">CreateNotificationDto</span>
+{
+    <span class="type">Title</span> = <span class="str">&quot;Promocao Especial&quot;</span>,
+    <span class="type">ExpiresAt</span> = <span class="type">DateTime</span>.<span class="type">Now</span>.<span class="type">AddDays</span>(<span class="num">7</span>)  <span class="cmt">// Auto-cleanup after 7 days</span>
+};</code></pre>
+<h3 id="5-use-batch-operations-for-multiple-targets">5. Use Batch Operations for Multiple Targets</h3>
+<pre><code class="lang-csharp"><span class="cmt">// Good: Single call with multiple targets</span>
+<span class="kw">await</span> <span class="type">NotificationService</span>.<span class="type">SendNotificationToMultipleTargetsAsync</span>(<span class="kw">new</span> <span class="type">NotificationToMultipleTargetsDto</span>
+{
+    <span class="type">DepartmentIds</span> = <span class="kw">new</span> <span class="type">List</span>&lt;<span class="kw">int</span>&gt; { <span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span> },
+    <span class="type">JobIds</span> = <span class="kw">new</span> <span class="type">List</span>&lt;<span class="kw">int</span>&gt; { <span class="num">10</span>, <span class="num">20</span> },
+    <span class="cmt">// ...</span>
+});
+
+<span class="cmt">// Avoid: Multiple individual calls</span>
+<span class="cmt">// foreach (var deptId in deptIds)</span>
+<span class="cmt">//     await NotificationService.SendNotificationToDepartmentAsync(deptId, ...);</span></code></pre>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="notification-not-received">Notification Not Received?</h3>
+<ol>
+<li><strong>Check SignalR Connection</strong></li>
+</ol>
+<ul>
+<li>Green dot in NotificationBadge = connected</li>
+<li>Browser console for SignalR errors</li>
+</ul>
+<ol>
+<li><strong>Verify User is in Correct Group</strong></li>
+</ol>
+<pre><code class="lang-csharp">   <span class="cmt">// In NotificationHub, log group joins</span>
+   _logger.<span class="type">LogInformation</span>(<span class="str">&quot;User {UserId} joined {GroupName}&quot;</span>, userId, groupName);</code></pre>
+<ol>
+<li><strong>Check Database</strong></li>
+</ol>
+<ul>
+<li>Is notification saved in NOTIFICATIONS table?</li>
+<li>Is target resolution working? (check logs)</li>
+</ul>
+<ol>
+<li><strong>Verify Employee-User Linkage</strong></li>
+</ol>
+<pre><code class="lang-sql">   SELECT * FROM USER_EMPLOYEE_LINKAGE
+   WHERE EmployeeId = @empId AND CompanyDatabase = @db</code></pre>
+<h3 id="connection-drops-frequently">Connection Drops Frequently?</h3>
+<ul>
+<li>Check server memory/CPU</li>
+<li>Review SignalR connection limits</li>
+<li>Consider sticky sessions for load balancers</li>
+</ul>
+<h2 id="summary">Summary</h2>
+<p>The notification system demonstrates advanced SignalR patterns:</p>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Pattern</th>
+<th>Implementation</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Multi-Database</strong></td>
+<td>NotificationTargetResolver handles cross-DB queries</td>
+</tr>
+<tr>
+<td><strong>Multiple Hubs</strong></td>
+<td>Separate concerns (Attendance vs Notifications)</td>
+</tr>
+<tr>
+<td><strong>Group Management</strong></td>
+<td>Dynamic group joining based on user context</td>
+</tr>
+<tr>
+<td><strong>Offline Support</strong></td>
+<td>Database persistence + real-time push</td>
+</tr>
+<tr>
+<td><strong>API + SignalR</strong></td>
+<td>REST for external systems, SignalR for real-time</td>
+</tr>
+</tbody></table></div>
+<h2 id="related-documentation">Related Documentation</h2>
+<ul>
+<li><a href="11-SignalR-Real-Time-Communication.md" target="_blank">11-SignalR-Real-Time-Communication.md</a> - Part 1: Basics</li>
+<li><a href="../../Services/Notifications/README.md" target="_blank">Services/Notifications/README.md</a> - Service documentation</li>
+</ul>
+</div>
+</body>
+</html>

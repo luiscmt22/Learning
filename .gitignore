@@ -1,0 +1,179 @@
+# ============================================================
+# Large files / archives / media (GitHub 100MB hard limit)
+# ============================================================
+*.zip
+*.rar
+*.7z
+*.tar
+*.tar.gz
+*.tgz
+*.iso
+
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+*.wmv
+*.mp3
+*.wav
+*.flac
+
+# Specific oversize files / folders flagged on first push
+Hands-On-Machine-Learning-for-.NET-Developers-V-*.zip
+Learning.rar
+
+# Excluded subprojects (kept local only)
+Crystal/
+CSharp-Projects-main/
+MachineLearning/
+
+# Large datasets
+*.tsv
+*.parquet
+*.feather
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.npy
+*.npz
+*.model
+*.onnx
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+
+# ============================================================
+# Tooling / IDE / OS
+# ============================================================
+.claude/
+.playwright-mcp/
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ============================================================
+# .NET / C# / MAUI / Blazor
+# ============================================================
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+[Bb]uild/
+[Bb]uilds/
+[Oo]ut/
+[Ll]og/
+[Ll]ogs/
+
+*.dll
+*.exe
+*.pdb
+*.cache
+*.tlog
+*.lastbuildstate
+*.unsuccessfulbuild
+*.nupkg
+*.snupkg
+
+# Test results / coverage
+[Tt]est[Rr]esult*/
+[Cc]overage*/
+*.coverage
+*.coveragexml
+*.trx
+
+# MAUI / Blazor specific
+*.binlog
+project.lock.json
+project.assets.json
+artifacts/
+publish/
+PublishProfiles/
+
+# ============================================================
+# Python
+# ============================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+.Python
+build/
+dist/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.manifest
+*.spec
+
+# Virtual envs
+.venv/
+venv/
+env/
+ENV/
+tutorial-env/
+PythonLearning/.venv/
+PythonLearning/tutorial-env/
+PythonLearning/webservice/venv/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ============================================================
+# Node / web
+# ============================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.next/
+.nuxt/
+.cache/
+
+# ============================================================
+# Generated screenshots / audit artifacts (project-specific)
+# ============================================================
+audit-*.png
+_curated-*.png
+_organized-*.png
+t0*-*.png
+t1*-*.png
+t2*-*.png
+t3*-*.png
+diagram-light-theme.png
+
+# ============================================================
+# Secrets / local config
+# ============================================================
+*.env
+.env
+.env.*
+!.env.example
+appsettings.Development.json
+appsettings.Local.json
+secrets.json
+*.pfx
+*.key

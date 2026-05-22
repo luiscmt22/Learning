@@ -1,0 +1,9 @@
+Backpropagation Visualized
+Backpropagation Visualized
+1. Forward Pass
+2. Output Errors
+3. Backpropagation
+4. Weight Update
+Reset
+Click the buttons above to step through backpropagation!
+This network has: 6 inputs → 6 hidden neurons → 8 output neurons

@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Git — Comprehensive Handbook</title>
+<style>
+:root {
+    --bg: #1a1a2e;
+    --surface: #16213e;
+    --surface2: #0f3460;
+    --accent: #e94560;
+    --accent2: #533483;
+    --text: #eee;
+    --text-muted: #aab;
+    --success: #4ecca3;
+    --warning: #f0a500;
+    --info: #569cd6;
+    --code-bg: #0d1117;
+    --border: #333;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    max-width: 1380px;
+    margin: 0 auto;
+    align-items: start;
+}
+
+.toc-sidebar {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    max-height: 100vh;
+    overflow-y: auto;
+    padding: 28px 12px 28px 24px;
+    border-right: 1px solid var(--border);
+    background: rgba(15, 52, 96, 0.18);
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent2) transparent;
+}
+.toc-sidebar::-webkit-scrollbar { width: 6px; }
+.toc-sidebar::-webkit-scrollbar-thumb { background: var(--accent2); border-radius: 3px; }
+.toc-sidebar h3 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+    color: var(--accent); margin: 0 0 14px; padding-left: 10px; font-weight: 700;
+}
+.toc-sidebar ol { list-style: none; counter-reset: toc; }
+.toc-sidebar li {
+    counter-increment: toc;
+    margin: 0;
+}
+.toc-sidebar a {
+    display: block;
+    padding: 6px 10px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 13px;
+    line-height: 1.45;
+    border-left: 2px solid transparent;
+    transition: all .15s;
+}
+.toc-sidebar a::before {
+    content: counter(toc) ". ";
+    color: var(--text-muted);
+    opacity: 0.6;
+}
+.toc-sidebar a:hover {
+    color: var(--text);
+    border-left-color: var(--accent2);
+    background: rgba(83, 52, 131, 0.15);
+}
+.toc-sidebar a.active {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    background: rgba(233, 69, 96, 0.10);
+}
+
+.content {
+    padding: 2rem 3rem;
+    max-width: 920px;
+    min-width: 0;
+}
+
+h1 {
+    text-align: center;
+    font-size: 2.4rem;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+    text-align: center;
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+    font-size: 1.05rem;
+}
+
+.companion {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+}
+.companion strong { color: var(--info); }
+.companion a { color: var(--accent); }
+
+h2 {
+    color: var(--accent);
+    font-size: 1.7rem;
+    margin: 3rem 0 1rem 0;
+    padding-bottom: 0.4rem;
+    border-bottom: 2px solid var(--accent);
+    scroll-margin-top: 16px;
+}
+
+h3 {
+    color: var(--success);
+    font-size: 1.25rem;
+    margin: 2rem 0 0.8rem 0;
+}
+
+h4 {
+    color: var(--warning);
+    font-size: 1.05rem;
+    margin: 1.4rem 0 0.5rem 0;
+}
+
+p { margin-bottom: 1rem; }
+ul, ol { margin: 0.5rem 0 1rem 1.5rem; }
+li { margin-bottom: 0.4rem; }
+li > p { margin-bottom: 0.4rem; }
+
+pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    overflow-x: auto;
+    margin: 1rem 0;
+    font-size: 0.86rem;
+    line-height: 1.55;
+}
+
+code {
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.9em;
+}
+
+p code, li code, td code, th code {
+    background: var(--code-bg);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    color: #ffd479;
+    font-size: 0.88em;
+}
+
+.callout {
+    border-radius: 8px;
+    padding: 1rem 1.4rem;
+    margin: 1.2rem 0;
+    border-left: 4px solid;
+}
+.callout p:last-child { margin-bottom: 0; }
+.callout::before {
+    display: block; font-weight: bold;
+    margin-bottom: 0.3rem; font-size: 0.78rem;
+    text-transform: uppercase; letter-spacing: 1.4px;
+}
+
+.callout-tldr   { background: rgba(86, 156, 214, 0.12); border-color: var(--info); }
+.callout-tldr::before   { content: "TL;DR"; color: var(--info); }
+
+.callout-rule   { background: rgba(233, 69, 96, 0.10); border-color: var(--accent); }
+.callout-rule::before   { content: "Rule"; color: var(--accent); }
+
+.callout-safety { background: rgba(78, 204, 163, 0.08); border-color: var(--success); }
+.callout-safety::before { content: "Safety net"; color: var(--success); }
+
+.callout-warn   { background: rgba(240, 165, 0, 0.10); border-color: var(--warning); }
+.callout-warn::before   { content: "Watch out"; color: var(--warning); }
+
+.callout-metaphor { background: rgba(83, 52, 131, 0.18); border-color: var(--accent2); }
+.callout-metaphor::before { content: "Metaphor"; color: var(--accent2); }
+
+.callout-when   { background: rgba(86, 156, 214, 0.06); border-color: var(--info); }
+.callout-when::before   { content: "When to use"; color: var(--info); }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.92rem;
+}
+th, td {
+    padding: 0.65rem 0.9rem;
+    border: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+}
+th {
+    background: var(--surface2);
+    color: var(--accent);
+    font-weight: 600;
+}
+td {
+    background: var(--surface);
+}
+tr:nth-child(even) td { background: rgba(15, 52, 96, 0.4); }
+
+.toc-top {
+    background: var(--surface);
+    border-left: 4px solid var(--accent);
+    padding: 1rem 1.4rem;
+    margin: 1.5rem 0 2.5rem;
+    border-radius: 8px;
+}
+.toc-top h3 { margin-top: 0; color: var(--accent); }
+.toc-top ol { margin: 0.5rem 0 0 1.5rem; }
+.toc-top a { color: var(--info); text-decoration: none; }
+.toc-top a:hover { text-decoration: underline; }
+
+.www {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+    margin: 1rem 0 1.4rem;
+}
+.www-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.9rem;
+}
+.www-card h5 {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.4px;
+    color: var(--accent2);
+    margin-bottom: 6px;
+    font-weight: 700;
+}
+.www-card p { margin: 0; color: var(--text); font-size: 0.92rem; line-height: 1.5; }
+
+.kbd {
+    display: inline-block;
+    padding: 1px 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: 'Cascadia Code', monospace;
+    font-size: 0.82em;
+    color: var(--text);
+}
+
+.marker { color: var(--accent); font-weight: bold; }
+.commit-hash { color: var(--warning); }
+.branch-line { color: var(--success); }
+
+a { color: var(--info); }
+
+.footer {
+    margin-top: 4rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+@media (max-width: 980px) {
+    .layout { grid-template-columns: 1fr; }
+    .toc-sidebar { display: none; }
+    .content { padding: 1.5rem 1.2rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+<aside class="toc-sidebar">
+    <h3>Sections</h3>
+    <ol>
+        <li><a href="#mental-model">Mental model</a></li>
+        <li><a href="#setup">Setup &amp; config</a></li>
+        <li><a href="#daily-flow">The daily flow</a></li>
+        <li><a href="#history">Inspecting history</a></li>
+        <li><a href="#branches">Branches</a></li>
+        <li><a href="#remotes">Remotes</a></li>
+        <li><a href="#merging">Merging</a></li>
+        <li><a href="#rebasing">Rebasing</a></li>
+        <li><a href="#stashing">Stashing</a></li>
+        <li><a href="#tags">Tags</a></li>
+        <li><a href="#undoing">Undoing things</a></li>
+        <li><a href="#cherry-pick">Cherry-picking</a></li>
+        <li><a href="#worktrees">Worktrees</a></li>
+        <li><a href="#submodules">Submodules vs subtrees</a></li>
+        <li><a href="#repo-separation">Repo separation</a></li>
+        <li><a href="#hooks">Hooks</a></li>
+        <li><a href="#search">Searching the repo</a></li>
+        <li><a href="#bisect">Bisect</a></li>
+        <li><a href="#lfs">Git LFS</a></li>
+        <li><a href="#aliases">Aliases worth setting</a></li>
+        <li><a href="#cheatsheet">Cheat sheet</a></li>
+        <li><a href="#shell-env">Shell environment (Windows)</a></li>
+        <li><a href="#errors">Common errors</a></li>
+    </ol>
+</aside>
+
+<main class="content">
+
+<h1>Git — Comprehensive Handbook</h1>
+<p class="subtitle">A reference you can come back to. What / Why / When / How / TL;DR per concept.</p>
+
+<div class="companion">
+    <strong>Companion docs in this folder:</strong><br>
+    &middot; <a href="merge-walkthrough.html">merge-walkthrough.html</a> — step-by-step tutorial for merging two feature branches<br>
+    &middot; <a href="separating-repos.md">separating-repos.md</a> — splitting one repo into two while preserving history
+</div>
+
+<!-- ───────────────────────────────────────────────────────────────── -->
+<h2 id="mental-model">1. Mental model</h2>
+
+<div class="callout callout-tldr">
+    <p>Git stores <strong>snapshots</strong>, not diffs. Branches are <strong>named pointers</strong> to commits. Most state lives <em>locally</em>; remotes are just other Git databases you sync with.</p>
+</div>
+
+<h3>The three trees</h3>
+
+<p>Every Git repo has three places where a file can live:</p>
+
+<table>
+    <tr><th>Tree</th><th>Lives in</th><th>What it represents</th></tr>
+    <tr><td><strong>Working directory</strong></td><td>Your folder on disk</td><td>What you're editing right now</td></tr>
+    <tr><td><strong>Index</strong> (staging area)</td><td><code>.git/index</code></td><td>What <code>git commit</code> will record next</td></tr>
+    <tr><td><strong>Repository</strong></td><td><code>.git/objects/</code></td><td>The committed history</td></tr>
+</table>
+
+<p>Most commands move data between these:</p>
+
+<pre>working dir   ──[ git add ]──▶  index  ──[ git commit ]──▶  repository
+working dir  ◀──[ git restore ]── index ◀──[ git restore --staged ]── repository</pre>
+
+<h3>What a commit actually is</h3>
+
+<p>A commit is a snapshot + metadata:</p>
+
+<ul>
+    <li>A pointer to a <strong>tree</strong> (full state of every file at that moment)</li>
+    <li>The <strong>parent commit(s)</strong> — usually one, two for merge commits, zero for the very first</li>
+    <li>An <strong>author</strong>, <strong>committer</strong>, <strong>timestamp</strong>, <strong>message</strong></li>
+    <li>A <strong>SHA-1 hash</strong> (40 hex chars, e.g. <code>019bcea0c9...</code>) that uniquely identifies it</li>
+</ul>
+
+<p>Git doesn't store diffs — it stores whole snapshots, then deduplicates content by hashing. Two files with identical content are stored once.</p>
+
+<h3>Refs and HEAD</h3>
+
+<div class="callout callout-metaphor">
+    <p>A <strong>ref</strong> is just a pointer to a commit. Branches and tags are refs. <code>HEAD</code> is a special pointer that says "where am I right now" — usually it points at a branch ref ("I'm on master"), occasionally directly at a commit ("detached HEAD").</p>
+</div>
+
+<p>When you commit, the branch ref <code>HEAD</code> points at advances to the new commit. That's all. Branches are not folders, not copies of code — just sticky notes.</p>
+
+<h3>"Local" and "remote" are just other databases</h3>
+
+<p>There is no "the database in the cloud." Every clone is a complete, equal Git database. <code>origin</code> is a nickname for "the database I cloned from." <code>git fetch</code> copies new commits from there into your local database; <code>git push</code> copies the other way.</p>
+
+<!-- ───────────────────────────────────────────────────────────────── -->
+<h2 id="setup">2. Setup &amp; config</h2>
+
+<div class="callout callout-tldr">
+    <p>Set your identity once. Configure line endings on Windows. Pick a default branch. Optionally set up a global gitignore and pull strategy.</p>
+</div>
+
+<h3>Identity (required)</h3>
+
+<pre>git config --global user.name  "Luís Tavares"
+git config --global user.email "luiscmt90@gmail.com"</pre>
+
+<p>Without this, commits show as <code>unknown &lt;unknown&gt;</code> and CI/PR systems get angry.</p>
+
+<h3>Line endings (Windows)</h3>
+
+<p>Windows uses CRLF, Unix LF. Mismatch = noisy diffs.</p>
+
+<pre>git config --global core.autocrlf true</pre>
+
+<p>For project-level enforcement, add a <code>.gitattributes</code> file at repo root:</p>
+
+<pre>* text=auto
+*.cs text eol=lf
+*.sh text eol=lf
+*.png binary</pre>
+
+<h3>Default branch name for new repos</h3>
+
+<pre>git config --global init.defaultBranch master   # or main</pre>
+
+<h3>Global gitignore</h3>
+
+<p>OS junk shouldn't sit in every project's <code>.gitignore</code>. Use a global one:</p>
+
+<pre>git config --global core.excludesFile ~/.gitignore_global</pre>
+
+<p>Then put <code>.DS_Store</code>, <code>Thumbs.db</code>, <code>.idea/</code>, <code>.vs/</code>, <code>*.user</code>, etc. in <code>~/.gitignore_global</code>.</p>
+
+<h3>Default editor &amp; merge tool</h3>
+
+<pre>git config --global core.editor    "code --wait"
+git config --global merge.tool     vscode
+git config --global mergetool.vscode.cmd 'code --wait $MERGED'</pre>
+
+<h3>Pull strategy</h3>
+
+<p>By default, <code>git pull</code> does fetch + merge. Pick an explicit policy so you're never surprised:</p>
+
+<pre>git config --global pull.ff only      # refuse pull if it would create a merge commit
+# or
+git config --global pull.rebase true  # always rebase your local on top of remote</pre>
+
+<div class="callout callout-rule">
+    <p><code>pull.ff = only</code> is the safest default for solo work — it forces you to think when histories have diverged.</p>
+</div>
+
+<h3>View &amp; edit config</h3>
+
+<pre>git config --list                    # everything
+git config --global --list           # only global
+git config --global --edit           # open the file directly</pre>
+
+<p>Configs are layered: <strong>system</strong> → <strong>global</strong> → <strong>local</strong> (per-repo). More specific wins.</p>
+
+<!-- ───────────────────────────────────────────────────────────────── -->
+<h2 id="daily-flow">3. The daily flow</h2>
+
+<div class="callout callout-tldr">
+    <p><code>status</code> → edit → <code>add</code> → <code>commit</code> → <code>push</code>. With <code>pull</code> somewhere before push.</p>
+</div>
+
+<h3>Check where you are</h3>
+
+<pre>git status                           # uncommitted changes + branch
+git status -sb                       # short, with branch line</pre>
+
+<p><code>status</code> is your most-used command. Run it often — Git's safety relies on you checking state before destructive operations.</p>
+
+<h3>See what changed</h3>
+
+<pre>git diff                             # unstaged changes (working vs index)
+git diff --staged                    # staged changes (index vs HEAD)
+git diff HEAD                        # all changes (working vs HEAD)
+git diff master..feature             # between two branches
+git diff master...feature            # commits unique to feature since branched off master
+git diff --stat                      # summary, not full content</pre>
+
+<div class="callout callout-warn">
+    <p><code>..</code> vs <code>...</code> is subtle but matters: <code>A..B</code> = "commits in B but not A." <code>A...B</code> in <code>diff</code> = "compare B to the merge-base of A and B" — i.e. only what B changed since branching off.</p>
+</div>
+
+<h3>Stage changes</h3>
+
+<pre>git add path/to/file.cs              # one file
+git add Services/                    # whole folder
+git add -p                           # interactive — pick chunks per file
+git add -u                           # all tracked files (modifications + deletions, NOT new files)
+git add -A                           # everything (modifications + deletions + new files)
+git add .                            # everything in current dir + below</pre>
+
+<p><code>-p</code> (patch mode) is the secret weapon — it lets you split one file's changes into multiple commits.</p>
+
+<h3>Commit</h3>
+
+<pre>git commit -m "feat: add foo"        # short message
+git commit                           # opens editor for full message
+git commit -a -m "..."               # auto-stage tracked files (skip git add)
+git commit --amend                   # rewrite the last commit (message or contents)
+git commit --amend --no-edit         # add staged changes to last commit, keep message</pre>
+
+<p><strong>Conventional Commits</strong> is the most common message style:</p>
+
+<pre>type(scope): short summary
+
+Optional longer body explaining the why.
+
+BREAKING CHANGE: ... (if applicable)</pre>
+
+<p>Common types: <code>feat</code>, <code>fix</code>, <code>refactor</code>, <code>docs</code>, <code>test</code>, <code>chore</code>, <code>perf</code>, <code>style</code>, <code>build</code>, <code>ci</code>.</p>
+
+<h3>Push &amp; pull</h3>
+
+<pre>git pull                             # fetch + merge/rebase from upstream
+git pull --ff-only                   # refuse if it would need a merge commit
+git push                             # send local commits to upstream
+git push -u origin feature/x         # first push of a new branch + set tracking
+git push origin --delete feature/x   # delete a remote branch</pre>
+
+<p>The <code>-u</code> flag tells Git "remember this local branch tracks this remote branch." After that, plain <code>git push</code> and <code>git pull</code> work without arguments.</p>
+
+<h3><code>.gitignore</code></h3>
+
+<p>Lives at repo root (or per-folder). Each line is a glob.</p>
+
+<pre># build outputs
+bin/
+obj/
+*.user
+
+# secrets
+appsettings.Development.json
+.env
+
+# IDE
+.vs/
+.idea/</pre>
+
+<div class="callout callout-warn">
+    <p>Already-committed files are <strong>not</strong> ignored retroactively. To stop tracking but keep on disk: <code>git rm --cached path/to/file</code> then commit.</p>
+</div>
+
+<!-- ───────────────────────────────────────────────────────────────── -->
+<h2 id="history">4. Inspecting history</h2>
+
+<div class="callout callout-tldr">
+    <p><code>git log --graph --oneline --all</code> is the universal "show me what's going on" command. Everything else is filtering.</p>
+</div>
+
+<h3>The base: <code>git log</code></h3>
+
+<pre>git log                              # full history, paged
+git log --oneline                    # one line per commit
+git log --graph --oneline --all      # ASCII graph of all branches
+git log -10                          # last 10 commits
+git log --since="2 weeks ago"
+git log --author="Luís"
+git log --grep="fix"                 # search commit messages
+git log -- path/to/file              # commits touching a file
+git log -p                           # show patches (full diffs) per commit
+git log -S"someText" -p              # commits where "someText" was added or removed (pickaxe)
+git log -G"regex" -p                 # commits whose diff matches the regex</pre>
+
+<h3>Show a single commit</h3>
+
+<pre>git show &lt;sha&gt;                       # message + full diff
+git show &lt;sha&gt; --stat                # message + file summary
+git show &lt;sha&gt;:path/to/file          # the file's contents at that commit</pre>
+
+<h3>Who wrote each line</h3>
+
+<pre>git blame path/to/file               # author + commit per line
+git blame -L 50,80 path/to/file      # lines 50-80 only
+git blame -w                         # ignore whitespace changes</pre>
+
+<h3><code>git reflog</code> — the time machine</h3>
+
+<div class="callout callout-safety">
+    <p><code>reflog</code> records every move HEAD makes — every commit, checkout, reset, merge. It's local-only and survives ~90 days. This is how you recover from "I think I lost a commit." Find the SHA in reflog, then <code>git reset --hard &lt;sha&gt;</code> or <code>git checkout -b recovered &lt;sha&gt;</code>.</p>
+</div>
+
+<pre>git reflog                           # everything HEAD did
+git reflog show feature/x            # for a specific ref</pre>
+
+<!-- ───────────────────────────────────────────────────────────────── -->
+<h2 id="branches">5. Branches</h2>
+
+<div class="callout callout-tldr">
+    <p>Branches are named pointers. Cheap to create, cheap to delete. Use the modern <code>switch</code> / <code>restore</code> instead of overloaded <code>checkout</code> where possible.</p>
+</div>
+
+<h3>List</h3>
+
+<pre>git branch                           # local
+git branch -r                        # remote-tracking
+git branch -a                        # both
+git branch -vv                       # show upstream tracking + last commit</pre>
+
+<h3>Create &amp; switch</h3>
+
+<p>Modern (Git 2.23+):</p>
+
+<pre>git switch master                    # switch to existing branch
+git switch -c feature/foo            # create + switch
+git switch -c feature/foo origin/x   # create from a remote branch</pre>
+
+<p>Legacy (still works, you'll see it everywhere):</p>
+
+<pre>git checkout master
+git checkout -b feature/foo</pre>
+
+<div class="callout callout-metaphor">
+    <p><code>switch</code> only handles branches — clearer mental model. <code>checkout</code> is overloaded with file-restore duties (use <code>restore</code> for files now).</p>
+</div>
+
+<h3>Rename</h3>
+
+<pre>git branch -m new-name               # rename current branch
+git branch -m old-name new-name      # rename another</pre>
+
+<p>If the old name is on the remote, push the new and delete the old:</p>
+
+<pre>git push origin -u new-name
+git push origin --delete old-name</pre>
+
+<h3>Delete</h3>
+
+<pre>git branch -d feature/x              # safe delete (refuses if unmerged)
+git branch -D feature/x              # force delete (loses unmerged commits)
+git push origin --delete feature/x   # delete remote branch</pre>
+
+<p>A "deleted" branch is just an unset pointer — the commits still exist for ~90 days and are recoverable via reflog.</p>
+
+<h3>Track an upstream</h3>
+
+<pre>git branch --set-upstream-to=origin/master master
+# or while pushing for the first time:
+git push -u origin feature/x</pre>
+
+<p>After tracking is set, <code>git status</code> tells you "ahead/behind by N commits" and <code>pull</code>/<code>push</code> work without arguments.</p>
+
+<!-- ───────────────────────────────────────────────────────────────── -->
+<h2 id="remotes">6. Remotes</h2>
+
+<div class="callout callout-tldr">
+    <p>A remote is a named URL pointing at another Git database. <code>origin</code> is just convention.</p>
+</div>
+
+<h3>Manage</h3>
+
+<pre>git remote -v                        # list, with URLs
+git remote add upstream &lt;url&gt;        # add another (e.g. for forks)
+git remote remove upstream
+git remote rename origin gh
+git remote set-url origin &lt;new-url&gt;  # change where origin points</pre>
+
+<h3>Sync</h3>
+
+<pre>git fetch                            # download commits into refs (origin/master etc), don't touch working dir
+git fetch --all                      # all remotes
+git fetch --prune                    # also delete local refs for branches deleted on remote
+git pull                             # fetch + merge (or rebase, depending on config)
+git push                             # send local commits to upstream
+git push --tags                      # also push annotated tags
+git push --force-with-lease          # safer --force; refuses if remote moved unexpectedly</pre>
+
+<div class="callout callout-rule">
+    <p>Never <code>git push --force</code> to shared branches. Use <code>--force-with-lease</code> if you must — it bails if someone else pushed since your last fetch.</p>
+</div>
+
+<h3>Inspect a remote</h3>
+
+<pre>git remote show origin               # branches, tracking info, default branch
+git ls-remote origin                 # raw list of all refs (branches + tags) on the remote
+git ls-remote --tags origin          # only tags
+git ls-remote --heads origin         # only branches
+git ls-remote origin v1.2.0          # check if a specific ref exists on origin</pre>
+
+<div class="callout callout-when">
+    <p>Quick verification after pushing a tag: <code>git ls-remote --tags origin</code> shows whether the tag actually landed. Unlike <code>git fetch</code> + <code>git tag -l</code>, this queries the remote live and doesn't touch your local refs.</p>
+</div>
+
+<!-- ───────────────────────────────────────────────────────────────── -->
+<h2 id="merging">7. Merging</h2>
+
+<div class="callout callout-tldr">
+    <p><code>git merge feature</code> brings <code>feature</code>'s commits into your current branch. Three flavours: fast-forward, merge commit, squash. See <a href="merge-walkthrough.html">merge-walkthrough.html</a> for a full step-by-step tutorial.</p>
+</div>
+
+<h3>Fast-forward (default when possible)</h3>
+
+<p>If your branch hasn't moved since <code>feature</code> branched off, Git just slides the pointer:</p>
+
+<pre><span class="branch-line">Before:</span>                  <span class="branch-line">After git merge feature:</span>
+  <span class="commit-hash">A─B─C</span> ← <span class="branch-line">master</span>           <span class="commit-hash">A─B─C─D─E</span> ← <span class="branch-line">master, feature</span>
+       \
+        <span class="commit-hash">D─E</span> ← <span class="branch-line">feature</span></pre>
+
+<p>No new commit. History is flat.</p>
+
+<pre>git merge feature                    # ff if possible, otherwise three-way merge
+git merge --ff-only feature          # only merge if ff is possible; fail otherwise</pre>
+
+<h3>Merge commit (forced, with <code>--no-ff</code>)</h3>
+
+<p>Creates a visible "bubble" in history showing the feature landed:</p>
+
+<pre><span class="commit-hash">A─B─C─────────M</span> ← <span class="branch-line">master</span>
+     \       /
+      <span class="commit-hash">D─E───</span>' ← <span class="branch-line">feature</span></pre>
+
+<pre>git merge --no-ff feature</pre>
+
+<p>Use this for feature branches when you want the bubble for clarity / easy revert.</p>
+
+<h3>Squash merge</h3>
+
+<p>Collapses the feature into a single new commit on master, with no merge bubble:</p>
+
+<pre>git merge --squash feature
+git commit -m "feat: add foo"</pre>
+
+<p>Good for small features with messy intermediate commits. Loses individual commit history.</p>
+
+<h3>Conflicts</h3>
+
+<p>When both branches edited the same lines, Git stops:</p>
+
+<pre><span class="marker">CONFLICT (content): Merge conflict in Services/Foo.cs</span></pre>
+
+<p>The file gets marker lines:</p>
+
+<pre><span class="marker">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</span>
+your version
+<span class="marker">=======</span>
+their version
+<span class="marker">&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature/x</span></pre>
+
+<p>To resolve:</p>
+
+<ol>
+    <li>Edit the file, choose what's correct, <strong>delete all marker lines</strong></li>
+    <li><code>git add path/to/file</code></li>
+    <li>Repeat for every conflicted file (find them with <code>git status</code>)</li>
+    <li><code>git commit</code> — Git pre-fills the merge message</li>
+</ol>
+
+<div class="callout callout-safety">
+    <p>Bail out: <code>git merge --abort</code>. Restores everything to pre-merge state. Nothing lost.</p>
+</div>
+
+<h3>Three-way merge — what's actually happening</h3>
+
+<p>When ff isn't possible, Git finds the <strong>merge base</strong> (most recent common ancestor) and does a three-way merge: it compares "their changes since base" vs "your changes since base" and combines them. Conflicts arise only when both modified the same region.</p>
+
+<!-- ───────────────────────────────────────────────────────────────── -->
+<h2 id="rebasing">8. Rebasing</h2>
+
+<div class="callout callout-tldr">
+    <p>Rebase replays your commits on top of a different base, rewriting history. Cleaner than merge for keeping branches up-to-date. <strong>Never rebase commits already pushed to a shared branch.</strong></p>
+</div>
+
+<h3>Basic: rebase your branch onto latest master</h3>
+
+<pre>git switch feature/x
+git fetch origin
+git rebase origin/master</pre>
+
+<p>What happens conceptually:</p>
+
+<pre><span class="branch-line">Before:</span>                  <span class="branch-line">After:</span>
+  <span class="commit-hash">A─B─C</span> ← <span class="branch-line">master</span>           <span class="commit-hash">A─B─C</span> ← <span class="branch-line">master</span>
+       \                        \
+        <span class="commit-hash">D─E</span> ← <span class="branch-line">feature</span>            <span class="commit-hash">D'─E'</span> ← <span class="branch-line">feature</span> (new commits, same content)</pre>
+
+<p><code>D'</code> and <code>E'</code> have new SHAs — Git replayed them on top of <code>C</code>. The original <code>D</code> and <code>E</code> are dangling and reachable only via reflog.</p>
+
+<h3>Interactive rebase — rewriting history</h3>
+
+<p>The most powerful Git command. Squash, reorder, edit, drop commits:</p>
+
+<pre>git rebase -i HEAD~5                 # last 5 commits
+git rebase -i origin/master          # everything since branched off</pre>
+
+<p>Editor opens with:</p>
+
+<pre>pick a1b2c3d feat: add login
+pick e4f5g6h fix: typo
+pick h7i8j9k fix: another typo
+pick l0m1n2o feat: add password reset</pre>
+
+<p>Change <code>pick</code> to:</p>
+
+<table>
+    <tr><th>Action</th><th>Effect</th></tr>
+    <tr><td><code>reword</code></td><td>Keep commit, change message</td></tr>
+    <tr><td><code>edit</code></td><td>Pause to amend it</td></tr>
+    <tr><td><code>squash</code> / <code>s</code></td><td>Fold into previous commit, combine messages</td></tr>
+    <tr><td><code>fixup</code> / <code>f</code></td><td>Fold into previous commit, drop this message</td></tr>
+    <tr><td><code>drop</code> / <code>d</code></td><td>Remove the commit</td></tr>
+    <tr><td>(reorder lines)</td><td>Reorder commits</td></tr>
+</table>
+
+<p>Save and close. Git replays. If conflicts arise, fix them, <code>git add</code>, then <code>git rebase --continue</code>. To bail: <code>git rebase --abort</code>.</p>
+
+<h3><code>--autosquash</code> workflow</h3>
+
+<p>You spotted a bug in commit <code>a1b2c3d</code>. Make the fix, then:</p>
+
+<pre>git commit --fixup=a1b2c3d
+git rebase -i --autosquash HEAD~10</pre>
+
+<p>Git pre-orders the editor with your fixup correctly placed. Saves typing.</p>
+
+<h3>The golden rule</h3>
+
+<div class="callout callout-rule">
+    <p>Never rebase commits that have been pushed to a branch other people use. Rebasing rewrites SHAs. If <code>feature/x</code> is shared and you rebase, your colleagues' clones diverge from yours and they'll have a bad time.</p>
+    <p><strong>Exception:</strong> rebasing your <em>own</em> PR branch to incorporate latest main is fine even if pushed — but you must <code>git push --force-with-lease</code> and warn anyone else who happens to have it checked out.</p>
+</div>
+
+<h3>Rebase vs merge — which to use</h3>
+
+<table>
+    <tr><th>Situation</th><th>Use</th></tr>
+    <tr><td>Updating a feature branch with latest master, before sharing</td><td>rebase</td></tr>
+    <tr><td>Merging a finished feature into master</td><td>merge (<code>--no-ff</code>)</td></tr>
+    <tr><td>Cleaning up your own messy commits before pushing</td><td>interactive rebase</td></tr>
+    <tr><td>Pulling shared updates on a branch where others also commit</td><td>merge (or <code>pull.rebase=true</code> carefully)</td></tr>
+</table>
+
+<!-- ───────────────────────────────────────────────────────────────── -->
+<h2 id="stashing">9. Stashing</h2>
+
+<div class="callout callout-tldr">
+    <p>Temporarily shelve uncommitted changes so you can switch contexts. Like a clipboard for working-tree state.</p>
+</div>
+
+<div class="callout callout-when">
+    <p>You need to switch branches but have uncommitted work. You started edits on the wrong branch. A <code>git pull</code> is blocked by your unstaged changes.</p>
+</div>
+
+<h3>Commands</h3>
+
+<pre>git stash                            # stash tracked, modified files
+git stash -u                         # ALSO stash untracked files
+git stash -a                         # stash everything including ignored
+git stash push -m "WIP: refactor X"  # named stash
+git stash push -p                    # interactive — pick chunks to stash
+git stash push -m "msg" -- file1 file2  # pathspec: stash ONLY these files, leave others in working tree
+
+git stash list                       # show all stashes
+git stash show stash@{0}             # summary of one
+git stash show -p stash@{0}          # full diff
+
+git stash pop                        # apply newest + remove from stash list
+git stash apply                      # apply newest, keep in stash list
+git stash apply stash@{2}            # specific stash
+git stash drop stash@{0}             # delete one
+git stash clear                      # delete ALL stashes (be careful)
+
+git stash branch new-branch stash@{0} # apply stash on a new branch from where it was created</pre>
+
+<div class="callout callout-warn">
+    <p>Stashes are <strong>local-only</strong> — they aren't pushed. Don't rely on stash for "remember to come back to this in a week." For long-lived work, commit to a WIP branch.</p>
+    <p>Pop applies the stash to your <em>current</em> branch, not back to the branch where it was created.</p>
+    <p>Conflict during <code>pop</code> means the stash isn't auto-deleted. Resolve, <code>git add</code>, then <code>git stash drop</code> manually.</p>
+</div>
+
+<!-- ───────────────────────────────────────────────────────────────── -->
+<h2 id="tags">10. Tags</h2>
+
+<div class="callout callout-tldr">
+    <p>Tags are immutable named pointers to commits. Use them for releases (<code>v1.2.0</code>) or as backup markers before risky operations.</p>
+</div>
+
+<h3>Two kinds</h3>
+
+<ul>
+    <li><strong>Lightweight</strong> — just a name pointing at a commit. No metadata.</li>
+    <li><strong>Annotated</strong> — full Git object with author, date, message, optional GPG signature. Use for releases.</li>
+</ul>
+
+<h3>Create</h3>
+
+<pre>git tag v1.2.0                       # lightweight at HEAD
+git tag -a v1.2.0 -m "Release 1.2.0" # annotated at HEAD
+git tag -a v1.2.0 abc1234            # annotated at a specific commit</pre>
+
+<h3>List, inspect, push</h3>
+
+<pre>git tag                              # list all
+git tag -l "v1.*"                    # filter
+git show v1.2.0                      # info about the tag
+
+git push origin v1.2.0               # push one
+git push origin --tags               # push all annotated tags
+git push --follow-tags               # push branch + tags reachable from it</pre>
+
+<h3>Delete</h3>
+
+<pre>git tag -d v1.2.0                    # local
+git push origin --delete v1.2.0      # remote</pre>
+
+<h3>Use case: backup before risky operation</h3>
+
+<div class="callout callout-safety">
+    <p>This is the trick used in <a href="merge-walkthrough.html">merge-walkthrough.html</a> step 3 — plant a tag before a merge / rebase / reset, so any mistake is one command to undo.</p>
+</div>
+
+<pre>git tag pre-rebase-backup
+git rebase -i HEAD~10
+# if it goes wrong:
+git reset --hard pre-rebase-backup
+git tag -d pre-rebase-backup</pre>
+
+<h3>Pre-merge safety recipe (solo-dev workflow)</h3>
+
+<p>The full sequence for merging a feature branch into master with a rollback anchor — convention used across HRModule:</p>
+
+<pre># 1. Anchor BEFORE the merge — the rollback point
+git tag pre-merge/2026-05-19-prj-0006-t-0016
+git tag --list "pre-merge/2026-05-19-prj-0006-t-0016"   # verify tag was created
+
+# 2. The merge itself, with --no-ff so the bubble stays visible in history
+git merge --no-ff feature/prj-0006-t-0016-myinfo \
+          -m "Merge: PRJ-0006-T-0016 - MyInfo personal section"
+
+git log --oneline --graph -10                            # verify graph shape
+
+# 3. Publish: master and tags need separate pushes (lightweight tags don't auto-follow)
+git push origin master
+git push origin pre-merge/2026-05-19-prj-0006-t-0016</pre>
+
+<div class="callout callout-safety">
+    <p>If the merge causes a problem you only notice later, <code>git reset --hard pre-merge/&lt;date&gt;-&lt;slug&gt;</code> rewinds master to its pre-merge state in one move. The tag is your rollback anchor.</p>
+</div>
+
+<div class="callout callout-warn">
+    <p>Lightweight tags (the form above) require explicit push by name. For one-shot <code>git push --follow-tags origin master</code> to also publish the tag, create it as annotated instead: <code>git tag -a pre-merge/&lt;date&gt;-&lt;slug&gt; -m "Anchor before merging &lt;slug&gt;"</code>. <code>--follow-tags</code> only follows annotated tags.</p>
+</div>
+
+<p>Tag naming convention: <code>pre-merge/&lt;YYYY-MM-DD&gt;-&lt;slug&gt;</code>. The <code>pre-merge/</code> namespace groups all safety anchors when listing tags; the date sorts naturally; the slug is a short URL-friendly identifier (ticket code like <code>prj-0006-t-0016</code> or a descriptive label like <code>role-service-cleanup</code>).</p>
+
+<!-- ───────────────────────────────────────────────────────────────── -->
+<h2 id="undoing">11. Undoing things — the survival guide</h2>
+
+<div class="callout callout-tldr">
+    <p>Almost everything is recoverable for ~90 days via reflog. Pick the right tool: <code>restore</code> for files, <code>reset</code> for branch pointer, <code>revert</code> for shared history, <code>reflog</code> for "I lost a commit."</p>
+</div>
+
+<h3>"I edited a file and want to throw away changes"</h3>
+
+<pre>git restore path/to/file             # discard unstaged changes
+git restore .                        # discard ALL unstaged changes (be careful)
+git checkout -- path/to/file         # legacy equivalent</pre>
+
+<h3>"I staged a file and want to unstage"</h3>
+
+<pre>git restore --staged path/to/file    # unstage but keep edits
+git reset HEAD path/to/file          # legacy equivalent</pre>
+
+<h3>"I want to fix the last commit"</h3>
+
+<pre>git add forgotten-file.cs
+git commit --amend                   # opens editor
+git commit --amend --no-edit         # keep message, just add the staged changes</pre>
+
+<div class="callout callout-rule">
+    <p>Don't amend a pushed commit on a shared branch — same rule as rebase. Amend rewrites the SHA.</p>
+</div>
+
+<h3>"I committed to the wrong branch"</h3>
+
+<pre>git switch correct-branch
+git cherry-pick wrong-branch          # bring the commit over
+git switch wrong-branch
+git reset --hard HEAD~1               # remove from wrong branch</pre>
+
+<h3>"I want to undo the last commit but keep changes"</h3>
+
+<pre>git reset --soft HEAD~1              # keep changes staged
+git reset HEAD~1                     # keep changes, unstaged (default --mixed)
+git reset --hard HEAD~1              # discard everything (dangerous)</pre>
+
+<table>
+    <tr><th>Mode</th><th>Working dir</th><th>Index</th><th>HEAD</th></tr>
+    <tr><td><code>--soft</code></td><td>unchanged</td><td>unchanged</td><td>moves</td></tr>
+    <tr><td><code>--mixed</code> (default)</td><td>unchanged</td><td>reset to HEAD</td><td>moves</td></tr>
+    <tr><td><code>--hard</code></td><td>reset to HEAD</td><td>reset to HEAD</td><td>moves</td></tr>
+</table>
+
+<h3>"I want to undo a commit that's already pushed"</h3>
+
+<p>Don't <code>reset --hard</code> and force-push to a shared branch — it breaks others' history.</p>
+
+<pre>git revert &lt;sha&gt;                     # creates a NEW commit that undoes &lt;sha&gt;
+git revert -m 1 &lt;merge-sha&gt;          # revert a merge commit (1 = mainline parent)
+git push                             # safe</pre>
+
+<h3>"I think I lost commits"</h3>
+
+<pre>git reflog
+# find the SHA you want
+git reset --hard &lt;sha&gt;
+# OR start a new branch at that point
+git switch -c recovered &lt;sha&gt;</pre>
+
+<div class="callout callout-safety">
+    <p>The reflog is your backup tape. As long as Git's garbage collector hasn't run (default: 90 days), commits are recoverable.</p>
+</div>
+
+<h3>"I want to bail on an in-progress operation"</h3>
+
+<pre>git merge --abort                    # cancel an in-progress merge
+git rebase --abort                   # cancel an in-progress rebase
+git cherry-pick --abort              # cancel cherry-pick with conflicts
+git revert --abort                   # cancel revert with conflicts</pre>
+
+<h3>"I deleted a branch — can I recover it?"</h3>
+
+<pre>git reflog                           # find the last commit on that branch
+git switch -c recovered-feature &lt;sha&gt;</pre>
+
+<!-- ───────────────────────────────────────────────────────────────── -->
+<h2 id="cherry-pick">12. Cherry-picking</h2>
+
+<div class="callout callout-tldr">
+    <p>Apply a single commit from one branch onto another. Useful for backporting fixes.</p>
+</div>
+
+<pre>git cherry-pick &lt;sha&gt;                # apply that commit on current branch
+git cherry-pick &lt;sha1&gt; &lt;sha2&gt;        # multiple, in order
+git cherry-pick A..B                 # range, exclusive of A
+git cherry-pick A^..B                # range, inclusive of A
+git cherry-pick -n &lt;sha&gt;             # apply but don't commit (stage only)</pre>
+
+<p>If conflicts arise: resolve, <code>git add</code>, <code>git cherry-pick --continue</code> (or <code>--abort</code>).</p>
+
+<div class="callout callout-warn">
+    <p>Cherry-picking creates a <strong>new commit with a new SHA</strong> but the same content/message. If you later merge the original branch in, Git is usually smart enough not to reapply (because the patch already matches), but you can occasionally get confused histories. Prefer rebase or merge for whole-branch operations.</p>
+</div>
+
+<!-- ───────────────────────────────────────────────────────────────── -->
+<h2 id="worktrees">13. Worktrees</h2>
+
+<div class="callout callout-tldr">
+    <p>One clone, multiple branches checked out into different folders simultaneously. Useful when you need to work on two branches without constantly switching.</p>
+</div>
+
+<h3>Create</h3>
+
+<pre>git worktree add ../sibling-folder feature/x
+git worktree add ../hotfix -b hotfix/urgent master   # new branch from master</pre>
+
+<p>This creates <code>../sibling-folder</code> containing <code>feature/x</code>'s files. The <code>.git/</code> data is shared with your main folder.</p>
+
+<h3>List &amp; remove</h3>
+
+<pre>git worktree list
+git worktree remove ../sibling-folder
+git worktree prune                   # clean up after manually deleted folders</pre>
+
+<h3>The rule</h3>
+
+<div class="callout callout-rule">
+    <p>Within one clone, the same branch can't be checked out in two worktrees. If <code>master</code> is in worktree A, trying <code>git switch master</code> in worktree B fails.</p>
+    <p>This is per-clone, not per-machine — two separate clones can both have master checked out independently. See <a href="merge-walkthrough.html">merge-walkthrough.html</a> § 4 for the full mental model.</p>
+</div>
+
+<!-- ───────────────────────────────────────────────────────────────── -->
+<h2 id="submodules">14. Submodules vs subtrees</h2>
+
+<div class="callout callout-tldr">
+    <p>Both let you embed one repo inside another. Submodules link by reference, subtrees copy in. Both are awkward; consider monorepos or package managers first.</p>
+</div>
+
+<h3>Submodules</h3>
+
+<p>A submodule is a pointer (commit SHA) into another repo. The parent records "this folder is a checkout of repo X at commit Y."</p>
+
+<pre>git submodule add &lt;url&gt; path/to/sub
+git submodule update --init --recursive   # after cloning a repo with submodules
+git submodule foreach 'git pull origin master'</pre>
+
+<div class="www">
+    <div class="www-card">
+        <h5>Pros</h5>
+        <p>Small parent repo, sub-repo stays independent.</p>
+    </div>
+    <div class="www-card">
+        <h5>Cons</h5>
+        <p>Complex workflows, easy to forget <code>--recursive</code>, two-step commits.</p>
+    </div>
+</div>
+
+<h3>Subtrees</h3>
+
+<p>A subtree merges another repo's history into a subdirectory of yours.</p>
+
+<pre>git subtree add --prefix=path/to/sub &lt;url&gt; master --squash
+git subtree pull --prefix=path/to/sub &lt;url&gt; master --squash
+git subtree push --prefix=path/to/sub &lt;url&gt; master</pre>
+
+<div class="www">
+    <div class="www-card">
+        <h5>Pros</h5>
+        <p>Consumers don't need to know it's a subtree, no <code>--init</code> step.</p>
+    </div>
+    <div class="www-card">
+        <h5>Cons</h5>
+        <p>Parent repo gets bigger, history can be confusing.</p>
+    </div>
+</div>
+
+<h3>When to use each</h3>
+
+<ul>
+    <li>Need to update the sub independently and pin specific versions in parent → <strong>submodule</strong>.</li>
+    <li>Want a copy that lives in your repo with no extra setup for cloners → <strong>subtree</strong>.</li>
+    <li>Have an actual problem package managers (npm, NuGet) can solve → <strong>use those instead</strong>.</li>
+</ul>
+
+<!-- ───────────────────────────────────────────────────────────────── -->
+<h2 id="repo-separation">15. Repo separation</h2>
+
+<div class="callout callout-tldr">
+    <p>See <a href="separating-repos.md">separating-repos.md</a>. Key trick: <code>git push &lt;remote&gt; &lt;sha&gt;:&lt;branch&gt; --force</code> rewrites a remote branch to a specific commit without touching your working tree.</p>
+</div>
+
+<p>For more advanced history surgery (extracting a subdirectory's history into its own repo), use <code>git filter-repo</code>:</p>
+
+<pre>git filter-repo --subdirectory-filter path/to/keep</pre>
+
+<p><code>git filter-repo</code> is the modern replacement for the deprecated <code>git filter-branch</code>. Install separately (<code>pip install git-filter-repo</code>).</p>
+
+<!-- ───────────────────────────────────────────────────────────────── -->
+<h2 id="hooks">16. Hooks</h2>
+
+<div class="callout callout-tldr">
+    <p>Scripts in <code>.git/hooks/</code> that Git runs at lifecycle points. Local-only by default unless you set up tooling.</p>
+</div>
+
+<h3>Common hooks</h3>
+
+<table>
+    <tr><th>Hook</th><th>When it runs</th><th>Common use</th></tr>
+    <tr><td><code>pre-commit</code></td><td>Before commit message editor</td><td>Run linter, formatter, fast tests</td></tr>
+    <tr><td><code>commit-msg</code></td><td>After message is written</td><td>Validate Conventional Commits format</td></tr>
+    <tr><td><code>pre-push</code></td><td>Before push to remote</td><td>Run full test suite</td></tr>
+    <tr><td><code>post-merge</code></td><td>After merge completes</td><td>Reinstall deps if <code>package.json</code> changed</td></tr>
+    <tr><td><code>prepare-commit-msg</code></td><td>Before message editor opens</td><td>Pre-fill template (e.g. issue number from branch name)</td></tr>
+</table>
+
+<h3>Anatomy</h3>
+
+<p>Hooks are executable scripts. Example <code>.git/hooks/pre-commit</code>:</p>
+
+<pre>#!/usr/bin/env bash
+dotnet format --verify-no-changes || {
+    echo "Formatting issues — run 'dotnet format' and re-commit."
+    exit 1
+}</pre>
+
+<p>Make executable: <code>chmod +x .git/hooks/pre-commit</code>.</p>
+
+<h3>Sharing hooks across the team</h3>
+
+<p><code>.git/hooks/</code> isn't committed (it's inside <code>.git/</code>). Share via:</p>
+
+<ol>
+    <li>Commit a <code>hooks/</code> folder, then <code>git config core.hooksPath hooks</code> per clone.</li>
+    <li>Use a tool: <strong>Husky</strong> (Node), <strong>pre-commit</strong> (Python), <strong>lefthook</strong>, <strong>CaptainHook</strong> (PHP).</li>
+</ol>
+
+<h3>Skip a hook</h3>
+
+<pre>git commit --no-verify               # skip pre-commit + commit-msg
+git push --no-verify                 # skip pre-push</pre>
+
+<div class="callout callout-warn">
+    <p>Don't make this a habit. Hooks are there for a reason. Skipping with <code>--no-verify</code> is for genuine emergencies, not "tests are slow today."</p>
+</div>
+
+<!-- ───────────────────────────────────────────────────────────────── -->
+<h2 id="search">17. Searching the repo</h2>
+
+<div class="callout callout-tldr">
+    <p><code>git grep</code> for current code. <code>git log -S</code> / <code>-G</code> for "when was this string added or removed?"</p>
+</div>
+
+<pre>git grep "pattern"                   # search tracked files in working tree
+git grep "pattern" master            # at a specific ref
+git grep -n "pattern"                # with line numbers
+git grep -i "pattern"                # case insensitive
+git grep -l "pattern"                # files only
+
+git log -S"InitializeForCompany"     # commits where this exact string was added/removed
+git log -G"async\s+Task"             # regex pickaxe — diff matches regex
+git log -p -S"foo" -- path/to/file   # full diffs, scoped to a file</pre>
+
+<p><code>git grep</code> is significantly faster than regular <code>grep -r</code> because it skips ignored files and uses Git's index.</p>
+
+<!-- ───────────────────────────────────────────────────────────────── -->
+<h2 id="bisect">18. Bisect — finding the bug commit</h2>
+
+<div class="callout callout-tldr">
+    <p>Binary search through history to find which commit introduced a bug. With ~1000 commits, you find the culprit in ~10 steps.</p>
+</div>
+
+<pre>git bisect start
+git bisect bad                       # current commit is broken
+git bisect good v1.0.0               # this old commit was working
+# Git checks out the midpoint commit
+# Test it; mark good or bad:
+git bisect good                      # or 'bad'
+# Git checks out next midpoint
+# Repeat until Git names the culprit
+git bisect reset                     # exit bisect mode</pre>
+
+<h3>Automated bisect</h3>
+
+<p>If you have a script that exits 0 for "good" and non-zero for "bad":</p>
+
+<pre>git bisect start HEAD v1.0.0
+git bisect run ./test-script.sh</pre>
+
+<p>Git runs the script automatically at each midpoint. You walk away, come back to the answer.</p>
+
+<!-- ───────────────────────────────────────────────────────────────── -->
+<h2 id="lfs">19. Git LFS</h2>
+
+<div class="callout callout-tldr">
+    <p>Large File Storage. Git's a poor fit for binary files &gt;50MB; LFS replaces them with text pointers and stores blobs separately.</p>
+</div>
+
+<pre>git lfs install                      # one-time per user
+git lfs track "*.psd"                # tell LFS to manage these
+git add .gitattributes               # LFS rules live here
+git add design.psd
+git commit -m "Add design"
+git push                             # LFS uploads to LFS server</pre>
+
+<h3>When to use</h3>
+
+<ul>
+    <li>Photoshop / Illustrator files</li>
+    <li>Video / audio</li>
+    <li>Large datasets</li>
+    <li>Compiled binaries you must version (try to avoid this)</li>
+</ul>
+
+<h3>When NOT to use</h3>
+
+<ul>
+    <li>Code / text — Git handles these efficiently natively.</li>
+    <li>Anything you can regenerate (build outputs, generated docs).</li>
+</ul>
+
+<div class="callout callout-warn">
+    <p>LFS storage is usually billed separately by GitHub/GitLab. <code>git clone</code> of an LFS repo without LFS installed gets pointer files, not real data. Some platforms (BitBucket Cloud) have surprising LFS quotas.</p>
+</div>
+
+<!-- ───────────────────────────────────────────────────────────────── -->
+<h2 id="aliases">20. Aliases worth setting</h2>
+
+<pre>git config --global alias.s   "status -sb"
+git config --global alias.lg  "log --graph --oneline --decorate --all"
+git config --global alias.last "log -1 HEAD --stat"
+git config --global alias.unstage "reset HEAD --"
+git config --global alias.amend "commit --amend --no-edit"
+git config --global alias.aa  "add --all"
+git config --global alias.cm  "commit -m"
+git config --global alias.co  "checkout"
+git config --global alias.br  "branch"
+git config --global alias.dc  "diff --cached"
+git config --global alias.wip "!git add -A &amp;&amp; git commit -m 'WIP'"
+git config --global alias.undo "reset --soft HEAD~1"</pre>
+
+<p>After this, <code>git lg</code> shows a beautiful graph, <code>git s</code> is short status, <code>git undo</code> rolls back the last commit safely.</p>
+
+<!-- ───────────────────────────────────────────────────────────────── -->
+<h2 id="cheatsheet">21. Cheat sheet — top commands</h2>
+
+<h3>Setup</h3>
+<table>
+    <tr><th>Goal</th><th>Command</th></tr>
+    <tr><td>Set identity</td><td><code>git config --global user.name "..."</code> / <code>user.email "..."</code></td></tr>
+    <tr><td>Init repo</td><td><code>git init</code></td></tr>
+    <tr><td>Clone</td><td><code>git clone &lt;url&gt;</code></td></tr>
+</table>
+
+<h3>Daily flow</h3>
+<table>
+    <tr><th>Goal</th><th>Command</th></tr>
+    <tr><td>Status</td><td><code>git status</code></td></tr>
+    <tr><td>Diff (unstaged)</td><td><code>git diff</code></td></tr>
+    <tr><td>Diff (staged)</td><td><code>git diff --staged</code></td></tr>
+    <tr><td>Stage</td><td><code>git add &lt;path&gt;</code> / <code>git add -p</code></td></tr>
+    <tr><td>Commit</td><td><code>git commit -m "..."</code></td></tr>
+    <tr><td>Amend last commit</td><td><code>git commit --amend</code></td></tr>
+    <tr><td>Pull</td><td><code>git pull --ff-only</code></td></tr>
+    <tr><td>Push</td><td><code>git push</code> / <code>git push -u origin &lt;branch&gt;</code></td></tr>
+</table>
+
+<h3>History</h3>
+<table>
+    <tr><th>Goal</th><th>Command</th></tr>
+    <tr><td>Compact log</td><td><code>git log --oneline -20</code></td></tr>
+    <tr><td>Graph</td><td><code>git log --graph --oneline --all</code></td></tr>
+    <tr><td>Show commit</td><td><code>git show &lt;sha&gt;</code></td></tr>
+    <tr><td>Who wrote each line</td><td><code>git blame &lt;file&gt;</code></td></tr>
+    <tr><td>Time machine</td><td><code>git reflog</code></td></tr>
+</table>
+
+<h3>Branches</h3>
+<table>
+    <tr><th>Goal</th><th>Command</th></tr>
+    <tr><td>List</td><td><code>git branch -vv</code></td></tr>
+    <tr><td>Create + switch</td><td><code>git switch -c &lt;name&gt;</code></td></tr>
+    <tr><td>Switch</td><td><code>git switch &lt;name&gt;</code></td></tr>
+    <tr><td>Rename</td><td><code>git branch -m &lt;new&gt;</code></td></tr>
+    <tr><td>Delete (safe)</td><td><code>git branch -d &lt;name&gt;</code></td></tr>
+    <tr><td>Delete remote</td><td><code>git push origin --delete &lt;name&gt;</code></td></tr>
+</table>
+
+<h3>Merge &amp; rebase</h3>
+<table>
+    <tr><th>Goal</th><th>Command</th></tr>
+    <tr><td>Merge with bubble</td><td><code>git merge --no-ff &lt;branch&gt;</code></td></tr>
+    <tr><td>Squash merge</td><td><code>git merge --squash &lt;branch&gt;</code></td></tr>
+    <tr><td>Abort merge</td><td><code>git merge --abort</code></td></tr>
+    <tr><td>Rebase onto master</td><td><code>git rebase origin/master</code></td></tr>
+    <tr><td>Interactive rebase</td><td><code>git rebase -i HEAD~5</code></td></tr>
+    <tr><td>Continue after conflict</td><td><code>git rebase --continue</code></td></tr>
+    <tr><td>Bail</td><td><code>git rebase --abort</code></td></tr>
+</table>
+
+<h3>Undo</h3>
+<table>
+    <tr><th>Goal</th><th>Command</th></tr>
+    <tr><td>Discard file edits</td><td><code>git restore &lt;file&gt;</code></td></tr>
+    <tr><td>Unstage file</td><td><code>git restore --staged &lt;file&gt;</code></td></tr>
+    <tr><td>Undo last commit (keep changes)</td><td><code>git reset --soft HEAD~1</code></td></tr>
+    <tr><td>Undo last commit (discard)</td><td><code>git reset --hard HEAD~1</code></td></tr>
+    <tr><td>Undo pushed commit</td><td><code>git revert &lt;sha&gt;</code></td></tr>
+    <tr><td>Recover lost commit</td><td><code>git reflog</code> → <code>git reset --hard &lt;sha&gt;</code></td></tr>
+</table>
+
+<h3>Stash &amp; tag</h3>
+<table>
+    <tr><th>Goal</th><th>Command</th></tr>
+    <tr><td>Stash everything (incl. untracked)</td><td><code>git stash -u</code></td></tr>
+    <tr><td>List stashes</td><td><code>git stash list</code></td></tr>
+    <tr><td>Apply newest, remove</td><td><code>git stash pop</code></td></tr>
+    <tr><td>Annotated tag</td><td><code>git tag -a v1.0.0 -m "..."</code></td></tr>
+    <tr><td>Push tags</td><td><code>git push --tags</code></td></tr>
+</table>
+
+<h3>Remote</h3>
+<table>
+    <tr><th>Goal</th><th>Command</th></tr>
+    <tr><td>List</td><td><code>git remote -v</code></td></tr>
+    <tr><td>Change URL</td><td><code>git remote set-url origin &lt;url&gt;</code></td></tr>
+    <tr><td>Fetch + prune</td><td><code>git fetch --prune</code></td></tr>
+    <tr><td>Push (safe force)</td><td><code>git push --force-with-lease</code></td></tr>
+</table>
+
+<h3>Misc power tools</h3>
+<table>
+    <tr><th>Goal</th><th>Command</th></tr>
+    <tr><td>Search code</td><td><code>git grep "pattern"</code></td></tr>
+    <tr><td>Find when string was added</td><td><code>git log -S"text" -p</code></td></tr>
+    <tr><td>Bisect</td><td><code>git bisect start</code> / <code>bad</code> / <code>good</code></td></tr>
+    <tr><td>Worktree add</td><td><code>git worktree add ../folder &lt;branch&gt;</code></td></tr>
+    <tr><td>Cherry-pick</td><td><code>git cherry-pick &lt;sha&gt;</code></td></tr>
+</table>
+
+<!-- ───────────────────────────────────────────────────────────────── -->
+<h2 id="shell-env">22. Shell environment notes (Windows)</h2>
+
+<div class="callout callout-tldr">
+    <p>Git commands look identical across shells, but anything you <em>pipe through</em> or <em>continue across lines</em> turns shell-specific fast. Know which shell your prompt belongs to.</p>
+</div>
+
+<h3>Which shell am I in?</h3>
+
+<table>
+    <tr><th>Prompt looks like</th><th>Shell</th></tr>
+    <tr><td><code>PS C:\path&gt;</code></td><td>PowerShell (Windows-native)</td></tr>
+    <tr><td><code>C:\path&gt;</code></td><td>cmd.exe (legacy)</td></tr>
+    <tr><td><code>user@host:/path$</code></td><td>Bash (WSL or Git Bash)</td></tr>
+    <tr><td><code>user@host MINGW64 /path$</code></td><td>Git Bash specifically</td></tr>
+</table>
+
+<h3>Line continuation across shells</h3>
+
+<p>Same git command, three different line-continuation characters:</p>
+
+<table>
+    <tr><th>Shell</th><th>Continuation char</th></tr>
+    <tr><td>Bash, Git Bash, WSL</td><td>Backslash <code>\</code> at end of line</td></tr>
+    <tr><td>PowerShell</td><td>Backtick <code>`</code> at end of line</td></tr>
+    <tr><td>cmd.exe</td><td>Caret <code>^</code> at end of line</td></tr>
+</table>
+
+<p>Bash form:</p>
+
+<pre>git merge --no-ff feature/x \
+          -m "Merge feature/x"</pre>
+
+<p>PowerShell form:</p>
+
+<pre>git merge --no-ff feature/x `
+          -m "Merge feature/x"</pre>
+
+<div class="callout callout-warn">
+    <p>Two strict rules for any line-continuation: (1) <strong>a space before</strong> the continuation char, and (2) <strong>nothing after it</strong> on that line — not even trailing whitespace. Either is silent: the command appears to run but doesn't do what you wrote.</p>
+</div>
+
+<h3>Filtering output — <code>grep</code> equivalents</h3>
+
+<p><code>grep</code> is a Unix tool. Not present in PowerShell or cmd. Same operation, four ways depending on where you're running:</p>
+
+<table>
+    <tr><th>Shell</th><th>Command</th></tr>
+    <tr><td>Bash / Git Bash / WSL</td><td><code>git ls-remote --tags origin | grep pre-merge</code></td></tr>
+    <tr><td>PowerShell</td><td><code>git ls-remote --tags origin | Select-String pre-merge</code></td></tr>
+    <tr><td>cmd.exe</td><td><code>git ls-remote --tags origin | findstr pre-merge</code></td></tr>
+    <tr><td>From PowerShell, calling WSL</td><td><code>git ls-remote --tags origin | wsl grep pre-merge</code></td></tr>
+</table>
+
+<h3>WSL — installed vs active</h3>
+
+<div class="callout callout-warn">
+    <p>Having WSL <em>installed</em> doesn't mean your current shell uses it. Linux tools (<code>grep</code>, <code>sed</code>, <code>awk</code>, <code>jq</code>, etc.) only work either when you're <strong>inside</strong> a WSL session (prompt switched to Bash) or when you pipe through <code>| wsl &lt;tool&gt;</code> explicitly from PowerShell/cmd.</p>
+</div>
+
+<p>To drop into WSL from PowerShell:</p>
+
+<pre>wsl                                  # opens a WSL Bash session
+# ... do Bash-y things ...
+exit                                 # back to your original shell</pre>
+
+<h3>The two-shell strategy</h3>
+
+<p>For Windows + Git workflows: use <strong>PowerShell</strong> for everyday Git (it handles paths, tab completion, and Windows-native tooling fine) and drop into <strong>WSL or Git Bash</strong> only when you need Unix tools (<code>grep</code>, complex pipes, shell scripts). Don't try to bend PowerShell into Bash syntax — pick the right shell per task.</p>
+
+<!-- ───────────────────────────────────────────────────────────────── -->
+<h2 id="errors">23. Common errors &amp; what they mean</h2>
+
+<h3><code>fatal: refusing to merge unrelated histories</code></h3>
+<p>You're trying to merge two histories with no common ancestor. Usually means you cloned wrong, or you initialized a repo locally and then <code>git pull</code>'d a remote that already had commits. Fix:</p>
+<pre>git pull origin master --allow-unrelated-histories</pre>
+<p>Then resolve any conflicts. Verify the result is what you wanted before pushing.</p>
+
+<h3><code>error: failed to push some refs</code></h3>
+<p>The remote has commits you don't have locally. Don't <code>--force</code>. Pull, integrate, then push:</p>
+<pre>git pull --rebase origin master
+git push</pre>
+
+<h3><code>Your branch is ahead of 'origin/master' by N commits</code></h3>
+<p>Just informational. You have local commits not pushed yet. <code>git push</code> to send them.</p>
+
+<h3><code>Your branch is behind 'origin/master' by N commits, and can be fast-forwarded</code></h3>
+<p>The remote has commits you don't have. <code>git pull</code> (or <code>git merge --ff-only origin/master</code>).</p>
+
+<h3><code>Your branch and 'origin/master' have diverged</code></h3>
+<p>Both you and the remote have new commits. You need to merge or rebase. Check the picture: <code>git log --graph --oneline HEAD origin/master</code>.</p>
+
+<h3><code>fatal: '&lt;branch&gt;' is already checked out at '&lt;path&gt;'</code></h3>
+<p>Worktree rule: that branch is already in another worktree off the same clone. Either switch the other worktree to a different branch, or do your work in that other folder.</p>
+
+<h3><code>error: Your local changes to the following files would be overwritten by checkout</code></h3>
+<p>You have uncommitted edits to files that differ between branches. Commit, stash, or discard:</p>
+<pre>git stash
+git switch other-branch
+git stash pop</pre>
+
+<h3><code>CONFLICT (content): Merge conflict in &lt;file&gt;</code></h3>
+<p>See § 7 — edit the file, remove markers, <code>git add</code>, <code>git commit</code>.</p>
+
+<h3><code>detached HEAD</code></h3>
+<p>You checked out a commit directly instead of a branch. Anything you commit here is reachable only by SHA — easy to lose. Either:</p>
+<pre>git switch -c new-branch    # save your work to a real branch
+# or
+git switch master            # commits made on detached HEAD are now reachable only via reflog</pre>
+
+<h3><code>fatal: Authentication failed</code></h3>
+<p>Credentials wrong. On Windows, Git uses Credential Manager — open it from Control Panel and remove stale entries, then retry. For HTTPS GitHub, your password isn't your password — it's a Personal Access Token from Settings → Developer settings → Tokens.</p>
+
+<h3><code>error: cannot lock ref ...</code></h3>
+<p>Another git process is running, or <code>.git/index.lock</code> is stale. If no other git is running:</p>
+<pre>rm .git/index.lock</pre>
+
+<div class="footer">
+    <p>Git Comprehensive Handbook · last revised 2026-05-19 · companion to <a href="merge-walkthrough.html">merge-walkthrough.html</a> &amp; <a href="separating-repos.md">separating-repos.md</a></p>
+</div>
+
+</main>
+
+</div>
+
+<script>
+// Active TOC item on scroll
+(function() {
+    const tocLinks = document.querySelectorAll('.toc-sidebar a');
+    if (!tocLinks.length) return;
+    const headings = Array.from(document.querySelectorAll('h2[id]'));
+    if (!headings.length) return;
+    function setActive(id) {
+        tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+    }
+    let lastVisible = headings[0].id;
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(e => { if (e.isIntersecting) lastVisible = e.target.id; });
+        setActive(lastVisible);
+    }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+    headings.forEach(h => observer.observe(h));
+    setActive(headings[0].id);
+})();
+</script>
+
+</body>
+</html>

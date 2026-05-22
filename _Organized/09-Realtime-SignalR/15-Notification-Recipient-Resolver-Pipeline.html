@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>15-Notification-Recipient-Resolver-Pipeline</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 09-Realtime-SignalR</div>
+  <h1>15-Notification-Recipient-Resolver-Pipeline</h1>
+  <div class="meta">Source: <code>Education/15-Notification-Recipient-Resolver-Pipeline.md</code> &middot; <a href="15-Notification-Recipient-Resolver-Pipeline.md">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<h1 id="notification-recipient-resolver-pipeline">Notification Recipient Resolver Pipeline</h1>
+<h2 id="overview">Overview</h2>
+<p>The Notification Recipient Resolver Pipeline is an <strong>OCP-compliant</strong> (Open/Closed Principle) system for determining who should receive notifications when events occur in the HR system. Instead of hardcoding recipient logic, it uses a <strong>strategy pipeline</strong> pattern that allows adding new recipient types without modifying existing code.</p>
+<h2 id="architecture">Architecture</h2>
+<div class="diagram-box"><pre>┌─────────────────────────────────────────────────────────────────┐
+│                    NotificationRecipientService                  │
+│                         (Orchestrator)                           │
+├─────────────────────────────────────────────────────────────────┤
+│  Executes resolvers in order, collects unique recipient IDs     │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+           ┌───────────────┼───────────────┐
+           │               │               │
+           ▼               ▼               ▼
+    ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
+    │  Manager    │ │  HR Admin   │ │   Future    │
+    │  Resolver   │ │  Resolver   │ │  Resolver   │
+    │  Order: 10  │ │  Order: 20  │ │  Order: 30  │
+    └─────────────┘ └─────────────┘ └─────────────┘</pre></div>
+<h2 id="key-components">Key Components</h2>
+<h3 id="1-context-record">1. Context Record</h3>
+<pre><code class="lang-csharp"><span class="cmt">// Services/Notifications/Resolvers/INotificationRecipientResolver.cs</span>
+
+<span class="kw">public</span> <span class="kw">record</span> <span class="type">NotificationRecipientContext</span>(
+    <span class="kw">int</span> <span class="type">EmployeeId</span>,           <span class="cmt">// Employee whose action triggered notification</span>
+    <span class="kw">string</span> <span class="type">CompanyDatabase</span>,   <span class="cmt">// Company context for data resolution</span>
+    <span class="kw">int</span>? <span class="type">ExcludeUserId</span> = <span class="kw">null</span> <span class="cmt">// User to exclude (usually the action initiator)</span>
+);</code></pre>
+<h3 id="2-resolver-interface">2. Resolver Interface</h3>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">interface</span> <span class="type">INotificationRecipientResolver</span>
+{
+    <span class="cmt">/// &lt;summary&gt;</span>
+    <span class="cmt">/// Order in which this resolver executes (lower = earlier)</span>
+    <span class="cmt">/// &lt;/summary&gt;</span>
+    <span class="kw">int</span> <span class="type">Order</span> { <span class="kw">get</span>; }
+
+    <span class="cmt">/// &lt;summary&gt;</span>
+    <span class="cmt">/// Resolves user IDs that should receive notifications</span>
+    <span class="cmt">/// &lt;/summary&gt;</span>
+    <span class="type">Task</span>&lt;<span class="type">IEnumerable</span>&lt;<span class="kw">int</span>&gt;&gt; <span class="type">GetRecipientUserIdsAsync</span>(<span class="type">NotificationRecipientContext</span> context);
+}</code></pre>
+<h3 id="3-orchestrator-service">3. Orchestrator Service</h3>
+<pre><code class="lang-csharp"><span class="cmt">// Services/Notifications/Resolvers/NotificationRecipientService.cs</span>
+
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">NotificationRecipientService</span> : <span class="type">INotificationRecipientService</span>
+{
+    <span class="kw">private</span> <span class="kw">readonly</span> <span class="type">IEnumerable</span>&lt;<span class="type">INotificationRecipientResolver</span>&gt; _resolvers;
+
+    <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="type">IReadOnlyList</span>&lt;<span class="kw">int</span>&gt;&gt; <span class="type">GetRecipientsAsync</span>(<span class="type">NotificationRecipientContext</span> context)
+    {
+        <span class="kw">var</span> recipientIds = <span class="kw">new</span> <span class="type">HashSet</span>&lt;<span class="kw">int</span>&gt;();
+
+        <span class="cmt">// Execute resolvers in order</span>
+        <span class="kw">foreach</span> (<span class="kw">var</span> resolver <span class="kw">in</span> _resolvers.<span class="type">OrderBy</span>(r =&gt; r.<span class="type">Order</span>))
+        {
+            <span class="kw">var</span> ids = <span class="kw">await</span> resolver.<span class="type">GetRecipientUserIdsAsync</span>(context);
+
+            <span class="kw">foreach</span> (<span class="kw">var</span> id <span class="kw">in</span> ids)
+            {
+                <span class="kw">if</span> (id != context.<span class="type">ExcludeUserId</span>)
+                {
+                    recipientIds.<span class="type">Add</span>(id);  <span class="cmt">// HashSet ensures uniqueness</span>
+                }
+            }
+        }
+
+        <span class="kw">return</span> recipientIds.<span class="type">ToList</span>();
+    }
+}</code></pre>
+<h2 id="current-resolvers">Current Resolvers</h2>
+<h3 id="managerrecipientresolver-order-10">ManagerRecipientResolver (Order: 10)</h3>
+<p>Resolves the employee&#x27;s direct manager via the <code class="il">ReportToUser</code> or <code class="il">Reportto</code> field.</p>
+<p><strong>Resolution path:</strong></p>
+<ol>
+<li>Find <code class="il">UserEmployeeLinkage</code> for the employee</li>
+<li>Get the linked user&#x27;s <code class="il">ReportToUser</code> (or fallback to <code class="il">Reportto</code>)</li>
+<li>Return that manager&#x27;s user ID</li>
+</ol>
+<pre><code class="lang-csharp"><span class="cmt">// Order 10: Manager is resolved first (most direct supervisor)</span>
+<span class="kw">public</span> <span class="kw">int</span> <span class="type">Order</span> =&gt; <span class="num">10</span>;
+
+<span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="type">IEnumerable</span>&lt;<span class="kw">int</span>&gt;&gt; <span class="type">GetRecipientUserIdsAsync</span>(<span class="type">NotificationRecipientContext</span> context)
+{
+    <span class="cmt">// 1. Find user linked to employee</span>
+    <span class="kw">var</span> linkage = <span class="kw">await</span> baseContext.<span class="type">Set</span>&lt;<span class="type">UserEmployeeLinkage</span>&gt;()
+        .<span class="type">FirstOrDefaultAsync</span>(l =&gt; l.<span class="type">EmployeeId</span> == context.<span class="type">EmployeeId</span> &amp;&amp; ...);
+
+    <span class="cmt">// 2. Get manager from user&#x27;s ReportToUser field</span>
+    <span class="kw">var</span> employeeUser = <span class="kw">await</span> baseContext.<span class="type">CrmUtilizadors</span>
+        .<span class="type">FirstOrDefaultAsync</span>(u =&gt; u.<span class="type">Id</span> == linkage.<span class="type">UserId</span>);
+
+    <span class="kw">var</span> managerId = employeeUser?.<span class="type">ReportToUser</span> ?? employeeUser?.<span class="type">Reportto</span>;
+
+    <span class="cmt">// 3. Return manager ID if found and not excluded</span>
+    <span class="kw">if</span> (managerId.<span class="type">HasValue</span> &amp;&amp; managerId.<span class="type">Value</span> != context.<span class="type">ExcludeUserId</span>)
+        recipients.<span class="type">Add</span>(managerId.<span class="type">Value</span>);
+
+    <span class="kw">return</span> recipients;
+}</code></pre>
+<h3 id="hradminrecipientresolver-order-20">HRAdminRecipientResolver (Order: 20)</h3>
+<p>Resolves all HR administrators (users with system role level &gt;= 50).</p>
+<pre><code class="lang-csharp"><span class="cmt">// Order 20: HR Admins are resolved after manager</span>
+<span class="kw">public</span> <span class="kw">int</span> <span class="type">Order</span> =&gt; <span class="num">20</span>;
+
+<span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="type">IEnumerable</span>&lt;<span class="kw">int</span>&gt;&gt; <span class="type">GetRecipientUserIdsAsync</span>(<span class="type">NotificationRecipientContext</span> context)
+{
+    <span class="cmt">// Uses INotificationService.GetAdminUserIdsAsync()</span>
+    <span class="cmt">// Returns users with UserSystemRole.RoleLevel &gt;= 50</span>
+    <span class="kw">var</span> adminIds = <span class="kw">await</span> _notificationService.<span class="type">GetAdminUserIdsAsync</span>();
+
+    <span class="kw">return</span> adminIds.<span class="type">Where</span>(id =&gt; id != context.<span class="type">ExcludeUserId</span>);
+}</code></pre>
+<h2 id="di-registration">DI Registration</h2>
+<pre><code class="lang-csharp"><span class="cmt">// Program.cs</span>
+
+<span class="cmt">// Notification recipient resolvers (SOLID: OCP-compliant pipeline)</span>
+builder.<span class="type">Services</span>.<span class="type">AddTransient</span>&lt;<span class="type">INotificationRecipientResolver</span>, <span class="type">ManagerRecipientResolver</span>&gt;();
+builder.<span class="type">Services</span>.<span class="type">AddTransient</span>&lt;<span class="type">INotificationRecipientResolver</span>, <span class="type">HRAdminRecipientResolver</span>&gt;();
+builder.<span class="type">Services</span>.<span class="type">AddScoped</span>&lt;<span class="type">INotificationRecipientService</span>, <span class="type">NotificationRecipientService</span>&gt;();</code></pre>
+<h2 id="usage-example">Usage Example</h2>
+<h3 id="in-notificationschedulerservice-background-service">In NotificationSchedulerService (Background Service)</h3>
+<pre><code class="lang-csharp"><span class="cmt">// Get recipients using the shared resolver pipeline</span>
+<span class="kw">var</span> context = <span class="kw">new</span> <span class="type">NotificationRecipientContext</span>(employee.<span class="type">Id</span>, company.<span class="type">Database</span>);
+<span class="kw">var</span> recipients = <span class="kw">await</span> recipientService.<span class="type">GetRecipientsAsync</span>(context);
+
+<span class="kw">if</span> (!recipients.<span class="type">Any</span>()) <span class="kw">continue</span>;
+
+<span class="cmt">// Send notification to all resolved recipients</span>
+<span class="kw">foreach</span> (<span class="kw">var</span> recipientId <span class="kw">in</span> recipients)
+{
+    <span class="kw">await</span> notificationService.<span class="type">SendNotificationToUserAsync</span>(recipientId, notification);
+}</code></pre>
+<h3 id="in-attendancenotificationservice">In AttendanceNotificationService</h3>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">NotifyValidatorsAsync</span>(<span class="type">Attendance</span> attendance, <span class="kw">string</span> companyDatabase, <span class="kw">int</span>? fromUserId)
+{
+    <span class="kw">var</span> context = <span class="kw">new</span> <span class="type">NotificationRecipientContext</span>(
+        attendance.<span class="type">EmployeeId</span>,
+        companyDatabase,
+        fromUserId  <span class="cmt">// Exclude the person who triggered the action</span>
+    );
+
+    <span class="kw">var</span> recipients = <span class="kw">await</span> _recipientService.<span class="type">GetRecipientsAsync</span>(context);
+
+    <span class="kw">var</span> notification = <span class="kw">new</span> <span class="type">CreateNotificationDto</span>
+    {
+        <span class="type">Title</span> = <span class="str">&quot;Nova Presenca para Validar&quot;</span>,
+        <span class="type">Message</span> = $<span class="str">&quot;{attendance.EmployeeName} registou entrada as {attendance.CheckInTime:HH:mm}.&quot;</span>,
+        <span class="type">Type</span> = <span class="str">&quot;Task&quot;</span>,
+        <span class="type">Url</span> = <span class="str">&quot;/Myinfo?tab=inbox&quot;</span>
+    };
+
+    <span class="kw">foreach</span> (<span class="kw">var</span> recipientId <span class="kw">in</span> recipients)
+    {
+        <span class="kw">await</span> _notificationService.<span class="type">SendNotificationToUserAsync</span>(recipientId, notification, fromUserId);
+    }
+}</code></pre>
+<h2 id="adding-new-resolvers-ocp-in-action">Adding New Resolvers (OCP in Action)</h2>
+<p>To add a new recipient type, simply create a new resolver class and register it. <strong>No existing code needs to change.</strong></p>
+<h3 id="example-teamleadrecipientresolver">Example: TeamLeadRecipientResolver</h3>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">TeamLeadRecipientResolver</span> : <span class="type">INotificationRecipientResolver</span>
+{
+    <span class="kw">public</span> <span class="kw">int</span> <span class="type">Order</span> =&gt; <span class="num">15</span>;  <span class="cmt">// Between Manager (10) and HR Admin (20)</span>
+
+    <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="type">IEnumerable</span>&lt;<span class="kw">int</span>&gt;&gt; <span class="type">GetRecipientUserIdsAsync</span>(<span class="type">NotificationRecipientContext</span> context)
+    {
+        <span class="cmt">// Find team memberships for employee</span>
+        <span class="cmt">// Get TeamLead user IDs from those teams</span>
+        <span class="cmt">// Return unique lead IDs</span>
+    }
+}
+
+<span class="cmt">// Register in Program.cs</span>
+builder.<span class="type">Services</span>.<span class="type">AddTransient</span>&lt;<span class="type">INotificationRecipientResolver</span>, <span class="type">TeamLeadRecipientResolver</span>&gt;();</code></pre>
+<h3 id="example-departmentheadrecipientresolver">Example: DepartmentHeadRecipientResolver</h3>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">DepartmentHeadRecipientResolver</span> : <span class="type">INotificationRecipientResolver</span>
+{
+    <span class="kw">public</span> <span class="kw">int</span> <span class="type">Order</span> =&gt; <span class="num">25</span>;  <span class="cmt">// After HR Admin</span>
+
+    <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="type">IEnumerable</span>&lt;<span class="kw">int</span>&gt;&gt; <span class="type">GetRecipientUserIdsAsync</span>(<span class="type">NotificationRecipientContext</span> context)
+    {
+        <span class="cmt">// Get employee&#x27;s department</span>
+        <span class="cmt">// Find department head (ResponsavelId)</span>
+        <span class="cmt">// Return head&#x27;s user ID</span>
+    }
+}</code></pre>
+<h2 id="resolver-order-convention">Resolver Order Convention</h2>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Order</th>
+<th>Resolver</th>
+<th>Rationale</th>
+</tr></thead><tbody>
+<tr>
+<td>10</td>
+<td>Manager</td>
+<td>Direct supervisor, most relevant</td>
+</tr>
+<tr>
+<td>15</td>
+<td>Team Lead</td>
+<td>Team-level oversight</td>
+</tr>
+<tr>
+<td>20</td>
+<td>HR Admin</td>
+<td>Administrative oversight</td>
+</tr>
+<tr>
+<td>25</td>
+<td>Department Head</td>
+<td>Departmental oversight</td>
+</tr>
+<tr>
+<td>30+</td>
+<td>Future resolvers</td>
+<td>Additional stakeholders</td>
+</tr>
+</tbody></table></div>
+<h2 id="benefits-of-this-pattern">Benefits of This Pattern</h2>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Benefit</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>OCP Compliance</strong></td>
+<td>Add new resolvers without modifying existing ones</td>
+</tr>
+<tr>
+<td><strong>Single Responsibility</strong></td>
+<td>Each resolver handles one recipient type</td>
+</tr>
+<tr>
+<td><strong>Testability</strong></td>
+<td>Each resolver can be unit tested in isolation</td>
+</tr>
+<tr>
+<td><strong>Reusability</strong></td>
+<td>Same pipeline used by scheduler, attendance, leave, etc.</td>
+</tr>
+<tr>
+<td><strong>Flexibility</strong></td>
+<td>Easy to adjust order or disable resolvers</td>
+</tr>
+<tr>
+<td><strong>Deduplication</strong></td>
+<td>HashSet ensures each user receives only one notification</td>
+</tr>
+</tbody></table></div>
+<h2 id="file-locations">File Locations</h2>
+<div class="diagram-box"><pre>Services/Notifications/Resolvers/
+├── INotificationRecipientResolver.cs    # Interface + Context record
+├── NotificationRecipientService.cs      # Orchestrator (INotificationRecipientService)
+├── ManagerRecipientResolver.cs          # Order 10
+└── HRAdminRecipientResolver.cs          # Order 20</pre></div>
+<h2 id="related-documentation">Related Documentation</h2>
+<ul>
+<li><a href="14-SignalR-Notification-System.md" target="_blank">14-SignalR-Notification-System.md</a> - Real-time notification delivery</li>
+<li><a href="08-Agnostic-Schedule-Conflict-Detection.md" target="_blank">08-Agnostic-Schedule-Conflict-Detection.md</a> - Similar strategy pattern</li>
+</ul>
+</div>
+</body>
+</html>

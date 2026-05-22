@@ -1,0 +1,531 @@
+Step 1: Create the Test Project
+
+Open Terminal/Command Prompt in your solution folder (where your .sln file is)
+
+Run these commands:
+
+bash
+
+# Create test project
+
+dotnet new xunit -n SambientalMVC.Tests
+
+# Add test project to solution
+
+dotnet sln add SambientalMVC.Tests/SambientalMVC.Tests.csproj
+
+# Navigate to test project folder
+
+cd SambientalMVC.Tests
+
+# Add reference to your main project
+
+dotnet add reference ../SambientalMVC/SambientalMVC.csproj
+
+# Add required NuGet packages
+
+dotnet add package Microsoft.EntityFrameworkCore.InMemory --version 8.0.0
+
+dotnet add package Moq --version 4.20.0
+
+dotnet add package FluentAssertions --version 6.12.0
+
+dotnet add package Microsoft.AspNetCore.Mvc.Testing --version 8.0.0
+
+# Go back to solution root
+
+cd ..
+
+Step 2: Create Test Project Structure
+
+In your SambientalMVC.Tests project, create these folders:
+
+Services/
+
+Helpers/
+
+Your folder structure should look like:
+
+SambientalMVC.Tests/
+
+├── Services/
+
+├── Helpers/
+
+├── SambientalMVC.Tests.csproj
+
+└── GlobalUsings.cs
+
+Step 3: Create GlobalUsings.cs
+
+Create GlobalUsings.cs in the test project root:
+
+csharp
+
+global using Xunit;
+
+global using FluentAssertions;
+
+global using Microsoft.EntityFrameworkCore;
+
+global using Microsoft.Extensions.DependencyInjection;
+
+global using Microsoft.Extensions.Logging;
+
+global using Moq;
+
+global using SambientalMVC.Data;
+
+global using SambientalMVC.Models;
+
+global using SambientalMVC.Services;
+
+global using System;
+
+global using System.Threading.Tasks;
+
+global using System.Linq;
+
+Step 4: Create Test Database Context Helper
+
+Create Helpers/TestDbContextFactory.cs:
+
+csharp
+
+namespace SambientalMVC.Tests.Helpers
+
+{
+
+public static class TestDbContextFactory
+
+{
+
+public static ApplicationDbContext CreateInMemoryContext()
+
+{
+
+var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+
+.UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+
+.Options;
+
+return new ApplicationDbContext(options);
+
+}
+
+}
+
+}
+
+Step 5: Create Your First Test Class
+
+Create Services/AgendaMaintenanceServiceTests.cs:
+
+csharp
+
+using SambientalMVC.Tests.Helpers;
+
+namespace SambientalMVC.Tests.Services
+
+{
+
+public class AgendaMaintenanceServiceTests : IDisposable
+
+{
+
+private readonly ApplicationDbContext _context;
+
+private readonly AgendaMaintenanceService _service;
+
+public AgendaMaintenanceServiceTests()
+
+{
+
+// Setup - runs before each test
+
+_context = TestDbContextFactory.CreateInMemoryContext();
+
+var dateFormattingService = new DateFormattingService();
+
+var separatorService = new AgendaSeparatorService(_context, dateFormattingService);
+
+var recurringProcessor = new RecurringServiceProcessor(_context, dateFormattingService);
+
+_service = new AgendaMaintenanceService(
+
+_context,
+
+dateFormattingService,
+
+separatorService,
+
+recurringProcessor
+
+);
+
+}
+
+[Fact]
+
+public async Task MaintainTodaySeparator_Should_Create_New_Separator()
+
+{
+
+// Arrange - setup test data
+
+// (nothing needed for this test)
+
+// Act - run the method we're testing
+
+await _service.MaintainTodaySeparatorAsync();
+
+// Assert - check the results
+
+var separators = await _context.AgendaServicos
+
+.Where(a => a.IsSeparator)
+
+.ToListAsync();
+
+separators.Should().HaveCount(1);
+
+separators[0].DataCompleta.Should().Be(DateTime.Today);
+
+}
+
+[Fact]
+
+public async Task MaintainBlankRows_Should_Create_Five_Rows()
+
+{
+
+// Act
+
+await _service.MaintainBlankRowsAsync();
+
+// Assert
+
+var totalRows = await _context.AgendaServicos.CountAsync();
+
+totalRows.Should().Be(5);
+
+}
+
+public void Dispose()
+
+{
+
+// Cleanup - runs after each test
+
+_context?.Dispose();
+
+}
+
+}
+
+}
+
+Step 6: Create Recurring Service Tests
+
+Create Services/RecurringServiceProcessorTests.cs:
+
+csharp
+
+using SambientalMVC.Tests.Helpers;
+
+namespace SambientalMVC.Tests.Services
+
+{
+
+public class RecurringServiceProcessorTests : IDisposable
+
+{
+
+private readonly ApplicationDbContext _context;
+
+private readonly RecurringServiceProcessor _processor;
+
+public RecurringServiceProcessorTests()
+
+{
+
+_context = TestDbContextFactory.CreateInMemoryContext();
+
+var dateFormattingService = new DateFormattingService();
+
+_processor = new RecurringServiceProcessor(_context, dateFormattingService);
+
+}
+
+[Fact]
+
+public async Task ProcessRecurringServices_Should_Create_Service_When_Due()
+
+{
+
+// Arrange - create a recurring service that's due
+
+var recurringService = new AgendaRecorrente
+
+{
+
+AgendaRecorrenteId = 1,
+
+DataAtualizacao = DateTime.Today.AddDays(-8), // 8 days ago
+
+DataFim = DateTime.Today.AddMonths(3),        // ends in 3 months
+
+Periodicidade = 7,                             // weekly
+
+ClienteId = "TEST123",
+
+Morada = "Test Address",
+
+CriadoPor = "Test User"
+
+};
+
+_context.AgendaRecorrentes.Add(recurringService);
+
+await _context.SaveChangesAsync();
+
+// Act
+
+var processedCount = await _processor.ProcessRecurringServicesAsync();
+
+// Assert
+
+processedCount.Should().Be(1);
+
+// Check if new service was created
+
+var newService = await _context.AgendaServicos
+
+.FirstOrDefaultAsync(s => s.ClienteId == "TEST123");
+
+newService.Should().NotBeNull();
+
+newService.Morada.Should().Be("Test Address");
+
+}
+
+[Fact]
+
+public async Task ProcessRecurringServices_Should_Not_Process_If_Not_Due()
+
+{
+
+// Arrange - create a recurring service that's NOT due yet
+
+var recurringService = new AgendaRecorrente
+
+{
+
+AgendaRecorrenteId = 1,
+
+DataAtualizacao = DateTime.Today.AddDays(-3), // only 3 days ago
+
+DataFim = DateTime.Today.AddMonths(3),
+
+Periodicidade = 7,                             // weekly
+
+ClienteId = "TEST456"
+
+};
+
+_context.AgendaRecorrentes.Add(recurringService);
+
+await _context.SaveChangesAsync();
+
+// Act
+
+var processedCount = await _processor.ProcessRecurringServicesAsync();
+
+// Assert
+
+processedCount.Should().Be(0);
+
+// Check no service was created
+
+var services = await _context.AgendaServicos.CountAsync();
+
+services.Should().Be(0);
+
+}
+
+public void Dispose()
+
+{
+
+_context?.Dispose();
+
+}
+
+}
+
+}
+
+Step 7: Create Hosted Service Test
+
+Create Services/AgendaHostedServiceTests.cs:
+
+csharp
+
+using Microsoft.Extensions.Hosting;
+
+using SambientalMVC.Tests.Helpers;
+
+using System.Threading;
+
+namespace SambientalMVC.Tests.Services
+
+{
+
+public class AgendaHostedServiceTests
+
+{
+
+[Fact]
+
+public async Task HostedService_Should_Run_All_Maintenance_Tasks()
+
+{
+
+// Arrange - create a test version of the hosted service
+
+var services = new ServiceCollection();
+
+// Add all required services
+
+services.AddDbContext<ApplicationDbContext>(options =>
+
+options.UseInMemoryDatabase("TestDb"));
+
+services.AddScoped<IDateFormattingService, DateFormattingService>();
+
+services.AddScoped<IAgendaSeparatorService, AgendaSeparatorService>();
+
+services.AddScoped<IRecurringServiceProcessor, RecurringServiceProcessor>();
+
+services.AddScoped<IAgendaMaintenanceService, AgendaMaintenanceService>();
+
+// Add logging so we can see what's happening
+
+services.AddLogging(builder => builder.AddConsole());
+
+var serviceProvider = services.BuildServiceProvider();
+
+// Create test hosted service that runs immediately
+
+var hostedService = new TestAgendaHostedService(serviceProvider);
+
+// Act - run the service
+
+var cancellationToken = new CancellationTokenSource(TimeSpan.FromSeconds(5)).Token;
+
+await hostedService.StartAsync(cancellationToken);
+
+// Wait a bit for it to complete
+
+await Task.Delay(1000);
+
+// Assert - check if tasks were executed
+
+using var scope = serviceProvider.CreateScope();
+
+var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+// Should have created today's separator
+
+var hasSeparator = await context.AgendaServicos
+
+.AnyAsync(a => a.IsSeparator);
+
+hasSeparator.Should().BeTrue();
+
+// Should have created blank rows
+
+var rowCount = await context.AgendaServicos.CountAsync();
+
+rowCount.Should().BeGreaterThan(1); // At least separator + blank rows
+
+}
+
+}
+
+// Test version that runs immediately instead of waiting
+
+public class TestAgendaHostedService : BackgroundService
+
+{
+
+private readonly IServiceProvider _serviceProvider;
+
+public TestAgendaHostedService(IServiceProvider serviceProvider)
+
+{
+
+_serviceProvider = serviceProvider;
+
+}
+
+protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+
+{
+
+// Run immediately for testing
+
+using var scope = _serviceProvider.CreateScope();
+
+var maintenanceService = scope.ServiceProvider
+
+.GetRequiredService<IAgendaMaintenanceService>();
+
+await maintenanceService.MaintainTodaySeparatorAsync();
+
+await maintenanceService.MaintainBlankRowsAsync();
+
+await maintenanceService.MaintainRecurringServicesAsync();
+
+}
+
+}
+
+}
+
+Step 8: Run Your Tests
+
+In Visual Studio:
+
+Open Test Explorer: Test → Test Explorer
+
+Click "Run All Tests" button
+
+Tests should appear and run
+
+In Terminal:
+
+bash
+
+# Run all tests
+
+dotnet test
+
+# Run with details
+
+dotnet test --logger "console;verbosity=normal"
+
+# Run specific test
+
+dotnet test --filter "FullyQualifiedName~MaintainTodaySeparator"
+
+Step 9: View Results
+
+You should see output like:
+
+Starting test execution, please wait...
+
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:     5, Skipped:     0, Total:     5, Duration: 1 s

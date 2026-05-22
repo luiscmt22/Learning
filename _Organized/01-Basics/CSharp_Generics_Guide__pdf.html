@@ -1,0 +1,1287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CSharp_Generics_Guide</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 01-Basics</div>
+  <h1>CSharp_Generics_Guide</h1>
+  <div class="meta">Source: <code>Education/Basics/CSharp_Generics_Guide.pdf</code> &middot; <a href="CSharp_Generics_Guide.pdf">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<div class="dup-banner"><strong>Same-stem variants</strong> (likely same content, different format): <code>Education/Basics/CSharp_Generics_Guide.md</code></div><div class="pdf-page"><h3>Page 1</h3><pre>              Generics in C#
+                           A Comprehensive Guide
+
+From Historical Context to Modern Patterns</pre></div>
+<div class="pdf-page"><h3>Page 2</h3><pre>Part I: Historical Context</pre></div>
+<div class="pdf-page"><h3>Page 3</h3><pre>Chapter 1: The World Before Generics
+
+1.1 The Problem of Type Safety
+
+Before generics were introduced, developers faced a fundamental tension in programming: flexibility
+versus type safety.
+
+Imagine you&#x27;re building a collection to store items. You want it to be reusable—capable of storing integers
+today, strings tomorrow, and custom Employee objects next week. In the early days of C# (versions 1.0
+and 1.1), you had two imperfect options.
+
+Option A: Create Type-Specific Collections
+
+             public class IntegerList
+             {
+
+                    private int[] _items;
+                    public void Add(int item) { /* ... */ }
+                    public int Get(int index) { /* ... */ }
+             }
+
+             public class StringList
+             {
+
+                    private string[] _items;
+                    public void Add(string item) { /* ... */ }
+                    public string Get(int index) { /* ... */ }
+             }
+
+This approach provided type safety—the compiler would catch errors like adding a string to an IntegerList.
+However, it was utterly impractical. For every type you needed to store, you had to write an entirely new
+collection class. Code duplication ran rampant.
+
+Option B: Use System.Object
+
+The .NET Framework offered a seemingly elegant solution: since every type in .NET inherits from
+System.Object, you could create a single collection that stores objects:
+
+             public class ArrayList
+             {
+
+                    private object[] _items;
+
+                    public void Add(object item) { /* ... */ }
+                    public object Get(int index) { /* ... */ }
+             }
+
+This was the approach taken by System.Collections.ArrayList, and it worked—sort of. You could store
+anything. But this flexibility came at a severe cost.
+
+1.2 The Two Penalties of Object-Based Collections
+
+Penalty #1: Boxing and Unboxing (Performance)
+
+In .NET, types are divided into two categories: Value types (e.g., int, double, bool, struct) stored directly
+on the stack, and Reference types (e.g., string, classes) stored on the heap with a reference on the stack.
+
+When you store a value type in an object-based collection, the runtime must perform boxing: wrapping the
+value in an object on the heap. When retrieving, unboxing occurs.
+
+             ArrayList numbers = new ArrayList();
+             numbers.Add(42); // Boxing occurs here: int → object</pre></div>
+<div class="pdf-page"><h3>Page 4</h3><pre>             int value = (int)numbers[0]; // Unboxing: object → int
+
+Boxing and unboxing are expensive operations involving memory allocation on the heap, copying data
+between stack and heap, and additional garbage collection pressure. In tight loops processing thousands
+of items, this overhead was devastating to performance.
+
+Penalty #2: Loss of Type Safety (Correctness)
+
+With object-based collections, the compiler had no way to enforce what types were stored:
+
+             ArrayList list = new ArrayList();
+             list.Add(1);
+             list.Add(2);
+             list.Add(&quot;three&quot;); // Compiles fine!
+
+             foreach (object item in list)
+             {
+
+                    int number = (int)item; // Runtime exception on &quot;three&quot;!
+             }
+
+Errors that should have been caught at compile time now exploded at runtime—sometimes in production,
+sometimes in edge cases that testing missed. This violated a core principle of strongly-typed languages:
+catch errors as early as possible.
+
+1.3 The Industry Response
+
+The limitations of object-based collections were not unique to C#. The Java community faced identical
+challenges, and in 2004, Java 5.0 introduced generics. C++ had long offered templates, a compile-time
+mechanism for generic programming.
+
+Microsoft and the C# team, led by Anders Hejlsberg, recognized that a robust generics implementation
+was essential. However, they made a crucial design decision that differentiated C# generics from Java&#x27;s
+approach.</pre></div>
+<div class="pdf-page"><h3>Page 5</h3><pre>Part II: The Advent of Generics</pre></div>
+<div class="pdf-page"><h3>Page 6</h3><pre>Chapter 2: Generics Arrive in C# 2.0
+
+In November 2005, C# 2.0 was released alongside .NET Framework 2.0. Generics were the flagship
+feature.
+
+2.1 The Core Concept
+
+A generic is a type or method that is parameterized by one or more type parameters. Instead of
+committing to a specific type, you define a &quot;placeholder&quot; that gets filled in when the generic is used.
+
+             public class List&lt;T&gt;
+             {
+
+                    private T[] _items;
+
+                    public void Add(T item) { /* ... */ }
+                    public T Get(int index) { /* ... */ }
+             }
+
+The &lt;T&gt; is a type parameter. By convention: T for general purpose, TKey/TValue for key-value scenarios,
+TInput/TOutput for transformation scenarios, and TEntity for entity/model scenarios.
+
+When you use the generic, you provide a type argument:
+
+             List&lt;int&gt; numbers = new List&lt;int&gt;();
+             List&lt;string&gt; names = new List&lt;string&gt;();
+             List&lt;Employee&gt; employees = new List&lt;Employee&gt;();
+
+Each of these is a constructed type—a specific version of the generic with concrete types substituted for
+the parameters.
+
+2.2 The Benefits Realized
+
+Benefit #1: Type Safety Restored
+
+The compiler now enforces type correctness:
+
+             List&lt;int&gt; numbers = new List&lt;int&gt;();
+             numbers.Add(1);
+             numbers.Add(2);
+             numbers.Add(&quot;three&quot;); // Compile error! Cannot convert string to int
+
+Errors are caught immediately, in your IDE, before the code ever runs.
+
+Benefit #2: No Boxing for Value Types
+
+The .NET runtime generates specialized versions of generic types for value types. When you use
+List&lt;int&gt;, the runtime creates a version that works directly with integers—no boxing required.
+
+             List&lt;int&gt; numbers = new List&lt;int&gt;();
+             numbers.Add(42); // No boxing! Stored directly as int
+             int value = numbers[0]; // No unboxing! Retrieved directly as int
+
+Benefit #3: Code Reuse Without Sacrifice
+
+A single generic class serves infinite use cases:
+
+             // One implementation, infinite applications
+             List&lt;int&gt; integers = new List&lt;int&gt;();
+             List&lt;string&gt; strings = new List&lt;string&gt;();
+             List&lt;Customer&gt; customers = new List&lt;Customer&gt;();
+             List&lt;List&lt;int&gt;&gt; matrix = new List&lt;List&lt;int&gt;&gt;(); // Generics can nest!</pre></div>
+<div class="pdf-page"><h3>Page 7</h3><pre>2.3 Reification: C#&#x27;s Secret Weapon
+
+Here lies a critical distinction between C# and Java generics.
+
+Java uses type erasure: generic type information exists only at compile time. At runtime, a List&lt;String&gt;
+and a List&lt;Integer&gt; are both just List. This was done for backward compatibility with older JVMs but limits
+what generics can do.
+
+C# uses reification: generic type information is preserved at runtime. The CLR (Common Language
+Runtime) knows the difference between List&lt;int&gt; and List&lt;string&gt;. This enables:
+
+// You can check generic types at runtime              // System.Int32
+Type listType = typeof(List&lt;int&gt;);
+Console.WriteLine(listType.IsGenericType); // True
+Console.WriteLine(listType.GetGenericArguments()[0]);
+
+             // You can create generic types dynamically
+             Type openType = typeof(List&lt;&gt;);
+             Type closedType = openType.MakeGenericType(typeof(string));
+             object instance = Activator.CreateInstance(closedType);
+
+This design decision makes C# generics more powerful and enables sophisticated scenarios in
+frameworks like Entity Framework, dependency injection containers, and serialization libraries.</pre></div>
+<div class="pdf-page"><h3>Page 8</h3><pre>Part III: Mastering Generic Syntax</pre></div>
+<div class="pdf-page"><h3>Page 9</h3><pre>Chapter 3: Generic Classes and Structures
+
+3.1 Defining a Generic Class
+
+Let&#x27;s build a practical example—a generic Result&lt;T&gt; type for handling operation outcomes:
+
+             public class Result&lt;T&gt;
+             {
+
+                    public bool IsSuccess { get; }
+                    public T Value { get; }
+                    public string Error { get; }
+
+                    private Result(bool isSuccess, T value, string error)
+                    {
+
+                            IsSuccess = isSuccess;
+                            Value = value;
+                            Error = error;
+                    }
+
+                    public static Result&lt;T&gt; Success(T value)
+                    {
+
+                            return new Result&lt;T&gt;(true, value, null);
+                    }
+
+                    public static Result&lt;T&gt; Failure(string error)
+                    {
+
+                            return new Result&lt;T&gt;(false, default, error);
+                    }
+             }
+
+Usage:
+
+             public Result&lt;Employee&gt; GetEmployee(int id)
+             {
+
+                    var employee = _database.Find(id);
+
+                    if (employee == null)
+                            return Result&lt;Employee&gt;.Failure(&quot;Employee not found&quot;);
+
+                    return Result&lt;Employee&gt;.Success(employee);
+             }
+
+             // Calling code
+             var result = GetEmployee(42);
+             if (result.IsSuccess)
+
+                    Console.WriteLine(result.Value.Name);
+             else
+
+                    Console.WriteLine(result.Error);
+
+3.2 Multiple Type Parameters
+
+Generics can have multiple type parameters:
+
+             public class Pair&lt;TFirst, TSecond&gt;
+             {
+
+                    public TFirst First { get; set; }
+                    public TSecond Second { get; set; }
+
+                    public Pair(TFirst first, TSecond second)
+                    {
+
+                            First = first;
+                            Second = second;
+                    }</pre></div>
+<div class="pdf-page"><h3>Page 10</h3><pre>             }
+
+             // Usage
+             var pair = new Pair&lt;string, int&gt;(&quot;Age&quot;, 30);
+             var coordinate = new Pair&lt;double, double&gt;(45.5, 122.7);
+
+3.3 Generic Structs
+
+Value types can also be generic:
+
+             public struct Point&lt;T&gt;
+             {
+
+                    public T X { get; }
+                    public T Y { get; }
+
+                    public Point(T x, T y)
+                    {
+
+                            X = x;
+                            Y = y;
+                    }
+             }
+
+             // Usage
+             Point&lt;int&gt; pixelPoint = new Point&lt;int&gt;(100, 200);
+             Point&lt;double&gt; precisePoint = new Point&lt;double&gt;(3.14159, 2.71828);</pre></div>
+<div class="pdf-page"><h3>Page 11</h3><pre>Chapter 4: Generic Methods
+
+4.1 Methods with Type Parameters
+
+Methods can be generic independently of their containing class:
+
+             public class Utilities
+             {
+
+                    public static void Swap&lt;T&gt;(ref T a, ref T b)
+                    {
+
+                            T temp = a;
+                            a = b;
+                            b = temp;
+                    }
+             }
+
+             // Usage
+             int x = 5, y = 10;
+             Utilities.Swap&lt;int&gt;(ref x, ref y); // x = 10, y = 5
+
+             string first = &quot;Hello&quot;, second = &quot;World&quot;;
+             Utilities.Swap&lt;string&gt;(ref first, ref second); // Swapped!
+
+4.2 Type Inference
+
+The compiler can often infer type arguments:
+
+             int x = 5, y = 10;
+             Utilities.Swap(ref x, ref y); // Compiler infers &lt;int&gt;
+
+             string a = &quot;Hello&quot;, b = &quot;World&quot;;
+             Utilities.Swap(ref a, ref b); // Compiler infers &lt;string&gt;
+
+This makes generic methods feel as natural as non-generic ones.
+
+4.3 Generic Methods in Non-Generic Classes
+
+A common pattern in utility classes:
+
+             public static class CollectionExtensions
+             {
+
+                    public static bool IsEmpty&lt;T&gt;(this ICollection&lt;T&gt; collection)
+                    {
+
+                            return collection == null || collection.Count == 0;
+                    }
+
+                    public static T FirstOrDefault&lt;T&gt;(this IEnumerable&lt;T&gt; source, T defaultValue)
+                    {
+
+                            foreach (T item in source)
+                                   return item;
+
+                            return defaultValue;
+                    }
+             }
+
+             // Usage
+             List&lt;int&gt; numbers = new List&lt;int&gt;();
+             bool empty = numbers.IsEmpty(); // True
+             int first = numbers.FirstOrDefault(-1); // Returns -1</pre></div>
+<div class="pdf-page"><h3>Page 12</h3><pre>Chapter 5: Generic Interfaces
+
+5.1 Defining Generic Interfaces
+
+Interfaces can be parameterized just like classes:
+
+             public interface IRepository&lt;TEntity&gt; where TEntity : class
+             {
+
+                    TEntity GetById(int id);
+                    IEnumerable&lt;TEntity&gt; GetAll();
+                    void Add(TEntity entity);
+                    void Update(TEntity entity);
+                    void Delete(TEntity entity);
+             }
+
+5.2 Implementing Generic Interfaces
+
+             public class EmployeeRepository : IRepository&lt;Employee&gt;
+             {
+
+                    private readonly AppDbContext _context;
+
+                    public EmployeeRepository(AppDbContext context)
+                    {
+
+                            _context = context;
+                    }
+
+                    public Employee GetById(int id) =&gt; _context.Employees.Find(id);
+                    public IEnumerable&lt;Employee&gt; GetAll() =&gt; _context.Employees.ToList();
+                    public void Add(Employee entity) =&gt; _context.Employees.Add(entity);
+                    public void Update(Employee entity) =&gt; _context.Employees.Update(entity);
+                    public void Delete(Employee entity) =&gt; _context.Employees.Remove(entity);
+             }
+
+5.3 Key Generic Interfaces in .NET
+
+The .NET Base Class Library is rich with generic interfaces:
+
+Interface                  Purpose
+IEnumerable&lt;T&gt;             Iteration over a sequence
+ICollection&lt;T&gt;             Sized, modifiable collection
+IList&lt;T&gt;                   Indexed access
+IDictionary&lt;TKey, TValue&gt;  Key-value mapping
+IComparable&lt;T&gt;             Type-safe comparison
+IEquatable&lt;T&gt;              Type-safe equality
+IComparer&lt;T&gt;               External comparison logic
+IEqualityComparer&lt;T&gt;       External equality logic</pre></div>
+<div class="pdf-page"><h3>Page 13</h3><pre>Part IV: Constraints — Controlling Generic
+                       Flexibility</pre></div>
+<div class="pdf-page"><h3>Page 14</h3><pre>Chapter 6: The Need for Constraints
+
+6.1 The Problem: Too Much Freedom
+
+Consider this innocent-looking generic method:
+
+             public static T Max&lt;T&gt;(T a, T b)
+             {
+
+                    if (a &gt; b) // Compile error!
+                            return a;
+
+                    return b;
+             }
+
+This won&#x27;t compile. Why? The compiler knows nothing about T. It could be int, which supports &gt;, or it could
+be Employee, which might not. Without knowing what operations T supports, the compiler must reject the
+code.
+
+6.2 Constraints to the Rescue
+
+Constraints tell the compiler: &quot;I promise T will have certain capabilities.&quot;
+
+             public static T Max&lt;T&gt;(T a, T b) where T : IComparable&lt;T&gt;
+             {
+
+                    if (a.CompareTo(b) &gt; 0)
+                            return a;
+
+                    return b;
+             }
+
+Now the compiler knows T implements IComparable&lt;T&gt;, which guarantees the CompareTo method
+exists.</pre></div>
+<div class="pdf-page"><h3>Page 15</h3><pre>Chapter 7: Types of Constraints
+
+7.1 Reference Type Constraint (class)
+
+Restricts T to reference types (classes, interfaces, delegates, arrays):
+
+             public class EntityCache&lt;T&gt; where T : class
+             {
+
+                    private T _cached;
+
+                    public T GetOrDefault()
+                    {
+
+                            return _cached; // Can be null
+                    }
+             }
+
+7.2 Value Type Constraint (struct)
+
+Restricts T to non-nullable value types:
+
+             public struct Nullable&lt;T&gt; where T : struct
+             {
+
+                    private readonly T _value;
+                    private readonly bool _hasValue;
+
+                    // This is essentially how System.Nullable&lt;T&gt; works
+             }
+
+7.3 Constructor Constraint (new())
+
+Requires T to have a public parameterless constructor:
+
+             public static T CreateInstance&lt;T&gt;() where T : new()
+             {
+
+                    return new T(); // Now this is valid!
+             }
+
+             // Usage
+             var employee = CreateInstance&lt;Employee&gt;(); // Works if Employee has parameterless ctor
+
+7.4 Base Class Constraint
+
+Restricts T to a specific class or its descendants:
+
+             public class AnimalShelter&lt;T&gt; where T : Animal
+             {
+
+                    private List&lt;T&gt; _animals = new List&lt;T&gt;();
+
+                    public void Admit(T animal)
+                    {
+
+                            animal.Feed(); // Valid: Animal has Feed() method
+                            _animals.Add(animal);
+                    }
+             }
+
+             // Usage
+             var dogShelter = new AnimalShelter&lt;Dog&gt;(); // Dog : Animal
+             var catShelter = new AnimalShelter&lt;Cat&gt;(); // Cat : Animal
+             // var carShelter = new AnimalShelter&lt;Car&gt;(); // Error!</pre></div>
+<div class="pdf-page"><h3>Page 16</h3><pre>7.5 Interface Constraint
+
+Restricts T to types implementing specific interfaces:
+
+             public class SortedCollection&lt;T&gt; where T : IComparable&lt;T&gt;
+             {
+
+                    private List&lt;T&gt; _items = new List&lt;T&gt;();
+
+                    public void Add(T item)
+                    {
+
+                            int index = _items.BinarySearch(item); // Uses IComparable&lt;T&gt;
+                            if (index &lt; 0) index = ~index;
+                            _items.Insert(index, item);
+                    }
+             }
+
+7.6 Multiple Constraints
+
+Constraints can be combined:
+
+public class Repository&lt;TEntity&gt;
+
+   where TEntity : class, IEntity, new()
+
+{
+
+   public TEntity Create()
+
+   {
+
+      var entity = new TEntity(); // new() constraint
+
+      entity.Id = GenerateId(); // IEntity constraint
+
+      return entity;              // class constraint allows null checks
+
+   }
+
+}
+
+7.7 The notnull Constraint (C# 8.0+)
+
+In nullable reference type contexts, ensures T cannot be null:
+
+             public class NonNullCache&lt;T&gt; where T : notnull
+             {
+
+                    private Dictionary&lt;string, T&gt; _cache = new();
+
+                    public void Set(string key, T value)
+                    {
+
+                            _cache[key] = value; // value is guaranteed non-null
+                    }
+             }
+
+7.8 The unmanaged Constraint (C# 7.3+)
+
+Restricts to unmanaged types (primitives and structs containing only unmanaged types):
+
+             public unsafe void ProcessBuffer&lt;T&gt;(T* buffer, int length)
+                    where T : unmanaged
+
+             {
+                    // Can use pointer arithmetic with T
+                    for (int i = 0; i &lt; length; i++)
+                    {
+                            Process(buffer[i]);
+                    }
+
+             }</pre></div>
+<div class="pdf-page"><h3>Page 17</h3><pre>Chapter 8: Constraint Combinations and Rules
+
+8.1 Constraint Ordering
+
+When specifying multiple constraints, they must appear in a specific order:
+
+      • 1. class or struct (mutually exclusive)
+      • 2. Base class name (if any)
+      • 3. Interface names
+      • 4. new() (must be last)
+
+             // Correct order
+             public class Example&lt;T&gt;
+
+                    where T : class, BaseClass, IInterface1, IInterface2, new()
+             {}
+
+8.2 Constraints on Multiple Type Parameters
+
+Each type parameter can have its own constraints:
+
+             public class Mapper&lt;TSource, TDestination&gt;
+                    where TSource : class
+                    where TDestination : class, new()
+
+             {
+                    public TDestination Map(TSource source)
+                    {
+                            var destination = new TDestination();
+                            // Map properties...
+                            return destination;
+                    }
+
+             }</pre></div>
+<div class="pdf-page"><h3>Page 18</h3><pre>Part V: Advanced Topics</pre></div>
+<div class="pdf-page"><h3>Page 19</h3><pre>Chapter 9: Covariance and Contravariance
+
+9.1 The Variance Problem
+
+Consider this scenario:
+
+             class Animal { }
+             class Dog : Animal { }
+
+             List&lt;Dog&gt; dogs = new List&lt;Dog&gt;();
+             List&lt;Animal&gt; animals = dogs; // Compile error! Why?
+
+Intuitively, since every Dog is an Animal, a list of dogs should be usable as a list of animals. But consider:
+animals.Add(new Cat()); — This would corrupt the dog list! This is why List&lt;T&gt; doesn&#x27;t allow such
+assignments. But sometimes variance is safe...
+
+9.2 Covariance (out keyword)
+
+Covariance allows a generic type to preserve the inheritance relationship of its type argument. It&#x27;s safe
+when the type parameter is only used in output positions:
+
+             public interface IProducer&lt;out T&gt;
+             {
+
+                    T Produce(); // T only appears as output (return type)
+             }
+
+             class DogProducer : IProducer&lt;Dog&gt;
+             {
+
+                    public Dog Produce() =&gt; new Dog();
+             }
+
+             // Now this is valid:
+             IProducer&lt;Animal&gt; producer = new DogProducer();
+             Animal animal = producer.Produce(); // Safe! We get a Dog, which is an Animal
+
+IEnumerable&lt;T&gt; is covariant:
+
+             IEnumerable&lt;Dog&gt; dogs = new List&lt;Dog&gt;();
+             IEnumerable&lt;Animal&gt; animals = dogs; // Valid! IEnumerable only produces items
+
+9.3 Contravariance (in keyword)
+
+Contravariance reverses the inheritance relationship. It&#x27;s safe when the type parameter is only used in
+input positions:
+
+             public interface IConsumer&lt;in T&gt;
+             {
+
+                    void Consume(T item); // T only appears as input (parameter)
+             }
+
+             class AnimalConsumer : IConsumer&lt;Animal&gt;
+             {
+
+                    public void Consume(Animal animal) =&gt; Console.WriteLine(&quot;Fed an animal&quot;);
+             }
+
+             // Now this is valid:
+             IConsumer&lt;Dog&gt; dogConsumer = new AnimalConsumer();
+             dogConsumer.Consume(new Dog()); // Safe! AnimalConsumer can handle any Animal
+
+9.4 Invariance</pre></div>
+<div class="pdf-page"><h3>Page 20</h3><pre>When a type parameter appears in both input and output positions, variance is not possible:
+
+             public interface ITransformer&lt;T&gt;
+             {
+
+                    T Transform(T input); // T is both input and output
+             }
+             // ITransformer&lt;T&gt; is invariant</pre></div>
+<div class="pdf-page"><h3>Page 21</h3><pre>Chapter 10: Static Members in Generic Types
+
+10.1 Static Fields Are Per Constructed Type
+
+A critical detail often overlooked:
+
+public class Counter&lt;T&gt;
+{
+
+       public static int Count = 0;
+
+       public Counter()
+       {
+
+              Count++;
+       }
+}
+
+// Usage
+var intCounter1 = new Counter&lt;int&gt;();
+var intCounter2 = new Counter&lt;int&gt;();
+var stringCounter = new Counter&lt;string&gt;();
+
+Console.WriteLine(Counter&lt;int&gt;.Count);      // 2
+
+Console.WriteLine(Counter&lt;string&gt;.Count); // 1
+
+Each constructed type (Counter&lt;int&gt;, Counter&lt;string&gt;) has its own static field. They are completely
+independent.
+
+10.2 Static Constructors
+
+Static constructors also run once per constructed type:
+
+             public class TypeLogger&lt;T&gt;
+             {
+
+                    static TypeLogger()
+                    {
+
+                            Console.WriteLine($&quot;TypeLogger&lt;{typeof(T).Name}&gt; initialized&quot;);
+                    }
+             }
+
+             // Using TypeLogger&lt;int&gt; and TypeLogger&lt;string&gt; prints two messages</pre></div>
+<div class="pdf-page"><h3>Page 22</h3><pre>Chapter 11: Generic Type Inference
+
+11.1 How Inference Works
+
+The compiler examines method arguments to infer type parameters:
+
+public static List&lt;T&gt; CreateList&lt;T&gt;(T first, T second)
+{
+
+       return new List&lt;T&gt; { first, second };
+}
+
+// Compiler infers T from arguments  // List&lt;int&gt;
+var ints = CreateList(1, 2);         // List&lt;string&gt;
+var strings = CreateList(&quot;a&quot;, &quot;b&quot;);
+
+11.2 Inference Limitations
+
+Inference only works from arguments, not return types:
+
+             public static T Parse&lt;T&gt;(string value) { /* ... */ }
+
+             // This won&#x27;t work:
+             int number = Parse(&quot;42&quot;); // Error: Cannot infer T
+
+             // You must specify:
+             int number = Parse&lt;int&gt;(&quot;42&quot;);
+
+11.3 Complex Inference
+
+The compiler can infer through multiple levels:
+
+             public static TResult Select&lt;TSource, TResult&gt;(
+                    TSource source,
+                    Func&lt;TSource, TResult&gt; selector)
+
+             {
+                    return selector(source);
+
+             }
+
+             // Both TSource and TResult are inferred
+             string result = Select(42, n =&gt; n.ToString());
+             // TSource = int, TResult = string</pre></div>
+<div class="pdf-page"><h3>Page 23</h3><pre>Chapter 12: Reflection and Generics
+
+12.1 Examining Generic Types at Runtime
+
+Type listType = typeof(List&lt;int&gt;);
+
+Console.WriteLine(listType.IsGenericType);     // True
+
+Console.WriteLine(listType.IsConstructedGenericType); // True
+
+Type[] args = listType.GetGenericArguments();
+Console.WriteLine(args[0]); // System.Int32
+
+Type definition = listType.GetGenericTypeDefinition();
+Console.WriteLine(definition); // System.Collections.Generic.List`1[T]
+
+12.2 Open vs. Closed Generic Types
+
+             Type openType = typeof(Dictionary&lt;,&gt;); // Open: no type arguments
+             Type closedType = typeof(Dictionary&lt;string, int&gt;); // Closed: fully specified
+
+             Console.WriteLine(openType.IsGenericTypeDefinition); // True
+             Console.WriteLine(closedType.IsGenericTypeDefinition); // False
+
+12.3 Creating Generic Types Dynamically
+
+             Type openList = typeof(List&lt;&gt;);
+             Type closedList = openList.MakeGenericType(typeof(string));
+             object instance = Activator.CreateInstance(closedList);
+
+             // instance is now a List&lt;string&gt;
+             var list = (List&lt;string&gt;)instance;
+             list.Add(&quot;Dynamic!&quot;);
+
+12.4 Invoking Generic Methods via Reflection
+
+             public class Processor
+             {
+
+                    public void Process&lt;T&gt;(T item)
+                    {
+
+                            Console.WriteLine($&quot;Processing {typeof(T).Name}: {item}&quot;);
+                    }
+             }
+
+             // Invoke via reflection
+             var processor = new Processor();
+             MethodInfo openMethod = typeof(Processor).GetMethod(&quot;Process&quot;);
+             MethodInfo closedMethod = openMethod.MakeGenericMethod(typeof(int));
+             closedMethod.Invoke(processor, new object[] { 42 });</pre></div>
+<div class="pdf-page"><h3>Page 24</h3><pre>Part VI: Patterns and Best Practices</pre></div>
+<div class="pdf-page"><h3>Page 25</h3><pre>Chapter 13: Common Generic Patterns
+
+13.1 The Repository Pattern
+
+             public interface IRepository&lt;TEntity&gt; where TEntity : class, IEntity
+             {
+
+                    Task&lt;TEntity?&gt; GetByIdAsync(int id);
+                    Task&lt;IReadOnlyList&lt;TEntity&gt;&gt; GetAllAsync();
+                    Task&lt;TEntity&gt; AddAsync(TEntity entity);
+                    Task UpdateAsync(TEntity entity);
+                    Task DeleteAsync(TEntity entity);
+             }
+
+             public class Repository&lt;TEntity&gt; : IRepository&lt;TEntity&gt;
+                    where TEntity : class, IEntity
+
+             {
+                    protected readonly DbContext _context;
+                    protected readonly DbSet&lt;TEntity&gt; _dbSet;
+
+                    public Repository(DbContext context)
+                    {
+
+                            _context = context;
+                            _dbSet = context.Set&lt;TEntity&gt;();
+                    }
+
+                    public virtual async Task&lt;TEntity?&gt; GetByIdAsync(int id)
+                    {
+
+                            return await _dbSet.FindAsync(id);
+                    }
+
+                    // ... other implementations
+             }
+
+13.2 The Factory Pattern
+
+             public interface IFactory&lt;out T&gt;
+             {
+
+                    T Create();
+             }
+
+             public class ServiceFactory&lt;T&gt; : IFactory&lt;T&gt; where T : class, new()
+             {
+
+                    public T Create() =&gt; new T();
+             }
+
+             // With parameters using Func&lt;T&gt;
+             public class ConfigurableFactory&lt;T&gt;
+             {
+
+                    private readonly Func&lt;T&gt; _creator;
+
+                    public ConfigurableFactory(Func&lt;T&gt; creator)
+                    {
+
+                            _creator = creator;
+                    }
+
+                    public T Create() =&gt; _creator();
+             }
+
+13.3 The Specification Pattern
+
+             public interface ISpecification&lt;T&gt;
+             {</pre></div>
+<div class="pdf-page"><h3>Page 26</h3><pre>                    bool IsSatisfiedBy(T entity);
+                    Expression&lt;Func&lt;T, bool&gt;&gt; ToExpression();
+             }
+
+             public abstract class Specification&lt;T&gt; : ISpecification&lt;T&gt;
+             {
+
+                    public bool IsSatisfiedBy(T entity)
+                    {
+
+                            return ToExpression().Compile()(entity);
+                    }
+
+                    public abstract Expression&lt;Func&lt;T, bool&gt;&gt; ToExpression();
+
+                    public Specification&lt;T&gt; And(Specification&lt;T&gt; other)
+                    {
+
+                            return new AndSpecification&lt;T&gt;(this, other);
+                    }
+             }
+
+             // Usage
+             public class ActiveEmployeeSpecification : Specification&lt;Employee&gt;
+             {
+
+                    public override Expression&lt;Func&lt;Employee, bool&gt;&gt; ToExpression()
+                    {
+
+                            return e =&gt; e.IsActive &amp;&amp; e.TerminationDate == null;
+                    }
+             }
+
+13.4 The Result/Either Pattern
+
+             public class Result&lt;TSuccess, TFailure&gt;
+             {
+
+                    public TSuccess? Success { get; }
+                    public TFailure? Failure { get; }
+                    public bool IsSuccess { get; }
+
+                    public static Result&lt;TSuccess, TFailure&gt; Ok(TSuccess value) =&gt; new(value);
+                    public static Result&lt;TSuccess, TFailure&gt; Fail(TFailure error) =&gt; new(error);
+
+                    public TResult Match&lt;TResult&gt;(
+                            Func&lt;TSuccess, TResult&gt; onSuccess,
+                            Func&lt;TFailure, TResult&gt; onFailure)
+
+                    {
+                            return IsSuccess ? onSuccess(Success!) : onFailure(Failure!);
+
+                    }
+             }
+
+             // Usage
+             var result = CreateEmployee(&quot;Alice&quot;, &quot;alice@example.com&quot;);
+             var message = result.Match(
+
+                    onSuccess: emp =&gt; $&quot;Created employee: {emp.Name}&quot;,
+                    onFailure: err =&gt; $&quot;Error: {err}&quot;
+             );</pre></div>
+<div class="pdf-page"><h3>Page 27</h3><pre>Chapter 14: Best Practices
+
+14.1 Naming Conventions
+
+• Single type parameter: T
+• Multiple parameters: Descriptive names starting with T
+
+// Good
+Dictionary&lt;TKey, TValue&gt;
+Func&lt;TInput, TOutput&gt;
+IRepository&lt;TEntity&gt;
+
+// Avoid
+
+Dictionary&lt;K, V&gt; // Not immediately clear
+
+List&lt;Type&gt;  // Confusing with System.Type
+
+14.2 Prefer Generic Collections
+
+Always prefer System.Collections.Generic over System.Collections:
+
+// Good
+List&lt;Employee&gt; employees = new();
+Dictionary&lt;string, int&gt; scores = new();
+
+// Avoid
+
+ArrayList employees = new(); // Boxing, no type safety
+
+Hashtable scores = new();  // Boxing, no type safety
+
+14.3 Use Constraints Judiciously
+
+Add constraints only when necessary:
+
+             // Over-constrained: Do we really need all these?
+             public class Repository&lt;T&gt;
+
+                    where T : class, IEntity, IValidatable, IAuditable, new()
+
+             // Better: Only what&#x27;s actually used
+             public class Repository&lt;T&gt; where T : class, IEntity
+
+14.4 Consider Variance When Designing Interfaces
+
+If your interface only produces T, make it covariant:
+
+             public interface IReadOnlyRepository&lt;out TEntity&gt;
+             {
+
+                    TEntity GetById(int id);
+                    IEnumerable&lt;TEntity&gt; GetAll();
+             }
+
+If it only consumes T, make it contravariant:
+
+             public interface IValidator&lt;in T&gt;
+             {
+
+                    bool Validate(T item);
+             }
+
+14.5 Avoid Excessive Generic Nesting
+
+             // Hard to read
+             Dictionary&lt;string, List&lt;Tuple&lt;int, Dictionary&lt;string, object&gt;&gt;&gt;&gt; data;</pre></div>
+<div class="pdf-page"><h3>Page 28</h3><pre>// Better: Create meaningful types
+class UserData { /* ... */ }
+Dictionary&lt;string, UserData&gt; data;</pre></div>
+<div class="pdf-page"><h3>Page 29</h3><pre>Part VII: Generics in the .NET Ecosystem</pre></div>
+<div class="pdf-page"><h3>Page 30</h3><pre>Chapter 15: Generics in Entity Framework Core
+
+15.1 DbSet&lt;T&gt;
+
+             public class AppDbContext : DbContext
+             {
+
+                    public DbSet&lt;Employee&gt; Employees { get; set; }
+                    public DbSet&lt;Department&gt; Departments { get; set; }
+             }
+
+             // DbSet&lt;T&gt; provides generic query and change tracking
+             var employees = await context.Employees
+
+                    .Where(e =&gt; e.IsActive)
+                    .ToListAsync();
+
+15.2 Generic Configuration
+
+             public abstract class BaseEntityConfiguration&lt;T&gt; : IEntityTypeConfiguration&lt;T&gt;
+                    where T : BaseEntity
+
+             {
+                    public virtual void Configure(EntityTypeBuilder&lt;T&gt; builder)
+                    {
+                            builder.HasKey(e =&gt; e.Id);
+                            builder.Property(e =&gt; e.CreatedAt).IsRequired();
+                            builder.Property(e =&gt; e.UpdatedAt).IsRequired();
+                    }
+
+             }
+
+             public class EmployeeConfiguration : BaseEntityConfiguration&lt;Employee&gt;
+             {
+
+                    public override void Configure(EntityTypeBuilder&lt;Employee&gt; builder)
+                    {
+
+                            base.Configure(builder);
+                            builder.Property(e =&gt; e.Name).HasMaxLength(100);
+                    }
+             }</pre></div>
+<div class="pdf-page"><h3>Page 31</h3><pre>Chapter 16: Generics in Dependency Injection
+
+16.1 Generic Service Registration
+
+             // Register open generic
+             services.AddScoped(typeof(IRepository&lt;&gt;), typeof(Repository&lt;&gt;));
+
+             // Now any IRepository&lt;T&gt; resolves to Repository&lt;T&gt;
+             // IRepository&lt;Employee&gt; → Repository&lt;Employee&gt;
+             // IRepository&lt;Product&gt; → Repository&lt;Product&gt;
+
+16.2 Generic Decorators
+
+             public class CachingRepository&lt;T&gt; : IRepository&lt;T&gt; where T : class, IEntity
+             {
+
+                    private readonly IRepository&lt;T&gt; _inner;
+                    private readonly IMemoryCache _cache;
+
+                    public CachingRepository(IRepository&lt;T&gt; inner, IMemoryCache cache)
+                    {
+
+                            _inner = inner;
+                            _cache = cache;
+                    }
+
+                    public async Task&lt;T?&gt; GetByIdAsync(int id)
+                    {
+
+                            string key = $&quot;{typeof(T).Name}_{id}&quot;;
+                            return await _cache.GetOrCreateAsync(key,
+
+                                   entry =&gt; _inner.GetByIdAsync(id));
+                    }
+             }
+
+             // Registration with decoration (using Scrutor)
+             services.Decorate(typeof(IRepository&lt;&gt;), typeof(CachingRepository&lt;&gt;));</pre></div>
+<div class="pdf-page"><h3>Page 32</h3><pre>Chapter 17: Generics in Blazor
+
+17.1 Generic Components
+
+             @typeparam TItem
+
+             &lt;ul&gt;
+                    @foreach (var item in Items)
+                    {
+                            &lt;li&gt;@ItemTemplate(item)&lt;/li&gt;
+                    }
+
+             &lt;/ul&gt;
+
+             @code {
+                    [Parameter] public IEnumerable&lt;TItem&gt; Items { get; set; } = default!;
+                    [Parameter] public RenderFragment&lt;TItem&gt; ItemTemplate { get; set; } = default!;
+
+             }
+
+Usage:
+
+             &lt;GenericList Items=&quot;employees&quot; Context=&quot;emp&quot;&gt;
+                    &lt;ItemTemplate&gt;
+                            &lt;span&gt;@emp.Name - @emp.Department&lt;/span&gt;
+                    &lt;/ItemTemplate&gt;
+
+             &lt;/GenericList&gt;
+
+17.2 Generic Component Constraints
+
+             @typeparam TEntity where TEntity : IEntity
+
+             &lt;MudTable Items=&quot;@Items&quot; Hover=&quot;true&quot;&gt;
+                    &lt;HeaderContent&gt;
+                            &lt;MudTh&gt;ID&lt;/MudTh&gt;
+                            &lt;MudTh&gt;Actions&lt;/MudTh&gt;
+                    &lt;/HeaderContent&gt;
+                    &lt;RowTemplate&gt;
+                            &lt;MudTd&gt;@context.Id&lt;/MudTd&gt; @* IEntity guarantees Id exists *@
+                            &lt;MudTd&gt;
+                                   &lt;MudIconButton Icon=&quot;@Icons.Material.Filled.Edit&quot;
+                                                            OnClick=&quot;() =&gt; Edit(context)&quot; /&gt;
+                            &lt;/MudTd&gt;
+                    &lt;/RowTemplate&gt;
+
+             &lt;/MudTable&gt;
+
+             @code {
+                    [Parameter] public IEnumerable&lt;TEntity&gt; Items { get; set; } = default!;
+                    [Parameter] public EventCallback&lt;TEntity&gt; OnEdit { get; set; }
+
+                    private async Task Edit(TEntity entity) =&gt; await OnEdit.InvokeAsync(entity);
+             }</pre></div>
+<div class="pdf-page"><h3>Page 33</h3><pre>         Appendix A: Quick Reference
+
+Constraint Syntax Summary
+
+Constraint               Meaning
+where T : class          T must be a reference type
+where T : struct         T must be a non-nullable value type
+where T : new()          T must have a parameterless constructor
+where T : BaseClass      T must inherit from BaseClass
+where T : IInterface     T must implement IInterface
+where T : notnull        T must be non-nullable (C# 8+)
+where T : unmanaged      T must be an unmanaged type (C# 7.3+)
+where T : U              T must derive from type parameter U
+
+Variance Summary
+
+Keyword  Name            Direction       Safe When
+out      Covariance      Child → Parent  T is only returned
+in       Contravariance  Parent → Child  T is only accepted
+(none)   Invariance      No conversion   T is both input and output</pre></div>
+<div class="pdf-page"><h3>Page 34</h3><pre>    Appendix B: Further Reading
+
+1. C# Language Specification — The official reference for generic syntax and semantics
+
+2. &quot;CLR via C#&quot; by Jeffrey Richter — Deep dive into how generics work at the runtime level
+
+3. &quot;C# in Depth&quot; by Jon Skeet — Excellent coverage of generic evolution across C# versions
+
+4.  Microsoft  Docs:  Generic                                               Classes         —
+
+https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/generics/
+
+5. Entity Framework Core Documentation — Practical examples of generics in ORM contexts
+
+This guide was written as an educational resource for .NET developers seeking to master generics.
+Understanding generics deeply will improve your ability to write reusable, type-safe, and performant code.</pre></div>
+</div>
+</body>
+</html>

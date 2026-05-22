@@ -1,0 +1,602 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - generic [ref=e4]: Learning › _Organized
+    - heading "Learning Index" [level=1] [ref=e5]
+    - generic [ref=e6]: 95 files across 21 categories
+  - paragraph [ref=e7]:
+    - text: Auto-generated organised view of the Learning content. Every source file has an HTML sibling. Duplicate clusters are flagged. See
+    - link "_Duplicates.md" [ref=e8] [cursor=pointer]:
+      - /url: _Duplicates.md
+    - text: for the full duplicate report and
+    - link "_Manifest.json" [ref=e9] [cursor=pointer]:
+      - /url: _Manifest.json
+    - text: for machine-readable metadata.
+  - generic [ref=e10]:
+    - generic [ref=e11]:
+      - generic [ref=e12]: "95"
+      - generic [ref=e13]: Files organised
+    - generic [ref=e14]:
+      - generic [ref=e15]: "21"
+      - generic [ref=e16]: Categories
+    - generic [ref=e17]:
+      - generic [ref=e18]: "0"
+      - generic [ref=e19]: Exact-duplicate clusters
+    - generic [ref=e20]:
+      - generic [ref=e21]: "11"
+      - generic [ref=e22]: Cross-format dup clusters
+    - generic [ref=e23]:
+      - generic [ref=e24]: "22"
+      - generic [ref=e25]: Files flagged as dup
+  - generic [ref=e26]:
+    - link "00-Meta" [ref=e27] [cursor=pointer]:
+      - /url: "#00-Meta"
+    - link "01-Basics" [ref=e28] [cursor=pointer]:
+      - /url: "#01-Basics"
+    - link "02-Architecture-and-Patterns" [ref=e29] [cursor=pointer]:
+      - /url: "#02-Architecture-and-Patterns"
+    - link "03-Blazor" [ref=e30] [cursor=pointer]:
+      - /url: "#03-Blazor"
+    - link "04-CSharp-Language" [ref=e31] [cursor=pointer]:
+      - /url: "#04-CSharp-Language"
+    - link "05-Scheduling" [ref=e32] [cursor=pointer]:
+      - /url: "#05-Scheduling"
+    - link "06-Auth-and-Identity" [ref=e33] [cursor=pointer]:
+      - /url: "#06-Auth-and-Identity"
+    - link "07-Database-EF-SQL" [ref=e34] [cursor=pointer]:
+      - /url: "#07-Database-EF-SQL"
+    - link "08-Concurrency-and-Async" [ref=e35] [cursor=pointer]:
+      - /url: "#08-Concurrency-and-Async"
+    - link "09-Realtime-SignalR" [ref=e36] [cursor=pointer]:
+      - /url: "#09-Realtime-SignalR"
+    - link "10-Integrations" [ref=e37] [cursor=pointer]:
+      - /url: "#10-Integrations"
+    - link "11-Web-Fundamentals" [ref=e38] [cursor=pointer]:
+      - /url: "#11-Web-Fundamentals"
+    - link "12-JavaScript" [ref=e39] [cursor=pointer]:
+      - /url: "#12-JavaScript"
+    - link "13-Testing" [ref=e40] [cursor=pointer]:
+      - /url: "#13-Testing"
+    - link "14-Code-Quality" [ref=e41] [cursor=pointer]:
+      - /url: "#14-Code-Quality"
+    - link "15-Feature-Management" [ref=e42] [cursor=pointer]:
+      - /url: "#15-Feature-Management"
+    - link "16-Domain-Examples-FactoryFloor" [ref=e43] [cursor=pointer]:
+      - /url: "#16-Domain-Examples-FactoryFloor"
+    - link "17-Domain-Examples-Stock" [ref=e44] [cursor=pointer]:
+      - /url: "#17-Domain-Examples-Stock"
+    - link "18-Machine-Learning" [ref=e45] [cursor=pointer]:
+      - /url: "#18-Machine-Learning"
+    - link "19-For-Dummies" [ref=e46] [cursor=pointer]:
+      - /url: "#19-For-Dummies"
+    - link "20-Git" [ref=e47] [cursor=pointer]:
+      - /url: "#20-Git"
+  - generic [ref=e48]:
+    - generic [ref=e49]:
+      - heading "00-Meta 1 files" [level=2] [ref=e50]:
+        - text: 00-Meta
+        - generic [ref=e51]: 1 files
+      - list [ref=e52]:
+        - listitem [ref=e53]:
+          - link "README.md" [ref=e54] [cursor=pointer]:
+            - /url: 00-Meta/README.html
+          - generic [ref=e56]: MD
+    - generic [ref=e57]:
+      - heading "01-Basics 6 files" [level=2] [ref=e58]:
+        - text: 01-Basics
+        - generic [ref=e59]: 6 files
+      - list [ref=e60]:
+        - listitem [ref=e61]:
+          - link "Blazor_Architecture_and_Security_Guide.pdf" [ref=e62] [cursor=pointer]:
+            - /url: 01-Basics/Blazor_Architecture_and_Security_Guide.html
+          - generic [ref=e64]: PDF
+        - listitem [ref=e65]:
+          - link "Blazor_Guide_For_Dummies (1).pdf" [ref=e66] [cursor=pointer]:
+            - /url: 01-Basics/Blazor_Guide_For_Dummies (1).html
+          - generic [ref=e67]:
+            - generic [ref=e68]: PDF
+            - generic "same content, different format" [ref=e69]: ×FMT
+        - listitem [ref=e70]:
+          - link "Blazor_Guide_For_Dummies.pdf" [ref=e71] [cursor=pointer]:
+            - /url: 01-Basics/Blazor_Guide_For_Dummies.html
+          - generic [ref=e72]:
+            - generic [ref=e73]: PDF
+            - generic "same content, different format" [ref=e74]: ×FMT
+        - listitem [ref=e75]:
+          - link "CSharp_Generics_Guide.md" [ref=e76] [cursor=pointer]:
+            - /url: 01-Basics/CSharp_Generics_Guide.html
+          - generic [ref=e77]:
+            - generic [ref=e78]: MD
+            - generic "same content, different format" [ref=e79]: ×FMT
+        - listitem [ref=e80]:
+          - link "CSharp_Generics_Guide.pdf" [ref=e81] [cursor=pointer]:
+            - /url: 01-Basics/CSharp_Generics_Guide.pdf.html
+          - generic [ref=e82]:
+            - generic [ref=e83]: PDF
+            - generic "same content, different format" [ref=e84]: ×FMT
+        - listitem [ref=e85]:
+          - link "CSharp_Stack_and_Heap_Guide.pdf" [ref=e86] [cursor=pointer]:
+            - /url: 01-Basics/CSharp_Stack_and_Heap_Guide.html
+          - generic [ref=e88]: PDF
+    - generic [ref=e89]:
+      - heading "02-Architecture-and-Patterns 5 files" [level=2] [ref=e90]:
+        - text: 02-Architecture-and-Patterns
+        - generic [ref=e91]: 5 files
+      - list [ref=e92]:
+        - listitem [ref=e93]:
+          - link "01-Understanding-Clean-Architecture.md" [ref=e94] [cursor=pointer]:
+            - /url: 02-Architecture-and-Patterns/01-Understanding-Clean-Architecture.html
+          - generic [ref=e96]: MD
+        - listitem [ref=e97]:
+          - link "03-Adapter-Pattern-Explained.md" [ref=e98] [cursor=pointer]:
+            - /url: 02-Architecture-and-Patterns/03-Adapter-Pattern-Explained.html
+          - generic [ref=e100]: MD
+        - listitem [ref=e101]:
+          - link "13-Export-Service-Strategy-Pattern.md" [ref=e102] [cursor=pointer]:
+            - /url: 02-Architecture-and-Patterns/13-Export-Service-Strategy-Pattern.html
+          - generic [ref=e104]: MD
+        - listitem [ref=e105]:
+          - link "29-Validator-Pipeline-Chain-Of-Responsibility.html" [ref=e106] [cursor=pointer]:
+            - /url: 02-Architecture-and-Patterns/29-Validator-Pipeline-Chain-Of-Responsibility.html
+          - generic [ref=e108]: HTML
+        - listitem [ref=e109]:
+          - link "31-Strategy-Pattern-Pluggable-Algorithms.html" [ref=e110] [cursor=pointer]:
+            - /url: 02-Architecture-and-Patterns/31-Strategy-Pattern-Pluggable-Algorithms.html
+          - generic [ref=e112]: HTML
+    - generic [ref=e113]:
+      - heading "03-Blazor 3 files" [level=2] [ref=e114]:
+        - text: 03-Blazor
+        - generic [ref=e115]: 3 files
+      - list [ref=e116]:
+        - listitem [ref=e117]:
+          - link "Actions&Events.docx" [ref=e118] [cursor=pointer]:
+            - /url: 03-Blazor/Actions&Events.html
+          - generic [ref=e120]: DOCX
+        - listitem [ref=e121]:
+          - link "Adding-New-Category.html" [ref=e122] [cursor=pointer]:
+            - /url: 03-Blazor/Adding-New-Category.html
+          - generic [ref=e124]: HTML
+        - listitem [ref=e125]:
+          - link "CookieHandlingBlazorServerApplications.docx" [ref=e126] [cursor=pointer]:
+            - /url: 03-Blazor/CookieHandlingBlazorServerApplications.html
+          - generic [ref=e128]: DOCX
+    - generic [ref=e129]:
+      - heading "04-CSharp-Language 5 files" [level=2] [ref=e130]:
+        - text: 04-CSharp-Language
+        - generic [ref=e131]: 5 files
+      - list [ref=e132]:
+        - listitem [ref=e133]:
+          - link "12-CSharp-Flags-Enum.md" [ref=e134] [cursor=pointer]:
+            - /url: 04-CSharp-Language/12-CSharp-Flags-Enum.html
+          - generic [ref=e136]: MD
+        - listitem [ref=e137]:
+          - link "26-Expression-Trees-Compiled-Reflection.html" [ref=e138] [cursor=pointer]:
+            - /url: 04-CSharp-Language/26-Expression-Trees-Compiled-Reflection.html
+          - generic [ref=e140]: HTML
+        - listitem [ref=e141]:
+          - link "32-Named-Tuples-Value-Semantics.html" [ref=e142] [cursor=pointer]:
+            - /url: 04-CSharp-Language/32-Named-Tuples-Value-Semantics.html
+          - generic [ref=e144]: HTML
+        - listitem [ref=e145]:
+          - link "delegates-lambdas-expression-bodies.html" [ref=e146] [cursor=pointer]:
+            - /url: 04-CSharp-Language/delegates-lambdas-expression-bodies.html
+          - generic [ref=e148]: HTML
+        - listitem [ref=e149]:
+          - link "generics-builders-deep-dive.html" [ref=e150] [cursor=pointer]:
+            - /url: 04-CSharp-Language/generics-builders-deep-dive.html
+          - generic [ref=e152]: HTML
+    - generic [ref=e153]:
+      - heading "05-Scheduling 2 files" [level=2] [ref=e154]:
+        - text: 05-Scheduling
+        - generic [ref=e155]: 2 files
+      - list [ref=e156]:
+        - listitem [ref=e157]:
+          - link "08-Agnostic-Schedule-Conflict-Detection.md" [ref=e158] [cursor=pointer]:
+            - /url: 05-Scheduling/08-Agnostic-Schedule-Conflict-Detection.html
+          - generic [ref=e160]: MD
+        - listitem [ref=e161]:
+          - link "09-Generic-Schedule-Grid-Architecture.md" [ref=e162] [cursor=pointer]:
+            - /url: 05-Scheduling/09-Generic-Schedule-Grid-Architecture.html
+          - generic [ref=e164]: MD
+    - generic [ref=e165]:
+      - heading "06-Auth-and-Identity 7 files" [level=2] [ref=e166]:
+        - text: 06-Auth-and-Identity
+        - generic [ref=e167]: 7 files
+      - list [ref=e168]:
+        - listitem [ref=e169]:
+          - link "02-Role-Based-Authorization.md" [ref=e170] [cursor=pointer]:
+            - /url: 06-Auth-and-Identity/02-Role-Based-Authorization.html
+          - generic [ref=e172]: MD
+        - listitem [ref=e173]:
+          - link "04-Authorization-Architecture.md" [ref=e174] [cursor=pointer]:
+            - /url: 06-Auth-and-Identity/04-Authorization-Architecture.html
+          - generic [ref=e176]: MD
+        - listitem [ref=e177]:
+          - link "28-Password-Security-BCrypt.html" [ref=e178] [cursor=pointer]:
+            - /url: 06-Auth-and-Identity/28-Password-Security-BCrypt.html
+          - generic [ref=e180]: HTML
+        - listitem [ref=e181]:
+          - link "IdentityProjectKnowledge.pdf" [ref=e182] [cursor=pointer]:
+            - /url: 06-Auth-and-Identity/IdentityProjectKnowledge.html
+          - generic [ref=e183]:
+            - generic [ref=e184]: PDF
+            - generic "same content, different format" [ref=e185]: ×FMT
+        - listitem [ref=e186]:
+          - link "IdentityProjectKnowledgeEditable.docx" [ref=e187] [cursor=pointer]:
+            - /url: 06-Auth-and-Identity/IdentityProjectKnowledgeEditable.html
+          - generic [ref=e188]:
+            - generic [ref=e189]: DOCX
+            - generic "same content, different format" [ref=e190]: ×FMT
+        - listitem [ref=e191]:
+          - link "IdentityRoadmap.pdf" [ref=e192] [cursor=pointer]:
+            - /url: 06-Auth-and-Identity/IdentityRoadmap.html
+          - generic [ref=e194]: PDF
+        - listitem [ref=e195]:
+          - link "login.html" [ref=e196] [cursor=pointer]:
+            - /url: 06-Auth-and-Identity/login.html
+          - generic [ref=e198]: HTML
+    - generic [ref=e199]:
+      - heading "07-Database-EF-SQL 7 files" [level=2] [ref=e200]:
+        - text: 07-Database-EF-SQL
+        - generic [ref=e201]: 7 files
+      - list [ref=e202]:
+        - listitem [ref=e203]:
+          - link "17-Database-Reset-And-Migration.html" [ref=e204] [cursor=pointer]:
+            - /url: 07-Database-EF-SQL/17-Database-Reset-And-Migration.html
+          - generic [ref=e206]: HTML
+        - listitem [ref=e207]:
+          - link "18-Migration-And-Seeding-Mechanism.html" [ref=e208] [cursor=pointer]:
+            - /url: 07-Database-EF-SQL/18-Migration-And-Seeding-Mechanism.html
+          - generic [ref=e210]: HTML
+        - listitem [ref=e211]:
+          - link "23-EF-Core-Audit-Trail-Two-Layer-System.html" [ref=e212] [cursor=pointer]:
+            - /url: 07-Database-EF-SQL/23-EF-Core-Audit-Trail-Two-Layer-System.html
+          - generic [ref=e214]: HTML
+        - listitem [ref=e215]:
+          - link "27-Base-Entity-Abstractions-Soft-Delete.html" [ref=e216] [cursor=pointer]:
+            - /url: 07-Database-EF-SQL/27-Base-Entity-Abstractions-Soft-Delete.html
+          - generic [ref=e218]: HTML
+        - listitem [ref=e219]:
+          - link "backup-and-cleanup.html" [ref=e220] [cursor=pointer]:
+            - /url: 07-Database-EF-SQL/backup-and-cleanup.html
+          - generic [ref=e222]: HTML
+        - listitem [ref=e223]:
+          - link "ef-core-multi-tenant.html" [ref=e224] [cursor=pointer]:
+            - /url: 07-Database-EF-SQL/ef-core-multi-tenant.html
+          - generic [ref=e226]: HTML
+        - listitem [ref=e227]:
+          - link "📘 Loadings_Includes_virtuals.docx" [ref=e228] [cursor=pointer]:
+            - /url: 07-Database-EF-SQL/📘 Loadings_Includes_virtuals.html
+          - generic [ref=e230]: DOCX
+    - generic [ref=e231]:
+      - heading "08-Concurrency-and-Async 5 files" [level=2] [ref=e232]:
+        - text: 08-Concurrency-and-Async
+        - generic [ref=e233]: 5 files
+      - list [ref=e234]:
+        - listitem [ref=e235]:
+          - link "20-IMemoryCache-Dual-Caching-Strategy.html" [ref=e236] [cursor=pointer]:
+            - /url: 08-Concurrency-and-Async/20-IMemoryCache-Dual-Caching-Strategy.html
+          - generic [ref=e238]: HTML
+        - listitem [ref=e239]:
+          - link "21-Background-Services-Smart-Scheduling.html" [ref=e240] [cursor=pointer]:
+            - /url: 08-Concurrency-and-Async/21-Background-Services-Smart-Scheduling.html
+          - generic [ref=e242]: HTML
+        - listitem [ref=e243]:
+          - link "22-ConcurrentDictionary-Thread-Safe-Caching.html" [ref=e244] [cursor=pointer]:
+            - /url: 08-Concurrency-and-Async/22-ConcurrentDictionary-Thread-Safe-Caching.html
+          - generic [ref=e246]: HTML
+        - listitem [ref=e247]:
+          - link "30-SemaphoreSlim-Controlled-Access.html" [ref=e248] [cursor=pointer]:
+            - /url: 08-Concurrency-and-Async/30-SemaphoreSlim-Controlled-Access.html
+          - generic [ref=e250]: HTML
+        - listitem [ref=e251]:
+          - link "ASyncPattern.docx" [ref=e252] [cursor=pointer]:
+            - /url: 08-Concurrency-and-Async/ASyncPattern.html
+          - generic [ref=e254]: DOCX
+    - generic [ref=e255]:
+      - heading "09-Realtime-SignalR 4 files" [level=2] [ref=e256]:
+        - text: 09-Realtime-SignalR
+        - generic [ref=e257]: 4 files
+      - list [ref=e258]:
+        - listitem [ref=e259]:
+          - link "11-SignalR-Real-Time-Communication.md" [ref=e260] [cursor=pointer]:
+            - /url: 09-Realtime-SignalR/11-SignalR-Real-Time-Communication.html
+          - generic [ref=e262]: MD
+        - listitem [ref=e263]:
+          - link "14-SignalR-Notification-System.md" [ref=e264] [cursor=pointer]:
+            - /url: 09-Realtime-SignalR/14-SignalR-Notification-System.html
+          - generic [ref=e266]: MD
+        - listitem [ref=e267]:
+          - link "15-Notification-Recipient-Resolver-Pipeline.md" [ref=e268] [cursor=pointer]:
+            - /url: 09-Realtime-SignalR/15-Notification-Recipient-Resolver-Pipeline.html
+          - generic [ref=e270]: MD
+        - listitem [ref=e271]:
+          - link "16-SignalR-Chat-System.html" [ref=e272] [cursor=pointer]:
+            - /url: 09-Realtime-SignalR/16-SignalR-Chat-System.html
+          - generic [ref=e274]: HTML
+    - generic [ref=e275]:
+      - heading "10-Integrations 3 files" [level=2] [ref=e276]:
+        - text: 10-Integrations
+        - generic [ref=e277]: 3 files
+      - list [ref=e278]:
+        - listitem [ref=e279]:
+          - link "07-Facial-Recognition-Architecture.md" [ref=e280] [cursor=pointer]:
+            - /url: 10-Integrations/07-Facial-Recognition-Architecture.html
+          - generic [ref=e282]: MD
+        - listitem [ref=e283]:
+          - link "24-Geofencing-Haversine-Location-Validation.html" [ref=e284] [cursor=pointer]:
+            - /url: 10-Integrations/24-Geofencing-Haversine-Location-Validation.html
+          - generic [ref=e286]: HTML
+        - listitem [ref=e287]:
+          - link "25-IMAP-SMTP-Email-Integration.html" [ref=e288] [cursor=pointer]:
+            - /url: 10-Integrations/25-IMAP-SMTP-Email-Integration.html
+          - generic [ref=e290]: HTML
+    - generic [ref=e291]:
+      - heading "11-Web-Fundamentals 2 files" [level=2] [ref=e292]:
+        - text: 11-Web-Fundamentals
+        - generic [ref=e293]: 2 files
+      - list [ref=e294]:
+        - listitem [ref=e295]:
+          - link "10-Web-Fundamentals.md" [ref=e296] [cursor=pointer]:
+            - /url: 11-Web-Fundamentals/10-Web-Fundamentals.html
+          - generic [ref=e298]: MD
+        - listitem [ref=e299]:
+          - link "tutorial.html" [ref=e300] [cursor=pointer]:
+            - /url: 11-Web-Fundamentals/tutorial.html
+          - generic [ref=e302]: HTML
+    - generic [ref=e303]:
+      - heading "12-JavaScript 9 files" [level=2] [ref=e304]:
+        - text: 12-JavaScript
+        - generic [ref=e305]: 9 files
+      - list [ref=e306]:
+        - listitem [ref=e307]:
+          - link "06-Blazor-JS-Interop-Static-Events.md" [ref=e308] [cursor=pointer]:
+            - /url: 12-JavaScript/06-Blazor-JS-Interop-Static-Events.html
+          - generic [ref=e310]: MD
+        - listitem [ref=e311]:
+          - link "AG_Grid_JS_learning.docx" [ref=e312] [cursor=pointer]:
+            - /url: 12-JavaScript/AG_Grid_JS_learning.html
+          - generic [ref=e314]: DOCX
+        - listitem [ref=e315]:
+          - link "Document 1.docx" [ref=e316] [cursor=pointer]:
+            - /url: 12-JavaScript/Document 1.html
+          - generic [ref=e317]:
+            - generic [ref=e318]: DOCX
+            - generic "same content, different format" [ref=e319]: ×FMT
+        - listitem [ref=e320]:
+          - link "Document 1.pdf" [ref=e321] [cursor=pointer]:
+            - /url: 12-JavaScript/Document 1.pdf.html
+          - generic [ref=e322]:
+            - generic [ref=e323]: PDF
+            - generic "same content, different format" [ref=e324]: ×FMT
+        - listitem [ref=e325]:
+          - link "Exemplo2Buttons.html" [ref=e326] [cursor=pointer]:
+            - /url: 12-JavaScript/Exemplo2Buttons.html
+          - generic [ref=e328]: HTML
+        - listitem [ref=e329]:
+          - link "ExemploCores.html" [ref=e330] [cursor=pointer]:
+            - /url: 12-JavaScript/ExemploCores.html
+          - generic [ref=e332]: HTML
+        - listitem [ref=e333]:
+          - link "JS_Select2&CustomMethods.pdf" [ref=e334] [cursor=pointer]:
+            - /url: 12-JavaScript/JS_Select2&CustomMethods.html
+          - generic [ref=e336]: PDF
+        - listitem [ref=e337]:
+          - link "Manual de Processos-Design.pdf" [ref=e338] [cursor=pointer]:
+            - /url: 12-JavaScript/Manual de Processos-Design.html
+          - generic [ref=e340]: PDF
+        - listitem [ref=e341]:
+          - link "Select2_JQuery_explanation.docx" [ref=e342] [cursor=pointer]:
+            - /url: 12-JavaScript/Select2_JQuery_explanation.html
+          - generic [ref=e344]: DOCX
+    - generic [ref=e345]:
+      - heading "13-Testing 3 files" [level=2] [ref=e346]:
+        - text: 13-Testing
+        - generic [ref=e347]: 3 files
+      - list [ref=e348]:
+        - listitem [ref=e349]:
+          - link "HowToCreateUnitTesting.docx" [ref=e350] [cursor=pointer]:
+            - /url: 13-Testing/HowToCreateUnitTesting.html
+          - generic [ref=e352]: DOCX
+        - listitem [ref=e353]:
+          - link "The Complete Guide to Unit Testing.docx" [ref=e354] [cursor=pointer]:
+            - /url: 13-Testing/The Complete Guide to Unit Testing.html
+          - generic [ref=e356]: DOCX
+        - listitem [ref=e357]:
+          - link "UnitTestingTutorial.pdf" [ref=e358] [cursor=pointer]:
+            - /url: 13-Testing/UnitTestingTutorial.html
+          - generic [ref=e360]: PDF
+    - generic [ref=e361]:
+      - heading "14-Code-Quality 1 files" [level=2] [ref=e362]:
+        - text: 14-Code-Quality
+        - generic [ref=e363]: 1 files
+      - list [ref=e364]:
+        - listitem [ref=e365]:
+          - link "05-Polite-Code-Style.md" [ref=e366] [cursor=pointer]:
+            - /url: 14-Code-Quality/05-Polite-Code-Style.html
+          - generic [ref=e368]: MD
+    - generic [ref=e369]:
+      - heading "15-Feature-Management 1 files" [level=2] [ref=e370]:
+        - text: 15-Feature-Management
+        - generic [ref=e371]: 1 files
+      - list [ref=e372]:
+        - listitem [ref=e373]:
+          - link "19-Feature-Flags-Hierarchy-Dependencies.html" [ref=e374] [cursor=pointer]:
+            - /url: 15-Feature-Management/19-Feature-Flags-Hierarchy-Dependencies.html
+          - generic [ref=e376]: HTML
+    - generic [ref=e377]:
+      - heading "16-Domain-Examples-FactoryFloor 8 files" [level=2] [ref=e378]:
+        - text: 16-Domain-Examples-FactoryFloor
+        - generic [ref=e379]: 8 files
+      - list [ref=e380]:
+        - listitem [ref=e381]:
+          - link "FactoryFloorProductionSystem.pdf" [ref=e382] [cursor=pointer]:
+            - /url: 16-Domain-Examples-FactoryFloor/FactoryFloorProductionSystem.html
+          - generic [ref=e384]: PDF
+        - listitem [ref=e385]:
+          - link "FactoryFloorProductionSystemFormalDocumentation.docx" [ref=e386] [cursor=pointer]:
+            - /url: 16-Domain-Examples-FactoryFloor/FactoryFloorProductionSystemFormalDocumentation.html
+          - generic [ref=e388]: DOCX
+        - listitem [ref=e389]:
+          - link "FactoryFloorProductionSystemInfoGraphic.docx" [ref=e390] [cursor=pointer]:
+            - /url: 16-Domain-Examples-FactoryFloor/FactoryFloorProductionSystemInfoGraphic.html
+          - generic [ref=e391]:
+            - generic [ref=e392]: DOCX
+            - generic "same content, different format" [ref=e393]: ×FMT
+        - listitem [ref=e394]:
+          - link "FactoryFloorProductionSystemInfoGraphic.pdf" [ref=e395] [cursor=pointer]:
+            - /url: 16-Domain-Examples-FactoryFloor/FactoryFloorProductionSystemInfoGraphic.pdf.html
+          - generic [ref=e396]:
+            - generic [ref=e397]: PDF
+            - generic "same content, different format" [ref=e398]: ×FMT
+        - listitem [ref=e399]:
+          - link "SistemaProduçãoChãoFábricaDocumentaçãoFormal.docx" [ref=e400] [cursor=pointer]:
+            - /url: 16-Domain-Examples-FactoryFloor/SistemaProduçãoChãoFábricaDocumentaçãoFormal.html
+          - generic [ref=e401]:
+            - generic [ref=e402]: DOCX
+            - generic "same content, different format" [ref=e403]: ×FMT
+        - listitem [ref=e404]:
+          - link "SistemaProduçãoChãoFábricaDocumentaçãoFormal.pdf" [ref=e405] [cursor=pointer]:
+            - /url: 16-Domain-Examples-FactoryFloor/SistemaProduçãoChãoFábricaDocumentaçãoFormal.pdf.html
+          - generic [ref=e406]:
+            - generic [ref=e407]: PDF
+            - generic "same content, different format" [ref=e408]: ×FMT
+        - listitem [ref=e409]:
+          - link "SistemaProduçãoChãoFábricaInfoGráfico.docx" [ref=e410] [cursor=pointer]:
+            - /url: 16-Domain-Examples-FactoryFloor/SistemaProduçãoChãoFábricaInfoGráfico.html
+          - generic [ref=e411]:
+            - generic [ref=e412]: DOCX
+            - generic "same content, different format" [ref=e413]: ×FMT
+        - listitem [ref=e414]:
+          - link "SistemaProduçãoChãoFábricaInfoGráfico.pdf" [ref=e415] [cursor=pointer]:
+            - /url: 16-Domain-Examples-FactoryFloor/SistemaProduçãoChãoFábricaInfoGráfico.pdf.html
+          - generic [ref=e416]:
+            - generic [ref=e417]: PDF
+            - generic "same content, different format" [ref=e418]: ×FMT
+    - generic [ref=e419]:
+      - heading "17-Domain-Examples-Stock 8 files" [level=2] [ref=e420]:
+        - text: 17-Domain-Examples-Stock
+        - generic [ref=e421]: 8 files
+      - list [ref=e422]:
+        - listitem [ref=e423]:
+          - link "SistemaServiçoStockDocumentaçãoFormal.docx" [ref=e424] [cursor=pointer]:
+            - /url: 17-Domain-Examples-Stock/SistemaServiçoStockDocumentaçãoFormal.html
+          - generic [ref=e425]:
+            - generic [ref=e426]: DOCX
+            - generic "same content, different format" [ref=e427]: ×FMT
+        - listitem [ref=e428]:
+          - link "SistemaServiçoStockDocumentaçãoFormal.pdf" [ref=e429] [cursor=pointer]:
+            - /url: 17-Domain-Examples-Stock/SistemaServiçoStockDocumentaçãoFormal.pdf.html
+          - generic [ref=e430]:
+            - generic [ref=e431]: PDF
+            - generic "same content, different format" [ref=e432]: ×FMT
+        - listitem [ref=e433]:
+          - link "SistemaServiçoStockInfoGráfico.docx" [ref=e434] [cursor=pointer]:
+            - /url: 17-Domain-Examples-Stock/SistemaServiçoStockInfoGráfico.html
+          - generic [ref=e435]:
+            - generic [ref=e436]: DOCX
+            - generic "same content, different format" [ref=e437]: ×FMT
+        - listitem [ref=e438]:
+          - link "SistemaServiçoStockInfoGráfico.pdf" [ref=e439] [cursor=pointer]:
+            - /url: 17-Domain-Examples-Stock/SistemaServiçoStockInfoGráfico.pdf.html
+          - generic [ref=e440]:
+            - generic [ref=e441]: PDF
+            - generic "same content, different format" [ref=e442]: ×FMT
+        - listitem [ref=e443]:
+          - link "StockServiceSystemFormalDocumentation.docx" [ref=e444] [cursor=pointer]:
+            - /url: 17-Domain-Examples-Stock/StockServiceSystemFormalDocumentation.html
+          - generic [ref=e445]:
+            - generic [ref=e446]: DOCX
+            - generic "same content, different format" [ref=e447]: ×FMT
+        - listitem [ref=e448]:
+          - link "StockServiceSystemFormalDocumentation.pdf" [ref=e449] [cursor=pointer]:
+            - /url: 17-Domain-Examples-Stock/StockServiceSystemFormalDocumentation.pdf.html
+          - generic [ref=e450]:
+            - generic [ref=e451]: PDF
+            - generic "same content, different format" [ref=e452]: ×FMT
+        - listitem [ref=e453]:
+          - link "StockServiceSystemInfoGraphic.docx" [ref=e454] [cursor=pointer]:
+            - /url: 17-Domain-Examples-Stock/StockServiceSystemInfoGraphic.html
+          - generic [ref=e455]:
+            - generic [ref=e456]: DOCX
+            - generic "same content, different format" [ref=e457]: ×FMT
+        - listitem [ref=e458]:
+          - link "StockServiceSystemInfoGraphic.pdf" [ref=e459] [cursor=pointer]:
+            - /url: 17-Domain-Examples-Stock/StockServiceSystemInfoGraphic.pdf.html
+          - generic [ref=e460]:
+            - generic [ref=e461]: PDF
+            - generic "same content, different format" [ref=e462]: ×FMT
+    - generic [ref=e463]:
+      - heading "18-Machine-Learning 7 files" [level=2] [ref=e464]:
+        - text: 18-Machine-Learning
+        - generic [ref=e465]: 7 files
+      - list [ref=e466]:
+        - listitem [ref=e467]:
+          - link "backprop-visualization.html" [ref=e468] [cursor=pointer]:
+            - /url: 18-Machine-Learning/backprop-visualization.html
+          - generic [ref=e470]: HTML
+        - listitem [ref=e471]:
+          - link "Backpropagation.md" [ref=e472] [cursor=pointer]:
+            - /url: 18-Machine-Learning/Backpropagation.html
+          - generic [ref=e474]: MD
+        - listitem [ref=e475]:
+          - link "neural-network-journeyV0.html" [ref=e476] [cursor=pointer]:
+            - /url: 18-Machine-Learning/neural-network-journeyV0.html
+          - generic [ref=e478]: HTML
+        - listitem [ref=e479]:
+          - link "neural-network-journeyV1.html" [ref=e480] [cursor=pointer]:
+            - /url: 18-Machine-Learning/neural-network-journeyV1.html
+          - generic [ref=e482]: HTML
+        - listitem [ref=e483]:
+          - link "neural-network-journeyV2.html" [ref=e484] [cursor=pointer]:
+            - /url: 18-Machine-Learning/neural-network-journeyV2.html
+          - generic [ref=e486]: HTML
+        - listitem [ref=e487]:
+          - link "sigmoid-derivative.html" [ref=e488] [cursor=pointer]:
+            - /url: 18-Machine-Learning/sigmoid-derivative.html
+          - generic [ref=e490]: HTML
+        - listitem [ref=e491]:
+          - link "training-flow-visualization.html" [ref=e492] [cursor=pointer]:
+            - /url: 18-Machine-Learning/training-flow-visualization.html
+          - generic [ref=e494]: HTML
+    - generic [ref=e495]:
+      - heading "19-For-Dummies 7 files" [level=2] [ref=e496]:
+        - text: 19-For-Dummies
+        - generic [ref=e497]: 7 files
+      - list [ref=e498]:
+        - listitem [ref=e499]:
+          - link "06-Blazor-JS-Interop-Static-Events-ForDummies.md" [ref=e500] [cursor=pointer]:
+            - /url: 19-For-Dummies/06-Blazor-JS-Interop-Static-Events-ForDummies.html
+          - generic [ref=e502]: MD
+        - listitem [ref=e503]:
+          - link "07-Facial-Recognition-Architecture-ForDummies.md" [ref=e504] [cursor=pointer]:
+            - /url: 19-For-Dummies/07-Facial-Recognition-Architecture-ForDummies.html
+          - generic [ref=e506]: MD
+        - listitem [ref=e507]:
+          - link "08-Design-Patterns-For-Dummies.md" [ref=e508] [cursor=pointer]:
+            - /url: 19-For-Dummies/08-Design-Patterns-For-Dummies.html
+          - generic [ref=e510]: MD
+        - listitem [ref=e511]:
+          - link "09-GenericScheduleGrid-ForDummies.md" [ref=e512] [cursor=pointer]:
+            - /url: 19-For-Dummies/09-GenericScheduleGrid-ForDummies.html
+          - generic [ref=e514]: MD
+        - listitem [ref=e515]:
+          - link "11-SignalR-Real-Time-Communication-ForDummies.md" [ref=e516] [cursor=pointer]:
+            - /url: 19-For-Dummies/11-SignalR-Real-Time-Communication-ForDummies.html
+          - generic [ref=e518]: MD
+        - listitem [ref=e519]:
+          - link "14-SignalR-Notification-System-ForDummies.md" [ref=e520] [cursor=pointer]:
+            - /url: 19-For-Dummies/14-SignalR-Notification-System-ForDummies.html
+          - generic [ref=e522]: MD
+        - listitem [ref=e523]:
+          - link "15-Notification-Recipient-Resolver-Pipeline-ForDummies.md" [ref=e524] [cursor=pointer]:
+            - /url: 19-For-Dummies/15-Notification-Recipient-Resolver-Pipeline-ForDummies.html
+          - generic [ref=e526]: MD
+    - generic [ref=e527]:
+      - heading "20-Git 1 files" [level=2] [ref=e528]:
+        - text: 20-Git
+        - generic [ref=e529]: 1 files
+      - list [ref=e530]:
+        - listitem [ref=e531]:
+          - link "separating-repos.md" [ref=e532] [cursor=pointer]:
+            - /url: 20-Git/separating-repos.html
+          - generic [ref=e534]: MD

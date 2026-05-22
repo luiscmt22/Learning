@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Migration & Seeding Mechanism — CLI Commands, TenantMigrator, and DemoDataSeeder</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --surface: #16213e;
+            --surface2: #0f3460;
+            --accent: #e94560;
+            --accent2: #533483;
+            --text: #eee;
+            --text-muted: #aab;
+            --success: #4ecca3;
+            --warning: #f0a500;
+            --code-bg: #0d1117;
+            --border: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+
+        h2 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin: 2.5rem 0 1rem 0;
+            padding-bottom: 0.3rem;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        h3 {
+            color: var(--success);
+            font-size: 1.2rem;
+            margin: 1.8rem 0 0.8rem 0;
+        }
+
+        h4 {
+            color: var(--warning);
+            font-size: 1.05rem;
+            margin: 1.2rem 0 0.5rem 0;
+        }
+
+        p { margin-bottom: 1rem; }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.2rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        code {
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9rem;
+        }
+
+        p code, li code, td code {
+            background: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .keyword { color: #569cd6; }
+        .type { color: #4ec9b0; }
+        .string { color: #ce9178; }
+        .comment { color: #6a9955; }
+        .method { color: #dcdcaa; }
+        .number { color: #b5cea8; }
+        .param { color: #9cdcfe; }
+
+        .callout {
+            border-radius: 8px;
+            padding: 1.2rem 1.5rem;
+            margin: 1.5rem 0;
+            border-left: 4px solid;
+        }
+
+        .callout-metaphor {
+            background: rgba(83, 52, 131, 0.2);
+            border-color: var(--accent2);
+        }
+        .callout-metaphor::before {
+            content: "Metaphor";
+            display: block;
+            font-weight: bold;
+            color: var(--accent2);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-english {
+            background: rgba(78, 204, 163, 0.1);
+            border-color: var(--success);
+        }
+        .callout-english::before {
+            content: "Read It Like English";
+            display: block;
+            font-weight: bold;
+            color: var(--success);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-warning {
+            background: rgba(240, 165, 0, 0.1);
+            border-color: var(--warning);
+        }
+        .callout-warning::before {
+            content: "Common Confusion";
+            display: block;
+            font-weight: bold;
+            color: var(--warning);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-rule {
+            background: rgba(233, 69, 96, 0.1);
+            border-color: var(--accent);
+        }
+        .callout-rule::before {
+            content: "Golden Rule";
+            display: block;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        ul, ol {
+            margin: 0.5rem 0 1rem 1.5rem;
+        }
+
+        li { margin-bottom: 0.3rem; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 0.6rem 1rem;
+            text-align: left;
+        }
+
+        th {
+            background: var(--surface2);
+            color: var(--success);
+        }
+
+        td { background: var(--surface); }
+
+        .diagram {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'Cascadia Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            white-space: pre;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+<div style="background:rgba(7,9,15,0.94);border-bottom:1px solid #1f2940;padding:12px 24px;font:13px/1.4 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;position:fixed;top:0;left:0;right:0;z-index:99999;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);display:flex;align-items:center;gap:10px;color:#94a3bf;box-sizing:border-box;min-height:48px;"><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;">Learning</a><span style="color:#5f6b86;">›</span><a href="../_Hub.html" style="color:#94a3bf;text-decoration:none;">APPLICATIONS</a><span style="color:#5f6b86;">›</span><a href="_Category.html" style="color:#94a3bf;text-decoration:none;">Migration &amp; Seeding</a><span style="color:#5f6b86;">›</span><span style="color:#e9eef8;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">Migration &amp; Seeding Mechanism — CLI Commands, TenantMigrator, and DemoDataSeeder</span><a href="givingcare-migration-and-seeding.html" download style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">↓ Download</a><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">All docs</a></div><div style="height:48px;"></div><div style="background:linear-gradient(135deg,#0a0e1a 0%,#11182a 100%);border:1px solid #1f2940;border-radius:14px;padding:24px 28px;margin:20px;font:15px/1.7 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;color:#e9eef8;box-shadow:0 12px 40px rgba(0,0,0,0.35);"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.6px;color:#b86aff;font-weight:600;margin-bottom:8px;">▸ Curated · Implementation · Migration System</div><div style="font-size:24px;font-weight:700;color:#e9eef8;margin-bottom:10px;letter-spacing:-0.02em;line-height:1.2;">Migration &amp; Seeding Mechanism — CLI Commands, TenantMigrator, and DemoDataSeeder</div><div style="font-size:16px;color:#94a3bf;margin-bottom:18px;line-height:1.5;">How the GivingCare app uses command-line arguments on its own executable to provision auth and tenant databases, layered with HasData migration seeds and a programmatic DemoDataSeeder for realistic demo data.</div><div style="font-style:italic;border-left:3px solid #b86aff;padding:6px 0 6px 16px;margin:14px 0;color:#e9eef8;">Why does your production deployment script need two separate executables — one to migrate the database and one to serve the app? Spoiler: it doesn&#x27;t. The same .exe can do both jobs, and a single POSIX convention (the -- separator) is what makes it elegant instead of hacky.</div><div style="background:rgba(106,166,255,0.06);border:1px solid rgba(106,166,255,0.20);border-radius:10px;padding:14px 18px;margin:14px 0;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#b86aff;margin-bottom:6px;font-weight:600;">Executive summary</div><div style="font-size:14px;color:#e9eef8;line-height:1.6;">This tutorial explains how GivingCare embeds its database-provisioning logic directly into the web app executable using dotnet run -- --migrate-all flags, so the same .exe can be a web server or a migration tool. It covers the TenantMigrator static class that wraps EF Core&#x27;s MigrateAsync for the AuthDatabase and each tenant DB, the difference between Layer 1 seeds (HasData inside IEntityTypeConfiguration) and Layer 2 seeds (DemoDataSeeder which generates 25 employees, 1000 attendance records, CRM pipeline data etc.), and the idempotency patterns that make both layers safe to run repeatedly.</div></div><div style="background:rgba(184,106,255,0.06);border:1px solid rgba(184,106,255,0.25);border-radius:10px;padding:14px 18px;margin:14px 0;display:flex;gap:12px;"><div style="font-size:20px;flex-shrink:0;">💡</div><div style="flex:1;font-size:14px;color:#e9eef8;line-height:1.6;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#b86aff;margin-bottom:4px;font-weight:700;">Metaphor</div>The executable is a Swiss Army knife. Fold out the regular blade (dotnet run) and it&#x27;s a web server. Fold out the bottle opener (dotnet run -- --migrate-all) and it provisions every database. Fold out the toothpick (dotnet run -- --reseed-demo) and it wipes the demo tenant clean and repopulates it with 25 fake employees and 1000 fake clock-ins. Same tool, different blade, no second program to install.</div></div><div style="margin-top:14px;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#5f6b86;margin-bottom:8px;font-weight:600;">Key concepts</div><div><span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">dotnet run -- argument separator</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">TenantMigrator pattern</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">EF Core MigrateAsync idempotency</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">HasData migration seeds</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">IEntityTypeConfiguration auto-discovery</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">DemoDataSeeder partial class</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">EnsureDeletedAsync re-seed</span></div></div><div style="margin-top:18px;padding-top:14px;border-top:1px solid #1f2940;font-size:11px;color:#5f6b86;">↑ Curated overlay added by render_curated.py · the original document follows below</div></div>
+
+<h1>Migration & Seeding Mechanism</h1>
+<p class="subtitle">CLI commands, TenantMigrator, DemoDataSeeder, and the two layers of seed data</p>
+
+<!-- ================================================= -->
+<h2>1. The Big Picture</h2>
+
+<p>Our apps have a <strong>CLI mode</strong> built directly into the same executable that runs the web server.
+Instead of separate migration tools, we pass command-line flags to <code>dotnet run</code> that tell the app
+to do database work and <strong>exit</strong> instead of starting Blazor.</p>
+
+<div class="diagram">
+dotnet run                          &rarr; Start the web server (normal mode)
+dotnet run -- --migrate-all         &rarr; Migrate all databases, then exit
+dotnet run -- --migrate-auth        &rarr; Migrate auth database only, then exit
+dotnet run -- --migrate-tenants     &rarr; Migrate company databases only, then exit
+dotnet run -- --seed-demo           &rarr; Seed demo company data, then exit
+dotnet run -- --reseed-demo         &rarr; Drop + re-create demo company, then exit
+</div>
+
+<div class="callout callout-metaphor">
+Think of it like a Swiss Army knife. The same <code>.exe</code> can be a web server OR a database provisioning
+tool &mdash; depending on which blade you flip out with the <code>--</code> flags.
+</div>
+
+<p>This approach means:</p>
+<ul>
+    <li>No separate console project for migrations</li>
+    <li>No <code>dotnet ef database update</code> needed at runtime</li>
+    <li>CI/CD pipelines can run <code>dotnet run -- --migrate-all</code> before starting the app</li>
+    <li>Developers can reset their environment with two commands</li>
+</ul>
+
+<!-- ================================================= -->
+<h2>2. How <code>args</code> Works</h2>
+
+<h3>The <code>--</code> separator</h3>
+
+<p>When you type <code>dotnet run -- --migrate-all</code>, the double-dash (<code>--</code>) tells the
+<code>dotnet</code> CLI: <em>"everything after this is for the app, not for me."</em></p>
+
+<div class="diagram">
+dotnet run -- --migrate-all
+│            │  │
+│            │  └── This goes into args[] as "--migrate-all"
+│            └───── Separator: "stop parsing dotnet flags here"
+└────────────────── The dotnet CLI command
+</div>
+
+<p>Inside <code>Program.cs</code>, the top-level <code>args</code> variable is the string array that
+<code>WebApplication.CreateBuilder(args)</code> receives. It contains exactly what comes after <code>--</code>.</p>
+
+<div class="callout callout-warning">
+Without the <code>--</code>, <code>dotnet run</code> would try to interpret <code>--migrate-all</code>
+as its own flag and fail with: <em>"Unrecognized option '--migrate-all'"</em>. The double dash is a
+Unix/POSIX convention that means "end of options for this command."
+</div>
+
+<h3>The decision gate in Program.cs</h3>
+
+<p>At the very bottom of <code>Program.cs</code>, after all middleware and services are configured,
+we check <code>args</code> before calling <code>app.Run()</code>:</p>
+
+<pre><code><span class="comment">// Database migration commands (run and exit &mdash; don't start the web server)</span>
+<span class="comment">// Usage:</span>
+<span class="comment">//   dotnet run -- --migrate-all       Migrate auth + all company databases</span>
+<span class="comment">//   dotnet run -- --migrate-auth      Migrate auth database only</span>
+<span class="comment">//   dotnet run -- --migrate-tenants   Migrate company databases only</span>
+<span class="keyword">if</span> (args.<span class="method">Contains</span>(<span class="string">"--migrate-all"</span>))
+{
+    <span class="keyword">await</span> <span class="type">TenantMigrator</span>.<span class="method">MigrateAllAsync</span>(app.Configuration);
+    <span class="keyword">return</span>;   <span class="comment">// &larr; EXIT: don't start the web server</span>
+}
+<span class="keyword">if</span> (args.<span class="method">Contains</span>(<span class="string">"--migrate-auth"</span>))
+{
+    <span class="keyword">await</span> <span class="type">TenantMigrator</span>.<span class="method">MigrateAuthDatabaseAsync</span>(app.Configuration);
+    <span class="keyword">return</span>;
+}
+<span class="keyword">if</span> (args.<span class="method">Contains</span>(<span class="string">"--migrate-tenants"</span>))
+{
+    <span class="keyword">await</span> <span class="type">TenantMigrator</span>.<span class="method">MigrateTenantsAsync</span>(app.Configuration);
+    <span class="keyword">return</span>;
+}
+<span class="keyword">if</span> (args.<span class="method">Contains</span>(<span class="string">"--seed-demo"</span>) || args.<span class="method">Contains</span>(<span class="string">"--reseed-demo"</span>))
+{
+    <span class="keyword">await</span> <span class="type">DemoDataSeeder</span>.<span class="method">SeedAsync</span>(app.Configuration, forceReseed: args.<span class="method">Contains</span>(<span class="string">"--reseed-demo"</span>));
+    <span class="keyword">return</span>;
+}
+
+app.<span class="method">Run</span>();  <span class="comment">// &larr; Only reached if NO migration/seeding command was provided</span></code></pre>
+
+<div class="callout callout-english">
+"If the user asked to migrate, do the migration and leave. If they asked to seed, do the seeding and
+leave. Otherwise, start the web server."
+</div>
+
+<div class="callout callout-rule">
+The <code>return;</code> after each migration/seeding block is critical. It <strong>exits the process</strong>
+without starting Kestrel. Migration is a setup step, not part of normal app operation.
+</div>
+
+<!-- ================================================= -->
+<h2>3. TenantMigrator &mdash; The Static Migration Class</h2>
+
+<h3>Where it lives</h3>
+<p><code>Tools/TenantMigrator.cs</code> &mdash; a small static class with four methods:</p>
+
+<pre><code><span class="keyword">using</span> <span class="type">GivingCare</span>.Models.Contexts;
+<span class="keyword">using</span> Microsoft.EntityFrameworkCore;
+
+<span class="keyword">namespace</span> <span class="type">GivingCare</span>.Tools;
+
+<span class="keyword">public static class</span> <span class="type">TenantMigrator</span>
+{
+    <span class="comment">/// Migrates the AuthDatabase (BaseControleContext).</span>
+    <span class="comment">/// Creates the database if it doesn't exist, applies migrations, seeds data.</span>
+    <span class="keyword">public static async</span> <span class="type">Task</span> <span class="method">MigrateAuthDatabaseAsync</span>(<span class="type">IConfiguration</span> <span class="param">configuration</span>)
+    {
+        <span class="keyword">await using var</span> <span class="param">context</span> = <span class="keyword">new</span> <span class="type">BaseControleContext</span>(configuration);
+        <span class="keyword">var</span> <span class="param">dbName</span> = context.Database.<span class="method">GetDbConnection</span>().Database;
+        Console.<span class="method">WriteLine</span>(<span class="string">$"Provisioning auth database: {dbName}"</span>);
+
+        <span class="keyword">await</span> context.Database.<span class="method">MigrateAsync</span>();
+
+        Console.<span class="method">WriteLine</span>(<span class="string">$"Auth database '{dbName}' is ready."</span>);
+    }
+
+    <span class="comment">/// Creates a single tenant database and applies all pending migrations.</span>
+    <span class="comment">/// The companyKey must match an entry in Client:Database:Companies in appsettings.json.</span>
+    <span class="keyword">public static async</span> <span class="type">Task</span> <span class="method">MigrateTenantAsync</span>(<span class="type">IConfiguration</span> <span class="param">configuration</span>, <span class="keyword">string</span> <span class="param">companyKey</span>)
+    {
+        <span class="keyword">await using var</span> <span class="param">context</span> = <span class="keyword">new</span> <span class="type">DynamicCompanyContext</span>(configuration, companyKey);
+        <span class="keyword">var</span> <span class="param">dbName</span> = context.Database.<span class="method">GetDbConnection</span>().Database;
+        Console.<span class="method">WriteLine</span>(<span class="string">$"Provisioning tenant database: {dbName} (key: {companyKey})"</span>);
+
+        <span class="keyword">await</span> context.Database.<span class="method">MigrateAsync</span>();
+
+        Console.<span class="method">WriteLine</span>(<span class="string">$"Tenant '{companyKey}' is ready."</span>);
+    }
+
+    <span class="comment">/// Provisions ALL tenant databases defined in Client:Database:Companies.</span>
+    <span class="keyword">public static async</span> <span class="type">Task</span> <span class="method">MigrateTenantsAsync</span>(<span class="type">IConfiguration</span> <span class="param">configuration</span>)
+    {
+        <span class="keyword">var</span> <span class="param">companies</span> = configuration
+            .<span class="method">GetSection</span>(<span class="string">"Client:Database:Companies"</span>).<span class="method">GetChildren</span>();
+        <span class="keyword">foreach</span> (<span class="keyword">var</span> <span class="param">company</span> <span class="keyword">in</span> companies)
+            <span class="keyword">await</span> <span class="method">MigrateTenantAsync</span>(configuration, company.Key);
+    }
+
+    <span class="comment">/// Provisions everything: AuthDatabase first, then all tenant databases.</span>
+    <span class="keyword">public static async</span> <span class="type">Task</span> <span class="method">MigrateAllAsync</span>(<span class="type">IConfiguration</span> <span class="param">configuration</span>)
+    {
+        <span class="keyword">await</span> <span class="method">MigrateAuthDatabaseAsync</span>(configuration);
+        <span class="keyword">await</span> <span class="method">MigrateTenantsAsync</span>(configuration);
+    }
+}</code></pre>
+
+<h3>What <code>MigrateAsync()</code> does under the hood</h3>
+
+<p>When EF Core's <code>context.Database.MigrateAsync()</code> is called, it performs these steps:</p>
+
+<ol>
+    <li><strong>Creates the database</strong> if it doesn't exist (<code>CREATE DATABASE</code>)</li>
+    <li><strong>Creates <code>__EFMigrationsHistory</code></strong> table if it doesn't exist &mdash; tracks applied migrations</li>
+    <li><strong>Compares</strong> migrations in your <code>Migrations/</code> folder against <code>__EFMigrationsHistory</code></li>
+    <li><strong>Applies pending migrations</strong> in chronological order (by the timestamp prefix)</li>
+    <li><strong>Executes <code>InsertData</code> calls</strong> inside those migrations &mdash; this is where <code>HasData()</code> seed data gets inserted</li>
+</ol>
+
+<div class="callout callout-rule">
+<code>MigrateAsync()</code> is <strong>idempotent</strong>. Running it twice is harmless.
+If all migrations are already applied, it does nothing. This is why it's safe to call on every deployment.
+</div>
+
+<h3>How it knows which database to connect to</h3>
+
+<p>Both contexts read connection details from <code>appsettings.json</code>:</p>
+
+<pre><code><span class="string">"Client"</span>: {
+    <span class="string">"Database"</span>: {
+        <span class="string">"Server"</span>: <span class="string">"your-server"</span>,
+        <span class="string">"AuthDatabase"</span>: <span class="string">"AuthDatabase"</span>,
+        <span class="string">"Username"</span>: <span class="string">"sa"</span>,
+        <span class="string">"Password"</span>: <span class="string">"..."</span>,
+        <span class="string">"Companies"</span>: {
+            <span class="string">"DefaultCompany"</span>: { <span class="string">"Database"</span>: <span class="string">"DefaultCompany"</span> },
+            <span class="string">"DemoCompany"</span>:    { <span class="string">"Database"</span>: <span class="string">"DemoCompany"</span> }
+        }
+    }
+}</code></pre>
+
+<p><code>BaseControleContext</code> reads <code>Client:Database:AuthDatabase</code>.
+<code>DynamicCompanyContext</code> takes a <code>companyKey</code> and reads
+<code>Client:Database:Companies:{key}:Database</code>.</p>
+
+<div class="callout callout-metaphor">
+<code>TenantMigrator</code> is a building superintendent. It goes to the lobby first
+(<code>MigrateAuthDatabaseAsync</code>), then walks apartment by apartment
+(<code>MigrateTenantsAsync</code>), making sure each one has working plumbing (schema + seed data).
+</div>
+
+<!-- ================================================= -->
+<h2>4. Two Layers of Seed Data</h2>
+
+<p>The system uses <strong>two distinct seeding mechanisms</strong> for different purposes:</p>
+
+<table>
+    <tr>
+        <th></th>
+        <th>Layer 1: HasData() (Migration Seeds)</th>
+        <th>Layer 2: DemoDataSeeder (Programmatic Seeds)</th>
+    </tr>
+    <tr>
+        <td><strong>What</strong></td>
+        <td>Reference/lookup data baked into migrations</td>
+        <td>Realistic demo data generated by code</td>
+    </tr>
+    <tr>
+        <td><strong>Where</strong></td>
+        <td><code>IEntityTypeConfiguration</code> classes + <code>OnModelCreating</code></td>
+        <td><code>Tools/DemoDataSeeder.cs</code> + <code>DemoDataSeeder.Business.cs</code></td>
+    </tr>
+    <tr>
+        <td><strong>When</strong></td>
+        <td>Every <code>MigrateAsync()</code> &mdash; always, every database</td>
+        <td>Only when you run <code>--seed-demo</code> or <code>--reseed-demo</code></td>
+    </tr>
+    <tr>
+        <td><strong>Scope</strong></td>
+        <td>ALL company databases get this data</td>
+        <td>Only the DemoCompany database</td>
+    </tr>
+    <tr>
+        <td><strong>Examples</strong></td>
+        <td>Document types, payment conditions, currencies, leave types, equipment statuses, VAT rates</td>
+        <td>25 employees, 15 entities, 30 articles, 1000 attendance records, CRM pipeline data</td>
+    </tr>
+</table>
+
+<div class="callout callout-english">
+"Layer 1 sets up the <em>furniture that every apartment needs</em> &mdash; kitchen cabinets, bathroom fixtures.
+Layer 2 fills one specific apartment with <em>realistic staging furniture</em> for the showroom tour."
+</div>
+
+<!-- ================================================= -->
+<h2>5. Layer 1: HasData() &mdash; Migration Seeds</h2>
+
+<h3>How it works</h3>
+
+<p>EF Core lets you define seed data via <code>HasData()</code> inside <code>IEntityTypeConfiguration&lt;T&gt;</code>
+classes. When you generate a migration, EF compares the current <code>HasData()</code> definitions against
+what was seeded in previous migrations, and emits <code>InsertData</code> calls for anything new.</p>
+
+<h4>Step 1: Define the configuration class</h4>
+
+<pre><code><span class="comment">// Models/Entities/Configuration/EntityLookupConfigurations.cs</span>
+
+<span class="keyword">public class</span> <span class="type">EntityCurrencyConfiguration</span>
+    : <span class="type">IEntityTypeConfiguration</span>&lt;<span class="type">EntityCurrency</span>&gt;
+{
+    <span class="keyword">public void</span> <span class="method">Configure</span>(<span class="type">EntityTypeBuilder</span>&lt;<span class="type">EntityCurrency</span>&gt; <span class="param">builder</span>)
+    {
+        builder.<span class="method">HasData</span>(
+            <span class="keyword">new</span> <span class="type">EntityCurrency</span> { Id = <span class="number">1</span>, Code = <span class="string">"EUR"</span>, Description = <span class="string">"Euro"</span> },
+            <span class="keyword">new</span> <span class="type">EntityCurrency</span> { Id = <span class="number">2</span>, Code = <span class="string">"USD"</span>, Description = <span class="string">"Dólar Americano"</span> },
+            <span class="keyword">new</span> <span class="type">EntityCurrency</span> { Id = <span class="number">3</span>, Code = <span class="string">"GBP"</span>, Description = <span class="string">"Libra Esterlina"</span> },
+            <span class="keyword">new</span> <span class="type">EntityCurrency</span> { Id = <span class="number">4</span>, Code = <span class="string">"CHF"</span>, Description = <span class="string">"Franco Suíço"</span> },
+            <span class="keyword">new</span> <span class="type">EntityCurrency</span> { Id = <span class="number">5</span>, Code = <span class="string">"BRL"</span>, Description = <span class="string">"Real Brasileiro"</span> }
+        );
+    }
+}</code></pre>
+
+<h4>Step 2: Auto-discovery via BaseContext</h4>
+
+<p>You don't register each configuration manually. <code>BaseContext.OnModelCreating</code> uses
+<code>ApplyConfigurationsFromAssembly</code> to auto-discover every <code>IEntityTypeConfiguration&lt;T&gt;</code>
+in the assembly:</p>
+
+<pre><code><span class="comment">// Models/Contexts/BaseContext.cs</span>
+
+<span class="keyword">protected override void</span> <span class="method">OnModelCreating</span>(<span class="type">ModelBuilder</span> <span class="param">modelBuilder</span>)
+{
+    modelBuilder.<span class="method">ApplyConfigurationsFromAssembly</span>(
+        <span class="keyword">typeof</span>(<span class="type">BaseContext</span>).Assembly,
+        type => !_centralOnlyConfigurations.<span class="method">Contains</span>(type));
+}</code></pre>
+
+<p>This means: <strong>just create the configuration class and it's automatically picked up</strong>.
+No registration step needed.</p>
+
+<div class="callout callout-warning">
+<code>_centralOnlyConfigurations</code> is a blocklist for configs that should only apply to the auth
+database (Countries, Districts, Counties). Everything else &mdash; including entity lookup configs &mdash;
+is applied to company databases.
+</div>
+
+<h4>Step 3: The migration captures it</h4>
+
+<p>When EF generates or applies a migration, the <code>HasData()</code> definitions become
+<code>InsertData</code> calls in the migration's <code>Up()</code> method:</p>
+
+<pre><code><span class="comment">// Inside 20260310_InitialCreate.cs (auto-generated)</span>
+
+migrationBuilder.<span class="method">InsertData</span>(
+    table: <span class="string">"EntityCurrencies"</span>,
+    columns: <span class="keyword">new</span>[] { <span class="string">"Id"</span>, <span class="string">"Code"</span>, <span class="string">"Description"</span> },
+    values: <span class="keyword">new</span> <span class="keyword">object</span>[,]
+    {
+        { <span class="number">1</span>, <span class="string">"EUR"</span>, <span class="string">"Euro"</span> },
+        { <span class="number">2</span>, <span class="string">"USD"</span>, <span class="string">"Dólar Americano"</span> },
+        { <span class="number">3</span>, <span class="string">"GBP"</span>, <span class="string">"Libra Esterlina"</span> },
+        { <span class="number">4</span>, <span class="string">"CHF"</span>, <span class="string">"Franco Suíço"</span> },
+        { <span class="number">5</span>, <span class="string">"BRL"</span>, <span class="string">"Real Brasileiro"</span> }
+    });</code></pre>
+
+<div class="callout callout-rule">
+<code>HasData()</code> requires <strong>explicit primary key values</strong> (<code>Id = 1</code>, <code>Id = 2</code>, etc.).
+EF uses these to track which rows are "seed data" across migrations. If you omit the ID, you get a compile error.
+</div>
+
+<h3>What gets seeded via HasData() in each database</h3>
+
+<table>
+    <tr>
+        <th>Database</th>
+        <th>Seed Data (via HasData)</th>
+    </tr>
+    <tr>
+        <td><code>AuthDatabase</code></td>
+        <td>
+            SuperAdmin user (<code>agile</code> / <code>1234</code>)<br>
+            4 SystemRoles (SuperAdmin, Admin, Manager, User)<br>
+            100+ SystemPermissions<br>
+            Master Company + UserCompany link<br>
+            Geography (countries, districts, counties)
+        </td>
+    </tr>
+    <tr>
+        <td>Company DBs</td>
+        <td>
+            13 document types &amp; series, 18 state configs<br>
+            56+ employee permissions<br>
+            Equipment &amp; maintenance statuses<br>
+            Article types, VAT rates, leave types<br>
+            2 warehouses, sales pipeline + stages<br>
+            <strong>Entity lookups</strong>: currencies, zones, languages, payment conditions, salespersons, shipping modes
+        </td>
+    </tr>
+</table>
+
+<h3>The three files that must agree</h3>
+
+<p>When you add <code>HasData()</code> to a configuration, <strong>three migration files</strong> need to contain the seed data:</p>
+
+<table>
+    <tr>
+        <th>File</th>
+        <th>Contains</th>
+        <th>Purpose</th>
+    </tr>
+    <tr>
+        <td><code>*_InitialCreate.cs</code></td>
+        <td><code>migrationBuilder.InsertData(...)</code></td>
+        <td>The actual SQL that runs when migrating</td>
+    </tr>
+    <tr>
+        <td><code>*_InitialCreate.Designer.cs</code></td>
+        <td><code>b.HasData(...)</code> inside entity builders</td>
+        <td>EF's snapshot of what the model looked like at this migration</td>
+    </tr>
+    <tr>
+        <td><code>*ModelSnapshot.cs</code></td>
+        <td><code>b.HasData(...)</code> inside entity builders</td>
+        <td>EF's snapshot of the <em>current</em> model state</td>
+    </tr>
+</table>
+
+<div class="callout callout-warning">
+If you add <code>HasData()</code> to a configuration <strong>after</strong> the migration was already generated,
+the migration won't have the <code>InsertData</code> calls. You must either generate a new migration or
+manually add the <code>InsertData</code> and <code>HasData</code> blocks to all three files. We chose the
+manual approach for our entity lookup data to keep it in the single <code>InitialCreate</code> migration.
+</div>
+
+<!-- ================================================= -->
+<h2>6. Layer 2: DemoDataSeeder &mdash; Programmatic Seeds</h2>
+
+<h3>Where it lives</h3>
+<p><code>Tools/DemoDataSeeder.cs</code> + <code>Tools/DemoDataSeeder.Business.cs</code> &mdash; a
+<strong>partial class</strong> split across two files for organization.</p>
+
+<h3>Entry point</h3>
+
+<pre><code><span class="keyword">public static partial class</span> <span class="type">DemoDataSeeder</span>
+{
+    <span class="keyword">private const int</span> DemoCompanyId = <span class="number">3</span>;
+    <span class="keyword">private const int</span> AdminUserId = <span class="number">1</span>;
+    <span class="keyword">private const string</span> CompanyKey = <span class="string">"DemoCompany"</span>;
+
+    <span class="keyword">private static readonly</span> <span class="type">DateTime</span> Today = <span class="type">DateTime</span>.Today;
+    <span class="keyword">private static readonly</span> <span class="type">Random</span> Rng = <span class="keyword">new</span>(<span class="number">42</span>); <span class="comment">// deterministic for reproducibility</span>
+
+    <span class="keyword">public static async</span> <span class="type">Task</span> <span class="method">SeedAsync</span>(<span class="type">IConfiguration</span> <span class="param">configuration</span>, <span class="keyword">bool</span> <span class="param">forceReseed</span> = <span class="keyword">false</span>)
+    {
+        <span class="comment">// 0. Drop tenant DB if re-seeding</span>
+        <span class="keyword">if</span> (forceReseed)
+        {
+            <span class="keyword">await using var</span> <span class="param">dropCtx</span> = <span class="keyword">new</span> <span class="type">DynamicCompanyContext</span>(configuration, CompanyKey);
+            <span class="keyword">await</span> dropCtx.Database.<span class="method">EnsureDeletedAsync</span>();
+        }
+
+        <span class="comment">// 1. Ensure databases exist (run migrations first)</span>
+        <span class="keyword">await</span> <span class="type">TenantMigrator</span>.<span class="method">MigrateAuthDatabaseAsync</span>(configuration);
+        <span class="keyword">await</span> <span class="type">TenantMigrator</span>.<span class="method">MigrateTenantAsync</span>(configuration, CompanyKey);
+
+        <span class="comment">// 2. Seed auth data (Company + UserCompany + FeatureFlags)</span>
+        <span class="keyword">await</span> <span class="method">SeedAuthDataAsync</span>(configuration);
+
+        <span class="comment">// 3. Seed company data (HR, CRM, Docs, Stock, etc.)</span>
+        <span class="keyword">await</span> <span class="method">SeedCompanyDataAsync</span>(configuration);
+    }
+}</code></pre>
+
+<h3>Key design decisions</h3>
+
+<h4>1. It calls TenantMigrator first</h4>
+<p>The seeder <strong>always migrates before seeding</strong>. This guarantees tables exist and
+Layer 1 seed data (HasData) is already in place. The seeder can then <em>reference</em> migration-seeded
+data:</p>
+
+<pre><code><span class="comment">// LeaveTypes are already seeded by the migration's HasData()</span>
+<span class="keyword">var</span> <span class="param">leaveTypes</span> = <span class="keyword">await</span> ctx.LeaveTypes.<span class="method">ToListAsync</span>();
+
+<span class="comment">// Now use them to create leave balances for demo employees</span>
+<span class="method">SeedLeaveBalances</span>(ctx, employees);</code></pre>
+
+<h4>2. It's idempotent</h4>
+<p>The seeder checks for existing data before inserting:</p>
+
+<pre><code><span class="comment">// Auth data: check before inserting</span>
+<span class="keyword">if</span> (!<span class="keyword">await</span> ctx.Companies.<span class="method">AnyAsync</span>(c => c.Id == DemoCompanyId))
+{
+    <span class="comment">// ... create company</span>
+}
+
+<span class="comment">// Company data: check once at the top</span>
+<span class="keyword">if</span> (<span class="keyword">await</span> ctx.CrmFuncionarios.<span class="method">AnyAsync</span>())
+{
+    Console.<span class="method">WriteLine</span>(<span class="string">"  → Company data already exists, skipping."</span>);
+    <span class="keyword">return</span>;
+}</code></pre>
+
+<h4>3. <code>--reseed-demo</code> drops first</h4>
+<p>If you pass <code>--reseed-demo</code> instead of <code>--seed-demo</code>, it calls
+<code>EnsureDeletedAsync()</code> to <strong>drop the entire DemoCompany database</strong> before re-creating it.
+This gives you a clean slate.</p>
+
+<h4>4. Domain-method chaining</h4>
+<p>The business partial file organizes seeding by domain, where each method returns its created
+entities so downstream methods can reference their IDs:</p>
+
+<pre><code><span class="comment">// Each seed method returns its entities for dependent methods</span>
+<span class="keyword">var</span> <span class="param">departments</span> = <span class="method">SeedDepartments</span>(ctx);     <span class="comment">// → List&lt;Department&gt;</span>
+<span class="keyword">var</span> <span class="param">locations</span>   = <span class="method">SeedLocations</span>(ctx);       <span class="comment">// → List&lt;Location&gt;</span>
+<span class="keyword">var</span> <span class="param">schedules</span>   = <span class="method">SeedSchedules</span>(ctx);       <span class="comment">// → List&lt;Schedule&gt;</span>
+<span class="keyword">await</span> ctx.<span class="method">SaveChangesAsync</span>();               <span class="comment">// flush → IDs are now populated</span>
+
+<span class="keyword">var</span> <span class="param">employees</span> = <span class="method">SeedEmployees</span>(ctx, departments);  <span class="comment">// uses dept.Id</span>
+<span class="keyword">await</span> ctx.<span class="method">SaveChangesAsync</span>();
+
+<span class="method">SeedContracts</span>(ctx, employees);                        <span class="comment">// uses emp.Id</span>
+<span class="method">SeedEmployeeSchedules</span>(ctx, employees, schedules);     <span class="comment">// uses emp.Id &amp; schedule.Id</span>
+<span class="method">SeedAttendanceRecords</span>(ctx, employees, schedules);     <span class="comment">// uses emp.Id</span></code></pre>
+
+<h3>What gets seeded</h3>
+
+<div class="diagram">
+DemoDataSeeder.SeedAsync()
+│
+├── Auth Database
+│   ├── Demo Company (Id=3, "DemoCompany" DB)
+│   ├── UserCompany link (admin → demo company)
+│   └── Feature flags (all modules enabled, Full access)
+│
+└── DemoCompany Database
+    ├── HR Core
+    │   ├── 6 departments, 4 locations, 3 schedules
+    │   ├── 25 employees with contracts
+    │   ├── Schedule &amp; location assignments
+    │   ├── Leave balances &amp; requests
+    │   └── ~1000 attendance records (80 days × employees)
+    │
+    ├── Equipment
+    │   ├── 5 types, 5 brands, 8 models, 15 items
+    │   └── 6 maintenance records
+    │
+    ├── Entities (Clients/Suppliers)
+    │   ├── 15 entities (10 clients, 5 suppliers)
+    │   ├── Contacts &amp; addresses per entity
+    │   └── Price levels
+    │
+    ├── Articles: 30 articles, 5 families, 10 sub-families
+    ├── Documents: 20 invoices/receipts with line items
+    ├── Jobs: 8 projects, 4 teams
+    ├── CRM: 15 leads, 8 opportunities, pipeline movements
+    ├── Support: 3 packages, 20 tickets
+    ├── Tasks: 3 process types/templates, instances
+    ├── Forms: 2 templates with groups/fields
+    ├── Stock: levels &amp; movements per warehouse
+    ├── Production: 2 sections, 3 work centers
+    └── Courses: 3 categories, 5 courses, 15 enrollments
+</div>
+
+<!-- ================================================= -->
+<h2>7. Handling Already-Migrated Databases</h2>
+
+<h3>The problem</h3>
+<p>If you add <code>HasData()</code> seed data <strong>after</strong> the migration has already been applied
+to a live database, <code>MigrateAsync()</code> won't insert the data &mdash; because the migration was
+already recorded in <code>__EFMigrationsHistory</code>.</p>
+
+<h3>Solution: SQL idempotent script</h3>
+<p>For databases that already ran the migration, use a standalone SQL script with <code>NOT EXISTS</code>
+guards so it's safe to run multiple times:</p>
+
+<pre><code><span class="comment">-- Scripts/SeedEntityLookups.sql</span>
+<span class="comment">-- Run against each COMPANY database where migration already applied.</span>
+
+<span class="keyword">SET IDENTITY_INSERT</span> [EntityCurrencies] <span class="keyword">ON</span>;
+<span class="keyword">IF NOT EXISTS</span> (<span class="keyword">SELECT</span> <span class="number">1</span> <span class="keyword">FROM</span> [EntityCurrencies] <span class="keyword">WHERE</span> [Id] = <span class="number">1</span>)
+    <span class="keyword">INSERT INTO</span> [EntityCurrencies] ([Id], [Code], [Description])
+    <span class="keyword">VALUES</span> (<span class="number">1</span>, N<span class="string">'EUR'</span>, N<span class="string">'Euro'</span>);
+<span class="comment">-- ... more rows ...</span>
+<span class="keyword">SET IDENTITY_INSERT</span> [EntityCurrencies] <span class="keyword">OFF</span>;</code></pre>
+
+<div class="callout callout-warning">
+<code>IDENTITY_INSERT ON</code> is required because the seed data uses explicit IDs (1, 2, 3...)
+but the table has an identity column. Without it, SQL Server would auto-assign IDs and they
+wouldn't match what the migration expects.
+</div>
+
+<h3>Decision flow</h3>
+
+<div class="diagram">
+Is this a NEW database (never migrated)?
+├── YES → dotnet run -- --migrate-all
+│         └── MigrateAsync() applies InitialCreate
+│             └── InsertData runs automatically ✓
+│
+└── NO → Database already exists with migration applied
+         ├── Option A: Run the SQL script manually
+         │   └── Scripts/SeedEntityLookups.sql against each company DB
+         │
+         └── Option B: Drop &amp; re-create (dev only!)
+             └── Drop DB → dotnet run -- --migrate-all
+</div>
+
+<!-- ================================================= -->
+<h2>8. File Map</h2>
+
+<div class="diagram">
+Project Root/
+├── Program.cs                          ← CLI arg routing (--migrate-*, --seed-*)
+│
+├── Tools/
+│   ├── TenantMigrator.cs              ← Static class: MigrateAllAsync, etc.
+│   ├── DemoDataSeeder.cs              ← Partial class: orchestrator + auth seed
+│   └── DemoDataSeeder.Business.cs     ← Partial class: domain-specific seed methods
+│
+├── Models/
+│   ├── Contexts/
+│   │   ├── BaseControleContext.cs      ← Auth DB context + HasData (users, roles, geo)
+│   │   ├── DynamicCompanyContext.cs    ← Company DB context (takes companyKey)
+│   │   └── BaseContext.cs             ← ApplyConfigurationsFromAssembly
+│   │
+│   └── Entities/Configuration/
+│       └── EntityLookupConfigurations.cs  ← HasData for currencies, zones, etc.
+│
+├── Migrations/
+│   ├── Auth/
+│   │   ├── *_InitialCreate.cs          ← Auth tables + InsertData (seed)
+│   │   ├── *_InitialCreate.Designer.cs ← HasData snapshot for this migration
+│   │   └── BaseControleContextModelSnapshot.cs
+│   │
+│   └── Company/
+│       ├── *_InitialCreate.cs          ← Company tables + InsertData (seed)
+│       ├── *_InitialCreate.Designer.cs ← HasData snapshot for this migration
+│       └── DynamicCompanyContextModelSnapshot.cs
+│
+└── Scripts/
+    ├── ResetDatabases.sql             ← DROP all databases
+    └── SeedEntityLookups.sql          ← Idempotent INSERT for already-migrated DBs
+</div>
+
+<!-- ================================================= -->
+<h2>9. Common Workflows</h2>
+
+<table>
+    <tr>
+        <th>Scenario</th>
+        <th>Commands</th>
+    </tr>
+    <tr>
+        <td>Fresh install (first time)</td>
+        <td>
+            <code>dotnet run -- --migrate-all</code><br>
+            <code>dotnet run</code>
+        </td>
+    </tr>
+    <tr>
+        <td>Fresh install + demo data</td>
+        <td>
+            <code>dotnet run -- --seed-demo</code> (migrates automatically)<br>
+            <code>dotnet run</code>
+        </td>
+    </tr>
+    <tr>
+        <td>Full reset (nuke everything)</td>
+        <td>
+            Run <code>Scripts/ResetDatabases.sql</code> in SSMS<br>
+            <code>dotnet run -- --migrate-all</code><br>
+            <code>dotnet run</code>
+        </td>
+    </tr>
+    <tr>
+        <td>Reset demo company only</td>
+        <td>
+            <code>dotnet run -- --reseed-demo</code><br>
+            <code>dotnet run</code>
+        </td>
+    </tr>
+    <tr>
+        <td>Schema changed (new migration added)</td>
+        <td>
+            <code>dotnet run -- --migrate-tenants</code><br>
+            <code>dotnet run</code>
+        </td>
+    </tr>
+    <tr>
+        <td>Added HasData after migration was applied</td>
+        <td>
+            Run <code>Scripts/SeedEntityLookups.sql</code> against each company DB
+        </td>
+    </tr>
+</table>
+
+<!-- ================================================= -->
+<h2>10. Key Takeaways</h2>
+
+<ul>
+    <li><strong>Same executable, two modes</strong> &mdash; <code>args</code> flags control whether it's a migration tool or a web server</li>
+    <li><strong><code>return;</code> after migration</strong> &mdash; the process exits cleanly without starting Kestrel</li>
+    <li><strong>TenantMigrator is static</strong> &mdash; no DI needed; it creates contexts directly from <code>IConfiguration</code></li>
+    <li><strong>Two seed layers</strong> &mdash; HasData for universal lookup data (every DB), DemoDataSeeder for realistic demo data (one DB)</li>
+    <li><strong>HasData needs three files in sync</strong> &mdash; the migration .cs, the Designer.cs, and the ModelSnapshot.cs</li>
+    <li><strong>DemoDataSeeder calls TenantMigrator</strong> &mdash; it always migrates before seeding, so Layer 1 data exists</li>
+    <li><strong>Idempotent everywhere</strong> &mdash; MigrateAsync skips applied migrations; DemoDataSeeder checks for existing data; SQL scripts use NOT EXISTS</li>
+    <li><strong>For already-migrated DBs</strong> &mdash; use the SQL script to backfill seed data that was added after the migration ran</li>
+</ul>
+
+</body>
+</html>

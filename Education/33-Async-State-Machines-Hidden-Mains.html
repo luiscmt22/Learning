@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inside async/await — State Machines and Hidden Mains</title>
+    <style>
+        :root{--bg:#1a1a2e;--surface:#16213e;--surface2:#0f3460;--accent:#e94560;--accent2:#533483;--text:#eee;--text-muted:#aab;--success:#4ecca3;--warning:#f0a500;--code-bg:#0d1117;--border:#333}*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;padding:2rem;max-width:900px;margin:0 auto}h1{text-align:center;font-size:2.2rem;margin-bottom:.5rem;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}.subtitle{text-align:center;color:var(--text-muted);margin-bottom:3rem;font-size:1.1rem}h2{color:var(--accent);font-size:1.6rem;margin:2.5rem 0 1rem 0;padding-bottom:.3rem;border-bottom:2px solid var(--accent)}h3{color:var(--success);font-size:1.2rem;margin:1.8rem 0 .8rem 0}h4{color:var(--warning);font-size:1.05rem;margin:1.2rem 0 .5rem 0}p{margin-bottom:1rem}pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1.2rem;overflow-x:auto;margin:1rem 0;font-size:.9rem;line-height:1.5}code{font-family:'Cascadia Code','Fira Code','Consolas',monospace;font-size:.9rem}p code,li code,td code{background:var(--code-bg);padding:.15rem .4rem;border-radius:4px;border:1px solid var(--border)}.keyword{color:#569cd6}.type{color:#4ec9b0}.string{color:#ce9178}.comment{color:#6a9955}.method{color:#dcdcaa}.number{color:#b5cea8}.param{color:#9cdcfe}.callout{border-radius:8px;padding:1.2rem 1.5rem;margin:1.5rem 0;border-left:4px solid}.callout-metaphor{background:rgba(83,52,131,.2);border-color:var(--accent2)}.callout-metaphor::before{content:"Metaphor";display:block;font-weight:bold;color:var(--accent2);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}.callout-english{background:rgba(78,204,163,.1);border-color:var(--success)}.callout-english::before{content:"Read It Like English";display:block;font-weight:bold;color:var(--success);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}.callout-warning{background:rgba(240,165,0,.1);border-color:var(--warning)}.callout-warning::before{content:"Common Confusion";display:block;font-weight:bold;color:var(--warning);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}.callout-rule{background:rgba(233,69,96,.1);border-color:var(--accent)}.callout-rule::before{content:"Golden Rule";display:block;font-weight:bold;color:var(--accent);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}ul,ol{margin:.5rem 0 1rem 1.5rem}li{margin-bottom:.3rem}table{width:100%;border-collapse:collapse;margin:1rem 0}th,td{border:1px solid var(--border);padding:.6rem 1rem;text-align:left}th{background:var(--surface2);color:var(--success)}td{background:var(--surface)}.diagram{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1.5rem;margin:1.5rem 0;font-family:'Cascadia Code',monospace;font-size:.85rem;line-height:1.6;white-space:pre;overflow-x:auto}
+    </style>
+</head>
+<body>
+
+<h1>Inside async/await</h1>
+<p class="subtitle">Tutorial #33 — State machines, hidden Mains, and the compiler tricks you never see</p>
+
+<!-- ============================================================ -->
+<h2>1. The Two Mysteries</h2>
+
+<p>When you use modern C#, two things happen that look like magic but aren't:</p>
+
+<ol>
+    <li><strong>Top-level statements</strong> — your Program.cs has no visible <code>Main</code>, yet the app runs.</li>
+    <li><strong>async/await</strong> — a single method seems to "pause" and "resume", which should be impossible.</li>
+</ol>
+
+<p>Both are resolved by the same underlying idea: <em>the compiler is doing something very clever before the runtime ever sees your code</em>. The runtime is dumb and strict. The compiler is clever and lenient. Understanding where that line sits is one of the biggest jumps in C# intuition.</p>
+
+<div class="callout callout-rule">
+    Syntactic sugar is always about what the compiler does with your code <em>before</em> the runtime sees it. Once you grasp this, a lot of C# "magic" disappears.
+</div>
+
+<!-- ============================================================ -->
+<h2>2. Mystery #1 — The Hidden Main</h2>
+
+<p>Consider this Program.cs from a modern C# console app:</p>
+
+<pre><code><span class="keyword">using</span> System;
+
+<span class="type">Console</span>.<span class="method">WriteLine</span>(<span class="string">"Hello, World!"</span>);</code></pre>
+
+<p>Where is <code>Main</code>? It must exist — the CLR (the .NET runtime) has no concept of "top-level statements". Every .NET executable must have a static <code>Main</code> method in its assembly. The compiler won't run your program without one.</p>
+
+<p>The secret: the compiler <strong>generates one for you</strong>. Behind the scenes, your file is transformed into something equivalent to:</p>
+
+<pre><code><span class="keyword">using</span> System;
+
+<span class="keyword">internal class</span> <span class="type">Program</span>
+{
+    <span class="keyword">private static void</span> <span class="method">Main</span>(<span class="keyword">string</span>[] <span class="param">args</span>)
+    {
+        <span class="type">Console</span>.<span class="method">WriteLine</span>(<span class="string">"Hello, World!"</span>);
+    }
+}</code></pre>
+
+<p>You can verify this on <a href="https://sharplab.io" style="color:var(--success)">sharplab.io</a> — paste any top-level C# code and it decompiles to exactly this kind of structure. The hidden <code>Program</code> class and synthetic <code>Main</code> are real IL code in the compiled DLL.</p>
+
+<h3>The compiler picks the right Main signature</h3>
+
+<p>Here's the clever part. The compiler looks at what your code <em>does</em> and picks a Main signature that fits:</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Your top-level code uses...</th>
+            <th>Compiler generates...</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>No <code>await</code></td>
+            <td><code>static void Main(string[] args)</code></td>
+        </tr>
+        <tr>
+            <td><code>await</code> anywhere</td>
+            <td><code>static async Task Main(string[] args)</code></td>
+        </tr>
+        <tr>
+            <td><code>return 0;</code> at the end</td>
+            <td><code>static int Main(string[] args)</code></td>
+        </tr>
+        <tr>
+            <td>Both <code>await</code> and <code>return 0;</code></td>
+            <td><code>static async Task&lt;int&gt; Main(string[] args)</code></td>
+        </tr>
+    </tbody>
+</table>
+
+<p>This means: the very moment you add a single <code>await</code> to Program.cs, the compiler silently switches the generated <code>Main</code> from <code>static void</code> to <code>static async Task</code>. You didn't write a line of configuration. No <code>async</code> keyword at the top. No <code>Task</code> return. The compiler <strong>inferred it all from the presence of await</strong>.</p>
+
+<div class="callout callout-english">
+    Top-level statements = "write your Main method body without typing the Main method." The compiler picks the right signature based on what it sees inside.
+</div>
+
+<h3>Scoping other methods with top-level statements</h3>
+
+<p>You can still declare classes and methods — there's just one ordering rule: <strong>top-level statements must come before any type declarations in the file</strong>.</p>
+
+<pre><code><span class="keyword">using</span> System;
+
+<span class="comment">// Top-level statements first</span>
+<span class="type">Console</span>.<span class="method">WriteLine</span>(<span class="string">"hi"</span>);
+<span class="type">Foo</span>.<span class="method">Bar</span>();
+
+<span class="comment">// Local function — lives INSIDE the synthesized Main</span>
+<span class="keyword">void</span> <span class="method">HelperFunction</span>()
+{
+    <span class="type">Console</span>.<span class="method">WriteLine</span>(<span class="string">"I'm a local function inside Main"</span>);
+}
+
+<span class="comment">// Type declaration — lives OUTSIDE Main, at the namespace level</span>
+<span class="keyword">public static class</span> <span class="type">Foo</span>
+{
+    <span class="keyword">public static void</span> <span class="method">Bar</span>() => <span class="type">Console</span>.<span class="method">WriteLine</span>(<span class="string">"I'm a real static method"</span>);
+}</code></pre>
+
+<p>The reverse ordering fails:</p>
+
+<pre><code><span class="keyword">public static class</span> <span class="type">Foo</span> { ... }
+
+<span class="type">Console</span>.<span class="method">WriteLine</span>(<span class="string">"hi"</span>); <span class="comment">// ❌ compile error — top-level after a type is illegal</span></code></pre>
+
+<p>The compiler needs a clear boundary to decide "where does the hidden Main end?". Once it sees a type declaration, the top-level region is over.</p>
+
+<!-- ============================================================ -->
+<h2>3. Mystery #2 — State Machines</h2>
+
+<p>Now the bigger mystery. Take this method:</p>
+
+<pre><code><span class="keyword">async</span> <span class="type">Task</span> <span class="method">FetchDataAsync</span>()
+{
+    <span class="type">Console</span>.<span class="method">WriteLine</span>(<span class="string">"Starting..."</span>);
+    <span class="keyword">var</span> data = <span class="keyword">await</span> httpClient.<span class="method">GetStringAsync</span>(url);
+    <span class="type">Console</span>.<span class="method">WriteLine</span>(<span class="string">$"Got: {data}"</span>);
+}</code></pre>
+
+<p>At the <code>await</code> line, this method needs to <em>pause</em>, release its thread back to the thread pool, and <em>resume</em> only when the HTTP call finishes. But methods don't work that way in C# — a method either runs to completion or throws an exception. There's no native "pause here" instruction.</p>
+
+<p>So how does it work? The compiler <strong>rewrites your method as a state machine</strong>.</p>
+
+<h3>What a state machine is</h3>
+
+<p>A state machine is a well-known CS concept: a data structure with a current <em>state</em> and rules for transitioning between states when events happen. You've probably seen them in videogames — an enemy might be in state <code>Idle</code>, and when the player enters range, it transitions to <code>Chasing</code>. When health hits zero, it transitions to <code>Dead</code>.</p>
+
+<div class="diagram">
+ Videogame State Machine:                Async State Machine:
+
+    ┌──────┐  sees player     ┌──────┐       ┌─────┐
+    │ Idle │ ───────────────> │Chase │       │ -1  │  initial entry
+    └──────┘                  └──────┘       └──┬──┘
+       ^                          │               │  runs code up to first await
+       │ lost                     │ in range       v
+       │                          v            ┌─────┐
+       │                       ┌──────┐        │  0  │  suspended, waiting for Task
+       └─────────────────────  │Attack│        └──┬──┘
+                               └──────┘            │  Task completes, MoveNext called
+                                                   v
+                                                ┌─────┐
+                                                │  1  │  runs code between awaits
+                                                └──┬──┘
+                                                   v
+                                                ┌─────┐
+                                                │ -2  │  done
+                                                └─────┘
+</div>
+
+<p>Both are state machines. The difference is <strong>who designs them</strong> and <strong>what the states mean</strong>:</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Videogame state machine</th>
+            <th>Async state machine</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>You design it by hand</td>
+            <td>Compiler generates it from your <code>async</code> method</td>
+        </tr>
+        <tr>
+            <td>States have semantic meaning (<code>Idle</code>, <code>Walking</code>, <code>Dead</code>)</td>
+            <td>States are mechanical checkpoints ("the code between await #0 and #1")</td>
+        </tr>
+        <tr>
+            <td>Transitions triggered by game events (input, collisions)</td>
+            <td>Transitions triggered only by Task completion</td>
+        </tr>
+        <tr>
+            <td>The state is the <em>abstraction you care about</em></td>
+            <td>The state is an <em>implementation detail you never see</em></td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="callout callout-metaphor">
+    If you've built a state machine for a Unity NPC, you've built the same thing the compiler builds for async — same pattern, different purpose. Async is a state machine with a single question driving transitions: "did the Task I was waiting on finish yet?"
+</div>
+
+<h3>What the compiler actually generates</h3>
+
+<p>Here's a simplified version of what <code>FetchDataAsync</code> becomes after compilation. The original single method is transformed into a <em>stub</em> plus a <em>generated struct</em>:</p>
+
+<pre><code><span class="comment">// Your method becomes a stub that kicks off the state machine</span>
+<span class="type">Task</span> <span class="method">FetchDataAsync</span>()
+{
+    <span class="keyword">var</span> sm = <span class="keyword">new</span> <span class="type">FetchDataAsyncStateMachine</span>();
+    sm.builder = <span class="type">AsyncTaskMethodBuilder</span>.<span class="method">Create</span>();
+    sm.state = <span class="number">-1</span>;
+    sm.builder.<span class="method">Start</span>(<span class="keyword">ref</span> sm);
+    <span class="keyword">return</span> sm.builder.Task;
+}
+
+<span class="comment">// The state machine — compiler-generated, never written by you</span>
+[<span class="type">CompilerGenerated</span>]
+<span class="keyword">struct</span> <span class="type">FetchDataAsyncStateMachine</span> : <span class="type">IAsyncStateMachine</span>
+{
+    <span class="keyword">public int</span> state;                       <span class="comment">// where are we in the method?</span>
+    <span class="keyword">public</span> <span class="type">AsyncTaskMethodBuilder</span> builder; <span class="comment">// tracks the Task to return</span>
+    <span class="keyword">public</span> <span class="type">TaskAwaiter</span>&lt;<span class="keyword">string</span>&gt; awaiter;    <span class="comment">// the current Task we're waiting on</span>
+    <span class="keyword">public string</span> data;                     <span class="comment">// local variable, hoisted to a field</span>
+
+    <span class="keyword">public void</span> <span class="method">MoveNext</span>()
+    {
+        <span class="keyword">switch</span> (state)
+        {
+            <span class="keyword">case</span> <span class="number">-1</span>:  <span class="comment">// first entry into the method</span>
+                <span class="type">Console</span>.<span class="method">WriteLine</span>(<span class="string">"Starting..."</span>);
+                awaiter = httpClient.<span class="method">GetStringAsync</span>(url).<span class="method">GetAwaiter</span>();
+                <span class="keyword">if</span> (!awaiter.IsCompleted)
+                {
+                    state = <span class="number">0</span>;
+                    builder.<span class="method">AwaitUnsafeOnCompleted</span>(<span class="keyword">ref</span> awaiter, <span class="keyword">ref this</span>);
+                    <span class="keyword">return</span>;  <span class="comment">// SUSPEND HERE — release the thread</span>
+                }
+                <span class="keyword">goto case</span> <span class="number">0</span>;
+
+            <span class="keyword">case</span> <span class="number">0</span>:  <span class="comment">// resumed after the await completed</span>
+                data = awaiter.<span class="method">GetResult</span>();
+                <span class="type">Console</span>.<span class="method">WriteLine</span>(<span class="string">$"Got: {data}"</span>);
+                builder.<span class="method">SetResult</span>();
+                <span class="keyword">return</span>;
+        }
+    }
+}</code></pre>
+
+<p>What to notice:</p>
+
+<ul>
+    <li><strong>Your local variable <code>data</code> became a field</strong> on the struct ("hoisted"). It has to live beyond the method's stack frame because the method can be paused and resumed.</li>
+    <li><strong>The state variable</strong> tracks which chunk of original code to run next. It starts at <code>-1</code> (not yet started), and each <code>await</code> adds a new case.</li>
+    <li><strong>When the Task isn't done yet, <code>MoveNext</code> returns early.</strong> This is the "pause" — the method literally returns, freeing the thread. The state machine is now dormant, its current state saved in the <code>state</code> field.</li>
+    <li><strong>When the awaited Task completes, the runtime calls <code>MoveNext</code> again.</strong> The <code>switch</code> sees <code>state == 0</code> and jumps to the "resumed" branch, continuing where it left off.</li>
+    <li><strong>The whole thing is one struct</strong>, not a class — structs live on the stack when possible, which saves allocations for synchronous completions.</li>
+</ul>
+
+<div class="callout callout-warning">
+    The compiler does this transformation <strong>every time</strong> you write <code>async</code>, whether or not the method actually has any awaits. Even an <code>async</code> method with no <code>await</code> at all gets the full state machine treatment. That's where the next section comes in.
+</div>
+
+<!-- ============================================================ -->
+<h2>4. The Cost of Unused Async</h2>
+
+<p>Consider these two methods. They're functionally identical — both produce a Task that's already completed when returned:</p>
+
+<pre><code><span class="comment">// Version A — async keyword, no awaits</span>
+<span class="keyword">async</span> <span class="type">Task</span> <span class="method">SyncyFoo</span>()
+{
+    <span class="type">Console</span>.<span class="method">WriteLine</span>(<span class="string">"hi"</span>);
+}
+
+<span class="comment">// Version B — return Task.CompletedTask directly</span>
+<span class="type">Task</span> <span class="method">SyncyFoo</span>()
+{
+    <span class="type">Console</span>.<span class="method">WriteLine</span>(<span class="string">"hi"</span>);
+    <span class="keyword">return</span> <span class="type">Task</span>.CompletedTask;
+}</code></pre>
+
+<p>At the call site, they behave identically — both return a completed Task, both can be <code>await</code>ed, both produce no errors. But the compiled output is dramatically different.</p>
+
+<h3>Version A — compiled</h3>
+
+<pre><code><span class="comment">// A struct is generated</span>
+<span class="keyword">struct</span> <span class="type">SyncyFooStateMachine</span> : <span class="type">IAsyncStateMachine</span>
+{
+    <span class="keyword">public int</span> state;
+    <span class="keyword">public</span> <span class="type">AsyncTaskMethodBuilder</span> builder;
+
+    <span class="keyword">public void</span> <span class="method">MoveNext</span>()
+    {
+        <span class="keyword">try</span>
+        {
+            <span class="type">Console</span>.<span class="method">WriteLine</span>(<span class="string">"hi"</span>);
+        }
+        <span class="keyword">catch</span> (<span class="type">Exception</span> ex)
+        {
+            state = <span class="number">-2</span>;
+            builder.<span class="method">SetException</span>(ex);
+            <span class="keyword">return</span>;
+        }
+        state = <span class="number">-2</span>;
+        builder.<span class="method">SetResult</span>();
+    }
+
+    <span class="keyword">public void</span> <span class="method">SetStateMachine</span>(<span class="type">IAsyncStateMachine</span> sm) { }
+}
+
+<span class="comment">// Your original method becomes a stub</span>
+<span class="type">Task</span> <span class="method">SyncyFoo</span>()
+{
+    <span class="keyword">var</span> sm = <span class="keyword">new</span> <span class="type">SyncyFooStateMachine</span>();
+    sm.builder = <span class="type">AsyncTaskMethodBuilder</span>.<span class="method">Create</span>();
+    sm.state = <span class="number">-1</span>;
+    sm.builder.<span class="method">Start</span>(<span class="keyword">ref</span> sm);
+    <span class="keyword">return</span> sm.builder.Task;
+}</code></pre>
+
+<h3>Version B — compiled</h3>
+
+<pre><code><span class="type">Task</span> <span class="method">SyncyFoo</span>()
+{
+    <span class="type">Console</span>.<span class="method">WriteLine</span>(<span class="string">"hi"</span>);
+    <span class="keyword">return</span> <span class="type">Task</span>.CompletedTask;
+}</code></pre>
+
+<p>That's it. Version B compiles to exactly what you wrote. Same two lines. No state machine, no builder, no struct.</p>
+
+<h3>The measurable difference</h3>
+
+<table>
+    <thead>
+        <tr>
+            <th>Aspect</th>
+            <th>async Task Foo() { ... }</th>
+            <th>Task Foo() { ...; return Task.CompletedTask; }</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>State machine struct</td>
+            <td>Generated</td>
+            <td>None</td>
+        </tr>
+        <tr>
+            <td>AsyncTaskMethodBuilder allocation</td>
+            <td>Created</td>
+            <td>None</td>
+        </tr>
+        <tr>
+            <td>Task allocation</td>
+            <td>Sometimes (builder may cache)</td>
+            <td>Singleton <code>Task.CompletedTask</code></td>
+        </tr>
+        <tr>
+            <td>Method call indirection</td>
+            <td>Builder.Start → MoveNext</td>
+            <td>Direct execution</td>
+        </tr>
+        <tr>
+            <td>JIT inlining</td>
+            <td>Harder (state machine boundary)</td>
+            <td>Full inlining possible</td>
+        </tr>
+        <tr>
+            <td>Debugging stack traces</td>
+            <td>Noisy (shows state machine frames)</td>
+            <td>Clean</td>
+        </tr>
+    </tbody>
+</table>
+
+<p>For one call, the difference is nanoseconds. For a web API handling millions of requests, or an ORM building thousands of query plans per second, or a hot game loop — it adds up measurably.</p>
+
+<!-- ============================================================ -->
+<h2>5. The Three Sentinel Tasks</h2>
+
+<p>When you don't have any actual async work to do but still need to return a <code>Task</code>, use one of these three pre-built sentinels:</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Return type</th>
+            <th>Sentinel</th>
+            <th>Use case</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code>Task</code></td>
+            <td><code>Task.CompletedTask</code></td>
+            <td>Method did its work synchronously, no result</td>
+        </tr>
+        <tr>
+            <td><code>Task&lt;T&gt;</code></td>
+            <td><code>Task.FromResult(value)</code></td>
+            <td>Method did its work synchronously, here's the value</td>
+        </tr>
+        <tr>
+            <td><code>Task</code> or <code>Task&lt;T&gt;</code></td>
+            <td><code>Task.FromException(ex)</code></td>
+            <td>Method failed synchronously, here's the error</td>
+        </tr>
+    </tbody>
+</table>
+
+<pre><code><span class="keyword">public</span> <span class="type">Task</span> <span class="method">ClearCache</span>()
+{
+    _cache.<span class="method">Clear</span>();
+    <span class="keyword">return</span> <span class="type">Task</span>.CompletedTask;
+}
+
+<span class="keyword">public</span> <span class="type">Task</span>&lt;<span class="keyword">int</span>&gt; <span class="method">GetCachedCount</span>()
+{
+    <span class="keyword">return</span> <span class="type">Task</span>.<span class="method">FromResult</span>(_cache.Count);
+}
+
+<span class="keyword">public</span> <span class="type">Task</span>&lt;<span class="type">User</span>&gt; <span class="method">GetUserOrFail</span>(<span class="keyword">int</span> id)
+{
+    <span class="keyword">if</span> (id &lt; <span class="number">0</span>)
+        <span class="keyword">return</span> <span class="type">Task</span>.<span class="method">FromException</span>&lt;<span class="type">User</span>&gt;(<span class="keyword">new</span> <span class="type">ArgumentException</span>(<span class="string">"Invalid id"</span>));
+    <span class="keyword">return</span> <span class="type">Task</span>.<span class="method">FromResult</span>(_users[id]);
+}</code></pre>
+
+<div class="callout callout-rule">
+    Only add the <code>async</code> keyword to a method if that method actually uses <code>await</code>. If it doesn't, return a Task directly and use one of the sentinel tasks. The compiler cannot tell that your <code>async</code> method has no awaits — it generates the state machine regardless.
+</div>
+
+<!-- ============================================================ -->
+<h2>6. Awaiting an Already-Completed Task</h2>
+
+<p>One more optimization worth knowing: when you <code>await</code> a Task that's <em>already completed</em> (like <code>Task.CompletedTask</code> or a Task returned from a method that ran synchronously), the runtime detects this and <strong>skips the suspension entirely</strong>. No continuation is scheduled. No thread switch happens. Execution just continues on the same thread, synchronously.</p>
+
+<pre><code><span class="keyword">async</span> <span class="type">Task</span> <span class="method">Caller</span>()
+{
+    <span class="keyword">await</span> <span class="method">SyncWorker</span>();  <span class="comment">// If SyncWorker returns Task.CompletedTask...</span>
+    <span class="type">Console</span>.<span class="method">WriteLine</span>(<span class="string">"hi"</span>);    <span class="comment">// ...this runs immediately, same thread, no reschedule</span>
+}</code></pre>
+
+<p>This is why mixing sync and async freely has very low cost in C#. The overhead of <code>await</code> only kicks in when the Task is genuinely incomplete. For completed Tasks, it's essentially a couple of branch predictions and a function call.</p>
+
+<div class="callout callout-english">
+    "Await that Task" really means "check if the Task is already done; if yes, keep going; if no, schedule the rest of this method to run when the Task finishes, then return." The fast path is just two checks and a branch.
+</div>
+
+<!-- ============================================================ -->
+<h2>7. Key Takeaways</h2>
+
+<ul>
+    <li><strong>Top-level statements</strong> are a compile-time transformation. The compiler generates a hidden <code>Program</code> class and a <code>Main</code> method, then stuffs your top-level code inside.</li>
+    <li><strong>The compiler picks the right Main signature</strong> based on what your code does. Use <code>await</code> → get <code>async Task Main</code>. Use <code>return 0</code> → get <code>int Main</code>. Both → get <code>async Task&lt;int&gt; Main</code>.</li>
+    <li><strong>Top-level statements must come before type declarations</strong>. Local functions can live in top-level code; actual classes must come after.</li>
+    <li><strong>async/await is 100% syntactic sugar</strong>. The CLR has no concept of it. The compiler rewrites every <code>async</code> method as a state machine struct with a <code>MoveNext</code> method and a state field.</li>
+    <li><strong>Local variables get "hoisted"</strong> to fields on the state machine struct because they need to survive suspension.</li>
+    <li><strong>State machines are the same CS concept</strong> as videogame FSMs. The difference is that async state machines are generated mechanically, with meaningless intermediate states, driven purely by Task completion events.</li>
+    <li><strong>An <code>async</code> method with no <code>await</code> still pays the full cost</strong> of state machine generation. Prefer returning <code>Task.CompletedTask</code> directly for sync work.</li>
+    <li><strong>The three sentinel tasks</strong> — <code>Task.CompletedTask</code>, <code>Task.FromResult(x)</code>, <code>Task.FromException(ex)</code> — let you fulfill a Task-returning contract with zero async overhead.</li>
+    <li><strong>Awaiting a completed Task is nearly free</strong>. The runtime detects synchronous completion and skips the continuation machinery entirely.</li>
+    <li><strong>Verify any of this yourself</strong> on <a href="https://sharplab.io" style="color:var(--success)">sharplab.io</a> — paste C# code, see exactly what the compiler generates. It's one of the best tools for dissolving "magic" in the language.</li>
+</ul>
+
+</body>
+</html>

@@ -1,0 +1,782 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Manual de Processos-Design</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 12-JavaScript</div>
+  <h1>Manual de Processos-Design</h1>
+  <div class="meta">Source: <code>JScript/Manual de Processos-Design.pdf</code> &middot; <a href="Manual de Processos-Design.pdf">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<div class="pdf-page"><h3>Page 1</h3><pre>Construção de Manual de Processos e Subprocessos
+
+Índice Processo 3 - Design
+
+1. Arquitetura do projeto e Protótipos
+
+Objetivo: Estruturar a arquitetura da informação e os fluxos comuns/básicos do projeto
+      a) Criar um escopo com, pelo menos 3 fluxos principais: devem ser representada a distinção
+            das principais funcionalidades do projeto, fluxos de registo e configurações base, por
+            exemplo.
+      b) Apresentar relação entre telas e disposição de componentes em telas principais:
+            apresentação visual de algumas telas basicas, que servirão de explicação do funcionamento
+            ao cliente. Estas telas podem ser uniformizadas e preparadas antecipadamente, para serem
+            utilizadas como recurso para contacto com cliente e avaliação de necessidades.
+      c) Desenvolver uma estrutura básica da interface sem distrações visuais, isto é, uma interface
+            limpa que priorize usabilidade, clareza e eficiência da aplicação, eliminando elementos
+            desnecessários. Por exemplo, deve conter header com logo da app/cliente e menu
+            principal, footer básico com “links” generalistas, e um conteúdo principal com informações
+            relevantes à tarefa principal destinada á app ou homepage.
+      d) Fazer diagrama hierarquico com legenda explicativa (entendível por stakeholders) que
+            represente o curso do projeto.
+      e) Documentar, estilo portefólio, para cada projeto, a anotação de todos os requisitos e
+            especificações definidas para o projeto, onde devem ser também arquivadas alterações de
+            planeamento e/ou requisitos, cronogramas, e restante documentação.
+
+2. Templates predifinidos
+
+      a) Login
+            i. Componentes:
+                   1. Background: imagem alinhada na direita (66,66%) e restante cor de fundo sólida.
+                   2. Main Content: Card e Logos. Logo parceiro deve ser apresentado no fundo Div de
+                         Fundo esquerda. Itens alinhados ao centro.
+                   3. Card: Inputs dados de acesso, botão Login, Link recuperação password. Itens
+                         alinhados ao centro.
+            ii. Exemplo:
+
+                                                                                                                            1</pre></div>
+<div class="pdf-page"><h3>Page 2</h3><pre>Construção de Manual de Processos e Subprocessos
+
+Deve-se adaptar o layout do Desktop, mantendo a imagem
+como fundo e centrando todos os itens da página.
+Todos os itens devem ter cores que permitam que estes sejam
+legiveis.
+Deve ser utilizada uma paleta de cores que permita a utilização
+dos mesmos estilos dos itens, independentemente do formato
+de visualiuzação, mobile, tablet ou desktop.
+Verificar regras e Telas pre definidas para Layouts responsivos.
+
+      b) Layout Empresas
+            i. Background: gradiente de cor
+            ii. Header: Barra de cor sólida a contrastar com a cor do texto
+            iii. Div Descrição: título da página e breve descrição da ação a fazer para o user
+            iv. Main Content: conjunto de cards distribuídos pelo grid com espaçamento vertical e
+                   horizontal uniforme.
+                   1. Cards: cada card apresentará o nome da empresa e um icon de settings no topo.
+                         O restante espaço apresentará o logo da empresa, centrado. Um exemplo deste
+                                                                                                                            2</pre></div>
+<div class="pdf-page"><h3>Page 3</h3><pre>Construção de Manual de Processos e Subprocessos
+                         componente para implementação está disponível no MudBlazer definido como
+                         Card/Header. Campos clicáveis do card: icon settings e div de logo da empresa.
+
+            v. Icon Settings: clicar neste icone navega-se para a página de edição de empresa.
+
+Para respeitar a responsividade da página o main
+content deve ficar sempre centrado, com os card
+divididos consoante a largura da tela.
+Ao reduzir a dimensão da tela, existe um ajuste de
+colunas do grid, logo a disposição dos cards também
+sofre alteração, como mostra a figura.
+Verificar regras e Telas pre definidas para Layouts
+responsivos.
+
+      c) Homepage (layout base)
+            i. Header:
+                   1. Logo do cliente/app.
+                   2. Menu principal com itens (ver exemplo em imagem).
+            ii. Main Content:
+                   1. Área principal com informações relevantes à tarefa principal da aplicação ou
+                         conteúdo da homepage.
+                   2. Design limpo, priorizando usabilidade e clareza.
+            iii. Footer:
+                   1. Texto de direitos reservados.
+                   2. Logo agile.
+            iv. Background com imagem/logo do cliente.
+                                                                                                                            3</pre></div>
+<div class="pdf-page"><h3>Page 4</h3><pre>Construção de Manual de Processos e Subprocessos
+
+Regras de Responsividade:
+      I. Background centrado;
+      II. Ícone Menu passa para a direita (?)
+      III. Secção de menu fecha. Só abre ao clicar ícone.
+      IV. Informação Footer aparece centrada (coluna
+            com varias linhas)
+
+      a) Dashboard
+            i. Header, Footer e Menu: mantém mesmo layout/formatação do Homepage (layout
+                   base)
+            ii. Main Content:
+                   1. Título
+                   2. Breadcrumbs
+                   3. Cards com Gráficos ou widgets de resumo (ex: KPIs, métricas).
+                                                                                                                            4</pre></div>
+<div class="pdf-page"><h3>Page 5</h3><pre>Construção de Manual de Processos e Subprocessos
+            iii. Seções organizadas em grids ou cards para exibir informações-chave, incluindo botões
+                   e links para ações rápidas.
+            iv. Deve ser considerada a funcionalidade de recolher/expandir os cards com um toggle
+                   button.
+
+      b) Perfil User
+            i. Header, Footer e Menu: mantém mesmo layout/formatação do Homepage (layout
+                   base)
+            ii. Main Content:
+                   1. Foto ou avatar do usuário.
+                   2. Campos de informações pessoais (nome, e-mail, cargo, etc.).
+                   3. Botões para edição de perfil e alteração de password.
+                   4. Histórico de atividades ou preferências (opcional).
+
+                                                                                                                            5</pre></div>
+<div class="pdf-page"><h3>Page 6</h3><pre>Construção de Manual de Processos e Subprocessos
+
+      c) Utilizadores
+            i. i.Header, Footer e Menu: mantém mesmo layout/formatação do Homepage (layout
+                   base)
+            ii. Main Content:
+                   1. Card Filtros Principais: filtra todos os dados da tabela
+                   2. Card Tabela:
+                         a) Lista ou tabela de usuários com colunas como: Nome, E-mail, Cargo, etc..
+                         b) Botões para adicionar, editar ou remover usuários.
+                         c) Barra de pesquisa
+                         d) Paginação
+
+      d) Tabelas
+Neste layout considera-se, para fins demonstrativos, só o conteúdo dentro do main container.
+
+            i. Título da tabela: componente indicativo com o nome da tabela. Insere-se sempre no
+                   topo do main container, à direita.
+
+            ii. Breadcrumbs: servem para orientar o utilizador relativamente à sua localização.
+                   Apresentam-se na mema linha que o título, à esquerda, sendo separados por barras
+                   (“/”).
+
+            iii. Card Filtros: card inicial que vai apresentar os filtros principais para facilitar a
+                   pesquisa/análise da informação detalhada na tabela. Contém também botões de ação
+                   como apresenta na tabela, podendo ser mais do que um botão, se necessário.
+
+            iv. Card Tabela:
+                   1. Barra de pesquisa (search): para pesquisas detalhadas em tempo real. Para
+                         procurar um dado ou conjuntop de dados esficíficos.
+                   2. Colunas:
+                         a) Título coluna: representa a coluna dos dados da tabela, podendo ter ícones
+                               de ordenação (ascendente/descendente).
+                         b) Filtros secundários: servem para reduzir a mostragem de dados da tabela
+                               por conjuntos de filtros. Apresentam-se a baixo do Título de cada coluna.
+
+                                                                                                                            6</pre></div>
+<div class="pdf-page"><h3>Page 7</h3><pre>Construção de Manual de Processos e Subprocessos
+                         c) Primeira Coluna: a coluna mais à esquerda destina-se a ícone de detalhe
+                               (folder) ou a ícone de edição, para editar o dado presente naquela linha.
+                         d) Última coluna: apresenta ícone de eliminar (trash), bem identificaso com
+                               hoover e mensagem de aviso para garantir que os dados não são eliminados
+                               acidentalmente. A cor deste ícone está definida na tabela dos mesmoa.
+
+                   3. Linhas:
+                         a) Dados organizados por célula (texto, números, badges, etc.).
+                         b) Botões/ícones de ação por linha (ex: &quot;Editar&quot;, &quot;Eliminar&quot;, “Detalhes”, ...).
+
+                   4. Paginador: Controle de paginação (ex: &quot;1-10 de 100&quot;) + botões
+                         &quot;Anterior&quot;/&quot;Próximo&quot;.
+
+      a) Dropdown User
+            i. Localização: canto superior direito (no header). Surge ao clicar no ícone user.
+            ii. Itens:
+                   1. Nome do usuário (opcional).
+                   2. Links para: Perfil, Configurações, Sair
+            iii. Estilo: Fundo sólido ou com leve sombra.
+
+                                                                                                                            7</pre></div>
+<div class="pdf-page"><h3>Page 8</h3><pre>Construção de Manual de Processos e Subprocessos
+
+2. Cores
+
+      a) Primárias
+      Objetivo: Estabelecer uma hierarquia visual clara, onde as cores primárias representam
+      identidade e ações-chave, enquanto as secundárias garantem harmonia e suporte.
+
+            i. Padrão:
+                   1. Primárias: Devem ser limitadas a 1–3 cores principais, usadas para elementos
+                         críticos (call-to-actions, ícones ativos, indicadores de estado).
+                   2. Secundárias: Derivadas das primárias através de ajustes de matiz, saturação ou
+                         luminosidade, ou cores neutras complementares. Devem sustentar a primária
+                         sem competir por atenção.
+
+            ii. Flexibilidade: As cores primárias podem variar por projeto, mas a relação entre
+                   primárias e secundárias (ex.: diferença de contraste, proporção de uso) deve manter-
+                   se consistente.
+
+      b) Hierarquia e Função de Cores
+      Objetivo: Associar cores a funções específicas para garantir intuitividade.
+
+            i. Padrão:
+                   1. Interatividade
+                         a) Primária: Ações principais (confirmação, progresso).
+                         b) Secundária: Ações secundárias (cancelar, voltar).
+                   2. Feedback:
+                   Cores dedicadas a estados (sucesso, erro, alerta) devem ser distintas das cores da
+                   marca para evitar confusão.
+                   Padrão:
+                         a) Sucesso (#2ecc71),
+                         b) Erro (#e74c3c),
+                         c) Alerta (#f39c12),
+                         d) Informação (#3498db).
+                   3. Neutras
+                   Fundos, textos e bordas devem seguir uma escala de tons claros/escuros adaptáveis
+                   ao modo de cor (claro/escuro).
+                   Padrão:
+                         a) Fundos (#f8f9fa),
+                         b) Textos (#333333),
+                         c) Bordas (#e0e0e0).
+
+      c) Acessibilidade
+      Objetivo: Garantir legibilidade e usabilidade para todos os usuários.
+
+            i. Padrão:
+                   1. Contraste mínimo: Texto vs. fundo deve atender ao nível AA (4.5:1) ou AAA (7:1)
+                         conforme a criticidade.
+                   2. Componentes interativos: Estados (hover, focus, desativado) devem ter
+                         contraste e indicação visual clara.
+
+                                                                                                                            8</pre></div>
+<div class="pdf-page"><h3>Page 9</h3><pre>Construção de Manual de Processos e Subprocessos
+                   3. Independência de cor: Não depender apenas de cor para transmitir informação
+                         (ex.: usar ícones + texto em alertas).
+                   4. Flexibilidade: Cores primárias podem ser ajustadas em luminosidade/saturação
+                         para cumprir contraste, mantendo a identidade.
+
+            ii. Regras para Tons:
+                   1. Primária + 20% de brilho → botão hover.
+                   2. Primária com 10% de saturação → fundo desativado.
+
+      d) Tonalidades e Variações
+      Objetivo: Criar escalas de cores adaptáveis a diferentes contextos.
+
+            i. Padrão:
+                   1. Variações: Gerar tons claros/escuros a partir da primária para estados (hover,
+                         active) ou fundos.
+                   2. Neutras: Escalas de cinza com subtons para harmonizar com a paleta.
+                   3. Consistência: As variações devem seguir a lógica predefinida.
+
+      e) Modo Claro vs. Escuro.
+      Objetivo: Oferecer conforto visual em diferentes ambientes. A paleta pode adaptar-se, mas a
+      hierarquia (ex.: primária &gt; secundária) mantém-se.
+
+            i. Padrão:
+                   1. Bases:
+                         a) Modo claro: Fundos claros com texto escuro.
+                         b) Modo escuro: Fundos escuros com texto claro.
+                   2. Ajustes:
+                         a) Cores primárias podem ser clareadas/escurecidas para manter contraste no
+                               modo escuro.
+                         b) Neutras devem inverter sua função (ex.: cinza claro vira cinza escuro).
+
+                                                                                                                            9</pre></div>
+<div class="pdf-page"><h3>Page 10</h3><pre>Construção de Manual de Processos e Subprocessos
+
+f) Exemplo Cores
+
+Categoria Função      Modo Claro                  Modo Escuro  Relação/Acessibilidade                                  Objetivo
+
+Primária  Base        #DF2E26                     #FF6B6B      Cor principal da marca. Contraste ≥ 4.5:1 sobre fundos  Botões primários, ações
+                                                               claros/escuros.                                         críticas.
+
+          Hover       #B8251E                     #E05555      20% mais escura que a base.                             Feedback visual ao interagir.
+
+          Active/Pressed #9A1D17                  #C43C3C      30% mais escura que a base.                             Estado de clique.
+
+          Desativado  #DF2E26 (50% opac) #FF6B6B (50% opac) Mantém identidade, mas reduz proeminência.                 Ações indisponíveis.
+
+Secundária Base       #F26D28                     #FF8E42      Complementar à primária (harmonia análoga). Contraste   Botões secundários, realces.
+                                                               ≥ 4.5:1.
+
+          Hover       #C25820                     #E07A35      20% mais escura que a base.                             Consistência interativa.
+
+Neutras   Fundo Primário #FFFFFF                  #121212      Neutro puro (claro) vs. quase-preto (escuro).           Base para conteúdo.
+
+          Fundo       #F8F8F8                     #1E1E1E      5% mais escuro/claro que o fundo primário.              Destaques de seções.
+          Secundário
+
+          Texto Primário #333333                  #E0E0E0      Contraste ≥ 7:1 (AAA) sobre fundos.                     Conteúdo principal.
+
+          Texto Secundário #666666                #A0A0A0      Contraste ≥ 4.5:1 (AA).                                 Texto menos importante.
+
+          Bordas      #E0E0E0                     #3A3A3A      Sutil distinção sem competir com conteúdo.              Divisões, cards.
+
+Feedback Sucesso      #2ECC71                     #27AE60      Verde saturado. Contraste ≥ 4.5:1.                      Confirmações, conclusões.
+
+          Erro        #E74C3C                     #C0392B      Vermelho distinto da primária. Contraste ≥ 4.5:1.       Falhas críticas.
+
+                                                                                                                                                 10</pre></div>
+<div class="pdf-page"><h3>Page 11</h3><pre>Construção de Manual de Processos e Subprocessos
+
+           Alerta      #F39C12                    #D35400  Âmbar. Contraste ≥ 4.5:1.                          Avisos (ex.: campos
+                                                                                                              incompletos).
+           Informação  #3498DB                    #2980B9  Azul claro. Contraste ≥ 4.5:1.                     Notificações, ajuda.
+           Link                                                                                               Navegação clara.
+Interação  Link Hover  #3498DB                    #5DADE2  Azul padrão para hiperlinks. Sublinhado em texto.  Feedback visual.
+Variações  Sombra                                                                                             Elevação de componentes.
+           Overlay     #2874A6                    #7FB3D5  20% mais escuro/claro que o link base.             Foco no conteúdo superior.
+
+                       #000000 (10% opac) #000000 (30% opac) Sutil profundidade em ambos os temas.
+
+                       #000000 (50% opac) #000000 (70% opac) Escurecimento para modais.
+
+                                                                                                              11</pre></div>
+<div class="pdf-page"><h3>Page 12</h3><pre>Construção de Manual de Processos e Subprocessos
+                                                                                                                                                                                                                 12</pre></div>
+<div class="pdf-page"><h3>Page 13</h3><pre>Construção de Manual de Processos e Subprocessos
+
+3. Tipografia
+4. Fontes
+
+      a) Primárias, secundárias e fallbacks
+      b) Tamanhos
+      c) Títulos, parágrafos, labels, h1, h2
+
+5. Pesos
+
+      a) Normal, bold, italic
+      b) Exemplos
+
+6. Bordas
+
+      a) Raio
+      b) Espessura
+      c) Estilos
+      d) Exemplos
+
+                                                                                                                           13</pre></div>
+<div class="pdf-page"><h3>Page 14</h3><pre>Construção de Manual de Processos e Subprocessos
+
+7. Icons
+
+Esta tabela apresenta um resumo dos principais ícones utilizados na aplicação, detalhando sua função, localização padrão e características visuais. Os ícones são baseados
+na biblioteca Font Awesome (versão classic), garantindo consistência e familiaridade para os utilizadores.
+
+      a) Objetivos da Tabela:
+            i. Padronização Visual: Definir cores, fontes e comportamentos para manter uma identidade coesa em toda a plataforma.
+            ii. Facilitar a Implementação: Servir como referência rápida para desenvolvedores e designers durante a construção de interfaces.
+            iii. Melhorar a Usabilidade: Assegurar que os ícones transmitam claramente suas funções (ex: ❌ para &quot;Eliminar&quot;, para &quot;Confirmação&quot;).
+
+      b) Destaques:
+            i. Ícones de Ação Crítica (ex: trash, ban) usam vermelho (#f44336) para sinalizar riscos.
+            ii. Ícones de Expansão/Redução (arrow-up, arrow-down) alternam dinamicamente em componentes como accordions.
+            iii. Flexibilidade: Cores &quot;primária/secundária&quot; adaptam-se ao contexto do layout.
+
+Esta lista abrange os ícones essenciais, mas pode ser expandida conforme necessidades futuras. Para ícones adicionais, consulte o Font Awesome.
+Recomenda-se testar a legibilidade dos ícones em diferentes fundos para garantir acessibilidade (contraste mínimo de 4.5:1 conforme WCAG).
+
+Nome   Preview  Fonte                                     Cor padrão               Localização         Função    Observações
+Check                                                      #00c853                                     Estética
+Trash           https://fontawesome.com/icons/check?f=cl   #f44336    Simboliza confirmação            Eliminar
+Xmark           assic&amp;s=regular                            #f44336                                     Estética
+ Ban                                                       #f44336    Presente em cada linha de        Estética
+                https://fontawesome.com/icons/trash-                  dados | Botão “Eliminar”
+                can?f=classic&amp;s=regular&amp;pc=%23f44336&amp;sc
+                =%23f44336                                            Simboliza erro, inexistência ou
+                                                                      não aplicação
+                https://fontawesome.com/icons/xmark?f=cl
+                assic&amp;s=regular                                       Boão de &quot;Cancelar&quot;
+
+                https://fontawesome.com/icons/ban?f=clas
+                sic&amp;s=regular
+
+                                                                                                                              14</pre></div>
+<div class="pdf-page"><h3>Page 15</h3><pre>Construção de Manual de Processos e Subprocessos
+
+Arrow-down     https://fontawesome.com/icons/arrow-       primária/   Tabelas de dados                  Expandir Ajustar preenchimento
+Arrow-down-    down?f=classic&amp;s=regular                   secundária                                   informação consoante o fundo.
+
+   fom-line    https://fontawesome.com/icons/arrow-       primária/   Botão de exportação              Estética    Ajustar preenchimento
+ Arrow-left    down-from-line?f=classic&amp;s=regular         secundária                                               consoante o fundo.
+
+ Arrow-right   https://fontawesome.com/icons/arrow-       primária/   Botão “Voltar”                   Estética    Ajustar preenchimento
+               left?f=classic&amp;s=solid                     secundária                                               consoante o fundo.
+Arrow-right-
+ to-bracket    https://fontawesome.com/icons/arrow-       primária/   Esquerda de títulos de           Estética    Ajustar preenchimento
+               right?f=classic&amp;s=regular                  secundária  páginas/telas que são                        consoante o fundo.
+   Arrows-                                                            selecionadas pelo menu.
+    rotate     https://fontawesome.com/icons/arrow-       primária/
+               right-to-bracket?f=classic&amp;s=regular       secundária  Botão “Login                     Estética    Ajustar preenchimento
+  Arrow-up                                                                                                         consoante o fundo.
+               https://fontawesome.com/icons/arrows-      primária/
+     Bars      rotate?f=classic&amp;s=regular                 secundária  Atualizar                        Estética    Ajustar preenchimento
+                                                                                                                   consoante o fundo.
+  Circle plus  https://fontawesome.com/icons/arrow-       primária/
+               up?f=classic&amp;s=regular                     secundária  Ação ao Clicar: troca com          Reduzir Ajustar preenchimento
+     Clock                                                            Expandir. Cor de icone depende   informação consoante o fundo.
+               https://fontawesome.com/icons/bars?f=cla   primária/   da cor de fundo aplicada.
+    Clone      ssic&amp;s=light                               secundária
+                                                                      Header                           Abrir Menu  Ajustar preenchimento
+               https://fontawesome.com/icons/circle-      primária/                                                consoante o fundo.
+               plus?f=classic&amp;s=solid                     secundária
+                                                                      Botões de “Adicionar” em         Estética    Ajustar preenchimento
+               https://fontawesome.com/icons/clock?f=cla  primária/   páginas de dados (tabelas)                   consoante o fundo.
+               ssic&amp;s=regular                             secundária
+                                                                      Semelhante ao botão Adicionar,   Estética    Ajustar preenchimento
+               https://fontawesome.com/icons/clone?f=cl   primária/   mas específico para registos de              consoante o fundo.
+               assic&amp;s=solid                              secundária  entradas/picagens.
+
+                                                                      Replicar/clonar dados            Estética    Ajustar preenchimento
+                                                                                                                   consoante o fundo.
+
+                                                                                                                                          15</pre></div>
+<div class="pdf-page"><h3>Page 16</h3><pre>Construção de Manual de Processos e Subprocessos
+
+Download      https://fontawesome.com/icons/download      primária/       Download | Botão                    Estética   Ajustar preenchimento
+     Eye      ?f=classic&amp;s=regular                        secundária                                                     consoante o fundo.
+
+ Eye-slash    https://fontawesome.com/icons/eye?f=clas    primária/       Mostrar dados/informação            Visível    Ajustar preenchimento
+File-circle-  sic&amp;s=regular                               secundária                                                     consoante o fundo.
+
+    plus      https://fontawesome.com/icons/eye-          primária/       Esconder dados/informação           Invisível  Ajustar preenchimento
+  File-pdf    slash?f=classic&amp;s=regular                   secundária                                                     consoante o fundo.
+  Arrows-
+   repeat     https://fontawesome.com/icons/file-circle-  primária/       Botão “Criar Documento”             Estética   Ajustar cor. Fica à
+Floppy-disk   plus?f=classic&amp;s=light                      secundária                                                     esquerda do texto.
+Folder-plus
+              https://fontawesome.com/icons/file-         primária/       Transformar dados em PDF, exportar  Estética   Ajustar preenchimento
+    Gear      pdf?f=classic&amp;s=solid                       secundária      documento para pdf.                            consoante o fundo.
+
+    Link      https://fontawesome.com/icons/arrows-          primária/    Sincronização de dados/informações  Estética | Ajustar preenchimento
+    Pen       repeat?f=classic&amp;s=regular                  secundária/Ver                                        Botão consoante a função.
+
+                                                                  de
+
+              https://fontawesome.com/icons/floppy-       primária/       Esquerda de títulos | Botão         Estética | Ajustar preenchimento
+              disk?f=classic&amp;s=solid                      secundária      Gravar/Guardar                        Botão consoante a função.
+
+              https://fontawesome.com/icons/folder-       primária/       Adiconar pastas                     Adicionar Ajustar preenchimento
+              plus?f=classic&amp;s=solid                      secundária                                           pastas consoante o fundo.
+
+              https://fontawesome.com/icons/gear?f=cla    primária/       Icone título secção                 Estética | Ajustar preenchimento
+              ssic&amp;s=light                                secundária      “Administração” | Aceder a            Botão consoante a função.
+                                                                          definições
+
+              https://fontawesome.com/icons/link?f=clas   primária/       Título coluna “Dependências”        Botão      Ajustar preenchimento
+              sic&amp;s=light                                 secundária      de tabela tarefas em processos      Editar     consoante o fundo.
+
+              https://fontawesome.com/icons/pen?f=clas    primária/       Editar dado em tabela                          Ajustar preenchimento
+              sic&amp;s=light                                 secundária                                                     consoante o fundo.
+
+                                                                                                                                                16</pre></div>
+<div class="pdf-page"><h3>Page 17</h3><pre>Construção de Manual de Processos e Subprocessos
+
+  Pen-to-    https://fontawesome.com/icons/pen-to-      primária/   Dados Tabelas |Botão “Editar”     Editar    Ajustar preenchimento
+   square    square?f=classic&amp;s=regular                 secundária                                              consoante o fundo.
+
+    Plus     https://fontawesome.com/icons/plus?f=cla   primária/   Esquerda de títulos para          Estética  Ajustar preenchimento
+             ssic&amp;s=regular                             secundária  adicionar/editar | Botões de                consoante o fundo.
+Square-plus                                                         criar
+ Up-down-    https://fontawesome.com/icons/square-      primária/
+ left-right  plus?f=classic&amp;s=regular                   secundária  Botão adicionar/criar nova série  Botão     Ajustar preenchimento
+                                                                                                                consoante o fundo.
+  Upload     https://fontawesome.com/icons/up-down-     primária/
+             left-right?f=classic&amp;s=solid               secundária  Mover                             Botão     Ajustar preenchimento
+    User                                                                                                        consoante o fundo.
+             https://fontawesome.com/icons/upload?f=    primária/
+ User-plus   classic&amp;s=regular                          secundária  Upload                            Estética | Ajustar preenchimento
+                                                                                                        Botão consoante o fundo.
+             https://fontawesome.com/icons/user?f=cla   primária/
+             ssic&amp;s=solid                               secundária  Botão canto superior direito |à   Detalhes  Ajustar preenchimento
+                                                                    esquerda de títulos relacionados   User |   consoante o fundo.
+             https://fontawesome.com/icons/user-        primária/   com usuários.                     Estética
+             plus?f=classic&amp;s=solid&amp;rt=flip-horizontal  secundária
+                                                                    Adicionar User                    Botão|Esté Ajustar preenchimento
+
+                                                                                                      tica      consoante o fundo.
+
+                                                                                                                                        17</pre></div>
+<div class="pdf-page"><h3>Page 18</h3><pre>Construção de Manual de Processos e Subprocessos
+
+      c) Biblioteca/package
+            i. MudBlazer
+            MudBlazor é um framework de componentes UI (User Interface) para Blazor, uma
+            tecnologia da Microsoft que permite criar aplicações web interativas usando C# em vez de
+            JavaScript. Ele oferece uma biblioteca de componentes prontos (como botões, menus, grids,
+            formulários) com um design moderno e customizável, seguindo o padrão Material Design
+            (estilo visual do Google).
+                   1. Principais características:
+                         a) Componentes ricos e estilizados (ex.: MudButton, MudCard, MudTable).
+                         b) Suporte a temas (claro/escuro) e personalização via CSS ou variáveis C#.
+                         c) Integração nativa com Blazor Server e Blazor WebAssembly.
+                         d) Open-source e comunidade ativa.
+                   2. Integração
+            ii. Font Awesome
+            Font Awesome é uma biblioteca de ícones vetoriais amplamente usada em projetos web.
+            Oferece +2.000 ícones gratuitos e +7.000 na versão Pro, com suporte a estilos (sólido,
+            regular, brands).
+                   1. Ícones Modernos:
+                         a) Ícones para ações (salvar, editar), mídias (play, pause) e categorias
+                               (negócios, saúde).
+                         b) Suporte a animações (spin, pulse) e tamanhos escaláveis.
+                   2. Integração Flexível: compatível com Blazor através de classes CSS ou
+                         componentes dedicados.
+                   3. Customização: Cor, tamanho e estilo configuráveis via CSS. Ícones podem ser
+                         usados em botões, menus, textos.
+
+8. Componentes Essenciais:
+
+      a) Botões
+            i. Hierarquia visual
+                   1. Botão Primário (Ação principal, &quot;Submeter&quot;, &quot;Comprar&quot;):Cor mais vibrante (usar
+                         cor primária da marca)
+                   2. Secundário (Ações alternativas, &quot;Voltar&quot;, &quot;Cancelar&quot;): Cor menos proeminente
+                         (cor secundária ou neutra)
+                   3. Terciário (Ações menos críticas, &quot;Saber mais&quot;, &quot;Link&quot;): Estilo minimalista (apenas
+                         texto ou borda)
+            ii. Estados Interativos
+                   1. Default (estado normal)
+                   2. Hover (mouse sobre): Escurecer/clarear a cor base em 15-20% e adicionar
+                         transição suave (transition: 0.2s ease)
+                   3. Active/Pressed (clicado): Efeito de &quot;afundar&quot; (sombra interna ou cor 30% mais
+                         escura)
+                   4. Focused (foco de acessibilidade): Contorno visível (outline ou box-shadow)
+                   5. Disabled (desativado): Reduzir opacidade (50-60%) e remover interação
+
+                                                                                                                           18</pre></div>
+<div class="pdf-page"><h3>Page 19</h3><pre>Construção de Manual de Processos e Subprocessos
+            iii. Acessibilidade
+                   1. Contraste mínimo: Texto vs. fundo: ≥ 4.5:1 (AA) para botões pequenos, ≥ 3:1
+                         para grandes.
+                   2. Tamanho: Área de toque mínima: 44×44px (mobile/web).
+                   3. Indicadores visuais: Não depender apenas de cor (usar ícones ou texto para
+                         estados como &quot;desativado&quot;).
+            iv. Estilo e Formato
+                   1. Bordas: Radius consistente (ex: 4px para corporate, 8px para friendly).
+                   2. Sombras: Sombra sutil para botões elevados (ex: box-shadow: 0 2px 4px
+                         rgba(0,0,0,0.1)).
+                   3. Ícones: Posicionamento (esquerda/direita do texto) e tamanho padronizado.
+            v. Espaçamento e Tamanhos
+                   1. Defina proporções fixas para: Altura: 36px (pequeno), 44px (médio), 52px
+                         (grande).
+                   2. Padding horizontal: Mínimo 16px para evitar toques acidentais.
+            vi. Exceções
+                   1. Botões Destrutivos (“Apagar”, &quot;Excluir&quot;): Usar vermelho distinto (#E74C3C)
+                         mesmo em interfaces com outra cor primária.
+                   2. Botões Flutuantes (FAB): Círculo com ícone, sombra mais pronunciada e
+                         mensagem descritiva com hoover.
+            vii. Exemplo:
+
+                                                                                                                           19</pre></div>
+<div class="pdf-page"><h3>Page 20</h3><pre>Construção de Manual de Processos e Subprocessos
+
+9. Responsividade
+
+      a) Comportamento adaptativo: mostrar diferenças de ocultação/mostragem de elementos e
+            do redimensionamento de textos/imagens/componentes.
+
+      b) Breakpoints
+
+Tipo de Tela Breakpoint (max-width)               Tipo de tela
+
+XS   600px                                        Smartphone
+
+S    960px                                        Tablets e Smartphones
+
+M    1280px                                       Laptops e Tablets
+
+L    1920px                                       Desktop
+
+XL   2560px                                       Telas HD e 4k
+
+XXL  &gt;=256px                                      4k+ e ultra-wide
+
+Ao trabalhar com o MudBlazor é necessário considerar a possibilidade da app estar com
+GridSystem definido que, à partida, será de 12 colunas (como no bootstrap) para dividir a
+organização dos conteúdos.
+Nessa situação, os breakpoints já se encontram definidos, devendo-se ter atenção redobrada
+para evitar duplicações de estilização e conteúdos.
+É importante veririficar e estudar o comportamento adaptativo do componente do MudBlazor
+para o inserir no layout, efetuando as modificações necessárias de forma a manter a mesma
+lógica de responsividade.
+c) Tipografia Escalável (exemplo)
+Usar rem ou em para escalabilidade. Evitar fontes abaixo de 14px em qualquer dispositivo.
+
+      i. Mobile:
+            1. Título principal: 1.5rem – 2rem (24px – 32px)
+            2. Texto comum: 1rem (16px)
+            3. Linhas muito longas? Reduza o tamanho ou aumente o line-height.
+
+      ii. Tablet/Desktop:
+            1. Títulos podem aumentar (2rem – 2.5rem).
+            2. Texto: Mantenha entre 1rem – 1.2rem para legibilidade.
+
+d) Toques e Interações
+      i. Tamanho mínimo para a área de toque
+            1. 48px por 48px para botões e links
+            2. Espaçamento entre elementos clicáveis: 8px - 16px.
+      ii. Recomendações
+            1. Em desktop, utilize hover para feedback visual.
+            2. Em mobile, garanta que active ou toques sejam claros (ex: mudança de cor ou
+                   transições).
+
+e) Outras Recomendações a considerar
+
+                                                                         20</pre></div>
+<div class="pdf-page"><h3>Page 21</h3><pre>Construção de Manual de Processos e Subprocessos
+
+            i. Imagens e Vídeos
+                   1. Tamanho e Compressão:
+                         a) Utilizar o mesmo formato de imagem para toda a app, preferencialmente o
+                               mais leve.
+                         b) Compressão automática via &lt;picture&gt; com fallback
+                         c) Em MudBlazor: utilizar o componente &lt;MudImage&gt; com SrcSet para
+                               diferentes resoluções.
+                   2. Layout Adaptativo:
+                         a) Sempre definir max-width: 100% e height: auto no CSS para evitar overflow.
+                         b) Utilizar CSS Grid ou Flexbox para reposicionamento em breakpoints (ex.:
+                               imagem em coluna em mobile).
+                   3. Vídeos:
+                         a) Utilizar a tag &lt;video&gt; com width=&quot;100%&quot; e atributo playsinline para mobile.
+                         b) Evitar autoplay (pode ser bloqueado em mobile).
+
+            ii. Navegação
+                   1. Menu em Mobile: substituir menus horizontais por drawer (gaveta lateral).
+                   2. Priorizar Conteúdo: esconder itens secundários em mobile (use dropdowns ou
+                         menus aninhados) e garantir que os CTAs principais (ex.: &quot;Criar pedido&quot;) estejam
+                         sempre visíveis.
+                   3. Touch-Friendly: tamanho mínimo de toque: 48x48px (ex.: links/ícones no menu).
+
+            iii. Forms e Inputs
+                   1. Layout Vertical em Mobile: utilizar MudGrid para reorganizar inputs em coluna
+                         única abaixo de breakpoint-md
+                   2. Validação Contextual: mensagens de erro abaixo dos inputs (não em tooltips, que
+                         quebram em mobile).
+
+            iv. Scroll e Paginação
+                   1. Scroll Suave:
+                   2. Evite scroll horizontal (priorize overflow-y: auto).
+                   3. Em tabelas longas, use &lt;MudTable FixedHeader=&quot;true&quot;&gt; para header fixo.
+                   4. Paginação Adaptativa:
+                   5. Substitua paginação numérica por &quot;Carregar mais&quot; em mobile (ex.: via
+                         MudInfiniteScroll).
+
+10. Animações e micro animações (MudBlazor)
+
+      a) Transições: duração e efeitos
+      b) Feedback Visual: confirmação de ações
+      c) Estados de hover/foco
+      d) Loaders
+      e) Cliques
+      f) Drag-and-drop
+      g) Scroll
+
+                                                                                                                           21</pre></div>
+<div class="pdf-page"><h3>Page 22</h3><pre>Construção de Manual de Processos e Subprocessos
+      h) Mensagens de erro/sucesso
+
+11. Acessibilidade
+
+      a) Cores
+      b) Utilzação de aria-label
+      c) Foco teclado
+
+12. Fluxo de Desenvolvimento
+
+      a) Disponibilização de app com design padrão com componentes básicos e que não sofrem
+            alterações
+
+      b) Nomenclatura: Definição de nomenclaturas para componentes e estilizações repetitivas,
+            sejam classes, divs ou botões pré definidos, para garantir consistência visual em toda a
+            aplicação, manutenção e colaboração eficientes.
+
+13. Documentação de exceções
+
+      a) Definição exceção
+      b) Objetivo
+      c) Justificação
+Nota: se uma exceção se notar muito regular, passa para procedimento ou componente essencial.
+
+Índice Processo 4: Desenvolvimento
+
+1. Registar relação tabelas/entidades
+2. Registar Fluxos de tarefas desenvolvidas do projeto
+3. Anotar a estrutura/organização do projeto (existe uma estrutura adaptada atualmente)
+4. Documentar funções importantes
+5. Confirmar e validar hábitos e regras de boas práticas de programação para existir conformidade nas
+estruturas de código de todos os projetos.
+6. Guia de revisão de código.
+
+                                                                                                                           22</pre></div>
+</div>
+</body>
+</html>

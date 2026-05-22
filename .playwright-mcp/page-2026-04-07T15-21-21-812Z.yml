@@ -1,0 +1,98 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e4]: Learning
+    - generic [ref=e5]:
+      - link "Duplicates report" [ref=e6] [cursor=pointer]:
+        - /url: _Duplicates.md
+      - link "Manifest" [ref=e7] [cursor=pointer]:
+        - /url: _Curated_Manifest.json
+  - generic [ref=e8]:
+    - generic [ref=e9]: Personal learning library
+    - heading "Learning" [level=1] [ref=e10]
+    - paragraph [ref=e11]:
+      - text: A curated split between
+      - strong [ref=e12]: core concepts
+      - text: you can reuse anywhere, and
+      - strong [ref=e13]: real implementations
+      - text: documented like full project tutorials.
+    - searchbox "Search documents and categories…" [ref=e15]
+  - generic [ref=e16]:
+    - generic [ref=e17]:
+      - generic [ref=e18]: "95"
+      - generic [ref=e19]: Documents
+    - generic [ref=e20]:
+      - generic [ref=e21]: "53"
+      - generic [ref=e22]: Core concepts
+    - generic [ref=e23]:
+      - generic [ref=e24]: "42"
+      - generic [ref=e25]: Implementations
+    - generic [ref=e26]:
+      - generic [ref=e27]: 189,641
+      - generic [ref=e28]: Total words
+    - generic [ref=e29]:
+      - generic [ref=e30]: "9"
+      - generic [ref=e31]: Dup clusters
+    - generic [ref=e32]:
+      - generic [ref=e33]: "20"
+      - generic [ref=e34]: Files flagged
+  - generic [ref=e35]:
+    - generic [ref=e36]:
+      - generic [ref=e37]: ▸ Concepts
+      - heading "Core concepts" [level=2] [ref=e38]
+      - paragraph [ref=e39]: Pure programming theory — generics, patterns, EF Core, SignalR, async, caching, ML fundamentals. The reusable knowledge layer that exists independently of any specific project.
+      - generic [ref=e40]:
+        - generic [ref=e41]: 10 families
+        - generic [ref=e42]: 53 documents
+      - link "Browse concepts →" [ref=e43] [cursor=pointer]:
+        - /url: CORE/_Hub.html
+      - generic [ref=e44]:
+        - heading "Recent additions" [level=4] [ref=e45]
+        - list [ref=e46]:
+          - listitem [ref=e47]:
+            - link "Adapter Pattern Explained (Decoupling Modules from Host Models)" [ref=e48] [cursor=pointer]:
+              - /url: CORE/patterns/adapter-pattern-module-decoupling.html
+          - listitem [ref=e49]:
+            - link "AG Grid Custom Cell Editor — JavaScript Prototypes & DOM Fundamentals" [ref=e50] [cursor=pointer]:
+              - /url: CORE/frontend/ag-grid-custom-cell-editor-js-prototypes.html
+          - listitem [ref=e51]:
+            - link "Agnostic Schedule Conflict Detection" [ref=e52] [cursor=pointer]:
+              - /url: CORE/patterns/schedule-conflict-strategy-pattern.html
+          - listitem [ref=e53]:
+            - link "Async Pattern - Task.WhenAll, Cold Tasks, and Awaiting Existing Tasks" [ref=e54] [cursor=pointer]:
+              - /url: CORE/concurrency/async-task-whenall-pattern.html
+          - listitem [ref=e55]:
+            - link "Background Services & Smart Scheduling — The Night Watchmen of Your Application" [ref=e56] [cursor=pointer]:
+              - /url: CORE/concurrency/background-services-scheduling-patterns.html
+          - listitem [ref=e57]:
+            - link "Backpropagation Visual Guide" [ref=e58] [cursor=pointer]:
+              - /url: CORE/ml/backpropagation-fundamentals.html
+    - generic [ref=e59]:
+      - generic [ref=e60]: ▸ Implementations
+      - heading "Real implementations" [level=2] [ref=e61]
+      - paragraph [ref=e62]: "Concrete systems built and shipped — Factory Floor production tracker, Stock Service, Identity Project, Scheduling, Facial Recognition. Each documented like a full tutorial: why, what, how."
+      - generic [ref=e63]:
+        - generic [ref=e64]: 13 domains
+        - generic [ref=e65]: 42 documents
+      - link "Browse implementations →" [ref=e66] [cursor=pointer]:
+        - /url: APPLICATIONS/_Hub.html
+      - generic [ref=e67]:
+        - heading "Recent additions" [level=4] [ref=e68]
+        - list [ref=e69]:
+          - listitem [ref=e70]:
+            - link "Adding a New Category to Furnor" [ref=e71] [cursor=pointer]:
+              - /url: APPLICATIONS/furnor-category-system/furnor-adding-new-category.html
+          - listitem [ref=e72]:
+            - link "AG Grid Custom Editors and Filters with Select2 - Method-by-Method Walkthrough" [ref=e73] [cursor=pointer]:
+              - /url: APPLICATIONS/factory-floor/ag-grid-custom-select2-editor-filter.html
+          - listitem [ref=e74]:
+            - link "Animated Character Login Page (Interactive Demo)" [ref=e75] [cursor=pointer]:
+              - /url: APPLICATIONS/ui-demos/animated-login-character-demo.html
+          - listitem [ref=e76]:
+            - link "Authorization Architecture" [ref=e77] [cursor=pointer]:
+              - /url: APPLICATIONS/identity-project/authorization-architecture.html
+          - listitem [ref=e78]:
+            - link "Cookie Handling in Blazor Server Applications" [ref=e79] [cursor=pointer]:
+              - /url: APPLICATIONS/identity-project/blazor-cookie-prerendering-fix.html
+          - listitem [ref=e80]:
+            - link "Database Reset & Tenant Migration - How GivingCare Provisions Its Databases" [ref=e81] [cursor=pointer]:
+              - /url: APPLICATIONS/migration-system/givingcare-tenant-migration.html

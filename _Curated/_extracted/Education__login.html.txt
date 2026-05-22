@@ -1,0 +1,10 @@
+Welcome back!
++
+Welcome back!
+Please enter your details
+Email
+Password
+Remember for 30 days
+Log in
+Log in with Google
+Don't have an account? Sign up

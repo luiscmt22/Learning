@@ -1,0 +1,406 @@
+IMemoryCache — Dual-Caching Strategy
+IMemoryCache — Dual-Caching Strategy
+Tutorial #20 — How GivingCare caches database lookups with different expiration lifetimes
+1. Why Cache?
+Every time your application asks the database a question, it costs time: a network roundtrip, query parsing, disk I/O, and result serialization. For data that changes rarely — like which company ID maps to which database name, or whether a feature flag is enabled — that cost is pure waste after the first read.
+IMemoryCache stores data directly in your application's process memory. No network hop, no serialization, no SQL. Just a dictionary lookup measured in nanoseconds.
+But here is the key insight: not all data has the same freshness requirement . A feature flag toggle should propagate in a few minutes. A company-to-database mapping might be fine staying cached for half an hour. This is why our codebase uses a dual-caching strategy — two cache layers with different expiration times in the same service.
+IMemoryCache is like a sticky note on your monitor. Fast to check, but the note gets old — you tear it off after 5 minutes and write a fresh one. Some notes (like your company's address) you keep for 30 minutes because they almost never change.
+2. How IMemoryCache Works
+Registration
+In Program.cs , a single line registers the memory cache as a singleton service:
+// Program.cs, line 73
+builder . Services . AddMemoryCache ();
+That is all. Behind the scenes, .NET registers IMemoryCache as a singleton , meaning every service in the application shares the same cache instance. This is what you want — if each scoped service had its own cache, nothing would actually be cached across requests.
+Injection
+Any service can then ask for the cache via constructor injection:
+private readonly IMemoryCache _cache ;
+public CompanyFeatureFlagService (
+IDbContextFactoryService contextFactory ,
+IMemoryCache cache ,
+ILogger < CompanyFeatureFlagService > logger )
+{
+_contextFactory = contextFactory ;
+_cache = cache ;
+_logger = logger ;
+}
+Thread Safety
+IMemoryCache (the default MemoryCache implementation) is thread-safe out of the box . Multiple requests can read and write concurrently without corrupting the cache. You do not need locks around TryGetValue or Set .
+Two Expiration Types
+Expiration Type
+Behavior
+Use When
+SlidingExpiration
+Timer resets every time the entry is read
+Data that is frequently accessed — keep it warm as long as someone needs it
+AbsoluteExpiration
+Fixed deadline — entry is evicted no matter how often it is read
+Data that MUST be refreshed after a hard time limit
+SlidingExpiration resets every time you read the cache. AbsoluteExpiration does not. A sliding 5-minute cache that gets read every 4 minutes lives FOREVER . If you need a hard upper bound, combine both: set a SlidingExpiration of 5 minutes AND an AbsoluteExpirationRelativeToNow of 30 minutes.
+3. The Pattern — TryGetValue + Set
+Here is the core caching pattern from CompanyFeatureFlagService.LoadFlagDataAsync :
+private async Task < FeatureFlagData > LoadFlagDataAsync ( int companyId )
+{
+var cacheKey = $"FeatureFlags_{companyId}" ;
+// Step 1: Check if we already have it
+if ( _cache . TryGetValue ( cacheKey , out FeatureFlagData ? cached ) && cached != null )
+return cached ;
+// Step 2: Not in cache — load from database
+await using var context = _contextFactory . CreateBaseControleContext ();
+var flags = await context . CompanyFeatureFlags
+. AsNoTracking ()
+. Where ( f => f . CompanyId == companyId )
+. ToListAsync ();
+var data = new FeatureFlagData (
+States: flags . ToDictionary ( f => f . FeatureKey , f => f . State ),
+Tiers: flags . ToDictionary ( f => f . FeatureKey , f => f . AccessTier ));
+// Step 3: Store in cache for next time
+_cache . Set ( cacheKey , data , new MemoryCacheEntryOptions
+{
+SlidingExpiration = FeatureCacheExpiration // 5 minutes
+});
+return data ;
+}
+TryGetValue reads as: "Do I already have this? Yes → use it. No → go get it from the database, then remember it for next time."
+Why Not GetOrCreate?
+You might wonder: .NET has _cache.GetOrCreate(key, entry => ...) that combines the check-and-set. Why don't we use it?
+No async support in the factory — GetOrCreate takes a synchronous factory delegate. Our data loading is async (database queries). There is GetOrCreateAsync , but it has a subtle problem...
+Cache stampede — GetOrCreateAsync does NOT lock on the cache key. If 50 requests hit simultaneously on a cold cache, all 50 will call the factory and all 50 will query the database. With TryGetValue + Set , only the first one that completes will set the cache, and the rest will find it on their next attempt (the double-hit is acceptable for our use case).
+Explicit control — The TryGetValue + Set pattern makes the cache logic visible and debuggable. You can set breakpoints, add logging, or adjust the options per-scenario.
+4. Dual-Layer Caching in CompanyFeatureFlagService
+This is where it gets interesting. CompanyFeatureFlagService maintains two independent cache layers with different lifetimes, because the two types of data have fundamentally different change frequencies.
+The Two Cache Layers
+Cache Key Pattern
+Cached Data
+Expiration
+Why This Duration
+FeatureFlags_{companyId}
+FeatureFlagData (States + Tiers dicts)
+5 min sliding
+Feature changes need to propagate relatively quickly
+CompanyDbToId_{database}
+int (company ID)
+30 min sliding
+Company-to-DB mapping almost never changes
+The FeatureFlagData Record
+Both feature states and access tiers are loaded in a single query and cached as one unit:
+/// Cached data for a company's feature configuration (states + access tiers).
+internal record FeatureFlagData (
+Dictionary < string , FeatureState > States ,
+Dictionary < string , AccessTier > Tiers );
+Using a record here is deliberate. Records are immutable by convention, which is exactly what you want for cached data — nobody should be modifying the cached dictionaries after they are stored.
+The Expiration Constants
+private static readonly TimeSpan FeatureCacheExpiration = TimeSpan . FromMinutes ( 5 );
+private static readonly TimeSpan CompanyIdCacheExpiration = TimeSpan . FromMinutes ( 30 );
+These are static readonly because they never change at runtime. Declaring them as named constants makes the code self-documenting and easy to tune later.
+Layer 1: Feature Flag Cache (5 minutes)
+This is the LoadFlagDataAsync method we saw in Section 3. It caches the full feature state + access tier dictionaries for a company under the key FeatureFlags_{companyId} .
+Layer 2: Company ID Cache (30 minutes)
+Many callers only have the company database name (a string like "GivingCare_CompanyX" ), not the integer company ID. The service needs to resolve that first:
+private async Task < int > ResolveCompanyIdAsync ( string companyDatabase )
+{
+if ( string . IsNullOrEmpty ( companyDatabase ))
+return 0 ;
+var cacheKey = $"CompanyDbToId_{companyDatabase}" ;
+// Check cache first
+if ( _cache . TryGetValue ( cacheKey , out int cachedId ))
+return cachedId ;
+// Not cached — query the database
+await using var context = _contextFactory . CreateBaseControleContext ();
+var company = await context . Companies
+. AsNoTracking ()
+. FirstOrDefaultAsync ( c => c . DatabaseName == companyDatabase );
+var id = company ?. Id ?? 0 ;
+// Only cache valid IDs (don't cache failures)
+if ( id > 0 )
+{
+_cache . Set ( cacheKey , id , new MemoryCacheEntryOptions
+{
+SlidingExpiration = CompanyIdCacheExpiration // 30 minutes
+});
+}
+return id ;
+}
+Notice the guard: if (id > 0) . We deliberately do NOT cache zero/failure results. If a company database name was temporarily unavailable, we don't want to cache "not found" for 30 minutes.
+The Flow: Two Caches Working Together
+Caller: GetFeatureStateAsync("GivingCare_CompanyX", "CRM")
+|
+v
++---------------------------+
+| ResolveCompanyIdAsync() |
+On a warm cache, this entire operation is two dictionary lookups . Zero database queries. Zero network I/O.
+5. Cache Invalidation
+There is a famous joke in computer science: "The two hardest problems in CS are cache invalidation, naming things, and off-by-one errors." Let's see how our codebase handles the first one.
+Explicit Invalidation for Feature Flags
+public void InvalidateCache ( int companyId )
+{
+_cache . Remove ( $"FeatureFlags_{companyId}" );
+}
+This is called in two places — both write operations:
+public async Task < ServiceResult > SetFeatureStateAsync ( int companyId , ...)
+{
+// ... update database ...
+await context . SaveChangesAsync ();
+InvalidateCache ( companyId ); // Immediately clear stale data
+// ...
+}
+public async Task < ServiceResult > SetAccessTierAsync ( int companyId , ...)
+{
+// ... update database ...
+await context . SaveChangesAsync ();
+InvalidateCache ( companyId ); // Immediately clear stale data
+// ...
+}
+The pattern is clear: save to database first, then invalidate . The next read will find the cache empty and reload fresh data from the database.
+If you write, invalidate. If you only read, let it expire naturally.
+No Invalidation for Company ID Cache
+Notice that InvalidateCache only removes the FeatureFlags_{companyId} key. It does NOT touch the CompanyDbToId_{database} key. Why?
+Company-to-database mappings essentially never change at runtime
+If they did change (a very rare admin operation), the 30-minute sliding expiration handles it eventually
+There is no UpdateCompanyDatabase method in this service, so there is nowhere to trigger invalidation
+This is a deliberate design choice: invest invalidation effort where data actually changes, and rely on natural expiration for data that barely moves.
+6. Graceful Degradation
+What happens when the cache is empty AND the database query fails? A poorly designed cache would crash the entire request. Our service handles this gracefully.
+Feature Flags: Return Empty on Error
+private async Task < FeatureFlagData > LoadFlagDataAsync ( int companyId )
+{
+// ... try to load from cache, then from DB ...
+catch ( Exception ex )
+{
+_logger . LogError ( ex , "Error loading feature flags for company {CompanyId}" , companyId );
+return new FeatureFlagData (
+new Dictionary < string , FeatureState >(),
+new Dictionary < string , AccessTier >());
+}
+}
+Empty dictionaries, not exceptions. The caller gets zero data, not a crash.
+Feature State: Default to Enabled
+public async Task < FeatureState > GetFeatureStateAsync ( int companyId , string featureKey )
+{
+var data = await LoadFlagDataAsync ( companyId );
+return data . States . TryGetValue ( featureKey , out var state ) ? state : FeatureState . Enabled ;
+}
+If the cache and database both fail, LoadFlagDataAsync returns empty dictionaries. TryGetValue finds nothing for the requested key. The fallback is FeatureState.Enabled — features work by default. Similarly, GetAccessTierAsync defaults to AccessTier.Full .
+This is a fail-open strategy: if the system cannot determine whether a feature is disabled, it assumes it is enabled. The reasoning is that it is better for users to temporarily see a feature they shouldn't, than for the entire application to break because a cache lookup failed.
+Company ID: Return Zero on Error
+public async Task < FeatureState > GetFeatureStateAsync ( string companyDatabase , string featureKey )
+{
+var companyId = await ResolveCompanyIdAsync ( companyDatabase );
+if ( companyId == 0 ) return FeatureState . Enabled ; // Can't resolve? Default to enabled
+return await GetFeatureStateAsync ( companyId , featureKey );
+}
+If company resolution fails (returns 0), the service short-circuits to the safe default rather than attempting to look up feature flags for company ID zero.
+7. ConcurrentDictionary as Alternative Cache
+Not all caching uses IMemoryCache . Some data is computed once and never changes for the lifetime of the application. For these cases, our codebase uses ConcurrentDictionary instead.
+ReflectionCache.cs
+public static class ReflectionCache
+{
+private static readonly ConcurrentDictionary <( Type , string ), Func < object , object ?>> Getters = new ();
+private static readonly ConcurrentDictionary <( Type , string ), Action < object , object ?>> Setters = new ();
+public static T ? GetValue < T >( object entity , string propertyName )
+{
+if ( entity == null ) return default ;
+var key = ( entity . GetType (), propertyName );
+var getter = Getters . GetOrAdd ( key , CreateGetter );
+if ( getter == null ) return default ;
+var value = getter ( entity );
+if ( value == null ) return default ;
+return ( T ) value ;
+}
+}
+The CreateGetter method compiles a lambda expression into a fast delegate — an expensive operation that should happen at most once per (Type, PropertyName) combination:
+private static Func < object , object ?>? CreateGetter (( Type type , string propertyName ) key )
+{
+var property = key . type . GetProperty ( key . propertyName ,
+BindingFlags . Public | BindingFlags . Instance );
+if ( property == null || ! property . CanRead ) return null ;
+var param = Expression . Parameter ( typeof ( object ), "obj" );
+var castToEntity = Expression . Convert ( param , key . type );
+var propertyAccess = Expression . Property ( castToEntity , property );
+var castToObject = Expression . Convert ( propertyAccess , typeof ( object ));
+return Expression . Lambda < Func < object , object ?>>( castToObject , param ). Compile ();
+}
+Why ConcurrentDictionary Here Instead of IMemoryCache?
+No expiration needed — a compiled expression for Article.Code will be valid for the entire app lifetime. The types and properties do not change at runtime.
+Static context — ReflectionCache is a static class with static fields. IMemoryCache requires DI injection, which is not available in static contexts.
+Simpler API — GetOrAdd(key, factory) is one call that atomically checks-or-creates. No need for TryGetValue + Set two-step.
+No eviction overhead — IMemoryCache has background cleanup, size tracking, and eviction callbacks. For permanent data, that is wasted work.
+IMemoryCache ConcurrentDictionary
+------------------------------------------------------
+Has expiration (sliding/absolute) No expiration (permanent)
+Has size limits + eviction Grows unbounded
+Background cleanup timer No background work
+Requires DI injection Works in static contexts
+GetOrCreateAsync available GetOrAdd (sync only)
+Good for DB results Good for computed data
+8. When to Use Which
+Scenario
+Use
+Why
+DB query results that change (feature flags, settings)
+IMemoryCache with short sliding expiration
+Need automatic freshness — stale data is visible to users
+DB query results that rarely change (company IDs, lookup tables)
+IMemoryCache with long sliding expiration
+Eventual consistency is OK — save the most queries
+Compiled expressions / reflection metadata
+ConcurrentDictionary (static)
+Never changes, expensive to create, no DI needed
+Per-request data
+None — just pass it around
+Too short-lived to cache; overhead exceeds benefit
+9. The Anti-Pattern — ArticlePersistenceService
+Not all caching in the codebase is done correctly. ArticlePersistenceService contains a pattern that works in practice but is technically flawed:
+public class ArticlePersistenceService : IArticlePersistenceService
+{
+// Cached property setters for performance (compiled once per property)
+private static readonly Dictionary < string , PropertyInfo > _propertyCache = new ();
+private static readonly object _cacheLock = new ();
+// ...
+}
+The GetCachedProperty Method
+private static PropertyInfo ? GetCachedProperty ( string propertyName )
+{
+// Problem 1: Reading Dictionary without lock (not thread-safe for writes!)
+if ( _propertyCache . TryGetValue ( propertyName , out var cached ))
+{
+return cached ;
+}
+lock ( _cacheLock )
+{
+// Double-check inside lock (correct)
+if ( _propertyCache . TryGetValue ( propertyName , out cached ))
+{
+return cached ;
+}
+var propertyInfo = typeof ( Article ). GetProperty ( propertyName );
+if ( propertyInfo != null )
+{
+// Problem 2: Writing to Dictionary while other threads may be reading
+_propertyCache [ propertyName ] = propertyInfo ;
+}
+return propertyInfo ;
+}
+}
+What Is Wrong
+Dictionary<K,V> is NOT thread-safe for concurrent reads and writes. The first TryGetValue call happens outside the lock. If another thread is writing inside the lock at the same moment, the reader could encounter a corrupted internal state (bucket array being resized, for example). In practice this rarely crashes because Dictionary writes are small, but it is undefined behavior .
+Manual locking is error-prone. You have to remember to lock every access point. If someone adds a new method that reads _propertyCache without the lock, you get a race condition with no compiler warning.
+The fix is one line. Replace Dictionary + object _cacheLock with ConcurrentDictionary :
+// Before (broken)
+private static readonly Dictionary < string , PropertyInfo > _propertyCache = new ();
+private static readonly object _cacheLock = new ();
+// After (correct)
+private static readonly ConcurrentDictionary < string , PropertyInfo > _propertyCache = new ();
+// And the entire GetCachedProperty method becomes:
+private static PropertyInfo ? GetCachedProperty ( string propertyName )
+{
+return _propertyCache . GetOrAdd ( propertyName ,
+name => typeof ( Article ). GetProperty ( name ));
+}
+Compare this to ReflectionCache.cs which does the same thing correctly with ConcurrentDictionary from the start. This is why having a reference pattern matters — when you see the right way once, you can spot the wrong way instantly.
+10. Adding Cache to a New Service — Step by Step
+Let's say you are building a new service that reads holiday data from the database. Holidays change very rarely (maybe once a year), so they are a great caching candidate.
+Step 1: Inject IMemoryCache
+public class HolidayLookupService
+{
+private readonly IDbContextFactoryService _contextFactory ;
+private readonly IMemoryCache _cache ;
+private readonly ILogger < HolidayLookupService > _logger ;
+public HolidayLookupService (
+IDbContextFactoryService contextFactory ,
+IMemoryCache cache ,
+ILogger < HolidayLookupService > logger )
+{
+_contextFactory = contextFactory ;
+_cache = cache ;
+_logger = logger ;
+}
+}
+Step 2: Define Cache Key and Expiration
+private const string HolidayCachePrefix = "Holidays_" ;
+private static readonly TimeSpan HolidayCacheExpiration = TimeSpan . FromHours ( 1 );
+Cache keys should be unique and descriptive. Use a prefix + the varying part (company database name, ID, year, etc.).
+Step 3: TryGetValue + Set in the Read Method
+public async Task < ServiceResult < List < Holiday >>> GetHolidaysAsync (
+int year , string companyDatabase )
+{
+var cacheKey = $"{HolidayCachePrefix}{companyDatabase}_{year}" ;
+// Check cache
+if ( _cache . TryGetValue ( cacheKey , out List < Holiday >? cached ) && cached != null )
+return ServiceResult < List < Holiday >>. SuccessResult ( cached );
+// Load from database
+await using var context = _contextFactory . CreateCompanyContext ( companyDatabase );
+var holidays = await context . Holidays
+. AsNoTracking ()
+. Where ( h => h . Date . Year == year )
+. ToListAsync ();
+// Cache the result
+_cache . Set ( cacheKey , holidays , new MemoryCacheEntryOptions
+{
+SlidingExpiration = HolidayCacheExpiration
+});
+return ServiceResult < List < Holiday >>. SuccessResult ( holidays );
+}
+Step 4: Invalidate on Write Operations
+public async Task < ServiceResult > CreateHolidayAsync (
+Holiday holiday , string companyDatabase )
+{
+// ... save to database ...
+await context . SaveChangesAsync ();
+// Invalidate the cached holidays for that year
+_cache . Remove ( $"{HolidayCachePrefix}{companyDatabase}_{holiday.Date.Year}" );
+return ServiceResult . SuccessResult ( "Feriado criado com sucesso" );
+}
+Checklist
+Inject IMemoryCache via constructor
+Define a unique cache key pattern (prefix + variable part)
+Define expiration as a static readonly TimeSpan
+In read methods: TryGetValue → return if hit → query DB → Set
+In write methods: save to DB first → Remove the cache key
+Handle errors gracefully — return defaults, not exceptions
+Do NOT cache failure results (zero IDs, empty results from errors)
+Summary — The Complete Mental Model
++-----------------------------------------------------------+
+| Your Application |
+| |
+| Request arrives |
+| | |
+| v |
+| +------------------+ HIT +------------------+ |
+| | IMemoryCache | --------> | Return instantly | |
+| | (in-process RAM) | | (nanoseconds) | |
+| +------------------+ +------------------+ |
+| | MISS |
+| v |
+| +------------------+ +------------------+ |
+| | SQL Server | --------> | Store in cache | |
+| | (network + disk) | | with expiration | |
+| +------------------+ +------------------+ |
+| |
+| Write operation |
+| | |
+| v |
+| Save to DB ----> InvalidateCache() ----> Next read |
+| reloads fresh |
++-----------------------------------------------------------+
+Concept
+In Our Codebase
+Registration
+builder.Services.AddMemoryCache() in Program.cs
+Read pattern
+TryGetValue + Set (not GetOrCreate )
+Short-lived cache
+FeatureFlags_{id} — 5 min sliding
+Long-lived cache
+CompanyDbToId_{db} — 30 min sliding
+Explicit invalidation
+InvalidateCache(companyId) after writes
+Natural expiration
+Company ID cache — no manual invalidation
+Graceful degradation
+Empty dictionaries + FeatureState.Enabled as defaults
+Permanent cache
+ConcurrentDictionary in ReflectionCache
+Anti-pattern
+Dictionary + manual lock in ArticlePersistenceService
+Every service that reads from a cache should have a clear answer to three questions: (1) What is the cache key? (2) How long does it live? (3) When does it get invalidated? If you cannot answer all three, your caching strategy has a gap.

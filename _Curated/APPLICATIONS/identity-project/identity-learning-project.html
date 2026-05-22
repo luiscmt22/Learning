@@ -1,0 +1,1408 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>IdentityLearning Project Knowledge Base</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #07090f;
+  --bg-1: #0c111c;
+  --bg-2: #11182a;
+  --bg-3: #1a2238;
+  --bg-4: #232e4a;
+  --border: #1e2840;
+  --border-2: #2a3551;
+  --border-3: #3a4870;
+  --text: #e9eef8;
+  --text-dim: #94a3bf;
+  --text-mut: #5f6b86;
+  --accent: #6aa6ff;
+  --accent-strong: #3b82f6;
+  --accent-2: #b86aff;
+  --accent-3: #f472b6;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+  --info: #38bdf8;
+  --code-bg: #0a1020;
+  --code-border: #1a2340;
+  --shadow: 0 8px 32px rgba(0,0,0,0.55);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.35);
+  --shadow-glow: 0 0 0 1px rgba(106,166,255,0.18), 0 12px 40px rgba(106,166,255,0.10);
+}
+
+/* Doc-type theming */
+[data-doc-type="core-concept"] {
+  --doc-accent: #6aa6ff;
+  --doc-accent-rgb: 106,166,255;
+  --doc-eyebrow: "Concept";
+}
+[data-doc-type="applied-implementation"] {
+  --doc-accent: #b86aff;
+  --doc-accent-rgb: 184,106,255;
+  --doc-eyebrow: "Implementation";
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font: 16px/1.7 -apple-system, "Inter", \'Segoe UI\', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+::selection { background: rgba(106,166,255,0.30); }
+
+/* ═══ Top bar ═══════════════════════════════════════════════════════ */
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(7,9,15,0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 28px;
+  display: flex; align-items: center; gap: 16px;
+}
+.topbar .crumbs {
+  flex: 1; font-size: 13px; color: var(--text-dim);
+  display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden;
+}
+.topbar .crumbs span.sep { color: var(--text-mut); }
+.topbar .crumbs .current {
+  color: var(--text); font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.topbar .crumbs a { color: var(--text-dim); text-decoration: none; }
+.topbar .crumbs a:hover { color: var(--accent); }
+.topbar .actions { display: flex; gap: 6px; flex-shrink: 0; }
+.topbar .action {
+  font-size: 13px; padding: 6px 14px; border-radius: 8px;
+  color: var(--text-dim); text-decoration: none;
+  border: 1px solid transparent; transition: all .15s;
+}
+.topbar .action:hover {
+  color: var(--text); background: var(--bg-2); border-color: var(--border);
+  text-decoration: none;
+}
+
+/* ═══ Document layout ═══════════════════════════════════════════════ */
+.layout {
+  display: grid; grid-template-columns: 280px 1fr;
+  max-width: 1380px; margin: 0 auto; align-items: start;
+}
+.layout.no-toc { grid-template-columns: 1fr; max-width: 940px; }
+
+.toc-sidebar {
+  position: sticky; top: 70px;
+  align-self: start;
+  max-height: calc(100vh - 90px);
+  overflow-y: auto;
+  padding: 40px 8px 40px 28px;
+  border-right: 1px solid var(--border);
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+.toc-sidebar::-webkit-scrollbar { width: 6px; }
+.toc-sidebar::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
+.toc-sidebar h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px; padding-left: 14px; font-weight: 600;
+}
+.toc-sidebar ol { list-style: none; margin: 0; padding: 0; }
+.toc-sidebar li { margin: 0; }
+.toc-sidebar a {
+  display: block;
+  padding: 5px 14px;
+  border-left: 2px solid transparent;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 13px;
+  line-height: 1.5;
+  transition: all .15s;
+  word-break: break-word;
+}
+.toc-sidebar a:hover {
+  color: var(--text); border-left-color: var(--border-2); text-decoration: none;
+}
+.toc-sidebar a.active {
+  color: var(--doc-accent, var(--accent));
+  border-left-color: var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.07);
+}
+.toc-sidebar .lvl-3 a { padding-left: 28px; font-size: 12.5px; }
+.toc-sidebar .lvl-4 a, .toc-sidebar .lvl-5 a, .toc-sidebar .lvl-6 a {
+  padding-left: 42px; font-size: 12px;
+}
+
+.content { padding: 40px 64px 120px; min-width: 0; }
+
+/* ═══ Hero (per-doc) ════════════════════════════════════════════════ */
+.doc-hero {
+  position: relative;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 32px;
+  margin-bottom: 36px;
+}
+.doc-hero::before {
+  content: ''; position: absolute;
+  top: -40px; left: -64px; right: -64px; height: 220px;
+  background: radial-gradient(ellipse 60% 100% at 0% 0%, rgba(var(--doc-accent-rgb, 106,166,255),0.10), transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+.doc-hero > * { position: relative; z-index: 1; }
+.doc-hero .eyebrow {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  color: var(--doc-accent, var(--accent)); font-weight: 600;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.doc-hero .eyebrow .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--doc-accent, var(--accent));
+  box-shadow: 0 0 8px var(--doc-accent, var(--accent));
+}
+.doc-hero h1 {
+  font-size: 40px; line-height: 1.1;
+  margin: 12px 0 16px;
+  font-weight: 700; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.doc-hero .one-liner {
+  font-size: 18px; line-height: 1.55;
+  color: var(--text-dim);
+  margin: 0 0 20px;
+  max-width: 70ch;
+}
+.doc-hero .meta-row {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  font-size: 12.5px;
+}
+.meta-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--bg-2); border: 1px solid var(--border);
+  padding: 5px 12px; border-radius: 14px;
+  font-size: 12px; color: var(--text-dim);
+}
+.meta-pill .num { color: var(--text); font-weight: 600; font-feature-settings: "tnum"; }
+.meta-pill.fmt-md   { color: #6aa6ff; border-color: rgba(106,166,255,0.30); background: rgba(106,166,255,0.06); }
+.meta-pill.fmt-pdf  { color: #f87171; border-color: rgba(248,113,113,0.30); background: rgba(248,113,113,0.06); }
+.meta-pill.fmt-docx { color: #38bdf8; border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.fmt-html { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.fmt-htm  { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.complexity-beginner    { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.06); }
+.meta-pill.complexity-intermediate { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.complexity-advanced     { color: #fb923c; border-color: rgba(251,146,60,0.30); background: rgba(251,146,60,0.06); }
+.meta-pill.complexity-unknown      { color: var(--text-mut); }
+.meta-pill.source code { background: transparent; padding: 0; border: 0; font-size: 11px; color: var(--text-dim); }
+
+/* ═══ Curation panels ═══════════════════════════════════════════════ */
+
+.curation {
+  margin-bottom: 36px;
+}
+
+.intro-hook {
+  font-size: 18px;
+  line-height: 1.65;
+  color: var(--text);
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  padding: 8px 0 8px 20px;
+  margin: 0 0 28px;
+  font-style: italic;
+  font-weight: 350;
+}
+
+.exec-summary {
+  background: linear-gradient(135deg, rgba(var(--doc-accent-rgb, 106,166,255),0.07), rgba(var(--doc-accent-rgb, 106,166,255),0.02));
+  border: 1px solid rgba(var(--doc-accent-rgb, 106,166,255),0.20);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 0 0 24px;
+}
+.exec-summary h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent, var(--accent));
+  font-weight: 600;
+}
+.exec-summary p {
+  margin: 0; font-size: 15px; line-height: 1.65; color: var(--text);
+}
+
+.metaphor-callout {
+  display: flex; gap: 14px; align-items: flex-start;
+  background: rgba(184,106,255,0.06);
+  border: 1px solid rgba(184,106,255,0.25);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 0 0 24px;
+}
+.metaphor-callout .icon {
+  font-size: 22px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 4px rgba(184,106,255,0.4));
+}
+.metaphor-callout .body {
+  flex: 1; font-size: 14.5px; line-height: 1.6;
+  color: var(--text);
+}
+.metaphor-callout .body .label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--accent-2); font-weight: 700;
+  display: block; margin-bottom: 4px;
+}
+
+.tutorial-structure {
+  display: grid; grid-template-columns: 1fr; gap: 14px;
+  margin: 0 0 28px;
+}
+.tutorial-section {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--doc-accent);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+}
+.tutorial-section h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent);
+  font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.tutorial-section h3 .num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--doc-accent); color: var(--bg);
+  font-size: 10px; font-weight: 700;
+}
+.tutorial-section p {
+  margin: 0; font-size: 14.5px; line-height: 1.65; color: var(--text);
+}
+
+.context-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin: 0 0 28px;
+}
+.context-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.context-card h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut);
+  font-weight: 600;
+}
+.context-card ul {
+  margin: 0; padding: 0; list-style: none;
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.context-card li {
+  background: var(--bg-3);
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--text-dim);
+  border: 1px solid var(--border-2);
+}
+.context-card.prereqs li { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.05); }
+.context-card.builds li { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.05); }
+.context-card.concepts li { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.05); }
+
+.takeaways {
+  background: linear-gradient(135deg, rgba(74,222,128,0.05), rgba(74,222,128,0.01));
+  border: 1px solid rgba(74,222,128,0.20);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin: 36px 0 0;
+}
+.takeaways h3 {
+  margin: 0 0 10px;
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--ok); font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.takeaways h3::before {
+  content: '✓';
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(74,222,128,0.18);
+  font-size: 12px; font-weight: 700;
+}
+.takeaways ul { margin: 0; padding-left: 22px; }
+.takeaways li {
+  font-size: 14.5px; line-height: 1.6; color: var(--text);
+  margin: 6px 0;
+}
+
+/* ═══ Article body ══════════════════════════════════════════════════ */
+article { font-size: 16px; line-height: 1.78; color: var(--text); max-width: 78ch; }
+article > * + * { margin-top: 1.0em; }
+article p { margin: 0; }
+article h1, article h2, article h3, article h4 {
+  font-weight: 650; letter-spacing: -0.01em; color: var(--text);
+  scroll-margin-top: 90px; position: relative;
+}
+article h1 { font-size: 28px; margin-top: 56px; }
+article h2 {
+  font-size: 24px; margin-top: 56px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+article h3 { font-size: 19px; margin-top: 36px; }
+article h4 { font-size: 16.5px; margin-top: 24px; color: var(--text-dim); }
+article h2::before, article h3::before {
+  content: '#'; position: absolute; left: -28px;
+  color: var(--text-mut); font-weight: 400;
+  opacity: 0; transition: opacity .15s;
+}
+article h2:hover::before, article h3:hover::before { opacity: 1; }
+
+article ul, article ol { padding-left: 1.5em; margin: 0; }
+article li { margin: .35em 0; }
+article li > p { margin: 0; }
+
+article hr {
+  border: 0; height: 1px; background: var(--border); margin: 36px 0;
+}
+
+article blockquote {
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.05);
+  padding: 14px 18px;
+  margin: 22px 0;
+  border-radius: 0 8px 8px 0;
+  color: var(--text-dim);
+}
+article blockquote p { margin: 0; }
+
+article pre {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-size: 13.5px;
+  line-height: 1.65;
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+article pre::-webkit-scrollbar { height: 7px; }
+article pre::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+article code, article pre {
+  font-family: "JetBrains Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+  font-feature-settings: "calt" 1;
+}
+article code.il {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  padding: 1px 7px; border-radius: 5px;
+  font-size: 0.88em;
+  color: var(--accent);
+}
+.code-block { position: relative; }
+.code-block .copy-btn {
+  position: absolute; top: 8px; right: 8px;
+  background: var(--bg-3); border: 1px solid var(--border);
+  color: var(--text-dim); padding: 4px 11px; border-radius: 5px;
+  font-size: 11px; font-family: inherit; cursor: pointer;
+  opacity: 0; transition: all .15s;
+}
+.code-block:hover .copy-btn { opacity: 1; }
+.code-block .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+.code-block .copy-btn.copied { color: var(--ok); border-color: var(--ok); }
+
+article pre .kw   { color: #c084fc; font-weight: 500; }
+article pre .type { color: #67e8f9; }
+article pre .str  { color: #fcd34d; }
+article pre .num  { color: #fb923c; }
+article pre .cmt  { color: #6b7d99; font-style: italic; }
+
+article .tbl-wrap {
+  overflow-x: auto; margin: 22px 0;
+  border-radius: 10px; border: 1px solid var(--border);
+}
+article table { border-collapse: collapse; width: 100%; font-size: 14px; }
+article th {
+  background: var(--bg-3); padding: 11px 14px; text-align: left;
+  font-weight: 600; color: var(--text);
+  border-bottom: 1px solid var(--border-2);
+}
+article td {
+  padding: 11px 14px; border-top: 1px solid var(--border); vertical-align: top;
+}
+article tr:nth-child(even) td { background: rgba(255,255,255,0.013); }
+
+article .diagram-box {
+  background: linear-gradient(135deg, #1c2540 0%, #0e1424 100%);
+  border: 1px solid var(--border-2);
+  border-radius: 12px;
+  padding: 22px 26px;
+  margin: 24px 0;
+  box-shadow: var(--shadow);
+}
+article .diagram-box pre {
+  background: transparent; border: 0; padding: 0;
+  color: #e8edf5; font-size: 13px; line-height: 1.55;
+}
+
+article .img-ref {
+  display: inline-block;
+  background: var(--bg-2); color: var(--text-mut);
+  padding: 1px 8px; border-radius: 4px;
+  font-size: 11px; font-style: normal;
+  border: 1px dashed var(--border-2);
+}
+
+/* ═══ Duplicate banners ═════════════════════════════════════════════ */
+.dup-banner {
+  background: linear-gradient(135deg, rgba(251,191,36,0.10), rgba(251,191,36,0.04));
+  border: 1px solid rgba(251,191,36,0.35);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 18px;
+  font-size: 14px; line-height: 1.55;
+  display: flex; gap: 14px; align-items: flex-start;
+}
+.dup-banner + .dup-banner { margin-top: 0; }
+.dup-banner .icon { font-size: 22px; line-height: 1.2; flex-shrink: 0; }
+.dup-banner .body { flex: 1; min-width: 0; }
+.dup-banner h4 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--warn); text-transform: uppercase; letter-spacing: 1px; }
+.dup-banner p { margin: 0; color: var(--text-dim); }
+.dup-banner ul { margin: 6px 0 0; padding-left: 22px; color: var(--text-dim); }
+.dup-banner ul li { margin: 3px 0; word-break: break-word; }
+.dup-banner code {
+  background: var(--bg-3); padding: 2px 7px; border-radius: 5px;
+  font-size: 0.92em; color: var(--text);
+}
+.dup-banner.exact {
+  border-color: rgba(248,113,113,0.40);
+  background: linear-gradient(135deg, rgba(248,113,113,0.10), rgba(248,113,113,0.04));
+}
+.dup-banner.exact h4 { color: var(--bad); }
+.dup-banner.near {
+  border-color: rgba(56,189,248,0.40);
+  background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(56,189,248,0.04));
+}
+.dup-banner.near h4 { color: var(--info); }
+.banner-stack { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+
+/* ═══ PDF page cards ════════════════════════════════════════════════ */
+.pdf-page {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin: 24px 0;
+  overflow: hidden;
+  scroll-margin-top: 90px;
+}
+.pdf-page .page-head {
+  background: var(--bg-3);
+  padding: 9px 20px;
+  font-size: 11px; font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 1.4px;
+  border-bottom: 1px solid var(--border);
+}
+.pdf-page .page-body { padding: 18px 24px 22px; }
+.pdf-page pre {
+  margin: 0; background: transparent; border: 0; padding: 0;
+  white-space: pre-wrap; word-wrap: break-word;
+  color: var(--text); font-size: 13px; line-height: 1.6;
+}
+
+.empty-note {
+  background: var(--bg-2);
+  border: 1px dashed var(--border-2);
+  border-radius: 10px;
+  padding: 18px 22px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* ═══ Cross-references + related ════════════════════════════════════ */
+.cross-refs {
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.cross-refs h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.cross-ref-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.cross-ref-list a {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: all .15s;
+}
+.cross-ref-list a:hover {
+  color: var(--text);
+  border-color: var(--doc-accent, var(--accent));
+  background: var(--bg-3);
+  text-decoration: none;
+}
+.cross-ref-list a .arrow { color: var(--doc-accent, var(--accent)); margin-right: 6px; }
+
+.related {
+  margin-top: 48px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.related h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 18px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.related-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+.related-card {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+}
+.related-card:hover {
+  border-color: var(--doc-accent, var(--accent));
+  transform: translateY(-1px);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+}
+.related-card .title {
+  font-weight: 600; font-size: 13.5px; line-height: 1.35;
+  color: var(--text);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.related-card .meta {
+  font-size: 11px; color: var(--text-mut); margin-top: 6px;
+  display: flex; gap: 8px; align-items: center;
+}
+.related-card .meta .badge {
+  padding: 1px 6px; border-radius: 3px;
+  background: var(--bg-3); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* ═══ Master index page ═════════════════════════════════════════════ */
+
+.index-hero {
+  text-align: center;
+  padding: 80px 24px 56px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.index-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 30% 0%, rgba(106,166,255,0.13), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 70% 30%, rgba(184,106,255,0.10), transparent 70%);
+  pointer-events: none;
+}
+.index-hero > * { position: relative; z-index: 1; }
+.index-hero .eyebrow {
+  color: var(--accent); font-size: 12px;
+  text-transform: uppercase; letter-spacing: 1.8px; font-weight: 600;
+}
+.index-hero h1 {
+  font-size: 56px; margin: 16px 0 12px;
+  font-weight: 750; letter-spacing: -0.025em;
+  background: linear-gradient(135deg, #6aa6ff 0%, #b86aff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.index-hero .tagline {
+  color: var(--text-dim); font-size: 18px;
+  max-width: 720px; margin: 14px auto 0; line-height: 1.6;
+}
+.search-row {
+  display: flex; gap: 12px;
+  max-width: 720px; margin: 36px auto 0;
+}
+.search-row input {
+  flex: 1;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 15px;
+  padding: 14px 22px;
+  border-radius: 14px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color .15s, box-shadow .15s;
+}
+.search-row input::placeholder { color: var(--text-mut); }
+.search-row input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(106,166,255,0.13);
+}
+
+.summary-stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  max-width: 1080px; margin: 36px auto 56px; padding: 0 24px;
+}
+.stat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  text-align: center;
+  transition: border-color .15s;
+}
+.stat-card:hover { border-color: var(--border-2); }
+.stat-card .num {
+  font-size: 32px; font-weight: 700; color: var(--accent);
+  font-feature-settings: "tnum"; line-height: 1.1;
+}
+.stat-card .lbl {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--text-mut); margin-top: 6px;
+}
+
+.split-view {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  max-width: 1320px; margin: 0 auto; padding: 0 24px 60px;
+}
+@media (max-width: 980px) {
+  .split-view { grid-template-columns: 1fr; }
+}
+
+.hub-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 32px 36px;
+  position: relative;
+  overflow: hidden;
+  transition: all .2s;
+}
+.hub-card.core::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 0% 0%, rgba(106,166,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card.applications::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 100% 0%, rgba(184,106,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card > * { position: relative; z-index: 1; }
+.hub-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.hub-card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 700;
+}
+.hub-card.core .label { color: var(--accent); }
+.hub-card.applications .label { color: var(--accent-2); }
+.hub-card h2 {
+  font-size: 32px; line-height: 1.15;
+  margin: 8px 0 12px;
+  font-weight: 700; letter-spacing: -0.02em;
+  color: var(--text);
+}
+.hub-card .desc {
+  font-size: 15px; line-height: 1.6; color: var(--text-dim);
+  margin: 0 0 24px;
+}
+.hub-card .stats {
+  display: flex; gap: 18px; margin-bottom: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-card .stats .num { color: var(--text); font-weight: 600; }
+.hub-card .cta {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 10px;
+  font-size: 13.5px; font-weight: 600;
+  text-decoration: none;
+}
+.hub-card.core .cta {
+  background: rgba(106,166,255,0.12);
+  color: var(--accent);
+  border: 1px solid rgba(106,166,255,0.30);
+}
+.hub-card.applications .cta {
+  background: rgba(184,106,255,0.12);
+  color: var(--accent-2);
+  border: 1px solid rgba(184,106,255,0.30);
+}
+.hub-card .cta:hover { text-decoration: none; transform: translateX(2px); }
+.hub-card .quick {
+  margin-top: 24px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.hub-card .quick h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut); font-weight: 600;
+}
+.hub-card .quick ul { list-style: none; margin: 0; padding: 0; }
+.hub-card .quick li { padding: 4px 0; font-size: 13px; }
+.hub-card .quick li a { color: var(--text-dim); text-decoration: none; }
+.hub-card .quick li a:hover { color: var(--text); }
+
+/* ═══ Hub page (CORE / APPLICATIONS landing) ════════════════════════ */
+
+.hub-hero {
+  padding: 64px 32px 36px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1240px; margin: 0 auto;
+}
+.hub-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 600;
+}
+.hub-hero h1 {
+  font-size: 48px; margin: 12px 0 14px;
+  font-weight: 750; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.hub-hero p {
+  color: var(--text-dim); font-size: 17px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.hub-hero .stats {
+  display: flex; gap: 22px; margin-top: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-hero .stats .num { color: var(--text); font-weight: 600; }
+
+.cat-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 18px;
+  max-width: 1280px; margin: 28px auto; padding: 0 32px 80px;
+}
+.cat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 24px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.cat-card:hover {
+  border-color: var(--border-3);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+}
+.cat-card .head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 12px;
+}
+.cat-card .head .icon {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 18px;
+  color: var(--accent);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.cat-card.app .head .icon { color: var(--accent-2); }
+.cat-card .title {
+  font-size: 18px; font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  flex: 1;
+}
+.cat-card .head .count {
+  font-size: 12px; color: var(--text-mut);
+  flex-shrink: 0;
+}
+.cat-card .tagline {
+  font-size: 13px; color: var(--accent);
+  font-weight: 500;
+  margin: 0;
+}
+.cat-card.app .tagline { color: var(--accent-2); }
+.cat-card .desc {
+  font-size: 13.5px; color: var(--text-dim);
+  line-height: 1.55;
+  margin: 4px 0 0;
+}
+
+/* ═══ Category landing (per family/domain) ══════════════════════════ */
+
+.cat-hero {
+  padding: 56px 32px 32px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1180px; margin: 0 auto;
+}
+.cat-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px; font-weight: 600;
+}
+.cat-hero h1 {
+  font-size: 42px; margin: 10px 0 14px;
+  font-weight: 700; letter-spacing: -0.02em;
+}
+.cat-hero p {
+  color: var(--text-dim); font-size: 16px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.cat-hero .stats {
+  display: flex; gap: 20px; margin-top: 22px;
+  font-size: 13px; color: var(--text-mut);
+}
+.cat-hero .stats .num { color: var(--text); font-weight: 600; }
+.cat-hero .search-row {
+  max-width: 520px; margin: 24px 0 0;
+}
+.cat-hero .search-row input { padding: 12px 18px; font-size: 14px; }
+
+.doc-cards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 14px;
+  max-width: 1180px; margin: 36px auto 96px;
+  padding: 0 32px;
+}
+.doc-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 22px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .18s;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.doc-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.doc-card.app:hover { border-color: var(--accent-2); }
+.doc-card .head {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+}
+.doc-card .title {
+  font-size: 16px; font-weight: 650; line-height: 1.3;
+  color: var(--text); flex: 1;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  letter-spacing: -0.01em;
+}
+.doc-card .badges { display: flex; gap: 4px; flex-shrink: 0; }
+.doc-card .badge {
+  font-size: 9px; padding: 2px 7px; border-radius: 3px;
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px;
+  background: var(--bg-3); color: var(--text-mut);
+}
+.doc-card .badge.dup { background: rgba(248,113,113,0.18); color: var(--bad); }
+.doc-card .badge.fmt-md { background: rgba(106,166,255,0.18); color: #6aa6ff; }
+.doc-card .badge.fmt-pdf { background: rgba(248,113,113,0.18); color: #f87171; }
+.doc-card .badge.fmt-docx { background: rgba(56,189,248,0.18); color: #38bdf8; }
+.doc-card .badge.fmt-html { background: rgba(251,191,36,0.18); color: #fbbf24; }
+.doc-card .one-liner {
+  font-size: 13.5px; color: var(--text-dim); line-height: 1.55;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  flex: 1;
+}
+.doc-card .meta {
+  display: flex; gap: 14px; font-size: 11px; color: var(--text-mut);
+  border-top: 1px solid var(--border); padding-top: 12px;
+  margin-top: auto;
+}
+.doc-card .meta .num { color: var(--text-dim); font-weight: 600; font-feature-settings: "tnum"; }
+
+/* ═══ Mobile ════════════════════════════════════════════════════════ */
+@media (max-width: 980px) {
+  .layout { grid-template-columns: 1fr; }
+  .toc-sidebar { display: none; }
+  .content { padding: 28px 24px 80px; }
+  .doc-hero h1 { font-size: 30px; }
+  .doc-hero .one-liner { font-size: 16px; }
+  .topbar { padding: 10px 18px; }
+  .index-hero h1 { font-size: 38px; }
+  .index-hero { padding: 56px 20px 36px; }
+  .hub-hero h1 { font-size: 34px; }
+  .hub-hero { padding: 40px 20px 24px; }
+  .cat-hero h1 { font-size: 32px; }
+  .cat-hero { padding: 36px 20px 24px; }
+  .doc-cards, .cat-grid { padding: 0 20px 60px; }
+  .split-view { padding: 0 20px 40px; }
+}
+</style>
+</head>
+<body data-doc-type="applied-implementation">
+<nav class="topbar">
+<div class="crumbs"><a href="../../00-Index.html">Learning</a><span class="sep">›</span><a href="../_Hub.html">APPLICATIONS</a><span class="sep">›</span><a href="_Category.html">Identity Project</a><span class="sep">›</span><span class="current">IdentityLearning Project Knowledge Base</span></div>
+<div class="actions"><a class="action" href="identity-learning-project.docx" download>↓ Download</a><a class="action" href="../../00-Index.html">All docs</a></div>
+</nav>
+<div class="layout">
+<aside class="toc-sidebar"><h3>On this page</h3><ol><li class="lvl-2"><a href="#identitylearning-project-knowledge-base-instructions">IdentityLearning Project Knowledge Base &amp; Instructions</a></li><li class="lvl-2"><a href="#project-overview">📋 Project Overview</a></li><li class="lvl-3"><a href="#project-name">Project Name</a></li><li class="lvl-3"><a href="#purpose">Purpose</a></li><li class="lvl-3"><a href="#technology-stack">Technology Stack</a></li><li class="lvl-2"><a href="#architecture-overview">🏗️ Architecture Overview</a></li><li class="lvl-3"><a href="#solution-structure">Solution Structure</a></li><li class="lvl-3"><a href="#key-components">Key Components</a></li><li class="lvl-4"><a href="#1-identity-system">1. Identity System</a></li><li class="lvl-4"><a href="#2-email-service-architecture">2. Email Service Architecture</a></li><li class="lvl-4"><a href="#3-authentication-features">3. Authentication Features</a></li><li class="lvl-2"><a href="#development-setup">🔧 Development Setup</a></li><li class="lvl-3"><a href="#prerequisites">Prerequisites</a></li><li class="lvl-3"><a href="#initial-setup-steps">Initial Setup Steps</a></li><li class="lvl-4"><a href="#1-clone-and-configure">1. Clone and Configure</a></li><li class="lvl-4"><a href="#2-database-configuration">2. Database Configuration</a></li><li class="lvl-4"><a href="#3-user-secrets-setup">3. User Secrets Setup</a></li><li class="lvl-4"><a href="#4-database-migration">4. Database Migration</a></li><li class="lvl-4"><a href="#5-run-the-application">5. Run the Application</a></li><li class="lvl-2"><a href="#feature-implementation-guide">🚀 Feature Implementation Guide</a></li><li class="lvl-3"><a href="#adding-new-identity-features">Adding New Identity Features</a></li><li class="lvl-4"><a href="#1-extending-user-properties">1. Extending User Properties</a></li><li class="lvl-4"><a href="#2-creating-custom-identity-pages">2. Creating Custom Identity Pages</a></li><li class="lvl-4"><a href="#3-adding-role-management">3. Adding Role Management</a></li><li class="lvl-3"><a href="#email-service-integration">Email Service Integration</a></li><li class="lvl-4"><a href="#1-email-configuration">1. Email Configuration</a></li><li class="lvl-4"><a href="#2-sending-emails-with-tables">2. Sending Emails with Tables</a></li><li class="lvl-3"><a href="#mudblazor-components">MudBlazor Components</a></li><li class="lvl-4"><a href="#1-static-input-components">1. Static Input Components</a></li><li class="lvl-4"><a href="#2-form-handling">2. Form Handling</a></li><li class="lvl-2"><a href="#security-best-practices">🔒 Security Best Practices</a></li><li class="lvl-3"><a href="#1-password-requirements">1. Password Requirements</a></li><li class="lvl-3"><a href="#2-account-lockout">2. Account Lockout</a></li><li class="lvl-3"><a href="#3-two-factor-authentication">3. Two-Factor Authentication</a></li><li class="lvl-3"><a href="#4-security-headers">4. Security Headers</a></li><li class="lvl-2"><a href="#testing-guidelines">🧪 Testing Guidelines</a></li><li class="lvl-3"><a href="#1-test-accounts">1. Test Accounts</a></li><li class="lvl-3"><a href="#2-test-scenarios">2. Test Scenarios</a></li><li class="lvl-3"><a href="#3-unit-testing-structure">3. Unit Testing Structure</a></li><li class="lvl-2"><a href="#configuration-management">📝 Configuration Management</a></li><li class="lvl-3"><a href="#development-settings">Development Settings</a></li><li class="lvl-3"><a href="#production-settings">Production Settings</a></li><li class="lvl-2"><a href="#deployment-instructions">🚢 Deployment Instructions</a></li><li class="lvl-3"><a href="#1-publish-profile">1. Publish Profile</a></li><li class="lvl-3"><a href="#2-database-deployment">2. Database Deployment</a></li><li class="lvl-3"><a href="#3-iis-deployment">3. IIS Deployment</a></li><li class="lvl-3"><a href="#4-azure-deployment">4. Azure Deployment</a></li><li class="lvl-2"><a href="#troubleshooting">🐛 Troubleshooting</a></li><li class="lvl-3"><a href="#common-issues">Common Issues</a></li><li class="lvl-4"><a href="#1-database-connection-errors">1. Database Connection Errors</a></li><li class="lvl-4"><a href="#2-email-service-failures">2. Email Service Failures</a></li><li class="lvl-4"><a href="#3-authentication-issues">3. Authentication Issues</a></li><li class="lvl-4"><a href="#4-migration-errors">4. Migration Errors</a></li><li class="lvl-2"><a href="#monitoring-logging">📊 Monitoring &amp; Logging</a></li><li class="lvl-3"><a href="#1-application-insights-azure">1. Application Insights (Azure)</a></li><li class="lvl-3"><a href="#2-serilog-configuration">2. Serilog Configuration</a></li><li class="lvl-3"><a href="#3-custom-logging">3. Custom Logging</a></li><li class="lvl-2"><a href="#maintenance-tasks">🔄 Maintenance Tasks</a></li><li class="lvl-3"><a href="#daily">Daily</a></li><li class="lvl-3"><a href="#weekly">Weekly</a></li><li class="lvl-3"><a href="#monthly">Monthly</a></li><li class="lvl-2"><a href="#additional-resources">📚 Additional Resources</a></li><li class="lvl-3"><a href="#documentation">Documentation</a></li><li class="lvl-3"><a href="#support-channels">Support Channels</a></li><li class="lvl-3"><a href="#version-history">Version History</a></li><li class="lvl-2"><a href="#important-notes">⚠️ Important Notes</a></li><li class="lvl-2"><a href="#quick-start-checklist">🎯 Quick Start Checklist</a></li><li class="lvl-3"><a href="#for-new-developers">For New Developers</a></li><li class="lvl-3"><a href="#for-deployment">For Deployment</a></li><li class="lvl-2"><a href="#contact-information">📞 Contact Information</a></li></ol></aside>
+<main class="content">
+
+<header class="doc-hero">
+  <div class="eyebrow"><span class="dot"></span>Implementation · Identity Project</div>
+  <h1>IdentityLearning Project Knowledge Base</h1>
+  <p class="one-liner">A complete onboarding knowledge base for the IdentityLearning Blazor Server app, covering architecture, setup, Identity features, email integration, security, deployment, and troubleshooting.</p>
+  <div class="meta-row">
+    <span class="meta-pill fmt-docx">DOCX</span>
+    <span class="meta-pill complexity-intermediate">Intermediate</span>
+    <span class="meta-pill"><span class="num">1,221</span> words</span>
+    <span class="meta-pill"><span class="num">6</span> min read</span>
+    <span class="meta-pill source">Source: <code>Identity/IdentityProjectKnowledgeEditable.docx</code></span>
+  </div>
+</header>
+
+<div class="curation"><p class="intro-hook">ASP.NET Core Identity gives you 80% of what you need for authentication - until someone asks &#x27;does it support 2FA with QR codes?&#x27; and &#x27;can the emails include HTML tables?&#x27; and &#x27;where do I store the SMTP password?&#x27; This project is the 20% that turns a tutorial into a shippable app.</p>
+<div class="exec-summary"><h3>Executive summary</h3><p>A comprehensive project knowledge base for the IdentityLearning project - an ASP.NET Core 9.0 Blazor Server app built to demonstrate enterprise Identity features (2FA with QR codes, email confirmation, password reset, account lockout, custom ApplicationUser with Department/IsActive/ColaboratorId). Documents the solution structure, MudBlazor 8 UI integration, a SOAP-based AgileEmailService, user secrets setup, EF Core migrations, role management configuration, password policy, security headers, and deployment strategies (IIS, Azure CLI). Includes troubleshooting for common issues and a quick-start checklist.</p></div>
+<div class="metaphor-callout"><div class="icon">💡</div><div class="body"><span class="label">Metaphor</span>This project is like the IKEA manual for your authentication system. It doesn&#x27;t just say &#x27;put screws in holes&#x27; - it tells you which screwdriver to use, which holes are optional, where to find the allen keys (User Secrets), what to do if a shelf is wobbly (troubleshooting), and how to assemble the whole thing on different surfaces (IIS, Azure, local). By the time you&#x27;re done, you don&#x27;t just have a functioning wardrobe, you understand why each piece is there.</div></div>
+<div class="tutorial-structure"><div class="tutorial-section"><h3><span class="num">1</span>Why it exists</h3><p>The developer needed a production-grade reference Identity implementation they could both learn from and use as a scaffold for real apps. Most online Identity tutorials stop at &#x27;user can register&#x27; - this project goes further into real-world requirements: 2FA enrollment with QR codes, email confirmation flow, password reset, account lockout after failed attempts, custom user properties, and a SOAP email service integration specific to the Agile ecosystem. It doubles as a knowledge base so any new developer on the team can clone, run, and extend without having to figure out the conventions from scratch.</p></div><div class="tutorial-section"><h3><span class="num">2</span>What it does</h3><p>Provides a complete Blazor Server Identity application with registration, login, logout, email confirmation, password reset, two-factor authentication (TOTP with QR code generator), account lockout, and a profile management area. The custom ApplicationUser extends IdentityUser with Department, IsActive, and ColaboratorId for integration with the Agile employee domain. Emails are sent via a SOAP-based AgileEmailService that supports templated HTML emails and table markup ([TABLE:name]...[/TABLE] blocks). Configuration is externalized into appsettings plus User Secrets for sensitive values, and the database is managed via EF Core migrations.</p></div><div class="tutorial-section"><h3><span class="num">3</span>How it works</h3><p>The Program.cs wires up Identity with AddIdentityCore&lt;ApplicationUser&gt;().AddRoles&lt;IdentityRole&gt;().AddEntityFrameworkStores&lt;ApplicationDbContext&gt;(), configures password policy (min 8 chars, digit/upper/lower/non-alphanumeric required), and account lockout (5 attempts, 5 minute cooldown). The Components/Account folder holds Razor pages for all Identity flows - Pages/ for Login/Register/Manage, Shared/ for common components, .cs files for services and helpers. MudStaticTextField is used throughout for SSR compatibility. AgileEmailService implements an SOAP client that posts to https://axrm.agileincloud.com/agMailService/agEmailService.asmx using a service key stored in User Secrets, and emails can include a custom [TABLE:name] markup that is converted to HTML tables server-side. Migrations are added with dotnet ef migrations add and applied with dotnet ef database update, and the deployment story covers IIS (no-managed-code app pool), Azure (az webapp up), and environment variables for secrets in production.</p></div></div>
+<div class="context-row"><div class="context-card prereqs"><h4>You should know first</h4><ul><li>ASP.NET Core basics</li><li>EF Core migrations</li><li>Blazor components</li><li>.NET 9 SDK</li></ul></div><div class="context-card concepts"><h4>Key concepts covered</h4><ul><li>ASP.NET Core Identity</li><li>ApplicationUser customization</li><li>two-factor authentication</li><li>SOAP email integration</li><li>User Secrets</li><li>MudBlazor StaticInput</li><li>Blazor SSR</li><li>account lockout</li></ul></div><div class="context-card builds"><h4>Opens the door to</h4><ul><li>role-based-authorization</li><li>policy-based-authorization</li><li>jwt-authentication</li><li>external-identity-providers</li></ul></div></div></div>
+<article>
+<h1 id="identitylearning-project-knowledge-base-instructions">IdentityLearning Project Knowledge Base &amp; Instructions</h1>
+<h2 id="project-overview">📋 Project Overview</h2>
+<h3 id="project-name">Project Name</h3>
+<p>IdentityLearning - Enterprise Authentication &amp; User Management System</p>
+<h3 id="purpose">Purpose</h3>
+<p>A comprehensive ASP.NET Core Blazor application demonstrating enterprise-grade authentication, authorization, and user management capabilities using ASP.NET Core Identity, designed as both a learning platform and production-ready showcase.</p>
+<h3 id="technology-stack">Technology Stack</h3>
+<p>Framework: .NET 9.0, Blazor Server-Side Rendering (SSR)</p>
+<p>Authentication: ASP.NET Core Identity</p>
+<p>UI Framework: MudBlazor 8.x</p>
+<p>Database: SQL Server with Entity Framework Core</p>
+<p>Email Service: Custom SOAP integration (AgileEmailService)</p>
+<p>Additional: Extensions.MudBlazor.StaticInput, QR Code Generator</p>
+<h2 id="architecture-overview">🏗️ Architecture Overview</h2>
+<h3 id="solution-structure">Solution Structure</h3>
+<div class="diagram-box"><pre>IdentityLearning/
+├── Components/
+│   ├── Account/          # Identity-related components and pages
+│   │   ├── Pages/        # Login, Register, Manage pages
+│   │   ├── Shared/       # Shared Identity components
+│   │   └── *.cs          # Identity services and helpers
+│   ├── Layout/           # Application layouts
+│   ├── Pages/            # Application pages
+│   └── _Imports.razor    # Global imports
+├── Data/
+│   ├── ApplicationDbContext.cs
+│   ├── ApplicationUser.cs
+│   └── Migrations/       # EF Core migrations
+├── Services/
+│   └── AgileEmailService.cs  # Email service implementation
+├── Properties/           # Launch settings and dependencies
+├── wwwroot/             # Static files
+├── Program.cs           # Application entry point
+├── appsettings.json     # Configuration
+└── IdentityLearning.csproj</pre></div>
+<h3 id="key-components">Key Components</h3>
+<h4 id="1-identity-system">1. Identity System</h4>
+<p>ApplicationUser: Extended IdentityUser with custom properties</p>
+<p>Department (string)</p>
+<p>IsActive (bool)</p>
+<p>ColaboratorId (int?)</p>
+<h4 id="2-email-service-architecture">2. Email Service Architecture</h4>
+<p>SOAP-based email service integration</p>
+<p>Support for HTML tables in emails</p>
+<p>Configurable SMTP settings</p>
+<p>Template-based email sending</p>
+<h4 id="3-authentication-features">3. Authentication Features</h4>
+<p>Email/Password authentication</p>
+<p>Two-factor authentication (2FA) with QR codes</p>
+<p>Email confirmation</p>
+<p>Password reset functionality</p>
+<p>Account lockout protection</p>
+<p>External authentication providers (ready for configuration)</p>
+<h2 id="development-setup">🔧 Development Setup</h2>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>.NET 9 SDK or later</p>
+<p>SQL Server (Express or Developer edition)</p>
+<p>Visual Studio 2022 (v17.14+) or VS Code</p>
+<p>Git for version control</p>
+<h3 id="initial-setup-steps">Initial Setup Steps</h3>
+<h4 id="1-clone-and-configure">1. Clone and Configure</h4>
+<pre><code class="lang-text"># Clone the repository
+git clone [repository-url]
+cd IdentityLearning
+# Restore packages
+dotnet restore</code></pre>
+<h4 id="2-database-configuration">2. Database Configuration</h4>
+<p>Update appsettings.json with your SQL Server connection:</p>
+<pre><code class="lang-csharp">{
+<span class="str">&quot;ConnectionStrings&quot;</span>: {
+<span class="str">&quot;DefaultConnection&quot;</span>: <span class="str">&quot;Server=YOUR_SERVER;Database=IdentityLearning;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true&quot;</span>
+}
+}</code></pre>
+<h4 id="3-user-secrets-setup">3. User Secrets Setup</h4>
+<p>Configure sensitive data using User Secrets:</p>
+<pre><code class="lang-text"># Initialize user secrets
+dotnet user-secrets init
+# Set email service credentials
+dotnet user-secrets set &quot;EmailSettings:ServiceKey&quot; &quot;your-service-key&quot;
+dotnet user-secrets set &quot;EmailSettings:Password&quot; &quot;your-email-password&quot;</code></pre>
+<h4 id="4-database-migration">4. Database Migration</h4>
+<pre><code class="lang-text"># Apply existing migrations
+dotnet ef database update
+# Create new migration (if needed)
+dotnet ef migrations add YourMigrationName</code></pre>
+<h4 id="5-run-the-application">5. Run the Application</h4>
+<pre><code class="lang-text"># Development mode
+dotnet run --launch-profile https
+# Or use Visual Studio F5 debugging</code></pre>
+<h2 id="feature-implementation-guide">🚀 Feature Implementation Guide</h2>
+<h3 id="adding-new-identity-features">Adding New Identity Features</h3>
+<h4 id="1-extending-user-properties">1. Extending User Properties</h4>
+<pre><code class="lang-csharp"><span class="cmt">// In Data/ApplicationUser.cs</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">ApplicationUser</span> : <span class="type">IdentityUser</span>
+{
+<span class="kw">public</span> <span class="kw">string</span>? <span class="type">Department</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+<span class="kw">public</span> <span class="kw">bool</span> <span class="type">IsActive</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+<span class="kw">public</span> <span class="kw">int</span>? <span class="type">ColaboratorId</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+<span class="cmt">// Add new properties here</span>
+<span class="kw">public</span> <span class="type">DateTime</span>? <span class="type">LastLoginDate</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+<span class="kw">public</span> <span class="kw">string</span>? <span class="type">ProfilePicture</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+}</code></pre>
+<p>After adding properties:</p>
+<pre><code class="lang-text">dotnet ef migrations add AddUserProperties
+dotnet ef database update</code></pre>
+<h4 id="2-creating-custom-identity-pages">2. Creating Custom Identity Pages</h4>
+<p>Place new pages in Components/Account/Pages/:</p>
+<pre><code class="lang-text">@page &quot;/Account/CustomPage&quot;
+@using Microsoft.AspNetCore.Identity
+@inject UserManager&lt;ApplicationUser&gt; UserManager
+&lt;PageTitle&gt;Custom Page&lt;/PageTitle&gt;
+&lt;MudText Typo=&quot;Typo.h3&quot;&gt;Custom Identity Page&lt;/MudText&gt;
+@code {
+// Implementation
+}</code></pre>
+<h4 id="3-adding-role-management">3. Adding Role Management</h4>
+<pre><code class="lang-csharp"><span class="cmt">// In Program.cs</span>
+builder.<span class="type">Services</span>.<span class="type">AddIdentityCore</span>&lt;<span class="type">ApplicationUser</span>&gt;(options =&gt; {
+<span class="cmt">// Configuration</span>
+})
+.<span class="type">AddRoles</span>&lt;<span class="type">IdentityRole</span>&gt;()  <span class="cmt">// Add this line</span>
+.<span class="type">AddEntityFrameworkStores</span>&lt;<span class="type">ApplicationDbContext</span>&gt;();</code></pre>
+<h3 id="email-service-integration">Email Service Integration</h3>
+<h4 id="1-email-configuration">1. Email Configuration</h4>
+<p>The email service uses a SOAP endpoint. Configuration in appsettings.json:</p>
+<pre><code class="lang-text">{
+&quot;EmailSettings&quot;: {
+&quot;ServiceUrl&quot;: &quot;https://axrm.agileincloud.com/agMailService/agEmailService.asmx&quot;,
+&quot;ServiceKey&quot;: &quot;&quot;,  // Use User Secrets
+&quot;SmtpServer&quot;: &quot;smtp-pt.securemail.pro&quot;,
+&quot;SmtpPort&quot;: 465,
+&quot;UseSsl&quot;: true,
+&quot;Username&quot;: &quot;noreply@agileincloud.com&quot;,
+&quot;Password&quot;: &quot;&quot;,     // Use User Secrets
+&quot;FromEmail&quot;: &quot;noreply@agileincloud.com&quot;,
+&quot;FromName&quot;: &quot;Your Company Name&quot;
+}
+}</code></pre>
+<h4 id="2-sending-emails-with-tables">2. Sending Emails with Tables</h4>
+<pre><code class="lang-csharp"><span class="cmt">// Example of sending email with table</span>
+<span class="kw">var</span> emailBody = @<span class="str">&quot;Order Confirmation
+[TABLE:Order Details]
+Product|Quantity|Price
+Widget A|2|$10.00
+Widget B|1|$15.00
+[/TABLE]
+Thank you for your order!&quot;</span>;
+<span class="kw">await</span> <span class="type">EmailService</span>.<span class="type">SendEmailAsync</span>(toEmail, subject, emailBody);</code></pre>
+<h3 id="mudblazor-components">MudBlazor Components</h3>
+<h4 id="1-static-input-components">1. Static Input Components</h4>
+<p>Use MudStaticTextField for SSR compatibility:</p>
+<pre><code class="lang-text">&lt;MudStaticTextField
+@bind-Value=&quot;Input.Email&quot;
+For=&quot;@(() =&gt; Input.Email)&quot;
+Label=&quot;Email&quot;
+Placeholder=&quot;name@example.com&quot; /&gt;</code></pre>
+<h4 id="2-form-handling">2. Form Handling</h4>
+<pre><code class="lang-text">&lt;EditForm Model=&quot;Input&quot; OnValidSubmit=&quot;HandleSubmit&quot; FormName=&quot;unique-form-name&quot;&gt;
+&lt;DataAnnotationsValidator /&gt;
+&lt;MudGrid&gt;
+&lt;!-- Form fields --&gt;
+&lt;/MudGrid&gt;
+&lt;/EditForm&gt;</code></pre>
+<h2 id="security-best-practices">🔒 Security Best Practices</h2>
+<h3 id="1-password-requirements">1. Password Requirements</h3>
+<p>Configure in Program.cs:</p>
+<pre><code class="lang-csharp">builder.<span class="type">Services</span>.<span class="type">AddIdentityCore</span>&lt;<span class="type">ApplicationUser</span>&gt;(options =&gt;
+{
+options.<span class="type">Password</span>.<span class="type">RequiredLength</span> = <span class="num">8</span>;
+options.<span class="type">Password</span>.<span class="type">RequireDigit</span> = <span class="kw">true</span>;
+options.<span class="type">Password</span>.<span class="type">RequireUppercase</span> = <span class="kw">true</span>;
+options.<span class="type">Password</span>.<span class="type">RequireLowercase</span> = <span class="kw">true</span>;
+options.<span class="type">Password</span>.<span class="type">RequireNonAlphanumeric</span> = <span class="kw">true</span>;
+});</code></pre>
+<h3 id="2-account-lockout">2. Account Lockout</h3>
+<pre><code class="lang-text">options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+options.Lockout.MaxFailedAccessAttempts = 5;
+options.Lockout.AllowedForNewUsers = true;</code></pre>
+<h3 id="3-two-factor-authentication">3. Two-Factor Authentication</h3>
+<p>Already implemented with QR code generation. Users can enable via: /Account/Manage/TwoFactorAuthentication</p>
+<h3 id="4-security-headers">4. Security Headers</h3>
+<p>Add to Program.cs:</p>
+<pre><code class="lang-text">app.UseHsts();
+app.UseHttpsRedirection();</code></pre>
+<h2 id="testing-guidelines">🧪 Testing Guidelines</h2>
+<h3 id="1-test-accounts">1. Test Accounts</h3>
+<p>Create test accounts with different roles:</p>
+<p>Admin: admin@test.com</p>
+<p>User: user@test.com</p>
+<p>Manager: manager@test.com</p>
+<h3 id="2-test-scenarios">2. Test Scenarios</h3>
+<p>[ ] Registration with email confirmation</p>
+<p>[ ] Login with wrong password (lockout testing)</p>
+<p>[ ] Password reset flow</p>
+<p>[ ] 2FA setup and login</p>
+<p>[ ] Profile management</p>
+<p>[ ] Email delivery</p>
+<h3 id="3-unit-testing-structure">3. Unit Testing Structure</h3>
+<pre><code class="lang-csharp">[<span class="type">TestClass</span>]
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">AuthenticationTests</span>
+{
+[<span class="type">TestMethod</span>]
+<span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">User_Can_Register_With_Valid_Data</span>()
+{
+<span class="cmt">// Arrange</span>
+<span class="cmt">// Act</span>
+<span class="cmt">// Assert</span>
+}
+}</code></pre>
+<h2 id="configuration-management">📝 Configuration Management</h2>
+<h3 id="development-settings">Development Settings</h3>
+<p>appsettings.Development.json:</p>
+<pre><code class="lang-text">{
+&quot;Logging&quot;: {
+&quot;LogLevel&quot;: {
+&quot;Default&quot;: &quot;Debug&quot;,
+&quot;Microsoft.AspNetCore&quot;: &quot;Warning&quot;,
+&quot;IdentityLearning.Services&quot;: &quot;Debug&quot;
+}
+}
+}</code></pre>
+<h3 id="production-settings">Production Settings</h3>
+<p>Use environment variables or Azure Key Vault:</p>
+<pre><code class="lang-text"># Linux/Mac
+export EmailSettings__ServiceKey=&quot;production-key&quot;
+# Windows
+set EmailSettings__ServiceKey=production-key</code></pre>
+<h2 id="deployment-instructions">🚢 Deployment Instructions</h2>
+<h3 id="1-publish-profile">1. Publish Profile</h3>
+<pre><code class="lang-text">&lt;Project&gt;
+&lt;PropertyGroup&gt;
+&lt;PublishProfile&gt;Production&lt;/PublishProfile&gt;
+&lt;Configuration&gt;Release&lt;/Configuration&gt;
+&lt;Platform&gt;Any CPU&lt;/Platform&gt;
+&lt;TargetFramework&gt;net9.0&lt;/TargetFramework&gt;
+&lt;RuntimeIdentifier&gt;win-x64&lt;/RuntimeIdentifier&gt;
+&lt;/PropertyGroup&gt;
+&lt;/Project&gt;</code></pre>
+<h3 id="2-database-deployment">2. Database Deployment</h3>
+<pre><code class="lang-text">-- Ensure database exists
+CREATE DATABASE IdentityLearning;
+-- Run migrations
+dotnet ef database update --connection &quot;Production Connection String&quot;</code></pre>
+<h3 id="3-iis-deployment">3. IIS Deployment</h3>
+<p>Install .NET 9 Hosting Bundle</p>
+<p>Create application pool (No Managed Code)</p>
+<p>Set up website pointing to published folder</p>
+<p>Configure environment variables</p>
+<h3 id="4-azure-deployment">4. Azure Deployment</h3>
+<pre><code class="lang-text"># Using Azure CLI
+az webapp up --name YourAppName --resource-group YourRG</code></pre>
+<h2 id="troubleshooting">🐛 Troubleshooting</h2>
+<h3 id="common-issues">Common Issues</h3>
+<h4 id="1-database-connection-errors">1. Database Connection Errors</h4>
+<p>Verify SQL Server is running</p>
+<p>Check connection string format</p>
+<p>Ensure database exists</p>
+<p>Verify user permissions</p>
+<h4 id="2-email-service-failures">2. Email Service Failures</h4>
+<p>Check SOAP endpoint availability</p>
+<p>Verify credentials in User Secrets</p>
+<p>Check firewall/network settings</p>
+<p>Review email service logs</p>
+<h4 id="3-authentication-issues">3. Authentication Issues</h4>
+<p>Clear browser cookies</p>
+<p>Check security stamp</p>
+<p>Verify email confirmation</p>
+<p>Review Identity logs</p>
+<h4 id="4-migration-errors">4. Migration Errors</h4>
+<pre><code class="lang-text"># Reset migrations if needed
+dotnet ef database drop
+dotnet ef migrations remove
+dotnet ef migrations add Initial
+dotnet ef database update</code></pre>
+<h2 id="monitoring-logging">📊 Monitoring &amp; Logging</h2>
+<h3 id="1-application-insights-azure">1. Application Insights (Azure)</h3>
+<pre><code class="lang-text">builder.Services.AddApplicationInsightsTelemetry();</code></pre>
+<h3 id="2-serilog-configuration">2. Serilog Configuration</h3>
+<pre><code class="lang-text">builder.Host.UseSerilog((context, configuration) =&gt;
+configuration.ReadFrom.Configuration(context.Configuration));</code></pre>
+<h3 id="3-custom-logging">3. Custom Logging</h3>
+<pre><code class="lang-csharp">_logger.<span class="type">LogInformation</span>(<span class="str">&quot;User {Email} logged in at {Time}&quot;</span>,
+user.<span class="type">Email</span>, <span class="type">DateTime</span>.<span class="type">UtcNow</span>);</code></pre>
+<h2 id="maintenance-tasks">🔄 Maintenance Tasks</h2>
+<h3 id="daily">Daily</h3>
+<p>Monitor error logs</p>
+<p>Check email delivery status</p>
+<p>Review failed login attempts</p>
+<h3 id="weekly">Weekly</h3>
+<p>Database backup</p>
+<p>Security audit log review</p>
+<p>Performance metrics review</p>
+<h3 id="monthly">Monthly</h3>
+<p>Update NuGet packages</p>
+<p>Security patches</p>
+<p>User access review</p>
+<p>Certificate renewal check</p>
+<h2 id="additional-resources">📚 Additional Resources</h2>
+<h3 id="documentation">Documentation</h3>
+<p>ASP.NET Core Identity Docs</p>
+<p>MudBlazor Documentation</p>
+<p>Entity Framework Core</p>
+<h3 id="support-channels">Support Channels</h3>
+<p>GitHub Issues: [Report bugs]</p>
+<p>Email: support@yourcompany.com</p>
+<p>Teams Channel: #identity-learning</p>
+<h3 id="version-history">Version History</h3>
+<p>v1.0.0 - Initial release with basic Identity</p>
+<p>v1.1.0 - Added 2FA support</p>
+<p>v1.2.0 - Email service integration</p>
+<p>v1.3.0 - MudBlazor UI upgrade</p>
+<h2 id="important-notes">⚠️ Important Notes</h2>
+<p>Never commit secrets to source control</p>
+<p>Always use HTTPS in production</p>
+<p>Keep dependencies updated for security</p>
+<p>Regular backups are essential</p>
+<p>Monitor security advisories for .NET Core</p>
+<p>Test thoroughly before production deployment</p>
+<p>Document all customizations for maintenance</p>
+<p>Follow GDPR/compliance requirements</p>
+<h2 id="quick-start-checklist">🎯 Quick Start Checklist</h2>
+<h3 id="for-new-developers">For New Developers</h3>
+<p>[ ] Install prerequisites</p>
+<p>[ ] Clone repository</p>
+<p>[ ] Configure database</p>
+<p>[ ] Set up user secrets</p>
+<p>[ ] Run migrations</p>
+<p>[ ] Start application</p>
+<p>[ ] Create test account</p>
+<p>[ ] Review documentation</p>
+<h3 id="for-deployment">For Deployment</h3>
+<p>[ ] Update connection strings</p>
+<p>[ ] Configure email settings</p>
+<p>[ ] Set environment to Production</p>
+<p>[ ] Run database migrations</p>
+<p>[ ] Configure SSL certificate</p>
+<p>[ ] Set up monitoring</p>
+<p>[ ] Verify email delivery</p>
+<p>[ ] Test authentication flow</p>
+<h2 id="contact-information">📞 Contact Information</h2>
+<p>Project Lead: [Your Name] Email: [your.email@company.com] Teams: @YourHandle</p>
+<p>Last Updated: August 2024 Version: 1.3.0 License: [Your License]</p>
+</article>
+<div class="takeaways"><h3>Key takeaways</h3><ul><li>Extend IdentityUser by creating ApplicationUser with your custom properties and registering it in AddIdentityCore&lt;ApplicationUser&gt;</li><li>Use MudStaticTextField for SSR-compatible forms in Blazor Server Identity pages</li><li>Store all sensitive config (SMTP passwords, service keys) in User Secrets during dev and environment variables in prod</li><li>Password policy and lockout are configured inside AddIdentityCore options</li><li>.AddRoles&lt;IdentityRole&gt;() must be chained after AddIdentityCore to enable role management</li><li>SOAP email integration needs its own service abstraction rather than stuffing logic into controllers</li><li>Deploy IIS sites with &#x27;No Managed Code&#x27; app pools for .NET Core apps</li></ul></div>
+<aside class="cross-refs"><h2>Cross-references</h2><div class="cross-ref-list"><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>aspnet-core-identity</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>two-factor-authentication</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>email-integration</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>user-secrets</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>mudblazor-ssr</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>blazor-server-hosting</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>iis-deployment</a></div></aside>
+<aside class="related"><h2>More in this category</h2><div class="related-grid"><a class="related-card" href="../../APPLICATIONS/identity-project/authorization-architecture.html"><div class="title">Authorization Architecture</div><div class="meta"><span class="badge">MD</span><span>538 words</span></div></a><a class="related-card" href="../../APPLICATIONS/identity-project/blazor-cookie-prerendering-fix.html"><div class="title">Cookie Handling in Blazor Server Applications</div><div class="meta"><span class="badge">DOCX</span><span>1,184 words</span></div></a><a class="related-card" href="../../APPLICATIONS/identity-project/identity-project-knowledge.html"><div class="title">Identity Project Knowledge</div><div class="meta"><span class="badge">PDF</span><span>0 words</span></div></a><a class="related-card" href="../../APPLICATIONS/identity-project/identity-project-roadmap.html"><div class="title">Identity Roadmap</div><div class="meta"><span class="badge">PDF</span><span>0 words</span></div></a><a class="related-card" href="../../APPLICATIONS/identity-project/givingcare-password-security.html"><div class="title">Password Security &amp; BCrypt in GivingCare</div><div class="meta"><span class="badge">HTML</span><span>3,632 words</span></div></a><a class="related-card" href="../../APPLICATIONS/identity-project/role-based-authorization-hierarchical.html"><div class="title">Role-Based Authorization - From Boolean Flags to Hierarchical Roles</div><div class="meta"><span class="badge">MD</span><span>524 words</span></div></a></div></aside>
+</main>
+</div>
+<script>
+// ─── Active TOC item on scroll ────────────────────────────────────
+(function() {
+  const tocLinks = document.querySelectorAll('.toc-sidebar a[href^="#"]');
+  if (!tocLinks.length) return;
+  const headings = Array.from(document.querySelectorAll(
+    'article h1[id], article h2[id], article h3[id], article h4[id], .pdf-page[id]'
+  ));
+  if (!headings.length) return;
+  function setActive(id) {
+    tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+  }
+  let lastVisible = headings[0].id;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) lastVisible = e.target.id; });
+    setActive(lastVisible);
+  }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+  headings.forEach(h => observer.observe(h));
+  setActive(headings[0].id);
+})();
+
+// ─── Copy code buttons ────────────────────────────────────────────
+(function() {
+  document.querySelectorAll('article pre').forEach(pre => {
+    if (pre.closest('.diagram-box')) return;
+    if (pre.closest('.pdf-page')) return;
+    if (pre.parentElement && pre.parentElement.classList.contains('code-block')) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'code-block';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.type = 'button';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', () => {
+      const code = pre.querySelector('code') || pre;
+      const text = code.innerText;
+      const done = () => {
+        btn.textContent = 'Copied';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(() => {});
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+    });
+    wrap.appendChild(btn);
+  });
+})();
+
+// ─── Live filter (master + hub + category pages) ─────────────────
+(function() {
+  const search = document.getElementById('search-input');
+  if (!search) return;
+  const items = document.querySelectorAll('[data-search]');
+  function apply() {
+    const q = search.value.toLowerCase().trim();
+    items.forEach(el => {
+      const match = !q || el.dataset.search.includes(q);
+      el.style.display = match ? '' : 'none';
+    });
+    document.querySelectorAll('[data-search-parent]').forEach(parent => {
+      const visible = Array.from(parent.querySelectorAll('[data-search]'))
+        .some(el => el.style.display !== 'none');
+      parent.style.display = visible ? '' : 'none';
+    });
+  }
+  search.addEventListener('input', apply);
+})();
+</script>
+</body>
+</html>

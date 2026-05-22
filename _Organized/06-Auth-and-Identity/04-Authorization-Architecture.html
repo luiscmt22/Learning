@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>04-Authorization-Architecture</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 06-Auth-and-Identity</div>
+  <h1>04-Authorization-Architecture</h1>
+  <div class="meta">Source: <code>Education/04-Authorization-Architecture.md</code> &middot; <a href="04-Authorization-Architecture.md">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<h1 id="authorization-architecture">Authorization Architecture</h1>
+<h2 id="overview">Overview</h2>
+<p>This document explains the unified authorization architecture that combines:</p>
+<ol>
+<li><strong>Database-based roles</strong> (UserSystemRole table)</li>
+<li><strong>Base class convenience methods</strong> (AuthenticatedComponentBase)</li>
+<li><strong>Future: Declarative attributes</strong> ([RequirePermission])</li>
+</ol>
+<h2 id="architecture-layers">Architecture Layers</h2>
+<div class="diagram-box"><pre>┌────────────────────────────────────────────────────────────────┐
+│                    PAGE LEVEL (Routing)                         │
+│  @attribute [RequireSystemRole(&quot;ADMIN&quot;)]  // Future             │
+│  Prevents unauthorized users from accessing page                │
+└────────────────────────────────────────────────────────────────┘
+                               │
+                               ▼
+┌────────────────────────────────────────────────────────────────┐
+│                  COMPONENT LEVEL (UI)                           │
+│  @if (IsAdminOrAbove) { &lt;button&gt;Admin Action&lt;/button&gt; }         │
+│  Controls what UI elements are visible                          │
+└────────────────────────────────────────────────────────────────┘
+                               │
+                               ▼
+┌────────────────────────────────────────────────────────────────┐
+│                  SERVICE LEVEL (Business)                       │
+│  if (!await _auth.CanUserPerformAction(userId))                 │
+│      return ServiceResult.Failure(&quot;Unauthorized&quot;);              │
+│  Final authorization check before action                        │
+└────────────────────────────────────────────────────────────────┘</pre></div>
+<h2 id="current-implementation">Current Implementation</h2>
+<h3 id="authenticatedcomponentbase">AuthenticatedComponentBase</h3>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">AuthenticatedComponentBase</span> : <span class="type">ComponentBase</span>
+{
+    [<span class="type">Inject</span>] <span class="kw">protected</span> <span class="type">IAuthorizationService</span> <span class="type">AuthorizationService</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+
+    <span class="cmt">// Role properties (cached from UserSystemRole table)</span>
+    <span class="kw">protected</span> <span class="kw">bool</span> <span class="type">IsSuperAdmin</span> { <span class="kw">get</span>; <span class="kw">private</span> <span class="kw">set</span>; }
+    <span class="kw">protected</span> <span class="kw">bool</span> <span class="type">IsAdminOrAbove</span> { <span class="kw">get</span>; <span class="kw">private</span> <span class="kw">set</span>; }
+    <span class="kw">protected</span> <span class="kw">bool</span> <span class="type">IsManagerOrAbove</span> { <span class="kw">get</span>; <span class="kw">private</span> <span class="kw">set</span>; }
+    <span class="kw">protected</span> <span class="kw">int</span> <span class="type">RoleLevel</span> { <span class="kw">get</span>; <span class="kw">private</span> <span class="kw">set</span>; }
+
+    <span class="cmt">// HR config checks (from EmployeeConfiguration)</span>
+    <span class="kw">protected</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">CanClockInOutAsync</span>() { ... }
+    <span class="kw">protected</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">CanValidateAttendanceAsync</span>() { ... }
+
+    <span class="kw">protected</span> <span class="kw">override</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">OnInitializedAsync</span>()
+    {
+        <span class="kw">var</span> role = <span class="kw">await</span> <span class="type">AuthorizationService</span>.<span class="type">GetUserRoleAsync</span>(<span class="type">UserId</span>);
+        <span class="type">RoleLevel</span> = (<span class="kw">int</span>)role;
+        <span class="type">IsSuperAdmin</span> = <span class="type">RoleLevel</span> &gt;= <span class="num">100</span>;
+        <span class="type">IsAdminOrAbove</span> = <span class="type">RoleLevel</span> &gt;= <span class="num">80</span>;
+        <span class="type">IsManagerOrAbove</span> = <span class="type">RoleLevel</span> &gt;= <span class="num">60</span>;
+    }
+}</code></pre>
+<h3 id="using-in-pages">Using in Pages</h3>
+<pre><code class="lang-razor">@inherits <span class="type">AuthenticatedComponentBase</span>
+@page <span class="str">&quot;/admin/users&quot;</span>
+
+&lt;!-- <span class="type">UI</span>-level authorization --&gt;
+<span class="kw">@if</span> (<span class="type">IsSuperAdmin</span>)
+{
+    &lt;<span class="type">MudButton</span> <span class="type">OnClick</span>=<span class="str">&quot;DeleteAll&quot;</span>&gt;<span class="type">Delete</span> <span class="type">All</span> <span class="type">Users</span>&lt;/<span class="type">MudButton</span>&gt;
+}
+
+<span class="kw">@if</span> (<span class="type">IsAdminOrAbove</span>)
+{
+    &lt;<span class="type">MudButton</span> <span class="type">OnClick</span>=<span class="str">&quot;CreateUser&quot;</span>&gt;<span class="type">Create</span> <span class="type">User</span>&lt;/<span class="type">MudButton</span>&gt;
+}
+
+<span class="kw">@if</span> (<span class="type">IsManagerOrAbove</span>)
+{
+    &lt;<span class="type">MudButton</span> <span class="type">OnClick</span>=<span class="str">&quot;ViewTeamReports&quot;</span>&gt;<span class="type">Team</span> <span class="type">Reports</span>&lt;/<span class="type">MudButton</span>&gt;
+}</code></pre>
+<h3 id="authorizationservice">AuthorizationService</h3>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">AuthorizationService</span> : <span class="type">IAuthorizationService</span>
+{
+    <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="type">UserRole</span>&gt; <span class="type">GetUserRoleAsync</span>(<span class="kw">int</span> userId)
+    {
+        <span class="kw">using</span> <span class="kw">var</span> context = _contextFactory.<span class="type">CreateBaseControleContext</span>();
+
+        <span class="kw">var</span> roleAssignment = <span class="kw">await</span> context.<span class="type">UserSystemRoles</span>
+            .<span class="type">Include</span>(usr =&gt; usr.<span class="type">Role</span>)
+            .<span class="type">Where</span>(usr =&gt; usr.<span class="type">UserId</span> == userId &amp;&amp; usr.<span class="type">IsActive</span>)
+            .<span class="type">OrderByDescending</span>(usr =&gt; usr.<span class="type">Role</span>.<span class="type">Level</span>)
+            .<span class="type">FirstOrDefaultAsync</span>();
+
+        <span class="kw">if</span> (roleAssignment?.<span class="type">Role</span> == <span class="kw">null</span>)
+            <span class="kw">return</span> <span class="type">UserRole</span>.<span class="type">Regular</span>;
+
+        <span class="kw">return</span> roleAssignment.<span class="type">Role</span>.<span class="type">Level</span> <span class="kw">switch</span>
+        {
+            &gt;= <span class="num">100</span> =&gt; <span class="type">UserRole</span>.<span class="type">SuperAdmin</span>,
+            &gt;= <span class="num">80</span> =&gt; <span class="type">UserRole</span>.<span class="type">Admin</span>,
+            &gt;= <span class="num">60</span> =&gt; <span class="type">UserRole</span>.<span class="type">Manager</span>,
+            _ =&gt; <span class="type">UserRole</span>.<span class="type">Regular</span>
+        };
+    }
+
+    <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">AssignRoleToUserAsync</span>(
+        <span class="kw">int</span> targetUserId,
+        <span class="type">UserRole</span> role,
+        <span class="kw">int</span> assignedByUserId)
+    {
+        <span class="cmt">// Find or create role assignment</span>
+        <span class="cmt">// Validate assigner can assign this role</span>
+        <span class="cmt">// Save to UserSystemRole table</span>
+    }
+}</code></pre>
+<h2 id="future-declarative-attributes">Future: Declarative Attributes</h2>
+<h3 id="requiresystemrole">RequireSystemRole</h3>
+<pre><code class="lang-csharp">[<span class="type">AttributeUsage</span>(<span class="type">AttributeTargets</span>.<span class="type">Class</span>)]
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">RequireSystemRoleAttribute</span> : <span class="type">AuthorizeAttribute</span>
+{
+    <span class="kw">public</span> <span class="type">RequireSystemRoleAttribute</span>(<span class="kw">string</span> roleCode)
+    {
+        <span class="type">Policy</span> = $<span class="str">&quot;SystemRole:{roleCode}&quot;</span>;
+    }
+}
+
+<span class="cmt">// Usage</span>
+@attribute [<span class="type">RequireSystemRole</span>(<span class="str">&quot;ADMIN&quot;</span>)]
+@page <span class="str">&quot;/admin/users&quot;</span></code></pre>
+<h3 id="requirepermission">RequirePermission</h3>
+<pre><code class="lang-csharp">[<span class="type">AttributeUsage</span>(<span class="type">AttributeTargets</span>.<span class="type">Class</span> | <span class="type">AttributeTargets</span>.<span class="type">Method</span>)]
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">RequirePermissionAttribute</span> : <span class="type">AuthorizeAttribute</span>
+{
+    <span class="kw">public</span> <span class="type">RequirePermissionAttribute</span>(<span class="kw">string</span> permission)
+    {
+        <span class="type">Policy</span> = $<span class="str">&quot;Permission:{permission}&quot;</span>;
+    }
+}
+
+<span class="cmt">// Usage</span>
+@attribute [<span class="type">RequirePermission</span>(<span class="str">&quot;USERS.CREATE&quot;</span>)]
+@page <span class="str">&quot;/admin/users/create&quot;</span></code></pre>
+<h2 id="hr-configuration-checks">HR Configuration Checks</h2>
+<p>For HR-specific features (attendance, timesheets), we check EmployeeConfiguration:</p>
+<pre><code class="lang-csharp"><span class="cmt">// In AuthenticatedComponentBase</span>
+<span class="kw">protected</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">CanClockInOutAsync</span>()
+{
+    <span class="kw">if</span> (<span class="type">LinkedEmployeeId</span> == <span class="kw">null</span>) <span class="kw">return</span> <span class="kw">false</span>;
+
+    <span class="kw">var</span> config = <span class="kw">await</span> _employeeConfigService
+        .<span class="type">GetConfigurationAsync</span>(<span class="type">LinkedEmployeeId</span>.<span class="type">Value</span>, <span class="type">CompanyDatabase</span>);
+
+    <span class="kw">return</span> config?.<span class="type">FazPicagens</span> ?? <span class="kw">false</span>;
+}
+
+<span class="kw">protected</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">CanValidateAttendanceAsync</span>()
+{
+    <span class="kw">if</span> (<span class="type">LinkedEmployeeId</span> == <span class="kw">null</span>) <span class="kw">return</span> <span class="kw">false</span>;
+
+    <span class="kw">var</span> config = <span class="kw">await</span> _employeeConfigService
+        .<span class="type">GetConfigurationAsync</span>(<span class="type">LinkedEmployeeId</span>.<span class="type">Value</span>, <span class="type">CompanyDatabase</span>);
+
+    <span class="kw">return</span> config?.<span class="type">ValidaPicagens</span> ?? <span class="kw">false</span>;
+}</code></pre>
+<h2 id="summary-table">Summary Table</h2>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Check Type</th>
+<th>Method</th>
+<th>Source</th>
+</tr></thead><tbody>
+<tr>
+<td>Super Admin</td>
+<td><code class="il">IsSuperAdmin</code></td>
+<td>UserSystemRole.Level &gt;= 100</td>
+</tr>
+<tr>
+<td>Admin+</td>
+<td><code class="il">IsAdminOrAbove</code></td>
+<td>UserSystemRole.Level &gt;= 80</td>
+</tr>
+<tr>
+<td>Manager+</td>
+<td><code class="il">IsManagerOrAbove</code></td>
+<td>UserSystemRole.Level &gt;= 60</td>
+</tr>
+<tr>
+<td>Can Clock In</td>
+<td><code class="il">CanClockInOutAsync()</code></td>
+<td>EmployeeConfiguration.FazPicagens</td>
+</tr>
+<tr>
+<td>Can Validate</td>
+<td><code class="il">CanValidateAttendanceAsync()</code></td>
+<td>EmployeeConfiguration.ValidaPicagens</td>
+</tr>
+<tr>
+<td>Specific Permission</td>
+<td><code class="il">HasPermission()</code></td>
+<td>Future: SystemRolePermission</td>
+</tr>
+</tbody></table></div>
+</div>
+</body>
+</html>

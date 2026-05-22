@@ -1,0 +1,47 @@
+@inject ProgressService ProgressService
+@inject SearchService SearchService
+
+<div class="phase-group">
+    <div class="phase-header @(_collapsed ? "collapsed" : "")" @onclick="ToggleCollapse">
+        <span class="arrow">&#9660;</span>
+        <span>Phase @Phase.Number: @Phase.Name</span>
+    </div>
+    <div class="phase-items" style="@(_collapsed ? "max-height:0" : "max-height:2000px")">
+        @foreach (var topic in GetFilteredTopics())
+        {
+            var isActive = topic.Id == ActiveTopicId;
+            var isRead = ProgressService.IsRead(topic.Id);
+            <div class="nav-item @(isActive ? "active" : "") @(isRead ? "completed" : "")"
+                 @onclick="() => SelectTopic(topic.Id)">
+                @topic.Title
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public Phase Phase { get; set; } = default!;
+    [Parameter] public string? ActiveTopicId { get; set; }
+    [Parameter] public EventCallback<string> OnTopicSelected { get; set; }
+    [Parameter] public string? SearchQuery { get; set; }
+
+    private bool _collapsed;
+
+    private IEnumerable<Topic> GetFilteredTopics()
+    {
+        if (string.IsNullOrWhiteSpace(SearchQuery))
+            return Phase.Topics;
+
+        return SearchService.Search(Phase.Topics, SearchQuery);
+    }
+
+    private void ToggleCollapse()
+    {
+        _collapsed = !_collapsed;
+    }
+
+    private async Task SelectTopic(string topicId)
+    {
+        await OnTopicSelected.InvokeAsync(topicId);
+    }
+}

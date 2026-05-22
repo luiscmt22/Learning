@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>08-Design-Patterns-For-Dummies</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 19-For-Dummies</div>
+  <h1>08-Design-Patterns-For-Dummies</h1>
+  <div class="meta">Source: <code>Education/ForDummies/08-Design-Patterns-For-Dummies.md</code> &middot; <a href="08-Design-Patterns-For-Dummies.md">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<h1 id="design-patterns-solid-principles-for-dummies">Design Patterns &amp; SOLID Principles - For Dummies</h1>
+<h2 id="the-real-world-problem">The Real-World Problem</h2>
+<p>We had a scheduling system that only worked for <strong>Employees</strong>. Now we needed to add <strong>Equipment</strong> scheduling with the same conflict detection logic.</p>
+<p><strong>The naive approach:</strong> Copy-paste the entire service and change &quot;Employee&quot; to &quot;Equipment&quot; everywhere.</p>
+<p><strong>The problem with copy-paste:</strong></p>
+<ul>
+<li>Bug in one place? Fix it in two places.</li>
+<li>Add a feature? Add it in two places.</li>
+<li>Add Vehicles later? Now fix bugs in THREE places.</li>
+</ul>
+<p><strong>The smart approach:</strong> Use design patterns to write it ONCE and reuse it for any entity type.</p>
+<hr>
+<h2 id="what-we-built">What We Built</h2>
+<pre><code class="lang-text">&quot;Hey system, does Employee #123 have a conflict on Monday?&quot;
+&quot;Hey system, does Equipment #456 have a conflict on Monday?&quot;
+&quot;Hey system, does Vehicle #789 have a conflict on Monday?&quot;
+
+Same question, same code, different data sources.</code></pre>
+<hr>
+<h2 id="the-patterns-we-used-in-order">The Patterns We Used (In Order)</h2>
+<h3 id="pattern-1-interface-isp-interface-segregation-principle">Pattern 1: Interface (ISP - Interface Segregation Principle)</h3>
+<p><strong>The Problem:</strong> Employee schedules and Equipment schedules are different classes, but they share common properties (start time, end time, etc.).</p>
+<p><strong>The Solution:</strong> Create a &quot;contract&quot; that both must follow.</p>
+<pre><code class="lang-csharp"><span class="cmt">// The contract - &quot;If you want to be a schedule, you must have these things&quot;</span>
+<span class="kw">public</span> <span class="kw">interface</span> <span class="type">IScheduleEntry</span>
+{
+    <span class="type">DateTime</span> <span class="type">ActualStartDateTime</span> { <span class="kw">get</span>; }
+    <span class="type">DateTime</span> <span class="type">ActualEndDateTime</span> { <span class="kw">get</span>; }
+    <span class="kw">bool</span> <span class="type">OverlapsWith</span>(<span class="type">IScheduleEntry</span> other);
+}</code></pre>
+<p><strong>Now both models &quot;sign the contract&quot;:</strong></p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">JobSchedule</span> : <span class="type">IScheduleEntry</span>          <span class="cmt">// &quot;I promise to have these properties&quot;</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">JobEquipmentSchedule</span> : <span class="type">IScheduleEntry</span> <span class="cmt">// &quot;I also promise!&quot;</span></code></pre>
+<p><strong>Why this matters:</strong></p>
+<pre><code class="lang-csharp"><span class="cmt">// WITHOUT interface - need separate methods:</span>
+<span class="kw">bool</span> <span class="type">CheckOverlap</span>(<span class="type">JobSchedule</span> a, <span class="type">JobSchedule</span> b) { ... }
+<span class="kw">bool</span> <span class="type">CheckOverlap</span>(<span class="type">JobEquipmentSchedule</span> a, <span class="type">JobEquipmentSchedule</span> b) { ... }
+<span class="kw">bool</span> <span class="type">CheckOverlap</span>(<span class="type">JobSchedule</span> a, <span class="type">JobEquipmentSchedule</span> b) { ... }  <span class="cmt">// Combinations explode!</span>
+
+<span class="cmt">// WITH interface - one method handles ALL types:</span>
+<span class="kw">bool</span> <span class="type">CheckOverlap</span>(<span class="type">IScheduleEntry</span> a, <span class="type">IScheduleEntry</span> b)
+{
+    <span class="kw">return</span> a.<span class="type">OverlapsWith</span>(b);  <span class="cmt">// Works with ANY schedule type!</span>
+}</code></pre>
+<p><strong>SOLID Principle Applied:</strong> <strong>ISP</strong> - Interface Segregation Principle</p>
+<blockquote>&quot;Don&#x27;t force classes to implement things they don&#x27;t need&quot;</blockquote>
+<p>We only put what&#x27;s needed for conflict detection in <code class="il">IScheduleEntry</code>. Employee-specific stuff (like <code class="il">EmployeeName</code>) stays out.</p>
+<hr>
+<h3 id="pattern-2-strategy-pattern-ocp-open-closed-principle">Pattern 2: Strategy Pattern (OCP - Open/Closed Principle)</h3>
+<p><strong>The Problem:</strong> Employee schedules live in <code class="il">JobSchedules</code> table. Equipment schedules live in <code class="il">JobEquipmentSchedules</code> table. The LOGIC is the same, but the DATA SOURCE is different.</p>
+<p><strong>The Solution:</strong> Each entity type gets its own &quot;strategy&quot; for fetching data.</p>
+<pre><code class="lang-csharp"><span class="cmt">// The strategy contract</span>
+<span class="kw">public</span> <span class="kw">interface</span> <span class="type">IScheduleConflictStrategy</span>
+{
+    <span class="kw">string</span> <span class="type">EntityType</span> { <span class="kw">get</span>; }  <span class="cmt">// &quot;Employee&quot; or &quot;Equipment&quot;</span>
+    <span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">HasConflictAsync</span>(<span class="kw">int</span> entityId, ...);
+}
+
+<span class="cmt">// Employee strategy - queries JobSchedules table</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">EmployeeScheduleConflictStrategy</span> : <span class="type">IScheduleConflictStrategy</span>
+{
+    <span class="kw">public</span> <span class="kw">string</span> <span class="type">EntityType</span> =&gt; <span class="str">&quot;Employee&quot;</span>;
+
+    <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">HasConflictAsync</span>(<span class="kw">int</span> entityId, ...)
+    {
+        <span class="cmt">// Query JobSchedules WHERE EmployeeId = entityId</span>
+    }
+}
+
+<span class="cmt">// Equipment strategy - queries JobEquipmentSchedules table</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">EquipmentScheduleConflictStrategy</span> : <span class="type">IScheduleConflictStrategy</span>
+{
+    <span class="kw">public</span> <span class="kw">string</span> <span class="type">EntityType</span> =&gt; <span class="str">&quot;Equipment&quot;</span>;
+
+    <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">HasConflictAsync</span>(<span class="kw">int</span> entityId, ...)
+    {
+        <span class="cmt">// Query JobEquipmentSchedules WHERE EquipmentId = entityId</span>
+    }
+}</code></pre>
+<p><strong>Why this matters:</strong></p>
+<pre><code class="lang-csharp"><span class="cmt">// WITHOUT strategy - ugly switch statement:</span>
+<span class="kw">public</span> <span class="kw">bool</span> <span class="type">HasConflict</span>(<span class="kw">string</span> type, <span class="kw">int</span> id)
+{
+    <span class="kw">switch</span> (type)
+    {
+        <span class="kw">case</span> <span class="str">&quot;Employee&quot;</span>: <span class="kw">return</span> <span class="type">CheckEmployeeConflict</span>(id);
+        <span class="kw">case</span> <span class="str">&quot;Equipment&quot;</span>: <span class="kw">return</span> <span class="type">CheckEquipmentConflict</span>(id);
+        <span class="kw">case</span> <span class="str">&quot;Vehicle&quot;</span>: <span class="kw">return</span> <span class="type">CheckVehicleConflict</span>(id);  <span class="cmt">// Must modify!</span>
+        <span class="kw">default</span>: <span class="kw">throw</span> <span class="kw">new</span> <span class="type">Exception</span>();
+    }
+}
+
+<span class="cmt">// WITH strategy - no modification needed:</span>
+<span class="kw">public</span> <span class="kw">bool</span> <span class="type">HasConflict</span>(<span class="kw">string</span> type, <span class="kw">int</span> id)
+{
+    <span class="kw">var</span> strategy = strategies.<span class="type">First</span>(s =&gt; s.<span class="type">EntityType</span> == type);
+    <span class="kw">return</span> strategy.<span class="type">HasConflictAsync</span>(id);
+    <span class="cmt">// Adding Vehicle? Just register a new strategy. This code never changes!</span>
+}</code></pre>
+<p><strong>SOLID Principle Applied:</strong> <strong>OCP</strong> - Open/Closed Principle</p>
+<blockquote>&quot;Open for extension, closed for modification&quot;</blockquote>
+<p>To add Vehicles, we CREATE a new <code class="il">VehicleScheduleConflictStrategy</code>. We DON&#x27;T MODIFY existing code.</p>
+<hr>
+<h3 id="pattern-3-dependency-injection-with-ienumerable-t">Pattern 3: Dependency Injection with IEnumerable&lt;T&gt;</h3>
+<p><strong>The Problem:</strong> How does the system know which strategies exist?</p>
+<p><strong>The Solution:</strong> Register all strategies in <code class="il">Program.cs</code>, and .NET DI collects them automatically.</p>
+<pre><code class="lang-csharp"><span class="cmt">// Program.cs - Registration</span>
+builder.<span class="type">Services</span>.<span class="type">AddScoped</span>&lt;<span class="type">IScheduleConflictStrategy</span>, <span class="type">EmployeeScheduleConflictStrategy</span>&gt;();
+builder.<span class="type">Services</span>.<span class="type">AddScoped</span>&lt;<span class="type">IScheduleConflictStrategy</span>, <span class="type">EquipmentScheduleConflictStrategy</span>&gt;();</code></pre>
+<pre><code class="lang-csharp"><span class="cmt">// The detector asks for ALL strategies</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">ScheduleConflictDetector</span>
+{
+    <span class="kw">public</span> <span class="type">ScheduleConflictDetector</span>(<span class="type">IEnumerable</span>&lt;<span class="type">IScheduleConflictStrategy</span>&gt; strategies)
+    {
+        <span class="cmt">// .NET DI automatically gives us [EmployeeStrategy, EquipmentStrategy]</span>
+        <span class="cmt">// We don&#x27;t manually create them!</span>
+    }
+}</code></pre>
+<p><strong>The magic:</strong> When you inject <code class="il">IEnumerable&lt;IScheduleConflictStrategy&gt;</code>, .NET DI gives you ALL registered implementations as a collection.</p>
+<p><strong>SOLID Principle Applied:</strong> <strong>DIP</strong> - Dependency Inversion Principle</p>
+<blockquote>&quot;Depend on abstractions, not concrete classes&quot;</blockquote>
+<p>The detector doesn&#x27;t know about <code class="il">EmployeeScheduleConflictStrategy</code> directly. It only knows <code class="il">IScheduleConflictStrategy</code>. The concrete classes are &quot;injected&quot; from outside.</p>
+<hr>
+<h3 id="pattern-4-facade-pattern-srp-single-responsibility">Pattern 4: Facade Pattern (SRP - Single Responsibility)</h3>
+<p><strong>The Problem:</strong> The caller shouldn&#x27;t need to know about strategies. They just want to ask &quot;is there a conflict?&quot;</p>
+<p><strong>The Solution:</strong> Create a simple &quot;facade&quot; that hides the complexity.</p>
+<pre><code class="lang-csharp"><span class="cmt">// The simple interface callers use</span>
+<span class="kw">public</span> <span class="kw">interface</span> <span class="type">IScheduleConflictDetector</span>
+{
+    <span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">HasTimeOverlapAsync</span>(<span class="kw">string</span> entityType, <span class="kw">int</span> entityId, ...);
+}
+
+<span class="cmt">// The implementation that hides the strategy selection</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">ScheduleConflictDetector</span> : <span class="type">IScheduleConflictDetector</span>
+{
+    <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">HasTimeOverlapAsync</span>(<span class="kw">string</span> entityType, <span class="kw">int</span> entityId, ...)
+    {
+        <span class="cmt">// 1. Find the right strategy</span>
+        <span class="kw">var</span> strategy = _strategies.<span class="type">First</span>(s =&gt; s.<span class="type">EntityType</span> == entityType);
+
+        <span class="cmt">// 2. Delegate to it</span>
+        <span class="kw">return</span> <span class="kw">await</span> strategy.<span class="type">HasTimeOverlapAsync</span>(entityId, ...);
+    }
+}</code></pre>
+<p><strong>From the caller&#x27;s perspective:</strong></p>
+<pre><code class="lang-csharp"><span class="cmt">// Simple! Caller doesn&#x27;t know about strategies</span>
+<span class="kw">await</span> _conflictDetector.<span class="type">HasTimeOverlapAsync</span>(<span class="str">&quot;Employee&quot;</span>, <span class="num">123</span>, ...);
+<span class="kw">await</span> _conflictDetector.<span class="type">HasTimeOverlapAsync</span>(<span class="str">&quot;Equipment&quot;</span>, <span class="num">456</span>, ...);</code></pre>
+<p><strong>SOLID Principle Applied:</strong> <strong>SRP</strong> - Single Responsibility Principle</p>
+<blockquote>&quot;A class should have only one reason to change&quot;</blockquote>
+<ul>
+<li><code class="il">ScheduleConflictDetector</code> - routes to strategies (ONE job)</li>
+<li><code class="il">EmployeeScheduleConflictStrategy</code> - queries employee schedules (ONE job)</li>
+<li><code class="il">EquipmentScheduleConflictStrategy</code> - queries equipment schedules (ONE job)</li>
+</ul>
+<hr>
+<h2 id="the-complete-picture">The Complete Picture</h2>
+<div class="diagram-box"><pre>┌─────────────────────────────────────────────────────────────────┐
+│                         CALLER                                   │
+│   &quot;Does Employee 123 have a conflict?&quot;                          │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              IScheduleConflictDetector (Facade)                  │
+│                                                                  │
+│   HasTimeOverlapAsync(&quot;Employee&quot;, 123, ...)                     │
+│                                                                  │
+│   1. Look through _strategies                                    │
+│   2. Find one where EntityType == &quot;Employee&quot;                    │
+│   3. Call that strategy&#x27;s method                                │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│         IEnumerable&lt;IScheduleConflictStrategy&gt;                   │
+│                                                                  │
+│   [0] EmployeeStrategy   (EntityType = &quot;Employee&quot;)  ◄── MATCH!  │
+│   [1] EquipmentStrategy  (EntityType = &quot;Equipment&quot;)             │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│            EmployeeScheduleConflictStrategy                      │
+│                                                                  │
+│   Queries: context.Set&lt;JobSchedule&gt;()                           │
+│            .Where(s =&gt; s.EmployeeId == 123)                     │
+│                                                                  │
+│   JobSchedule implements IScheduleEntry                         │
+│   So overlap logic works via the interface                      │
+└─────────────────────────────────────────────────────────────────┘</pre></div>
+<hr>
+<h2 id="solid-principles-summary">SOLID Principles Summary</h2>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Principle</th>
+<th>What It Means</th>
+<th>How We Applied It</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>S</strong>ingle Responsibility</td>
+<td>One class = One job</td>
+<td>Each strategy handles ONE entity type</td>
+</tr>
+<tr>
+<td><strong>O</strong>pen/Closed</td>
+<td>Add features without modifying existing code</td>
+<td>New entity = new strategy file, no changes elsewhere</td>
+</tr>
+<tr>
+<td><strong>L</strong>iskov Substitution</td>
+<td>Subtypes are interchangeable</td>
+<td>Any <code class="il">IScheduleEntry</code> can be compared with any other</td>
+</tr>
+<tr>
+<td><strong>I</strong>nterface Segregation</td>
+<td>Don&#x27;t force unnecessary implementations</td>
+<td><code class="il">IScheduleEntry</code> has ONLY conflict-related properties</td>
+</tr>
+<tr>
+<td><strong>D</strong>ependency Inversion</td>
+<td>Depend on abstractions</td>
+<td>Detector depends on <code class="il">IScheduleConflictStrategy</code>, not concrete classes</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="design-patterns-summary">Design Patterns Summary</h2>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Pattern</th>
+<th>What It Does</th>
+<th>Where We Used It</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Strategy</strong></td>
+<td>Different algorithms, same interface</td>
+<td>Employee vs Equipment conflict detection</td>
+</tr>
+<tr>
+<td><strong>Facade</strong></td>
+<td>Simple interface hiding complexity</td>
+<td><code class="il">IScheduleConflictDetector</code> hides strategy selection</td>
+</tr>
+<tr>
+<td><strong>Adapter</strong> (via interface)</td>
+<td>Makes incompatible types compatible</td>
+<td><code class="il">IScheduleEntry</code> makes JobSchedule and JobEquipmentSchedule comparable</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="the-payoff-adding-a-new-entity-type">The Payoff: Adding a New Entity Type</h2>
+<p><strong>Before (without patterns):</strong></p>
+<ol>
+<li>Copy-paste EmployeeConflictService</li>
+<li>Rename everything to Vehicle</li>
+<li>Hope you didn&#x27;t miss anything</li>
+<li>Now maintain two (or three, or four) copies</li>
+</ol>
+<p><strong>After (with patterns):</strong></p>
+<ol>
+<li>Create <code class="il">JobVehicleSchedule : IScheduleEntry</code></li>
+<li>Create <code class="il">VehicleScheduleConflictStrategy : IScheduleConflictStrategy</code></li>
+<li>Register in <code class="il">Program.cs</code></li>
+<li>Done. Existing code unchanged.</li>
+</ol>
+<pre><code class="lang-csharp"><span class="cmt">// This code NEVER changes, no matter how many entity types we add:</span>
+<span class="kw">var</span> strategy = _strategies.<span class="type">First</span>(s =&gt; s.<span class="type">EntityType</span> == entityType);
+<span class="kw">return</span> <span class="kw">await</span> strategy.<span class="type">HasConflictAsync</span>(entityId, ...);</code></pre>
+<hr>
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ol>
+<li><strong>Interfaces define contracts</strong> - &quot;If you want to play, follow these rules&quot;</li>
+<li><strong>Strategy pattern = pluggable algorithms</strong> - Same question, different data sources</li>
+<li><strong>IEnumerable&lt;T&gt; in DI = collect all implementations</strong> - Register many, inject as collection</li>
+<li><strong>Facade = simple front door</strong> - Hide complexity behind a simple interface</li>
+<li><strong>SOLID = maintainable code</strong> - Changes are additions, not modifications</li>
+</ol>
+<hr>
+<h2 id="real-code-locations">Real Code Locations</h2>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Concept</th>
+<th>File</th>
+</tr></thead><tbody>
+<tr>
+<td>Interface contract</td>
+<td><code class="il">Services/Core/Scheduling/IScheduleEntry.cs</code></td>
+</tr>
+<tr>
+<td>Strategy interface</td>
+<td><code class="il">Services/Core/Scheduling/IScheduleConflictStrategy.cs</code></td>
+</tr>
+<tr>
+<td>Facade interface</td>
+<td><code class="il">Services/Core/Scheduling/IScheduleConflictDetector.cs</code></td>
+</tr>
+<tr>
+<td>Facade implementation</td>
+<td><code class="il">Services/Core/Scheduling/ScheduleConflictDetector.cs</code></td>
+</tr>
+<tr>
+<td>Employee strategy</td>
+<td><code class="il">Services/Core/Scheduling/Strategies/EmployeeScheduleConflictStrategy.cs</code></td>
+</tr>
+<tr>
+<td>Equipment strategy</td>
+<td><code class="il">Services/Core/Scheduling/Strategies/EquipmentScheduleConflictStrategy.cs</code></td>
+</tr>
+<tr>
+<td>DI registration</td>
+<td><code class="il">Program.cs</code> (search for &quot;Schedule Conflict Detection&quot;)</td>
+</tr>
+</tbody></table></div>
+</div>
+</body>
+</html>

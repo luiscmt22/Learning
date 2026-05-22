@@ -1,0 +1,386 @@
+Database Reset & Tenant Migration — How It All Works
+Database Reset & Tenant Migration
+How GivingCare 3.0 creates, seeds, and resets its databases
+1. The Two-Database Architecture
+GivingCare uses a multi-tenant architecture with two types of databases:
+SQL Server Instance
+├── AuthDatabase (1 per deployment)
+│ ├── Users
+│ ├── Companies
+│ ├── SystemRoles
+│ ├── SystemPermissions
+│ ├── UserSystemRoles
+│ ├── Notifications
+│ ├── ChatMessages
+│ ├── Geography (Countries, Districts, Counties)
+│ └── AuditLogs
+│
+├── DefaultCompany (1 per company)
+│ ├── Employees
+│ ├── Departments
+│ ├── Contracts
+│ ├── Attendance
+│ ├── Jobs, Teams
+│ ├── Documents, Articles
+│ ├── CRM (Leads, Opportunities)
+│ └── ... everything company-specific
+│
+└── TestCompany (another company DB)
+└── ... same schema, different data
+Think of it like an apartment building. AuthDatabase is the building's lobby — it knows
+who lives there, which apartments exist, and who has keys. Each Company database is an
+individual apartment — same layout (schema), but completely separate furniture (data).
+Database
+EF Context
+Purpose
+AuthDatabase
+BaseControleContext
+Authentication, authorization, shared data
+DefaultCompany
+DynamicCompanyContext
+Company-specific HR, CRM, operations data
+TestCompany
+DynamicCompanyContext
+Same context class, different connection string
+The database name AuthDatabase is configured in appsettings.json under
+Client:Database:AuthDatabase . The code default in ClientOptions.cs says
+"BaseControle" , but the config overrides it. Always check appsettings.json
+for the actual runtime value — the code default is just a fallback.
+2. How Migrations Work in EF Core
+What is a Migration?
+A migration is a C# class that describes a change to the database schema . It has two methods:
+public partial class InitialCreate : Migration
+{
+protected override void Up ( MigrationBuilder migrationBuilder )
+{
+// What to do when APPLYING this migration
+migrationBuilder. CreateTable (name: "Users" , ...);
+migrationBuilder. InsertData (table: "SystemRoles" , ...); // Seed data!
+}
+protected override void Down ( MigrationBuilder migrationBuilder )
+{
+// What to do when REVERTING this migration
+migrationBuilder. DropTable (name: "Users" );
+}
+}
+"A migration says: here's what the database looked like before, and here's what it should look like after .
+EF Core figures out the diff and generates the SQL."
+Where do migrations live?
+Migrations/
+├── Auth/ (for BaseControleContext)
+│ ├── 20260306124854_InitialCreate.cs ← creates all auth tables + seeds
+│ ├── 20260309174807_AddUserSessionTimeout.cs
+│ └── BaseControleContextModelSnapshot.cs ← current state of the model
+│
+└── Company/ (for DynamicCompanyContext)
+├── 20260306125048_InitialCreate.cs ← creates all company tables + seeds
+├── 20260309174859_SeedProcessTemplateAndTasks.cs
+└── DynamicCompanyContextModelSnapshot.cs
+What does MigrateAsync() actually do?
+When you call context.Database.MigrateAsync() , EF Core does these steps:
+Creates the database if it doesn't exist (like CREATE DATABASE )
+Creates __EFMigrationsHistory table if it doesn't exist — this tracks which migrations have been applied
+Compares the migrations in your code against __EFMigrationsHistory
+Applies pending migrations in chronological order (by the timestamp prefix)
+Runs HasData() seed configurations that are part of those migrations
+MigrateAsync() is idempotent — running it twice does nothing harmful.
+If all migrations are already applied, it simply does nothing. This is why it's safe to call on every startup.
+How EF Core tracks migration state
+After applying a migration, EF Core inserts a row into __EFMigrationsHistory :
+-- What EF does internally after applying a migration:
+INSERT INTO __EFMigrationsHistory (MigrationId, ProductVersion)
+VALUES ( '20260306124854_InitialCreate' , '8.0.11' );
+Next time MigrateAsync() runs, it sees this row and skips InitialCreate .
+If you drop the database , this table is gone too, so EF Core will re-apply everything from scratch.
+3. The TenantMigrator
+Where it lives
+Tools/TenantMigrator.cs — a static utility class with three methods:
+public static class TenantMigrator
+{
+// Migrate the auth database only
+public static async Task MigrateAuthDatabaseAsync ( IConfiguration configuration )
+{
+await using var context = new BaseControleContext (configuration);
+var dbName = context.Database. GetDbConnection ().Database;
+Console. WriteLine ( $"Provisioning auth database: {dbName}" );
+await context.Database. MigrateAsync ();
+Console. WriteLine ( $"Auth database '{dbName}' is ready." );
+}
+// Migrate one company database by key
+public static async Task MigrateTenantAsync ( IConfiguration configuration , string companyKey )
+{
+await using var context = new DynamicCompanyContext (configuration, companyKey);
+var dbName = context.Database. GetDbConnection ().Database;
+Console. WriteLine ( $"Provisioning tenant database: {dbName} (key: {companyKey})" );
+await context.Database. MigrateAsync ();
+Console. WriteLine ( $"Tenant '{companyKey}' is ready." );
+}
+// Migrate ALL company databases (no auth)
+public static async Task MigrateTenantsAsync ( IConfiguration configuration )
+{
+var companies = configuration
+. GetSection ( "Client:Database:Companies" ). GetChildren ();
+foreach ( var company in companies)
+await MigrateTenantAsync (configuration, company.Key);
+}
+// Migrate EVERYTHING: auth first, then all companies
+public static async Task MigrateAllAsync ( IConfiguration configuration )
+{
+await MigrateAuthDatabaseAsync (configuration);
+await MigrateTenantsAsync (configuration);
+}
+}
+"Migrate all tenants: first create the lobby (AuthDatabase with users, roles, and the company registry),
+then create each apartment (company database with employees, documents, etc.)."
+How it gets called
+At the very end of Program.cs , three flags are checked:
+// Database migration commands (run and exit)
+if (args. Contains ( "--migrate-all" ))
+{
+await TenantMigrator . MigrateAllAsync (app.Configuration);
+return ;
+}
+if (args. Contains ( "--migrate-auth" ))
+{
+await TenantMigrator . MigrateAuthDatabaseAsync (app.Configuration);
+return ;
+}
+if (args. Contains ( "--migrate-tenants" ))
+{
+await TenantMigrator . MigrateTenantsAsync (app.Configuration);
+return ;
+}
+app. Run ();
+Command
+What it migrates
+When to use
+dotnet run -- --migrate-all
+Auth + all company DBs
+Fresh install, full reset
+dotnet run -- --migrate-auth
+Auth database only
+Auth schema changed, or auth DB was dropped
+dotnet run -- --migrate-tenants
+All company databases
+Company schema changed, tenants already exist
+The key detail: args comes from the command line. When you run:
+dotnet run -- --migrate-auth
+The -- separator tells dotnet : "everything after this is for my app , not for dotnet itself."
+So --migrate-auth ends up in the args array that WebApplication.CreateBuilder(args) receives.
+Without the -- separator, dotnet run would try to interpret --migrate-auth
+as its own flag and fail with an error. The double dash is a Unix convention that means
+"end of options for this command."
+Order matters (when using --migrate-all)
+dotnet run -- --migrate-all
+│
+├── 1. MigrateAuthDatabaseAsync()
+│ └── Creates AuthDatabase
+│ ├── Tables: Users, Companies, SystemRoles, SystemPermissions, ...
+│ └── Seeds: SuperAdmin (agile/1234), 4 roles, 100+ permissions,
+│ Master Company, Geography (countries/districts/counties)
+│
+├── 2. MigrateTenantAsync("DefaultCompany")
+│ └── Creates DefaultCompany database
+│ ├── Tables: Employees, Departments, Contracts, Jobs, ...
+│ └── Seeds: 13 doc types, 13 series, 18 state configs,
+│ 56+ employee permissions, equipment statuses, ...
+│
+├── 3. MigrateTenantAsync("TestCompany")
+│ └── Creates TestCompany database
+│ └── Same schema and seeds as DefaultCompany
+│
+└── return; (exits without starting web server)
+But you can run them independently. If you already have company databases and only
+need to recreate the auth database:
+dotnet run -- --migrate-auth
+│
+└── 1. MigrateAuthDatabaseAsync()
+└── Creates/updates AuthDatabase only
+└── return;
+Auth must be migrated before company databases. The auth database contains the
+Companies table that registers which company databases exist. Without it,
+the app can't resolve company connections at login time.
+4. Seed Data — HasData() in OnModelCreating
+How seeding works
+EF Core has a built-in seeding mechanism via HasData() in OnModelCreating .
+When you add a migration, EF compares the seed data in your code against what was seeded in
+previous migrations and generates InsertData calls for new entries:
+// In BaseControleContext.OnModelCreating:
+private void SeedSuperAdmin ( ModelBuilder modelBuilder )
+{
+var passwordService = new PasswordService ( null );
+var superAdmin = new User
+{
+Id = 1 , // Fixed ID -- required for HasData
+Name = "agile" ,
+Username = "agile" ,
+Email = "luis@agileincloud.com" ,
+PasswordBcrypt = passwordService. HashBCrypt ( "1234" ),
+IsActive = true ,
+ChangePassword = true , // Forces password change on first login
+};
+modelBuilder. Entity < User >(). HasData (superAdmin);
+}
+HasData() requires explicit primary key values (like Id = 1 ).
+This is because EF needs to track which rows are "seed data" vs "user data" across migrations.
+If you omit the ID, you get a compile error.
+What gets seeded in each database
+Database
+Seed Data
+AuthDatabase
+SuperAdmin user ( agile / 1234 , must change password)
+4 SystemRoles (SuperAdmin, Admin, Manager, User)
+100+ SystemPermissions (organized by module)
+Master Company (linked to DefaultCompany DB)
+SuperAdmin → Company link
+SuperAdmin → SuperAdmin role assignment
+Geography (countries, districts, counties — via configurations)
+DefaultCompany
+13 document types, 13 document series
+18 state configs
+56+ employee permissions
+Equipment statuses, article types, VAT rates
+Leave types, 2 warehouses
+Process template with pipeline stage
+5. The Reset Script
+When do you need it?
+When you want to start completely fresh — wipe everything and let migrations
+recreate from scratch with clean seed data. Common scenarios:
+Accidentally corrupted data (deleted companies, broke relationships)
+Schema got out of sync with migrations
+Want a clean dev/test environment
+The script
+-- Scripts/ResetDatabases.sql
+-- Run against [master] database in SSMS or sqlcmd
+USE [master];
+GO
+-- Drop AuthDatabase (auth/control database)
+IF DB_ID( 'AuthDatabase' ) IS NOT NULL
+BEGIN
+ALTER DATABASE [AuthDatabase] SET SINGLE_USER WITH ROLLBACK IMMEDIATE ;
+DROP DATABASE [AuthDatabase];
+END
+GO
+-- Drop DefaultCompany
+IF DB_ID( 'DefaultCompany' ) IS NOT NULL
+BEGIN
+ALTER DATABASE [DefaultCompany] SET SINGLE_USER WITH ROLLBACK IMMEDIATE ;
+DROP DATABASE [DefaultCompany];
+END
+GO
+Why SET SINGLE_USER WITH ROLLBACK IMMEDIATE ?
+SQL Server won't let you drop a database that has active connections. This command:
+SINGLE_USER — kicks everyone out except the current connection
+ROLLBACK IMMEDIATE — rolls back any in-progress transactions instead of waiting for them to finish
+Without this, you'd get: "Cannot drop database because it is currently in use."
+Why IF DB_ID(...) IS NOT NULL ?
+Makes the script safe to run even if the database doesn't exist yet.
+DB_ID('AuthDatabase') returns NULL if no database by that name exists,
+so the DROP is skipped. This makes the script idempotent.
+6. The Complete Reset Workflow
+Step 1: Run SQL reset script (SSMS or sqlcmd)
+└── Drops AuthDatabase, DefaultCompany, TestCompany
+└── All tables, data, and __EFMigrationsHistory gone
+Step 2: Run migration command
+$ dotnet run -- --migrate-all (or --migrate-auth for auth only)
+│
+├── "Provisioning auth database: AuthDatabase"
+│ └── MigrateAsync() creates DB from scratch
+│ ├── Applies 20260306_InitialCreate (tables + seeds)
+│ └── Applies 20260309_AddUserSessionTimeout
+│
+├── "Provisioning tenant database: DefaultCompany"
+│ └── MigrateAsync() creates DB from scratch
+│ ├── Applies 20260306_InitialCreate (tables + seeds)
+│ └── Applies 20260309_SeedProcessTemplateAndTasks
+│
+└── "Provisioning tenant database: TestCompany"
+└── Same as DefaultCompany
+Step 3: Start the app normally
+$ dotnet run
+└── Login: agile / 1234 (forced password change)
+The migration command uses return; after migrating — it exits without starting
+the web server. This is intentional: migration is a setup step , not part of normal
+app operation. Run the app separately with a plain dotnet run .
+7. How the Contexts Know Which Database to Connect To
+BaseControleContext (auth)
+Reads Client:Database:AuthDatabase from config to find the database name,
+then builds a connection string:
+protected override void OnConfiguring ( DbContextOptionsBuilder optionsBuilder )
+{
+if (!optionsBuilder.IsConfigured && _configuration != null )
+{
+var connectionString = BuildConnectionString (_configuration, "AuthDatabase" );
+optionsBuilder. UseSqlServer (connectionString);
+}
+}
+private static string BuildConnectionString ( IConfiguration config , string databaseKey )
+{
+var server = config[ "Client:Database:Server" ];
+var database = config[ $"Client:Database:{databaseKey}" ]; // "AuthDatabase"
+var username = config[ "Client:Database:Username" ];
+var password = config[ "Client:Database:Password" ];
+return $"Server={server};Database={database};User Id={username};..." ;
+}
+DynamicCompanyContext (company)
+Takes a companyKey parameter and looks up the database name from the
+Client:Database:Companies:{key}:Database config path:
+// From appsettings.json:
+"Companies" : {
+"DefaultCompany" : { "Database" : "DefaultCompany" },
+"TestCompany" : { "Database" : "TestCompany" }
+}
+// The key "DefaultCompany" maps to database name "DefaultCompany"
+// But you could have: "Inersel": { "Database": "InerselProduction" }
+The companyKey is like a door number in the building. The config file is the
+building directory that tells you which apartment name goes with which door.
+Usually they match (door "DefaultCompany" → apartment "DefaultCompany"),
+but they don't have to.
+8. Design-Time vs Runtime Contexts
+The problem
+When you run dotnet ef migrations add , there's no running app — no DI container,
+no IConfiguration injected. EF Core needs to create a context somehow to compare your
+model against the database. That's what Design-Time Factories are for:
+// Models/Contexts/DesignTimeContextFactories.cs
+public class BaseControleContextFactory
+: IDesignTimeDbContextFactory < BaseControleContext >
+{
+public BaseControleContext CreateDbContext ( string [] args )
+{
+// Manually build configuration (no DI available)
+var configuration = new ConfigurationBuilder ()
+. SetBasePath ( Directory . GetCurrentDirectory ())
+. AddJsonFile ( "appsettings.json" )
+. Build ();
+return new BaseControleContext (configuration);
+}
+}
+Scenario
+How context is created
+dotnet ef migrations add
+Design-time factory ( IDesignTimeDbContextFactory )
+dotnet run -- --migrate-tenants
+new BaseControleContext(configuration) in TenantMigrator
+Normal app runtime
+DbContextFactoryService.CreateBaseControleContext() (via DI)
+9. Adding a New Company Database
+To add a new tenant (e.g., "Inersel"), just add it to appsettings.json :
+"Companies" : {
+"DefaultCompany" : { "Database" : "DefaultCompany" },
+"TestCompany" : { "Database" : "TestCompany" },
+"Inersel" : { "Database" : "InerselDB" } // NEW
+}
+Then either:
+Run dotnet run -- --migrate-tenants to provision all (including the new one)
+Or call TenantMigrator.MigrateTenantAsync(config, "Inersel") programmatically
+You also need to register the company in the AuthDatabase Companies table
+so users can be linked to it. The seed data only creates "Master Company" — additional companies
+are added through the admin UI (Configuracoes > Empresas).
+10. Key Takeaways
+Two databases, two contexts — AuthDatabase (shared) and Company databases (per-tenant), each with separate migration histories
+MigrateAsync() is safe — it creates the DB if missing, applies only pending migrations, and is idempotent
+--migrate-tenants exits after migrating — it doesn't start the web server; run dotnet run separately
+Auth must migrate first — company databases depend on the auth database existing
+Seed data uses HasData() — it's part of migrations, so dropping the DB and re-migrating restores all seed data
+The reset script drops databases — this forces EF to recreate everything from the first migration
+Check appsettings.json for actual names — code defaults can differ from runtime config

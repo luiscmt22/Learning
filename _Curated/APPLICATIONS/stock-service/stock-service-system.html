@@ -1,0 +1,1714 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Stock Service System — Formal Technical Documentation</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #07090f;
+  --bg-1: #0c111c;
+  --bg-2: #11182a;
+  --bg-3: #1a2238;
+  --bg-4: #232e4a;
+  --border: #1e2840;
+  --border-2: #2a3551;
+  --border-3: #3a4870;
+  --text: #e9eef8;
+  --text-dim: #94a3bf;
+  --text-mut: #5f6b86;
+  --accent: #6aa6ff;
+  --accent-strong: #3b82f6;
+  --accent-2: #b86aff;
+  --accent-3: #f472b6;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+  --info: #38bdf8;
+  --code-bg: #0a1020;
+  --code-border: #1a2340;
+  --shadow: 0 8px 32px rgba(0,0,0,0.55);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.35);
+  --shadow-glow: 0 0 0 1px rgba(106,166,255,0.18), 0 12px 40px rgba(106,166,255,0.10);
+}
+
+/* Doc-type theming */
+[data-doc-type="core-concept"] {
+  --doc-accent: #6aa6ff;
+  --doc-accent-rgb: 106,166,255;
+  --doc-eyebrow: "Concept";
+}
+[data-doc-type="applied-implementation"] {
+  --doc-accent: #b86aff;
+  --doc-accent-rgb: 184,106,255;
+  --doc-eyebrow: "Implementation";
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font: 16px/1.7 -apple-system, "Inter", \'Segoe UI\', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+::selection { background: rgba(106,166,255,0.30); }
+
+/* ═══ Top bar ═══════════════════════════════════════════════════════ */
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(7,9,15,0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 28px;
+  display: flex; align-items: center; gap: 16px;
+}
+.topbar .crumbs {
+  flex: 1; font-size: 13px; color: var(--text-dim);
+  display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden;
+}
+.topbar .crumbs span.sep { color: var(--text-mut); }
+.topbar .crumbs .current {
+  color: var(--text); font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.topbar .crumbs a { color: var(--text-dim); text-decoration: none; }
+.topbar .crumbs a:hover { color: var(--accent); }
+.topbar .actions { display: flex; gap: 6px; flex-shrink: 0; }
+.topbar .action {
+  font-size: 13px; padding: 6px 14px; border-radius: 8px;
+  color: var(--text-dim); text-decoration: none;
+  border: 1px solid transparent; transition: all .15s;
+}
+.topbar .action:hover {
+  color: var(--text); background: var(--bg-2); border-color: var(--border);
+  text-decoration: none;
+}
+
+/* ═══ Document layout ═══════════════════════════════════════════════ */
+.layout {
+  display: grid; grid-template-columns: 280px 1fr;
+  max-width: 1380px; margin: 0 auto; align-items: start;
+}
+.layout.no-toc { grid-template-columns: 1fr; max-width: 940px; }
+
+.toc-sidebar {
+  position: sticky; top: 70px;
+  align-self: start;
+  max-height: calc(100vh - 90px);
+  overflow-y: auto;
+  padding: 40px 8px 40px 28px;
+  border-right: 1px solid var(--border);
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+.toc-sidebar::-webkit-scrollbar { width: 6px; }
+.toc-sidebar::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
+.toc-sidebar h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px; padding-left: 14px; font-weight: 600;
+}
+.toc-sidebar ol { list-style: none; margin: 0; padding: 0; }
+.toc-sidebar li { margin: 0; }
+.toc-sidebar a {
+  display: block;
+  padding: 5px 14px;
+  border-left: 2px solid transparent;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 13px;
+  line-height: 1.5;
+  transition: all .15s;
+  word-break: break-word;
+}
+.toc-sidebar a:hover {
+  color: var(--text); border-left-color: var(--border-2); text-decoration: none;
+}
+.toc-sidebar a.active {
+  color: var(--doc-accent, var(--accent));
+  border-left-color: var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.07);
+}
+.toc-sidebar .lvl-3 a { padding-left: 28px; font-size: 12.5px; }
+.toc-sidebar .lvl-4 a, .toc-sidebar .lvl-5 a, .toc-sidebar .lvl-6 a {
+  padding-left: 42px; font-size: 12px;
+}
+
+.content { padding: 40px 64px 120px; min-width: 0; }
+
+/* ═══ Hero (per-doc) ════════════════════════════════════════════════ */
+.doc-hero {
+  position: relative;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 32px;
+  margin-bottom: 36px;
+}
+.doc-hero::before {
+  content: ''; position: absolute;
+  top: -40px; left: -64px; right: -64px; height: 220px;
+  background: radial-gradient(ellipse 60% 100% at 0% 0%, rgba(var(--doc-accent-rgb, 106,166,255),0.10), transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+.doc-hero > * { position: relative; z-index: 1; }
+.doc-hero .eyebrow {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  color: var(--doc-accent, var(--accent)); font-weight: 600;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.doc-hero .eyebrow .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--doc-accent, var(--accent));
+  box-shadow: 0 0 8px var(--doc-accent, var(--accent));
+}
+.doc-hero h1 {
+  font-size: 40px; line-height: 1.1;
+  margin: 12px 0 16px;
+  font-weight: 700; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.doc-hero .one-liner {
+  font-size: 18px; line-height: 1.55;
+  color: var(--text-dim);
+  margin: 0 0 20px;
+  max-width: 70ch;
+}
+.doc-hero .meta-row {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  font-size: 12.5px;
+}
+.meta-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--bg-2); border: 1px solid var(--border);
+  padding: 5px 12px; border-radius: 14px;
+  font-size: 12px; color: var(--text-dim);
+}
+.meta-pill .num { color: var(--text); font-weight: 600; font-feature-settings: "tnum"; }
+.meta-pill.fmt-md   { color: #6aa6ff; border-color: rgba(106,166,255,0.30); background: rgba(106,166,255,0.06); }
+.meta-pill.fmt-pdf  { color: #f87171; border-color: rgba(248,113,113,0.30); background: rgba(248,113,113,0.06); }
+.meta-pill.fmt-docx { color: #38bdf8; border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.fmt-html { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.fmt-htm  { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.complexity-beginner    { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.06); }
+.meta-pill.complexity-intermediate { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.complexity-advanced     { color: #fb923c; border-color: rgba(251,146,60,0.30); background: rgba(251,146,60,0.06); }
+.meta-pill.complexity-unknown      { color: var(--text-mut); }
+.meta-pill.source code { background: transparent; padding: 0; border: 0; font-size: 11px; color: var(--text-dim); }
+
+/* ═══ Curation panels ═══════════════════════════════════════════════ */
+
+.curation {
+  margin-bottom: 36px;
+}
+
+.intro-hook {
+  font-size: 18px;
+  line-height: 1.65;
+  color: var(--text);
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  padding: 8px 0 8px 20px;
+  margin: 0 0 28px;
+  font-style: italic;
+  font-weight: 350;
+}
+
+.exec-summary {
+  background: linear-gradient(135deg, rgba(var(--doc-accent-rgb, 106,166,255),0.07), rgba(var(--doc-accent-rgb, 106,166,255),0.02));
+  border: 1px solid rgba(var(--doc-accent-rgb, 106,166,255),0.20);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 0 0 24px;
+}
+.exec-summary h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent, var(--accent));
+  font-weight: 600;
+}
+.exec-summary p {
+  margin: 0; font-size: 15px; line-height: 1.65; color: var(--text);
+}
+
+.metaphor-callout {
+  display: flex; gap: 14px; align-items: flex-start;
+  background: rgba(184,106,255,0.06);
+  border: 1px solid rgba(184,106,255,0.25);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 0 0 24px;
+}
+.metaphor-callout .icon {
+  font-size: 22px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 4px rgba(184,106,255,0.4));
+}
+.metaphor-callout .body {
+  flex: 1; font-size: 14.5px; line-height: 1.6;
+  color: var(--text);
+}
+.metaphor-callout .body .label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--accent-2); font-weight: 700;
+  display: block; margin-bottom: 4px;
+}
+
+.tutorial-structure {
+  display: grid; grid-template-columns: 1fr; gap: 14px;
+  margin: 0 0 28px;
+}
+.tutorial-section {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--doc-accent);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+}
+.tutorial-section h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent);
+  font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.tutorial-section h3 .num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--doc-accent); color: var(--bg);
+  font-size: 10px; font-weight: 700;
+}
+.tutorial-section p {
+  margin: 0; font-size: 14.5px; line-height: 1.65; color: var(--text);
+}
+
+.context-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin: 0 0 28px;
+}
+.context-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.context-card h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut);
+  font-weight: 600;
+}
+.context-card ul {
+  margin: 0; padding: 0; list-style: none;
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.context-card li {
+  background: var(--bg-3);
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--text-dim);
+  border: 1px solid var(--border-2);
+}
+.context-card.prereqs li { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.05); }
+.context-card.builds li { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.05); }
+.context-card.concepts li { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.05); }
+
+.takeaways {
+  background: linear-gradient(135deg, rgba(74,222,128,0.05), rgba(74,222,128,0.01));
+  border: 1px solid rgba(74,222,128,0.20);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin: 36px 0 0;
+}
+.takeaways h3 {
+  margin: 0 0 10px;
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--ok); font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.takeaways h3::before {
+  content: '✓';
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(74,222,128,0.18);
+  font-size: 12px; font-weight: 700;
+}
+.takeaways ul { margin: 0; padding-left: 22px; }
+.takeaways li {
+  font-size: 14.5px; line-height: 1.6; color: var(--text);
+  margin: 6px 0;
+}
+
+/* ═══ Article body ══════════════════════════════════════════════════ */
+article { font-size: 16px; line-height: 1.78; color: var(--text); max-width: 78ch; }
+article > * + * { margin-top: 1.0em; }
+article p { margin: 0; }
+article h1, article h2, article h3, article h4 {
+  font-weight: 650; letter-spacing: -0.01em; color: var(--text);
+  scroll-margin-top: 90px; position: relative;
+}
+article h1 { font-size: 28px; margin-top: 56px; }
+article h2 {
+  font-size: 24px; margin-top: 56px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+article h3 { font-size: 19px; margin-top: 36px; }
+article h4 { font-size: 16.5px; margin-top: 24px; color: var(--text-dim); }
+article h2::before, article h3::before {
+  content: '#'; position: absolute; left: -28px;
+  color: var(--text-mut); font-weight: 400;
+  opacity: 0; transition: opacity .15s;
+}
+article h2:hover::before, article h3:hover::before { opacity: 1; }
+
+article ul, article ol { padding-left: 1.5em; margin: 0; }
+article li { margin: .35em 0; }
+article li > p { margin: 0; }
+
+article hr {
+  border: 0; height: 1px; background: var(--border); margin: 36px 0;
+}
+
+article blockquote {
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.05);
+  padding: 14px 18px;
+  margin: 22px 0;
+  border-radius: 0 8px 8px 0;
+  color: var(--text-dim);
+}
+article blockquote p { margin: 0; }
+
+article pre {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-size: 13.5px;
+  line-height: 1.65;
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+article pre::-webkit-scrollbar { height: 7px; }
+article pre::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+article code, article pre {
+  font-family: "JetBrains Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+  font-feature-settings: "calt" 1;
+}
+article code.il {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  padding: 1px 7px; border-radius: 5px;
+  font-size: 0.88em;
+  color: var(--accent);
+}
+.code-block { position: relative; }
+.code-block .copy-btn {
+  position: absolute; top: 8px; right: 8px;
+  background: var(--bg-3); border: 1px solid var(--border);
+  color: var(--text-dim); padding: 4px 11px; border-radius: 5px;
+  font-size: 11px; font-family: inherit; cursor: pointer;
+  opacity: 0; transition: all .15s;
+}
+.code-block:hover .copy-btn { opacity: 1; }
+.code-block .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+.code-block .copy-btn.copied { color: var(--ok); border-color: var(--ok); }
+
+article pre .kw   { color: #c084fc; font-weight: 500; }
+article pre .type { color: #67e8f9; }
+article pre .str  { color: #fcd34d; }
+article pre .num  { color: #fb923c; }
+article pre .cmt  { color: #6b7d99; font-style: italic; }
+
+article .tbl-wrap {
+  overflow-x: auto; margin: 22px 0;
+  border-radius: 10px; border: 1px solid var(--border);
+}
+article table { border-collapse: collapse; width: 100%; font-size: 14px; }
+article th {
+  background: var(--bg-3); padding: 11px 14px; text-align: left;
+  font-weight: 600; color: var(--text);
+  border-bottom: 1px solid var(--border-2);
+}
+article td {
+  padding: 11px 14px; border-top: 1px solid var(--border); vertical-align: top;
+}
+article tr:nth-child(even) td { background: rgba(255,255,255,0.013); }
+
+article .diagram-box {
+  background: linear-gradient(135deg, #1c2540 0%, #0e1424 100%);
+  border: 1px solid var(--border-2);
+  border-radius: 12px;
+  padding: 22px 26px;
+  margin: 24px 0;
+  box-shadow: var(--shadow);
+}
+article .diagram-box pre {
+  background: transparent; border: 0; padding: 0;
+  color: #e8edf5; font-size: 13px; line-height: 1.55;
+}
+
+article .img-ref {
+  display: inline-block;
+  background: var(--bg-2); color: var(--text-mut);
+  padding: 1px 8px; border-radius: 4px;
+  font-size: 11px; font-style: normal;
+  border: 1px dashed var(--border-2);
+}
+
+/* ═══ Duplicate banners ═════════════════════════════════════════════ */
+.dup-banner {
+  background: linear-gradient(135deg, rgba(251,191,36,0.10), rgba(251,191,36,0.04));
+  border: 1px solid rgba(251,191,36,0.35);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 18px;
+  font-size: 14px; line-height: 1.55;
+  display: flex; gap: 14px; align-items: flex-start;
+}
+.dup-banner + .dup-banner { margin-top: 0; }
+.dup-banner .icon { font-size: 22px; line-height: 1.2; flex-shrink: 0; }
+.dup-banner .body { flex: 1; min-width: 0; }
+.dup-banner h4 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--warn); text-transform: uppercase; letter-spacing: 1px; }
+.dup-banner p { margin: 0; color: var(--text-dim); }
+.dup-banner ul { margin: 6px 0 0; padding-left: 22px; color: var(--text-dim); }
+.dup-banner ul li { margin: 3px 0; word-break: break-word; }
+.dup-banner code {
+  background: var(--bg-3); padding: 2px 7px; border-radius: 5px;
+  font-size: 0.92em; color: var(--text);
+}
+.dup-banner.exact {
+  border-color: rgba(248,113,113,0.40);
+  background: linear-gradient(135deg, rgba(248,113,113,0.10), rgba(248,113,113,0.04));
+}
+.dup-banner.exact h4 { color: var(--bad); }
+.dup-banner.near {
+  border-color: rgba(56,189,248,0.40);
+  background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(56,189,248,0.04));
+}
+.dup-banner.near h4 { color: var(--info); }
+.banner-stack { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+
+/* ═══ PDF page cards ════════════════════════════════════════════════ */
+.pdf-page {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin: 24px 0;
+  overflow: hidden;
+  scroll-margin-top: 90px;
+}
+.pdf-page .page-head {
+  background: var(--bg-3);
+  padding: 9px 20px;
+  font-size: 11px; font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 1.4px;
+  border-bottom: 1px solid var(--border);
+}
+.pdf-page .page-body { padding: 18px 24px 22px; }
+.pdf-page pre {
+  margin: 0; background: transparent; border: 0; padding: 0;
+  white-space: pre-wrap; word-wrap: break-word;
+  color: var(--text); font-size: 13px; line-height: 1.6;
+}
+
+.empty-note {
+  background: var(--bg-2);
+  border: 1px dashed var(--border-2);
+  border-radius: 10px;
+  padding: 18px 22px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* ═══ Cross-references + related ════════════════════════════════════ */
+.cross-refs {
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.cross-refs h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.cross-ref-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.cross-ref-list a {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: all .15s;
+}
+.cross-ref-list a:hover {
+  color: var(--text);
+  border-color: var(--doc-accent, var(--accent));
+  background: var(--bg-3);
+  text-decoration: none;
+}
+.cross-ref-list a .arrow { color: var(--doc-accent, var(--accent)); margin-right: 6px; }
+
+.related {
+  margin-top: 48px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.related h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 18px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.related-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+.related-card {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+}
+.related-card:hover {
+  border-color: var(--doc-accent, var(--accent));
+  transform: translateY(-1px);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+}
+.related-card .title {
+  font-weight: 600; font-size: 13.5px; line-height: 1.35;
+  color: var(--text);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.related-card .meta {
+  font-size: 11px; color: var(--text-mut); margin-top: 6px;
+  display: flex; gap: 8px; align-items: center;
+}
+.related-card .meta .badge {
+  padding: 1px 6px; border-radius: 3px;
+  background: var(--bg-3); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* ═══ Master index page ═════════════════════════════════════════════ */
+
+.index-hero {
+  text-align: center;
+  padding: 80px 24px 56px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.index-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 30% 0%, rgba(106,166,255,0.13), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 70% 30%, rgba(184,106,255,0.10), transparent 70%);
+  pointer-events: none;
+}
+.index-hero > * { position: relative; z-index: 1; }
+.index-hero .eyebrow {
+  color: var(--accent); font-size: 12px;
+  text-transform: uppercase; letter-spacing: 1.8px; font-weight: 600;
+}
+.index-hero h1 {
+  font-size: 56px; margin: 16px 0 12px;
+  font-weight: 750; letter-spacing: -0.025em;
+  background: linear-gradient(135deg, #6aa6ff 0%, #b86aff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.index-hero .tagline {
+  color: var(--text-dim); font-size: 18px;
+  max-width: 720px; margin: 14px auto 0; line-height: 1.6;
+}
+.search-row {
+  display: flex; gap: 12px;
+  max-width: 720px; margin: 36px auto 0;
+}
+.search-row input {
+  flex: 1;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 15px;
+  padding: 14px 22px;
+  border-radius: 14px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color .15s, box-shadow .15s;
+}
+.search-row input::placeholder { color: var(--text-mut); }
+.search-row input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(106,166,255,0.13);
+}
+
+.summary-stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  max-width: 1080px; margin: 36px auto 56px; padding: 0 24px;
+}
+.stat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  text-align: center;
+  transition: border-color .15s;
+}
+.stat-card:hover { border-color: var(--border-2); }
+.stat-card .num {
+  font-size: 32px; font-weight: 700; color: var(--accent);
+  font-feature-settings: "tnum"; line-height: 1.1;
+}
+.stat-card .lbl {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--text-mut); margin-top: 6px;
+}
+
+.split-view {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  max-width: 1320px; margin: 0 auto; padding: 0 24px 60px;
+}
+@media (max-width: 980px) {
+  .split-view { grid-template-columns: 1fr; }
+}
+
+.hub-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 32px 36px;
+  position: relative;
+  overflow: hidden;
+  transition: all .2s;
+}
+.hub-card.core::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 0% 0%, rgba(106,166,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card.applications::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 100% 0%, rgba(184,106,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card > * { position: relative; z-index: 1; }
+.hub-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.hub-card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 700;
+}
+.hub-card.core .label { color: var(--accent); }
+.hub-card.applications .label { color: var(--accent-2); }
+.hub-card h2 {
+  font-size: 32px; line-height: 1.15;
+  margin: 8px 0 12px;
+  font-weight: 700; letter-spacing: -0.02em;
+  color: var(--text);
+}
+.hub-card .desc {
+  font-size: 15px; line-height: 1.6; color: var(--text-dim);
+  margin: 0 0 24px;
+}
+.hub-card .stats {
+  display: flex; gap: 18px; margin-bottom: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-card .stats .num { color: var(--text); font-weight: 600; }
+.hub-card .cta {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 10px;
+  font-size: 13.5px; font-weight: 600;
+  text-decoration: none;
+}
+.hub-card.core .cta {
+  background: rgba(106,166,255,0.12);
+  color: var(--accent);
+  border: 1px solid rgba(106,166,255,0.30);
+}
+.hub-card.applications .cta {
+  background: rgba(184,106,255,0.12);
+  color: var(--accent-2);
+  border: 1px solid rgba(184,106,255,0.30);
+}
+.hub-card .cta:hover { text-decoration: none; transform: translateX(2px); }
+.hub-card .quick {
+  margin-top: 24px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.hub-card .quick h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut); font-weight: 600;
+}
+.hub-card .quick ul { list-style: none; margin: 0; padding: 0; }
+.hub-card .quick li { padding: 4px 0; font-size: 13px; }
+.hub-card .quick li a { color: var(--text-dim); text-decoration: none; }
+.hub-card .quick li a:hover { color: var(--text); }
+
+/* ═══ Hub page (CORE / APPLICATIONS landing) ════════════════════════ */
+
+.hub-hero {
+  padding: 64px 32px 36px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1240px; margin: 0 auto;
+}
+.hub-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 600;
+}
+.hub-hero h1 {
+  font-size: 48px; margin: 12px 0 14px;
+  font-weight: 750; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.hub-hero p {
+  color: var(--text-dim); font-size: 17px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.hub-hero .stats {
+  display: flex; gap: 22px; margin-top: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-hero .stats .num { color: var(--text); font-weight: 600; }
+
+.cat-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 18px;
+  max-width: 1280px; margin: 28px auto; padding: 0 32px 80px;
+}
+.cat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 24px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.cat-card:hover {
+  border-color: var(--border-3);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+}
+.cat-card .head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 12px;
+}
+.cat-card .head .icon {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 18px;
+  color: var(--accent);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.cat-card.app .head .icon { color: var(--accent-2); }
+.cat-card .title {
+  font-size: 18px; font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  flex: 1;
+}
+.cat-card .head .count {
+  font-size: 12px; color: var(--text-mut);
+  flex-shrink: 0;
+}
+.cat-card .tagline {
+  font-size: 13px; color: var(--accent);
+  font-weight: 500;
+  margin: 0;
+}
+.cat-card.app .tagline { color: var(--accent-2); }
+.cat-card .desc {
+  font-size: 13.5px; color: var(--text-dim);
+  line-height: 1.55;
+  margin: 4px 0 0;
+}
+
+/* ═══ Category landing (per family/domain) ══════════════════════════ */
+
+.cat-hero {
+  padding: 56px 32px 32px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1180px; margin: 0 auto;
+}
+.cat-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px; font-weight: 600;
+}
+.cat-hero h1 {
+  font-size: 42px; margin: 10px 0 14px;
+  font-weight: 700; letter-spacing: -0.02em;
+}
+.cat-hero p {
+  color: var(--text-dim); font-size: 16px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.cat-hero .stats {
+  display: flex; gap: 20px; margin-top: 22px;
+  font-size: 13px; color: var(--text-mut);
+}
+.cat-hero .stats .num { color: var(--text); font-weight: 600; }
+.cat-hero .search-row {
+  max-width: 520px; margin: 24px 0 0;
+}
+.cat-hero .search-row input { padding: 12px 18px; font-size: 14px; }
+
+.doc-cards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 14px;
+  max-width: 1180px; margin: 36px auto 96px;
+  padding: 0 32px;
+}
+.doc-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 22px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .18s;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.doc-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.doc-card.app:hover { border-color: var(--accent-2); }
+.doc-card .head {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+}
+.doc-card .title {
+  font-size: 16px; font-weight: 650; line-height: 1.3;
+  color: var(--text); flex: 1;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  letter-spacing: -0.01em;
+}
+.doc-card .badges { display: flex; gap: 4px; flex-shrink: 0; }
+.doc-card .badge {
+  font-size: 9px; padding: 2px 7px; border-radius: 3px;
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px;
+  background: var(--bg-3); color: var(--text-mut);
+}
+.doc-card .badge.dup { background: rgba(248,113,113,0.18); color: var(--bad); }
+.doc-card .badge.fmt-md { background: rgba(106,166,255,0.18); color: #6aa6ff; }
+.doc-card .badge.fmt-pdf { background: rgba(248,113,113,0.18); color: #f87171; }
+.doc-card .badge.fmt-docx { background: rgba(56,189,248,0.18); color: #38bdf8; }
+.doc-card .badge.fmt-html { background: rgba(251,191,36,0.18); color: #fbbf24; }
+.doc-card .one-liner {
+  font-size: 13.5px; color: var(--text-dim); line-height: 1.55;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  flex: 1;
+}
+.doc-card .meta {
+  display: flex; gap: 14px; font-size: 11px; color: var(--text-mut);
+  border-top: 1px solid var(--border); padding-top: 12px;
+  margin-top: auto;
+}
+.doc-card .meta .num { color: var(--text-dim); font-weight: 600; font-feature-settings: "tnum"; }
+
+/* ═══ Mobile ════════════════════════════════════════════════════════ */
+@media (max-width: 980px) {
+  .layout { grid-template-columns: 1fr; }
+  .toc-sidebar { display: none; }
+  .content { padding: 28px 24px 80px; }
+  .doc-hero h1 { font-size: 30px; }
+  .doc-hero .one-liner { font-size: 16px; }
+  .topbar { padding: 10px 18px; }
+  .index-hero h1 { font-size: 38px; }
+  .index-hero { padding: 56px 20px 36px; }
+  .hub-hero h1 { font-size: 34px; }
+  .hub-hero { padding: 40px 20px 24px; }
+  .cat-hero h1 { font-size: 32px; }
+  .cat-hero { padding: 36px 20px 24px; }
+  .doc-cards, .cat-grid { padding: 0 20px 60px; }
+  .split-view { padding: 0 20px 40px; }
+}
+</style>
+</head>
+<body data-doc-type="applied-implementation">
+<nav class="topbar">
+<div class="crumbs"><a href="../../00-Index.html">Learning</a><span class="sep">›</span><a href="../_Hub.html">APPLICATIONS</a><span class="sep">›</span><a href="_Category.html">Stock Service (BioBraga)</a><span class="sep">›</span><span class="current">Stock Service System — Formal Technical Documentation</span></div>
+<div class="actions"><a class="action" href="stock-service-system.docx" download>↓ Download</a><a class="action" href="../../00-Index.html">All docs</a></div>
+</nav>
+<div class="layout">
+<aside class="toc-sidebar"><h3>On this page</h3><ol><li class="lvl-2"><a href="#stock-service-system-technical-documentation">Stock Service System - Technical Documentation</a></li><li class="lvl-2"><a href="#table-of-contents">Table of Contents</a></li><li class="lvl-2"><a href="#system-overview">System Overview</a></li><li class="lvl-3"><a href="#purpose">Purpose</a></li><li class="lvl-3"><a href="#key-features">Key Features</a></li><li class="lvl-3"><a href="#architecture-philosophy">Architecture Philosophy</a></li><li class="lvl-2"><a href="#architecture">Architecture</a></li><li class="lvl-3"><a href="#system-architecture-diagram">System Architecture Diagram</a></li><li class="lvl-3"><a href="#component-interaction-flow">Component Interaction Flow</a></li><li class="lvl-2"><a href="#core-services">Core Services</a></li><li class="lvl-3"><a href="#istockservice-interface">IStockService Interface</a></li><li class="lvl-3"><a href="#stockservice-implementation">StockService Implementation</a></li><li class="lvl-4"><a href="#getarticlestockbydateasync">GetArticleStockByDateAsync</a></li><li class="lvl-4"><a href="#getstockmovementsasync">GetStockMovementsAsync</a></li><li class="lvl-2"><a href="#caching-strategy">Caching Strategy</a></li><li class="lvl-3"><a href="#multi-tier-cache-architecture">Multi-Tier Cache Architecture</a></li><li class="lvl-4"><a href="#cache-key-generation">Cache Key Generation</a></li><li class="lvl-4"><a href="#graduated-expiration-strategy">Graduated Expiration Strategy</a></li><li class="lvl-3"><a href="#cache-decision-matrix">Cache Decision Matrix</a></li><li class="lvl-3"><a href="#cache-invalidation-patterns">Cache Invalidation Patterns</a></li><li class="lvl-4"><a href="#time-based-expiration">Time-Based Expiration</a></li><li class="lvl-4"><a href="#manual-invalidation-extension">Manual Invalidation (Extension)</a></li><li class="lvl-2"><a href="#database-integration">Database Integration</a></li><li class="lvl-3"><a href="#sql-server-functions">SQL Server Functions</a></li><li class="lvl-4"><a href="#fn-artigostockbydate">fn_ArtigoStockByDate</a></li><li class="lvl-4"><a href="#fn-artigousedinfluxo">fn_ArtigoUsedInFluxo</a></li><li class="lvl-3"><a href="#connection-management">Connection Management</a></li><li class="lvl-2"><a href="#ui-integration">UI Integration</a></li><li class="lvl-3"><a href="#pre-loading-strategy-in-artigodetalhe-razor">Pre-Loading Strategy in ArtigoDetalhe.razor</a></li><li class="lvl-4"><a href="#initialization-phase">Initialization Phase</a></li><li class="lvl-4"><a href="#tab-activation">Tab Activation</a></li><li class="lvl-3"><a href="#date-filtering-with-task-management">Date Filtering with Task Management</a></li><li class="lvl-2"><a href="#performance-optimization">Performance Optimization</a></li><li class="lvl-3"><a href="#optimization-techniques">Optimization Techniques</a></li><li class="lvl-4"><a href="#1-task-pre-loading">1. Task Pre-Loading</a></li><li class="lvl-4"><a href="#2-connection-pooling">2. Connection Pooling</a></li><li class="lvl-4"><a href="#3-query-optimization">3. Query Optimization</a></li><li class="lvl-4"><a href="#4-graduated-cache-expiration">4. Graduated Cache Expiration</a></li><li class="lvl-3"><a href="#performance-metrics">Performance Metrics</a></li><li class="lvl-3"><a href="#memory-management">Memory Management</a></li><li class="lvl-2"><a href="#api-reference">API Reference</a></li><li class="lvl-3"><a href="#extension-methods">Extension Methods</a></li><li class="lvl-3"><a href="#data-transfer-objects">Data Transfer Objects</a></li><li class="lvl-2"><a href="#configuration">Configuration</a></li><li class="lvl-3"><a href="#service-registration">Service Registration</a></li><li class="lvl-4"><a href="#basic-configuration">Basic Configuration</a></li><li class="lvl-4"><a href="#advanced-configuration-with-caching">Advanced Configuration with Caching</a></li><li class="lvl-3"><a href="#configuration-settings">Configuration Settings</a></li><li class="lvl-2"><a href="#monitoring-troubleshooting">Monitoring &amp; Troubleshooting</a></li><li class="lvl-3"><a href="#logging-strategy">Logging Strategy</a></li><li class="lvl-3"><a href="#health-checks">Health Checks</a></li><li class="lvl-3"><a href="#performance-monitoring">Performance Monitoring</a></li><li class="lvl-3"><a href="#common-issues-solutions">Common Issues &amp; Solutions</a></li><li class="lvl-3"><a href="#debug-helpers">Debug Helpers</a></li><li class="lvl-2"><a href="#best-practices">Best Practices</a></li><li class="lvl-3"><a href="#do-s">Do&#x27;s ✅</a></li><li class="lvl-3"><a href="#don-ts">Don&#x27;ts ❌</a></li><li class="lvl-2"><a href="#future-enhancements">Future Enhancements</a></li><li class="lvl-3"><a href="#proposed-improvements">Proposed Improvements</a></li></ol></aside>
+<main class="content">
+
+<header class="doc-hero">
+  <div class="eyebrow"><span class="dot"></span>Implementation · Stock Service (BioBraga)</div>
+  <h1>Stock Service System — Formal Technical Documentation</h1>
+  <p class="one-liner">Formal technical reference for a high-performance inventory tracking system built around a decorator-pattern cached service layer, SQL Server functions, pre-loading tasks, and graduated cache expiration.</p>
+  <div class="meta-row">
+    <span class="meta-pill fmt-docx">DOCX</span>
+    <span class="meta-pill complexity-advanced">Advanced</span>
+    <span class="meta-pill"><span class="num">2,083</span> words</span>
+    <span class="meta-pill"><span class="num">10</span> min read</span>
+    <span class="meta-pill source">Source: <code>Education/Stock/ENG/StockServiceSystemFormalDocumentation.docx</code></span>
+  </div>
+</header>
+<div class="banner-stack"><div class="dup-banner near"><div class="icon">≈</div><div class="body"><h4>Near-duplicate content</h4><p>Significant text overlap (Jaccard ≥ 0.65) with — likely audience variants (ENG/PT, ForDummies/Formal) of the same source:</p><ul><li><code>Education/Stock/ENG/StockServiceSystemFormalDocumentation.pdf</code></li></ul></div></div></div>
+<div class="curation"><p class="intro-hook">Every time a user clicks the Stock tab on an article page, the database has to sum every inbound and outbound movement since the beginning of time to tell them how many units are on the shelf. That&#x27;s expensive. Now imagine 40 users clicking that tab every minute across 50,000 articles. This is how you make that scream instead of crawl.</p>
+<div class="exec-summary"><h3>Executive summary</h3><p>This is the formal architecture document for the Stock Service — a three-layer system (UI/Service/Data) where a CachedStockService decorator wraps a StockService implementation that talks to SQL Server table-valued functions (fn_ArtigoStockByDate, fn_ArtigoUsedInFluxo) through a raw ADO.NET connection for performance. The caching strategy uses graduated expiration: 1 hour for historical data older than 7 days, 5 minutes for recent data, nothing at all for filtered queries. Razor components pre-load expensive operations as Tasks in OnInitializedAsync so that by the time the user clicks the Stock tab, the data is already there. The doc also covers extension methods, health checks, structured logging with cache-hit tagging, cache inspection endpoints, and future enhancements like Redis and SignalR-driven invalidation.</p></div>
+<div class="metaphor-callout"><div class="icon">💡</div><div class="body"><span class="label">Metaphor</span>The Stock Service is a coffee shop with a secret second menu — the barista keeps sticky notes of the most recent orders so that if you ask for the same drink someone just ordered, they hand it to you instantly. Regular espresso from yesterday? Sticky note lasts an hour because yesterday can&#x27;t change. Today&#x27;s cappuccino? Sticky note lasts five minutes because someone might modify it. A custom half-caf oat milk with exactly 1.5 pumps of vanilla? No sticky note — too specific, nobody else is ordering that.</div></div>
+<div class="tutorial-structure"><div class="tutorial-section"><h3><span class="num">1</span>Why it exists</h3><p>Inventory queries are the most asked question in a warehouse ERP, and they&#x27;re brutally expensive because computing &#x27;what did I have on January 15th?&#x27; means summing every movement from the beginning of time up to that date. Hitting the database for every query brings the system to its knees and users wait 2-3 seconds every single time. The Stock Service exists to eliminate that wait by caching aggressively for data that doesn&#x27;t change (historical stock) and conservatively for data that might (today&#x27;s stock), while never caching filtered queries that are too specific to repeat. The result is sub-millisecond responses for 99% of queries with the database staying cool.</p></div><div class="tutorial-section"><h3><span class="num">2</span>What it does</h3><p>Exposes an IStockService with four operations: GetArticleStockByDateAsync (point-in-time query), GetStockMovementsAsync (movement history with optional date filters), GetStockTotalsAsync (aggregate entradas/saídas), and CheckFluxoAsync (per-document-line flow). A CachedStockService wraps the real StockService as a decorator and checks IMemoryCache first, falling back to the real service on miss and then storing the result with an expiration chosen based on how old the queried date is. The UI layer (ArtigoDetalhe.razor) kicks off stock queries as Tasks in OnInitializedAsync so that clicking the Stock tab awaits an already-completed task.</p></div><div class="tutorial-section"><h3><span class="num">3</span>How it works</h3><p>Under the hood, the StockService opens a raw SqlCommand on the DbContext&#x27;s connection and invokes the dbo.fn_ArtigoStockByDate table-valued function with parameterized arguments — deliberately bypassing EF Core&#x27;s change tracker and LINQ translation for maximum speed. A &#x27;smart trick&#x27; adds one day to the filter date so the query includes everything up to end-of-day. Movement queries use EF Core LINQ with three joins (CrmDocumentoDetalhes → CrmDocumentos → CrmTipoDocumentos → CrmSerieDocumentos) filtered by Movstocks=true. The CachedStockService generates keys like &#x27;stock_{artigoId}_{yyyyMMdd}&#x27; and picks an expiration: TimeSpan.FromHours(1) if the date is more than 7 days old, TimeSpan.FromMinutes(5) otherwise. The Razor layer orchestrates task reuse — if a filter hasn&#x27;t changed, it awaits the existing _stockMovementsTask field; if the filter did change, it creates a new task and parallel-awaits a totals task alongside it. Health checks run a test query + cache statistics, and structured logging emits one-line entries with ArticleId, Date, CacheHit, and ExecutionTime tags for monitoring.</p></div></div>
+<div class="context-row"><div class="context-card prereqs"><h4>You should know first</h4><ul><li>EF Core basics</li><li>Blazor components</li><li>IMemoryCache</li><li>dependency injection</li><li>async/await</li></ul></div><div class="context-card concepts"><h4>Key concepts covered</h4><ul><li>decorator pattern for caching</li><li>graduated cache expiration</li><li>SQL Server table-valued functions</li><li>IDbContextFactory and connection pooling</li><li>Task pre-loading in Blazor</li><li>IMemoryCache with size limits</li><li>point-in-time stock queries</li></ul></div><div class="context-card builds"><h4>Opens the door to</h4><ul><li>distributed caching with Redis</li><li>event-driven cache invalidation</li><li>CQRS for read-heavy systems</li></ul></div></div></div>
+<article>
+<h1 id="stock-service-system-technical-documentation">Stock Service System - Technical Documentation</h1>
+<h2 id="table-of-contents">Table of Contents</h2>
+<p>System Overview</p>
+<p>Architecture</p>
+<p>Core Services</p>
+<p>Caching Strategy</p>
+<p>Database Integration</p>
+<p>UI Integration</p>
+<p>Performance Optimization</p>
+<p>API Reference</p>
+<p>Configuration</p>
+<p>Monitoring &amp; Troubleshooting</p>
+<h2 id="system-overview">System Overview</h2>
+<h3 id="purpose">Purpose</h3>
+<p>The Stock Service System provides high-performance, real-time inventory tracking with intelligent caching mechanisms to minimize database load while maintaining data accuracy.</p>
+<h3 id="key-features">Key Features</h3>
+<p>Real-time stock level queries with point-in-time accuracy</p>
+<p>Historical stock movement tracking</p>
+<p>Multi-tier caching with intelligent expiration</p>
+<p>Async task pre-loading for perceived instant response</p>
+<p>SQL Server function integration for complex calculations</p>
+<p>Memory-efficient caching with graduated expiration</p>
+<h3 id="architecture-philosophy">Architecture Philosophy</h3>
+<p>The system implements a Decorator Pattern with separation of concerns:</p>
+<p>Core Service Layer: Business logic and database operations</p>
+<p>Caching Layer: Memory management and cache invalidation</p>
+<p>UI Layer: Presentation and user interaction</p>
+<h2 id="architecture">Architecture</h2>
+<h3 id="system-architecture-diagram">System Architecture Diagram</h3>
+<div class="diagram-box"><pre>┌──────────────────────────────────────────────────────────┐
+│                    Presentation Layer                    │
+│                   (ArtigoDetalhe.razor)                  │
+│  ┌──────────────────────────────────────────────────┐    │
+│  │  Pre-loading Tasks  │  MudBlazor Components      │    │
+│  │  State Management   │  Event Handlers            │    │
+│  └────────────────────┬─────────────────────────────┘    │
+└───────────────────────┼──────────────────────────────────┘
+│
+┌───────────────────────▼──────────────────────────────────┐
+│                     Service Layer                        │
+│  ┌─────────────────────────────────────────────────┐     │
+│  │            IStockService Interface              │     │
+│  └──────────────────┬──────────────────────────────┘     │
+│           ┌─────────▼─────────┐                          │
+│           │ CachedStockService│ ← Decorator              │
+│           │   (IMemoryCache)  │                          │
+│           └─────────┬─────────┘                          │
+│           ┌─────────▼─────────┐                          │
+│           │   StockService    │ ← Core Implementation    │
+│           └─────────┬─────────┘                          │
+└───────────────────────┼──────────────────────────────────┘
+│
+┌───────────────────────▼──────────────────────────────────┐
+│                  Data Access Layer                       │
+│  ┌──────────────────────────────────────────────────┐    │
+│  │  Entity Framework  │  SQL Functions              │    │
+│  │  BioBragaContext   │  fn_ArtigoStockByDate       │    │
+│  │                    │  fn_ArtigoUsedInFluxo       │    │
+│  └──────────────────────────────────────────────────┘    │
+└──────────────────────────────────────────────────────────┘</pre></div>
+<h3 id="component-interaction-flow">Component Interaction Flow</h3>
+<pre><code class="lang-text">sequenceDiagram
+participant UI as UI Layer
+participant CS as CachedService
+participant MC as MemoryCache
+participant SS as StockService
+participant DB as Database
+UI-&gt;&gt;CS: GetArticleStockByDateAsync(123, &quot;2024-01-15&quot;)
+CS-&gt;&gt;MC: Check cache key &quot;stock_123_20240115&quot;
+alt Cache Hit
+MC--&gt;&gt;CS: Return cached ArtigoStock
+CS--&gt;&gt;UI: Return immediately
+else Cache Miss
+CS-&gt;&gt;SS: GetArticleStockByDateAsync(123, &quot;2024-01-15&quot;)
+SS-&gt;&gt;DB: Execute fn_ArtigoStockByDate
+DB--&gt;&gt;SS: Return stock data
+SS--&gt;&gt;CS: Return ArtigoStock
+CS-&gt;&gt;MC: Store with expiration
+CS--&gt;&gt;UI: Return ArtigoStock
+end</code></pre>
+<h2 id="core-services">Core Services</h2>
+<h3 id="istockservice-interface">IStockService Interface</h3>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">interface</span> <span class="type">IStockService</span>
+{
+<span class="cmt">// Point-in-time stock query</span>
+<span class="type">Task</span>&lt;<span class="type">ArtigoStock</span>?&gt; <span class="type">GetArticleStockByDateAsync</span>(<span class="kw">int</span> artigoId, <span class="type">DateTime</span> date);
+<span class="cmt">// Movement history retrieval</span>
+<span class="type">Task</span>&lt;<span class="type">List</span>&lt;<span class="type">StockMov</span>&gt;&gt; <span class="type">GetStockMovementsAsync</span>(
+<span class="kw">int</span> artigoId,
+<span class="type">DateTime</span>? startDate = <span class="kw">null</span>,
+<span class="type">DateTime</span>? endDate = <span class="kw">null</span>);
+<span class="cmt">// Aggregated totals calculation</span>
+<span class="type">Task</span>&lt;(<span class="kw">decimal</span> entradas, <span class="kw">decimal</span> saidas)&gt; <span class="type">GetStockTotalsAsync</span>(
+<span class="kw">int</span> artigoId,
+<span class="type">DateTime</span>? startDate = <span class="kw">null</span>,
+<span class="type">DateTime</span>? endDate = <span class="kw">null</span>);
+<span class="cmt">// Document line flow check</span>
+<span class="type">Task</span>&lt;<span class="kw">decimal</span>&gt; <span class="type">CheckFluxoAsync</span>(<span class="kw">int</span> artigoId, <span class="type">DateTime</span> date, <span class="kw">int</span> linhaId);
+}</code></pre>
+<h3 id="stockservice-implementation">StockService Implementation</h3>
+<h4 id="getarticlestockbydateasync">GetArticleStockByDateAsync</h4>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="type">ArtigoStock</span>?&gt; <span class="type">GetArticleStockByDateAsync</span>(<span class="kw">int</span> artigoId, <span class="type">DateTime</span> date)
+{
+<span class="cmt">// Critical: Add one day for end-of-day inclusion</span>
+<span class="kw">var</span> dateWithTime = date.<span class="type">Date</span>.<span class="type">AddDays</span>(<span class="num">1</span>);
+<span class="kw">await</span> <span class="kw">using</span> <span class="kw">var</span> dbContext = <span class="kw">await</span> _contextFactory.<span class="type">CreateDbContextAsync</span>();
+<span class="kw">await</span> <span class="kw">using</span> <span class="kw">var</span> connection = dbContext.<span class="type">Database</span>.<span class="type">GetDbConnection</span>();
+<span class="kw">await</span> connection.<span class="type">OpenAsync</span>();
+<span class="cmt">// Direct SQL function call for performance</span>
+<span class="kw">await</span> <span class="kw">using</span> <span class="kw">var</span> command = connection.<span class="type">CreateCommand</span>();
+command.<span class="type">CommandText</span> = <span class="str">&quot;SELECT * FROM dbo.fn_ArtigoStockByDate(@ArtigoId, @Date)&quot;</span>;
+command.<span class="type">CommandType</span> = <span class="type">CommandType</span>.<span class="type">Text</span>;
+<span class="cmt">// Strongly-typed parameters prevent SQL injection</span>
+command.<span class="type">Parameters</span>.<span class="type">Add</span>(<span class="kw">new</span> <span class="type">SqlParameter</span>(<span class="str">&quot;@ArtigoId&quot;</span>, <span class="type">SqlDbType</span>.<span class="type">Int</span>) { <span class="type">Value</span> = artigoId });
+command.<span class="type">Parameters</span>.<span class="type">Add</span>(<span class="kw">new</span> <span class="type">SqlParameter</span>(<span class="str">&quot;@Date&quot;</span>, <span class="type">SqlDbType</span>.<span class="type">DateTime</span>) { <span class="type">Value</span> = dateWithTime });
+<span class="kw">await</span> <span class="kw">using</span> <span class="kw">var</span> reader = <span class="kw">await</span> command.<span class="type">ExecuteReaderAsync</span>();
+<span class="kw">if</span> (<span class="kw">await</span> reader.<span class="type">ReadAsync</span>())
+{
+<span class="kw">return</span> <span class="kw">new</span> <span class="type">ArtigoStock</span>
+{
+<span class="type">ArtigoId</span> = reader.<span class="type">GetInt32</span>(reader.<span class="type">GetOrdinal</span>(<span class="str">&quot;ARTIGO_ID&quot;</span>)),
+<span class="type">Entrada</span> = reader.<span class="type">GetDecimal</span>(reader.<span class="type">GetOrdinal</span>(<span class="str">&quot;ENTRADA&quot;</span>)),
+<span class="type">Saida</span> = reader.<span class="type">GetDecimal</span>(reader.<span class="type">GetOrdinal</span>(<span class="str">&quot;SAIDA&quot;</span>)),
+<span class="type">Stock</span> = reader.<span class="type">GetDecimal</span>(reader.<span class="type">GetOrdinal</span>(<span class="str">&quot;STOCK&quot;</span>))
+};
+}
+<span class="kw">return</span> <span class="kw">null</span>;
+}</code></pre>
+<h4 id="getstockmovementsasync">GetStockMovementsAsync</h4>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="type">List</span>&lt;<span class="type">StockMov</span>&gt;&gt; <span class="type">GetStockMovementsAsync</span>(
+<span class="kw">int</span> artigoId,
+<span class="type">DateTime</span>? startDate = <span class="kw">null</span>,
+<span class="type">DateTime</span>? endDate = <span class="kw">null</span>)
+{
+<span class="kw">using</span> <span class="kw">var</span> dbContext = <span class="kw">await</span> _contextFactory.<span class="type">CreateDbContextAsync</span>();
+<span class="cmt">// Complex LINQ join for movement tracking</span>
+<span class="kw">var</span> query = dbContext.<span class="type">CrmDocumentoDetalhes</span>
+.<span class="type">Join</span>(dbContext.<span class="type">CrmDocumentos</span>,
+detalhe =&gt; detalhe.<span class="type">Documentoid</span>,
+doc =&gt; doc.<span class="type">Id</span>,
+(detalhe, doc) =&gt; <span class="kw">new</span> { detalhe, doc })
+.<span class="type">Join</span>(dbContext.<span class="type">CrmTipoDocumentos</span>,
+x =&gt; x.doc.<span class="type">Tipodocumentoid</span>,
+tipo =&gt; tipo.<span class="type">Id</span>,
+(x, tipo) =&gt; <span class="kw">new</span> { x.detalhe, x.doc, tipo })
+.<span class="type">Join</span>(dbContext.<span class="type">CrmSerieDocumentos</span>,
+x =&gt; x.doc.<span class="type">Serieid</span>,
+serie =&gt; serie.<span class="type">Id</span>,
+(x, serie) =&gt; <span class="kw">new</span> { x.detalhe, x.doc, x.tipo, serie })
+.<span class="type">Where</span>(x =&gt; x.detalhe.<span class="type">ArtigoId</span> == artigoId &amp;&amp; x.tipo.<span class="type">Movstocks</span> == <span class="kw">true</span>);
+<span class="cmt">// Dynamic date filtering</span>
+<span class="kw">if</span> (startDate.<span class="type">HasValue</span>)
+query = query.<span class="type">Where</span>(x =&gt; x.doc.<span class="type">Data</span> &gt;= startDate.<span class="type">Value</span>.<span class="type">Date</span>);
+<span class="kw">if</span> (endDate.<span class="type">HasValue</span>)
+query = query.<span class="type">Where</span>(x =&gt; x.doc.<span class="type">Data</span> &lt;= endDate.<span class="type">Value</span>.<span class="type">Date</span>.<span class="type">AddDays</span>(<span class="num">1</span>).<span class="type">AddSeconds</span>(-<span class="num">1</span>));
+<span class="kw">return</span> <span class="kw">await</span> query
+.<span class="type">Select</span>(x =&gt; <span class="kw">new</span> <span class="type">StockMov</span>
+{
+<span class="type">ArtigoId</span> = x.detalhe.<span class="type">ArtigoId</span>,
+doc = x.doc,
+docdetalhe = x.detalhe,
+doctipo = x.tipo,
+docserie = x.serie
+})
+.<span class="type">OrderByDescending</span>(s =&gt; s.doc.<span class="type">Data</span>)
+.<span class="type">ToListAsync</span>();
+}</code></pre>
+<h2 id="caching-strategy">Caching Strategy</h2>
+<h3 id="multi-tier-cache-architecture">Multi-Tier Cache Architecture</h3>
+<h4 id="cache-key-generation">Cache Key Generation</h4>
+<pre><code class="lang-csharp"><span class="cmt">// Pattern: {type}_{identifier}_{date}</span>
+<span class="kw">var</span> cacheKey = $<span class="str">&quot;stock_{artigoId}_{date:yyyyMMdd}&quot;</span>;</code></pre>
+<h4 id="graduated-expiration-strategy">Graduated Expiration Strategy</h4>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="type">ArtigoStock</span>?&gt; <span class="type">GetArticleStockByDateAsync</span>(<span class="kw">int</span> artigoId, <span class="type">DateTime</span> date)
+{
+<span class="kw">var</span> cacheKey = $<span class="str">&quot;stock_{artigoId}_{date:yyyyMMdd}&quot;</span>;
+<span class="cmt">// L1 Cache: Memory Check</span>
+<span class="kw">if</span> (_cache.<span class="type">TryGetValue</span>&lt;<span class="type">ArtigoStock</span>&gt;(cacheKey, <span class="kw">out</span> <span class="kw">var</span> cachedStock))
+{
+_logger.<span class="type">LogDebug</span>(<span class="str">&quot;Stock cache hit for article {ArtigoId} at date {Date}&quot;</span>,
+artigoId, date);
+<span class="kw">return</span> cachedStock;
+}
+<span class="cmt">// L2: Database Query</span>
+<span class="kw">var</span> stock = <span class="kw">await</span> _innerService.<span class="type">GetArticleStockByDateAsync</span>(artigoId, date);
+<span class="kw">if</span> (stock != <span class="kw">null</span>)
+{
+<span class="cmt">// Intelligent expiration based on data age</span>
+<span class="kw">var</span> cacheExpiration = date.<span class="type">Date</span> &lt; <span class="type">DateTime</span>.<span class="type">Today</span>.<span class="type">AddDays</span>(-<span class="num">7</span>)
+? <span class="type">TimeSpan</span>.<span class="type">FromHours</span>(<span class="num">1</span>)      <span class="cmt">// Historical: 1 hour</span>
+: <span class="type">TimeSpan</span>.<span class="type">FromMinutes</span>(<span class="num">5</span>);   <span class="cmt">// Recent: 5 minutes</span>
+_cache.<span class="type">Set</span>(cacheKey, stock, cacheExpiration);
+}
+<span class="kw">return</span> stock;
+}</code></pre>
+<h3 id="cache-decision-matrix">Cache Decision Matrix</h3>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Query Type</th>
+<th>Cache Duration</th>
+<th>Reasoning</th>
+</tr></thead><tbody>
+<tr>
+<td>Historical Stock (&gt;7 days)</td>
+<td>1 hour</td>
+<td>Data is immutable</td>
+</tr>
+<tr>
+<td>Recent Stock (&lt;7 days)</td>
+<td>5 minutes</td>
+<td>May still change</td>
+</tr>
+<tr>
+<td>Current Stock (today)</td>
+<td>5 minutes</td>
+<td>Active transactions</td>
+</tr>
+<tr>
+<td>Filtered Movements</td>
+<td>Not cached</td>
+<td>Too specific</td>
+</tr>
+<tr>
+<td>All-time Totals</td>
+<td>5 minutes</td>
+<td>Frequently accessed</td>
+</tr>
+<tr>
+<td>Document Flow</td>
+<td>Not cached</td>
+<td>Transaction-specific</td>
+</tr>
+</tbody></table></div>
+<h3 id="cache-invalidation-patterns">Cache Invalidation Patterns</h3>
+<h4 id="time-based-expiration">Time-Based Expiration</h4>
+<pre><code class="lang-csharp"><span class="kw">var</span> cacheOptions = <span class="kw">new</span> <span class="type">MemoryCacheEntryOptions</span>
+{
+<span class="type">AbsoluteExpirationRelativeToNow</span> = <span class="type">TimeSpan</span>.<span class="type">FromMinutes</span>(<span class="num">5</span>),
+<span class="type">SlidingExpiration</span> = <span class="type">TimeSpan</span>.<span class="type">FromMinutes</span>(<span class="num">2</span>)
+};</code></pre>
+<h4 id="manual-invalidation-extension">Manual Invalidation (Extension)</h4>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">void</span> <span class="type">InvalidateStockCache</span>(<span class="kw">int</span> artigoId)
+{
+<span class="kw">var</span> pattern = $<span class="str">&quot;stock_{artigoId}_*&quot;</span>;
+<span class="cmt">// Remove all cache entries for this article</span>
+_cache.<span class="type">Remove</span>(pattern);
+}</code></pre>
+<h2 id="database-integration">Database Integration</h2>
+<h3 id="sql-server-functions">SQL Server Functions</h3>
+<h4 id="fn-artigostockbydate">fn_ArtigoStockByDate</h4>
+<pre><code class="lang-text">-- Function signature (implied)
+CREATE FUNCTION dbo.fn_ArtigoStockByDate
+(
+@ArtigoId INT,
+@Date DATETIME
+)
+RETURNS TABLE
+AS
+RETURN
+(
+SELECT
+@ArtigoId as ARTIGO_ID,
+ISNULL(SUM(CASE WHEN t.Entradasaida = &#x27;E&#x27; THEN d.Quantidade END), 0) as ENTRADA,
+ISNULL(SUM(CASE WHEN t.Entradasaida = &#x27;S&#x27; THEN d.Quantidade END), 0) as SAIDA,
+ISNULL(SUM(CASE WHEN t.Entradasaida = &#x27;E&#x27; THEN d.Quantidade
+WHEN t.Entradasaida = &#x27;S&#x27; THEN -d.Quantidade END), 0) as STOCK
+FROM CrmDocumentoDetalhes d
+JOIN CrmDocumentos doc ON d.Documentoid = doc.Id
+JOIN CrmTipoDocumentos t ON doc.Tipodocumentoid = t.Id
+WHERE d.ArtigoId = @ArtigoId
+AND doc.Data &lt; @Date
+AND t.Movstocks = 1
+)</code></pre>
+<h4 id="fn-artigousedinfluxo">fn_ArtigoUsedInFluxo</h4>
+<pre><code class="lang-text">-- Checks stock flow for specific document lines
+CREATE FUNCTION dbo.fn_ArtigoUsedInFluxo
+(
+@ArtigoId INT,
+@LinhaId INT,
+@Date DATETIME
+)
+RETURNS TABLE
+AS
+RETURN
+(
+-- Complex flow calculation logic
+SELECT ... as STOCK
+)</code></pre>
+<h3 id="connection-management">Connection Management</h3>
+<pre><code class="lang-csharp"><span class="cmt">// Using IDbContextFactory for connection pooling</span>
+<span class="kw">private</span> <span class="kw">readonly</span> <span class="type">IDbContextFactory</span>&lt;<span class="type">BioBragaContext</span>&gt; _contextFactory;
+<span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;T&gt; <span class="type">ExecuteWithContextAsync</span>&lt;T&gt;(<span class="type">Func</span>&lt;<span class="type">BioBragaContext</span>, <span class="type">Task</span>&lt;T&gt;&gt; operation)
+{
+<span class="kw">await</span> <span class="kw">using</span> <span class="kw">var</span> context = <span class="kw">await</span> _contextFactory.<span class="type">CreateDbContextAsync</span>();
+<span class="kw">return</span> <span class="kw">await</span> operation(context);
+}</code></pre>
+<h2 id="ui-integration">UI Integration</h2>
+<h3 id="pre-loading-strategy-in-artigodetalhe-razor">Pre-Loading Strategy in ArtigoDetalhe.razor</h3>
+<h4 id="initialization-phase">Initialization Phase</h4>
+<pre><code class="lang-csharp"><span class="kw">protected</span> <span class="kw">override</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">OnInitializedAsync</span>()
+{
+<span class="cmt">// ... other initialization ...</span>
+<span class="cmt">// Start pre-loading stock data if stock management is enabled</span>
+<span class="kw">if</span> (artigo != <span class="kw">null</span> &amp;&amp; artigo.<span class="type">TemGestao</span> == <span class="kw">true</span>)
+{
+<span class="cmt">// Fire and forget - starts loading in background</span>
+_stockSummaryTask = <span class="type">StockService</span>.<span class="type">GetCurrentStockAsync</span>(artigo.<span class="type">Id</span>);
+}
+}</code></pre>
+<h4 id="tab-activation">Tab Activation</h4>
+<pre><code class="lang-csharp"><span class="kw">private</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">OnStockTabClick</span>()
+{
+<span class="kw">if</span> (stockTabFirstLoad &amp;&amp; artigo != <span class="kw">null</span>)
+{
+isLoadingStock = <span class="kw">true</span>;
+<span class="type">StateHasChanged</span>();
+<span class="kw">try</span>
+{
+<span class="cmt">// If pre-loaded, this completes immediately</span>
+<span class="kw">if</span> (_stockSummaryTask != <span class="kw">null</span>)
+{
+currentStock = <span class="kw">await</span> _stockSummaryTask;
+}
+<span class="kw">else</span>
+{
+<span class="cmt">// Fallback if not pre-loaded</span>
+currentStock = <span class="kw">await</span> <span class="type">StockService</span>.<span class="type">GetCurrentStockAsync</span>(artigo.<span class="type">Id</span>);
+}
+<span class="cmt">// Update statistics</span>
+<span class="kw">if</span> (currentStock != <span class="kw">null</span>)
+{
+stat_stock_e = currentStock.<span class="type">Entrada</span>;
+stat_stock_s = currentStock.<span class="type">Saida</span>;
+}
+}
+<span class="kw">finally</span>
+{
+isLoadingStock = <span class="kw">false</span>;
+stockTabFirstLoad = <span class="kw">false</span>;
+<span class="type">StateHasChanged</span>();
+}
+}
+}</code></pre>
+<h3 id="date-filtering-with-task-management">Date Filtering with Task Management</h3>
+<pre><code class="lang-csharp"><span class="kw">private</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">ShowStockHistory</span>()
+{
+showStockHistory = <span class="kw">true</span>;
+<span class="cmt">// Smart task reuse pattern</span>
+<span class="kw">if</span> (stocklist == <span class="kw">null</span> || !stocklist.<span class="type">Any</span>() || isFiltered)
+{
+isLoadingHistory = <span class="kw">true</span>;
+<span class="type">StateHasChanged</span>();
+<span class="kw">try</span>
+{
+<span class="kw">if</span> (isFiltered)
+{
+<span class="cmt">// Create new filtered task</span>
+_stockMovementsTask = <span class="type">StockService</span>.<span class="type">GetStockMovementsAsync</span>(
+artigo.<span class="type">Id</span>, filterStartDate, filterEndDate);
+<span class="cmt">// Parallel totals calculation</span>
+<span class="kw">var</span> totalsTask = <span class="type">StockService</span>.<span class="type">GetStockTotalsAsync</span>(
+artigo.<span class="type">Id</span>, filterStartDate, filterEndDate);
+<span class="cmt">// Await both</span>
+stocklist = <span class="kw">await</span> _stockMovementsTask;
+<span class="kw">var</span> (entradas, saidas) = <span class="kw">await</span> totalsTask;
+stat_stock_e = entradas;
+stat_stock_s = saidas;
+}
+<span class="kw">else</span>
+{
+<span class="cmt">// Reuse or create unfiltered task</span>
+<span class="kw">if</span> (_stockMovementsTask == <span class="kw">null</span>)
+{
+_stockMovementsTask = <span class="type">StockService</span>.<span class="type">GetStockMovementsAsync</span>(artigo.<span class="type">Id</span>);
+}
+stocklist = <span class="kw">await</span> _stockMovementsTask;
+}
+}
+<span class="kw">finally</span>
+{
+isLoadingHistory = <span class="kw">false</span>;
+<span class="type">StateHasChanged</span>();
+}
+}
+}</code></pre>
+<h2 id="performance-optimization">Performance Optimization</h2>
+<h3 id="optimization-techniques">Optimization Techniques</h3>
+<h4 id="1-task-pre-loading">1. Task Pre-Loading</h4>
+<pre><code class="lang-csharp"><span class="cmt">// Start expensive operations before needed</span>
+<span class="kw">private</span> <span class="type">Task</span>&lt;<span class="type">ArtigoStock</span>&gt; _stockSummaryTask;
+<span class="kw">private</span> <span class="type">Task</span>&lt;<span class="type">List</span>&lt;<span class="type">StockMov</span>&gt;&gt; _stockMovementsTask;
+<span class="cmt">// Initialize on page load</span>
+_stockSummaryTask = <span class="type">StockService</span>.<span class="type">GetCurrentStockAsync</span>(artigo.<span class="type">Id</span>);
+<span class="cmt">// Use when needed (already complete or nearly complete)</span>
+<span class="kw">var</span> result = <span class="kw">await</span> _stockSummaryTask;</code></pre>
+<h4 id="2-connection-pooling">2. Connection Pooling</h4>
+<pre><code class="lang-text">// IDbContextFactory maintains connection pool
+services.AddDbContextFactory&lt;BioBragaContext&gt;(options =&gt;
+options.UseSqlServer(connectionString, sqlOptions =&gt;
+sqlOptions.EnableRetryOnFailure()));</code></pre>
+<h4 id="3-query-optimization">3. Query Optimization</h4>
+<pre><code class="lang-text">// Single query with joins instead of multiple queries
+var query = context.CrmDocumentoDetalhes
+.Join(...) // All joins in one query
+.Where(...)
+.Select(...) // Project only needed fields
+.AsNoTracking(); // Read-only optimization</code></pre>
+<h4 id="4-graduated-cache-expiration">4. Graduated Cache Expiration</h4>
+<pre><code class="lang-text">// Longer cache for stable data
+var expiration = IsHistoricalData(date)
+? TimeSpan.FromHours(1)
+: TimeSpan.FromMinutes(5);</code></pre>
+<h3 id="performance-metrics">Performance Metrics</h3>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Operation</th>
+<th>Without Cache</th>
+<th>With Cache</th>
+<th>Improvement</th>
+</tr></thead><tbody>
+<tr>
+<td>Current Stock Query</td>
+<td>2000ms</td>
+<td>1ms</td>
+<td>99.95%</td>
+</tr>
+<tr>
+<td>Historical Stock</td>
+<td>1500ms</td>
+<td>1ms</td>
+<td>99.93%</td>
+</tr>
+<tr>
+<td>Movement List (50 items)</td>
+<td>3000ms</td>
+<td>2ms</td>
+<td>99.93%</td>
+</tr>
+<tr>
+<td>Filtered Query</td>
+<td>2500ms</td>
+<td>2500ms</td>
+<td>N/A (not cached)</td>
+</tr>
+</tbody></table></div>
+<h3 id="memory-management">Memory Management</h3>
+<pre><code class="lang-csharp"><span class="cmt">// Configure cache size limits</span>
+services.<span class="type">AddMemoryCache</span>(options =&gt;
+{
+options.<span class="type">SizeLimit</span> = <span class="num">1000</span>; <span class="cmt">// Maximum entries</span>
+options.<span class="type">CompactionPercentage</span> = <span class="num">0.25</span>; <span class="cmt">// Compact 25% when limit reached</span>
+});
+<span class="cmt">// Set size for cache entries</span>
+<span class="kw">var</span> cacheOptions = <span class="kw">new</span> <span class="type">MemoryCacheEntryOptions</span>
+{
+<span class="type">Size</span> = <span class="num">1</span>, <span class="cmt">// Each entry counts as 1 toward limit</span>
+<span class="type">Priority</span> = <span class="type">CacheItemPriority</span>.<span class="type">Normal</span>
+};</code></pre>
+<h2 id="api-reference">API Reference</h2>
+<h3 id="extension-methods">Extension Methods</h3>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">static</span> <span class="kw">class</span> <span class="type">StockServiceExtensions</span>
+{
+<span class="cmt">/// &lt;summary&gt;</span>
+<span class="cmt">/// Gets current stock (as of today)</span>
+<span class="cmt">/// &lt;/summary&gt;</span>
+<span class="kw">public</span> <span class="kw">static</span> <span class="type">Task</span>&lt;<span class="type">ArtigoStock</span>?&gt; <span class="type">GetCurrentStockAsync</span>(
+<span class="kw">this</span> <span class="type">IStockService</span> stockService, <span class="kw">int</span> artigoId)
+{
+<span class="kw">return</span> stockService.<span class="type">GetArticleStockByDateAsync</span>(artigoId, <span class="type">DateTime</span>.<span class="type">Today</span>);
+}
+<span class="cmt">/// &lt;summary&gt;</span>
+<span class="cmt">/// Checks if sufficient stock is available</span>
+<span class="cmt">/// &lt;/summary&gt;</span>
+<span class="kw">public</span> <span class="kw">static</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="type">HasSufficientStockAsync</span>(
+<span class="kw">this</span> <span class="type">IStockService</span> stockService,
+<span class="kw">int</span> artigoId,
+<span class="kw">decimal</span> requiredQuantity,
+<span class="type">DateTime</span> date)
+{
+<span class="kw">var</span> stock = <span class="kw">await</span> stockService.<span class="type">GetArticleStockByDateAsync</span>(artigoId, date);
+<span class="kw">return</span> stock?.<span class="type">Stock</span> &gt;= requiredQuantity;
+}
+}</code></pre>
+<h3 id="data-transfer-objects">Data Transfer Objects</h3>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">ArtigoStock</span>
+{
+<span class="kw">public</span> <span class="kw">int</span> <span class="type">ArtigoId</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+<span class="kw">public</span> <span class="kw">decimal</span> <span class="type">Entrada</span> { <span class="kw">get</span>; <span class="kw">set</span>; }    <span class="cmt">// Total entries</span>
+<span class="kw">public</span> <span class="kw">decimal</span> <span class="type">Saida</span> { <span class="kw">get</span>; <span class="kw">set</span>; }      <span class="cmt">// Total exits</span>
+<span class="kw">public</span> <span class="kw">decimal</span> <span class="type">Stock</span> { <span class="kw">get</span>; <span class="kw">set</span>; }      <span class="cmt">// Current balance</span>
+}
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">StockMov</span>
+{
+<span class="kw">public</span> <span class="kw">int</span>? <span class="type">ArtigoId</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+<span class="kw">public</span> <span class="type">CrmDocumento</span> doc { <span class="kw">get</span>; <span class="kw">set</span>; }
+<span class="kw">public</span> <span class="type">CrmDocumentoDetalhe</span> docdetalhe { <span class="kw">get</span>; <span class="kw">set</span>; }
+<span class="kw">public</span> <span class="type">CrmTipoDocumento</span> doctipo { <span class="kw">get</span>; <span class="kw">set</span>; }
+<span class="kw">public</span> <span class="type">CrmSerieDocumento</span> docserie { <span class="kw">get</span>; <span class="kw">set</span>; }
+}</code></pre>
+<h2 id="configuration">Configuration</h2>
+<h3 id="service-registration">Service Registration</h3>
+<h4 id="basic-configuration">Basic Configuration</h4>
+<pre><code class="lang-text">// Program.cs
+builder.Services.AddDbContextFactory&lt;BioBragaContext&gt;(options =&gt;
+options.UseSqlServer(connectionString));
+builder.Services.AddScoped&lt;IStockService, StockService&gt;();
+builder.Services.AddMemoryCache();</code></pre>
+<h4 id="advanced-configuration-with-caching">Advanced Configuration with Caching</h4>
+<pre><code class="lang-csharp"><span class="cmt">// Register with caching decorator</span>
+builder.<span class="type">Services</span>.<span class="type">AddScoped</span>&lt;<span class="type">StockService</span>&gt;();
+builder.<span class="type">Services</span>.<span class="type">AddScoped</span>&lt;<span class="type">IStockService</span>&gt;(provider =&gt;
+{
+<span class="kw">var</span> innerService = provider.<span class="type">GetRequiredService</span>&lt;<span class="type">StockService</span>&gt;();
+<span class="kw">var</span> cache = provider.<span class="type">GetRequiredService</span>&lt;<span class="type">IMemoryCache</span>&gt;();
+<span class="kw">var</span> logger = provider.<span class="type">GetRequiredService</span>&lt;<span class="type">ILogger</span>&lt;<span class="type">CachedStockService</span>&gt;&gt;();
+<span class="kw">return</span> <span class="kw">new</span> <span class="type">CachedStockService</span>(innerService, cache, logger);
+});
+<span class="cmt">// Configure cache options</span>
+builder.<span class="type">Services</span>.<span class="type">AddMemoryCache</span>(options =&gt;
+{
+options.<span class="type">SizeLimit</span> = <span class="num">1000</span>;
+options.<span class="type">CompactionPercentage</span> = <span class="num">0.25</span>;
+options.<span class="type">ExpirationScanFrequency</span> = <span class="type">TimeSpan</span>.<span class="type">FromMinutes</span>(<span class="num">5</span>);
+});</code></pre>
+<h3 id="configuration-settings">Configuration Settings</h3>
+<pre><code class="lang-csharp">{
+<span class="str">&quot;ConnectionStrings&quot;</span>: {
+<span class="str">&quot;DefaultConnection&quot;</span>: <span class="str">&quot;Server=...;Database=BioBraga;...&quot;</span>
+},
+<span class="str">&quot;Caching&quot;</span>: {
+<span class="str">&quot;StockCacheMinutes&quot;</span>: <span class="num">5</span>,
+<span class="str">&quot;HistoricalCacheHours&quot;</span>: <span class="num">1</span>,
+<span class="str">&quot;EnableCaching&quot;</span>: <span class="kw">true</span>
+},
+<span class="str">&quot;Performance&quot;</span>: {
+<span class="str">&quot;EnablePreloading&quot;</span>: <span class="kw">true</span>,
+<span class="str">&quot;MaxConcurrentQueries&quot;</span>: <span class="num">10</span>
+}
+}</code></pre>
+<h2 id="monitoring-troubleshooting">Monitoring &amp; Troubleshooting</h2>
+<h3 id="logging-strategy">Logging Strategy</h3>
+<pre><code class="lang-csharp"><span class="cmt">// Structured logging for monitoring</span>
+_logger.<span class="type">LogInformation</span>(<span class="str">&quot;Stock query executed&quot;</span>, <span class="kw">new</span>
+{
+<span class="type">ArticleId</span> = artigoId,
+<span class="type">Date</span> = date,
+<span class="type">CacheHit</span> = fromCache,
+<span class="type">ExecutionTime</span> = stopwatch.<span class="type">ElapsedMilliseconds</span>
+});</code></pre>
+<h3 id="health-checks">Health Checks</h3>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">StockServiceHealthCheck</span> : <span class="type">IHealthCheck</span>
+{
+<span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="type">HealthCheckResult</span>&gt; <span class="type">CheckHealthAsync</span>(
+<span class="type">HealthCheckContext</span> context,
+<span class="type">CancellationToken</span> cancellationToken = <span class="kw">default</span>)
+{
+<span class="kw">try</span>
+{
+<span class="cmt">// Test database connection</span>
+<span class="kw">var</span> testStock = <span class="kw">await</span> _stockService.<span class="type">GetCurrentStockAsync</span>(<span class="num">1</span>);
+<span class="cmt">// Check cache</span>
+<span class="kw">var</span> cacheStats = _memoryCache.<span class="type">GetCurrentStatistics</span>();
+<span class="kw">return</span> <span class="type">HealthCheckResult</span>.<span class="type">Healthy</span>(<span class="str">&quot;Stock service operational&quot;</span>, <span class="kw">new</span> <span class="type">Dictionary</span>&lt;<span class="kw">string</span>, <span class="kw">object</span>&gt;
+{
+[<span class="str">&quot;CacheHitRate&quot;</span>] = cacheStats.<span class="type">TotalHits</span> / (<span class="kw">double</span>)cacheStats.<span class="type">TotalMisses</span>,
+[<span class="str">&quot;CacheEntries&quot;</span>] = cacheStats.<span class="type">CurrentEntryCount</span>
+});
+}
+<span class="kw">catch</span> (<span class="type">Exception</span> ex)
+{
+<span class="kw">return</span> <span class="type">HealthCheckResult</span>.<span class="type">Unhealthy</span>(<span class="str">&quot;Stock service failure&quot;</span>, ex);
+}
+}
+}</code></pre>
+<h3 id="performance-monitoring">Performance Monitoring</h3>
+<pre><code class="lang-csharp"><span class="cmt">// Add performance counters</span>
+services.<span class="type">AddSingleton</span>&lt;<span class="type">IMetrics</span>, <span class="type">MetricsCollector</span>&gt;();
+<span class="cmt">// In service</span>
+<span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="type">ArtigoStock</span>?&gt; <span class="type">GetArticleStockByDateAsync</span>(<span class="kw">int</span> artigoId, <span class="type">DateTime</span> date)
+{
+<span class="kw">using</span> <span class="kw">var</span> activity = <span class="type">Activity</span>.<span class="type">StartActivity</span>(<span class="str">&quot;StockQuery&quot;</span>);
+activity?.<span class="type">SetTag</span>(<span class="str">&quot;article.id&quot;</span>, artigoId);
+activity?.<span class="type">SetTag</span>(<span class="str">&quot;query.date&quot;</span>, date);
+<span class="cmt">// ... implementation ...</span>
+_metrics.<span class="type">RecordQueryTime</span>(activity.<span class="type">Duration</span>);
+}</code></pre>
+<h3 id="common-issues-solutions">Common Issues &amp; Solutions</h3>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Issue</th>
+<th>Symptoms</th>
+<th>Solution</th>
+</tr></thead><tbody>
+<tr>
+<td>Cache Memory Pressure</td>
+<td>High memory usage, slow responses</td>
+<td>Reduce cache duration or implement size limits</td>
+</tr>
+<tr>
+<td>Stale Data</td>
+<td>Users see outdated stock</td>
+<td>Reduce cache expiration time or add manual refresh</td>
+</tr>
+<tr>
+<td>Slow Filtered Queries</td>
+<td>Date range queries are slow</td>
+<td>Consider implementing range-based caching strategy</td>
+</tr>
+<tr>
+<td>Connection Pool Exhaustion</td>
+<td>Timeout exceptions</td>
+<td>Increase pool size or optimize query execution</td>
+</tr>
+</tbody></table></div>
+<h3 id="debug-helpers">Debug Helpers</h3>
+<pre><code class="lang-csharp"><span class="cmt">// Cache inspection endpoint</span>
+[<span class="type">HttpGet</span>(<span class="str">&quot;api/debug/cache-stats&quot;</span>)]
+<span class="kw">public</span> <span class="type">IActionResult</span> <span class="type">GetCacheStats</span>()
+{
+<span class="kw">var</span> stats = _memoryCache.<span class="type">GetCurrentStatistics</span>();
+<span class="kw">return</span> <span class="type">Ok</span>(<span class="kw">new</span>
+{
+stats.<span class="type">CurrentEntryCount</span>,
+stats.<span class="type">TotalHits</span>,
+stats.<span class="type">TotalMisses</span>,
+<span class="type">HitRate</span> = stats.<span class="type">TotalHits</span> / (<span class="kw">double</span>)(stats.<span class="type">TotalHits</span> + stats.<span class="type">TotalMisses</span>)
+});
+}</code></pre>
+<h2 id="best-practices">Best Practices</h2>
+<h3 id="do-s">Do&#x27;s ✅</h3>
+<p>Always use IDbContextFactory for database operations</p>
+<p>Implement graduated cache expiration based on data stability</p>
+<p>Pre-load expensive operations when possible</p>
+<p>Use structured logging for debugging</p>
+<p>Monitor cache hit rates</p>
+<h3 id="don-ts">Don&#x27;ts ❌</h3>
+<p>Don&#x27;t cache filtered queries (too specific)</p>
+<p>Don&#x27;t cache mutable data for long periods</p>
+<p>Don&#x27;t forget to handle cache misses gracefully</p>
+<p>Don&#x27;t use synchronous database operations</p>
+<p>Don&#x27;t ignore memory pressure warnings</p>
+<h2 id="future-enhancements">Future Enhancements</h2>
+<h3 id="proposed-improvements">Proposed Improvements</h3>
+<p>Redis Integration: Distributed caching for multi-server deployments</p>
+<p>GraphQL Support: More efficient data fetching for complex queries</p>
+<p>Event-Driven Invalidation: Real-time cache updates via SignalR</p>
+<p>Predictive Pre-Loading: ML-based prediction of user behavior</p>
+<p>Compression: Compress large cached objects to save memory</p>
+</article>
+<div class="takeaways"><h3>Key takeaways</h3><ul><li>Wrap expensive services with a cached decorator so caching logic lives in one place and tests can swap it out</li><li>Cache expiration should be proportional to how likely the data is to change — historical = long, recent = short, filtered = don&#x27;t bother</li><li>SQL Server table-valued functions called via raw ADO.NET skip EF Core overhead and are perfect for pure-aggregate queries</li><li>Start expensive Tasks in OnInitializedAsync and store them as fields — clicking a tab then awaits an already-complete task</li><li>Cache keys should encode everything that distinguishes the query (artigoId + date) and the format should be predictable for manual invalidation</li><li>Monitor cache hit rates via IMemoryCache.GetCurrentStatistics in a health check — if the ratio degrades, something upstream changed</li></ul></div>
+<aside class="cross-refs"><h2>Cross-references</h2><div class="cross-ref-list"><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>decorator-pattern</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>imemorycache-patterns</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>ef-core-raw-sql</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>blazor-task-preloading</a><a href="../../APPLICATIONS/factory-floor/factory-floor-system.html"><span class="arrow">→</span>Factory Floor Production System — Technical Documentation</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>sql-table-valued-functions</a></div></aside>
+<aside class="related"><h2>More in this category</h2><div class="related-grid"><a class="related-card" href="../../APPLICATIONS/stock-service/stock-service-system-pt__4.html"><div class="title">Sistema de Serviço de Stock - Documentação Técnica (PT)</div><div class="meta"><span class="badge">DOCX</span><span>2,288 words</span></div></a><a class="related-card" href="../../APPLICATIONS/stock-service/stock-service-system-pt__3.html"><div class="title">Sistema de Serviço de Stock - O Guia Para Totós</div><div class="meta"><span class="badge">DOCX</span><span>1,631 words</span></div></a><a class="related-card" href="../../APPLICATIONS/stock-service/stock-service-system-pt.html"><div class="title">Sistema de Serviço de Stock — Documentação Técnica Formal (PT)</div><div class="meta"><span class="badge">PDF</span><span>2,271 words</span></div></a><a class="related-card" href="../../APPLICATIONS/stock-service/stock-service-system-pt__2.html"><div class="title">Sistema de Serviço de Stock — O Guia &quot;Para Totós&quot;</div><div class="meta"><span class="badge">PDF</span><span>1,711 words</span></div></a><a class="related-card" href="../../APPLICATIONS/stock-service/stock-service-system__3.html"><div class="title">Stock Service System - The For Dummies Guide</div><div class="meta"><span class="badge">DOCX</span><span>1,495 words</span></div></a><a class="related-card" href="../../APPLICATIONS/stock-service/stock-service-system__2.html"><div class="title">Stock Service System — Technical Documentation</div><div class="meta"><span class="badge">PDF</span><span>2,064 words</span></div></a></div></aside>
+</main>
+</div>
+<script>
+// ─── Active TOC item on scroll ────────────────────────────────────
+(function() {
+  const tocLinks = document.querySelectorAll('.toc-sidebar a[href^="#"]');
+  if (!tocLinks.length) return;
+  const headings = Array.from(document.querySelectorAll(
+    'article h1[id], article h2[id], article h3[id], article h4[id], .pdf-page[id]'
+  ));
+  if (!headings.length) return;
+  function setActive(id) {
+    tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+  }
+  let lastVisible = headings[0].id;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) lastVisible = e.target.id; });
+    setActive(lastVisible);
+  }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+  headings.forEach(h => observer.observe(h));
+  setActive(headings[0].id);
+})();
+
+// ─── Copy code buttons ────────────────────────────────────────────
+(function() {
+  document.querySelectorAll('article pre').forEach(pre => {
+    if (pre.closest('.diagram-box')) return;
+    if (pre.closest('.pdf-page')) return;
+    if (pre.parentElement && pre.parentElement.classList.contains('code-block')) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'code-block';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.type = 'button';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', () => {
+      const code = pre.querySelector('code') || pre;
+      const text = code.innerText;
+      const done = () => {
+        btn.textContent = 'Copied';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(() => {});
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+    });
+    wrap.appendChild(btn);
+  });
+})();
+
+// ─── Live filter (master + hub + category pages) ─────────────────
+(function() {
+  const search = document.getElementById('search-input');
+  if (!search) return;
+  const items = document.querySelectorAll('[data-search]');
+  function apply() {
+    const q = search.value.toLowerCase().trim();
+    items.forEach(el => {
+      const match = !q || el.dataset.search.includes(q);
+      el.style.display = match ? '' : 'none';
+    });
+    document.querySelectorAll('[data-search-parent]').forEach(parent => {
+      const visible = Array.from(parent.querySelectorAll('[data-search]'))
+        .some(el => el.style.display !== 'none');
+      parent.style.display = visible ? '' : 'none';
+    });
+  }
+  search.addEventListener('input', apply);
+})();
+</script>
+</body>
+</html>

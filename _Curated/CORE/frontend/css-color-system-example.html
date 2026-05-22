@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exemplo Cores</title>
+    <style>
+        :root {
+            /* Cores Primárias e Secundárias */
+            --color-primary: #df2e26;
+            --color-primary-hover: #b8251e;
+            --color-secondary: #f26d28;
+            --color-secondary-hover: #c25820;
+            
+            /* Neutras */
+            --neutral-menu: #f5e6e5;
+            --neutral-light: #f8f8f8;
+            --neutral-dark: #333333;
+            --neutral-text: #666666;
+            --neutral-border: #e0e0e0;
+            
+            /* Feedback */
+            --success: #2ecc71;
+            --success-hover: #27ae60;
+            --error: #e74c3c;
+            --error-hover: #c0392b;
+            --warning: #f39c12;
+            --warning-hover: #d35400;
+            --info: #3498db;
+            --info-hover: #2980b9;
+            
+            /* Links */
+            --link: #3498db;
+            --link-hover: #2874a6;
+            
+            /* Espaçamentos */
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            display: grid;
+            grid-template-areas:
+                "header header"
+                "sidebar main"
+                "footer footer";
+            grid-template-columns: 250px 1fr;
+            grid-template-rows: auto 1fr auto;
+            min-height: 100vh;
+            background-color: var(--neutral-light);
+        }
+        
+        /* Header - Cor Primária */
+        header {
+            grid-area: header;
+            background-color: var(--color-primary);
+            padding: var(--spacing-md) var(--spacing-lg);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .logo {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        
+        /* Sidebar - Tom Neutro Relacionado */
+        nav {
+            grid-area: sidebar;
+            background-color: var(--neutral-menu);
+            padding: var(--spacing-lg) 0;
+            border-right: 1px solid var(--neutral-border);
+        }
+        
+        .menu-section {
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .menu-section h3 {
+            padding: 0 var(--spacing-lg) var(--spacing-md);
+            color: var(--color-primary);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .menu-item {
+            padding: var(--spacing-md) var(--spacing-lg);
+            color: var(--neutral-dark);
+            text-decoration: none;
+            display: block;
+            transition: all 0.2s ease;
+        }
+        
+        .menu-item:hover {
+            background-color: rgba(223, 46, 38, 0.1);
+            border-left: 3px solid var(--color-primary);
+            padding-left: calc(var(--spacing-lg) - 3px);
+        }
+        
+        /* Main Content */
+        main {
+            grid-area: main;
+            padding: var(--spacing-lg);
+            background-color: white;
+        }
+        
+        /* Grid de Componentes */
+        .component-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--spacing-lg);
+        }
+        
+        .component-box {
+            border: 1px solid var(--neutral-border);
+            padding: var(--spacing-lg);
+            border-radius: 8px;
+            background-color: white;
+        }
+        
+        /* Botões com Hover */
+        .btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            margin-right: 12px;
+            margin-bottom: 12px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-primary {
+            background-color: var(--color-primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--color-primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .btn-secondary {
+            background-color: var(--color-secondary);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: var(--color-secondary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .btn-cancel {
+            background-color: white;
+            color: var(--neutral-dark);
+            border: 1px solid var(--neutral-border);
+        }
+        
+        .btn-cancel:hover {
+            background-color: var(--neutral-light);
+            border-color: var(--neutral-text);
+        }
+        
+        /* Links */
+        a.link {
+            color: var(--link);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+            border-bottom: 1px solid transparent;
+        }
+        
+        a.link:hover {
+            color: var(--link-hover);
+            border-bottom: 1px solid var(--link-hover);
+        }
+        
+        /* Feedbacks */
+        .feedback-box {
+            padding: var(--spacing-md);
+            border-radius: 6px;
+            margin-bottom: var(--spacing-md);
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        .feedback-box:hover {
+            transform: translateX(5px);
+        }
+        
+        .feedback-success {
+            background-color: rgba(46, 204, 113, 0.1);
+            border-left: 4px solid var(--success);
+            color: var(--neutral-dark);
+        }
+        
+        .feedback-error {
+            background-color: rgba(231, 76, 60, 0.1);
+            border-left: 4px solid var(--error);
+            color: var(--neutral-dark);
+        }
+        
+        .feedback-warning {
+            background-color: rgba(243, 156, 18, 0.1);
+            border-left: 4px solid var(--warning);
+            color: var(--neutral-dark);
+        }
+        
+        .feedback-info {
+            background-color: rgba(52, 152, 219, 0.1);
+            border-left: 4px solid var(--info);
+            color: var(--neutral-dark);
+        }
+        
+        /* Footer */
+        footer {
+            grid-area: footer;
+            background-color: var(--neutral-dark);
+            color: white;
+            padding: var(--spacing-md) var(--spacing-lg);
+            text-align: center;
+            font-size: 0.8rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+    </style>
+</head>
+<body>
+<div style="background:rgba(7,9,15,0.94);border-bottom:1px solid #1f2940;padding:12px 24px;font:13px/1.4 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;position:fixed;top:0;left:0;right:0;z-index:99999;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);display:flex;align-items:center;gap:10px;color:#94a3bf;box-sizing:border-box;min-height:48px;"><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;">Learning</a><span style="color:#5f6b86;">›</span><a href="../_Hub.html" style="color:#94a3bf;text-decoration:none;">CORE</a><span style="color:#5f6b86;">›</span><a href="_Category.html" style="color:#94a3bf;text-decoration:none;">Blazor &amp; Frontend</a><span style="color:#5f6b86;">›</span><span style="color:#e9eef8;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">Exemplo Cores - CSS Color System Example</span><a href="css-color-system-example.html" download style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">↓ Download</a><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">All docs</a></div><div style="height:48px;"></div><div style="background:linear-gradient(135deg,#0a0e1a 0%,#11182a 100%);border:1px solid #1f2940;border-radius:14px;padding:24px 28px;margin:20px;font:15px/1.7 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;color:#e9eef8;box-shadow:0 12px 40px rgba(0,0,0,0.35);"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.6px;color:#6aa6ff;font-weight:600;margin-bottom:8px;">▸ Curated · Concept · Frontend</div><div style="font-size:24px;font-weight:700;color:#e9eef8;margin-bottom:10px;letter-spacing:-0.02em;line-height:1.2;">Exemplo Cores - CSS Color System Example</div><div style="font-size:16px;color:#94a3bf;margin-bottom:18px;line-height:1.5;">A self-contained HTML/CSS demo showing a full web color system using CSS custom properties (primary, secondary, neutrals, feedback colors) with hover states and feedback boxes.</div><div style="font-style:italic;border-left:3px solid #6aa6ff;padding:6px 0 6px 16px;margin:14px 0;color:#e9eef8;">Your designer hands you a Figma file with nineteen shades of red and says &#x27;the primary button should use red #3 but if it&#x27;s in a warning box use red #5 with 10% transparency.&#x27; You can hard-code those hex values across 47 files and pray nothing drifts - or you can define them once as CSS variables and never touch a hex again.</div><div style="background:rgba(106,166,255,0.06);border:1px solid rgba(106,166,255,0.20);border-radius:10px;padding:14px 18px;margin:14px 0;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#6aa6ff;margin-bottom:6px;font-weight:600;">Executive summary</div><div style="font-size:14px;color:#e9eef8;line-height:1.6;">A single-file HTML demo that establishes a reusable CSS design token system via :root custom properties. It defines primary (red #df2e26), secondary (orange #f26d28), neutrals, feedback colors (success green, error red, warning orange, info blue), links, and spacing variables - then applies them to a complete page layout (header, sidebar, main grid, footer) with buttons, feedback boxes, and links demonstrating hover states. Useful as a visual reference for a brand color system implemented purely with CSS variables.</div></div><div style="background:rgba(184,106,255,0.06);border:1px solid rgba(184,106,255,0.25);border-radius:10px;padding:14px 18px;margin:14px 0;display:flex;gap:12px;"><div style="font-size:20px;flex-shrink:0;">💡</div><div style="flex:1;font-size:14px;color:#e9eef8;line-height:1.6;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#b86aff;margin-bottom:4px;font-weight:700;">Metaphor</div>This file is like a paint chip booklet from a hardware store, except it&#x27;s also showing you how the paint looks on a fake wall. All the colors are declared in one place at the top (the :root section), given names like --color-primary and --success, and then referenced everywhere else with var(). Change the hex in one place and the entire page repaints - like swapping out the master tin and every wall in the house updating simultaneously.</div></div><div style="margin-top:14px;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#5f6b86;margin-bottom:8px;font-weight:600;">Key concepts</div><div><span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">CSS custom properties (variables)</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">:root selector</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">design tokens</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">grid-template-areas</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">hover pseudo-class</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">color palette</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">feedback states</span></div></div><div style="margin-top:18px;padding-top:14px;border-top:1px solid #1f2940;font-size:11px;color:#5f6b86;">↑ Curated overlay added by render_curated.py · the original document follows below</div></div>
+    <header>
+        <div class="logo">Logo Cliente</div>
+        <div class="user-menu">
+            <a href="#" class="link">Perfil</a>
+        </div>
+    </header>
+    
+    <nav>
+        <div class="menu-section">
+            <h3>Menu</h3>
+            <a href="#" class="menu-item">blablabla</a>
+            <a href="#" class="menu-item">blablabla</a>
+            <a href="#" class="menu-item">blablabla</a>
+        </div>
+        
+        <div class="menu-section">
+            <h3>Configurações</h3>
+            <a href="#" class="menu-item">blablabla</a>
+            <a href="#" class="menu-item">blablabla</a>
+        </div>
+    </nav>
+    
+    <main>
+        <div class="component-grid">
+            <!-- Botões com Hover -->
+            <div class="component-box">
+                <h3>Botões Interativos</h3>
+                <button class="btn btn-primary">Submeter</button>
+                <button class="btn btn-secondary">Secundário</button>
+                <button class="btn btn-cancel">Cancelar</button>
+                
+                <div style="margin-top: 20px;">
+                    <a href="#" class="link">Exemplo de Link</a>
+                </div>
+            </div>
+            
+            <!-- Feedbacks Completos -->
+            <div class="component-box">
+                <h3>Sistema de Feedbacks</h3>
+                <div class="feedback-box feedback-success">
+                    Operação concluída com sucesso
+                </div>
+                <div class="feedback-box feedback-error">
+                    Ocorreu um erro no processamento
+                </div>
+                <div class="feedback-box feedback-warning">
+                    Atenção: dados incompletos
+                </div>
+                <div class="feedback-box feedback-info">
+                    Nova atualização disponível
+                </div>
+            </div>
+            
+            <!-- Exemplo de Formulário -->
+            <div class="component-box">
+                <h3>Formulário</h3>
+                <p>blablabla</p>
+                <button class="btn btn-primary">Submeter</button>
+                <button class="btn btn-cancel">Cancelar</button>
+                <div style="margin-top: 15px;">
+                    <a href="#" class="link">Esqueceu a password?</a>
+                </div>
+            </div>
+            
+            <!-- Cards com Links -->
+            <div class="component-box">
+                <h3>Notificações</h3>
+                <p>blablabla <a href="#" class="link">ver mais</a></p>
+                <div class="feedback-box feedback-info" style="margin-top: 15px;">
+                    <span>3 novas mensagens <a href="#" class="link" style="margin-left: 10px;">visualizar</a></span>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer>
+        © 2025 Exemplo de Cores Web. <a href="#" class="link" style="color: white; opacity: 0.8;">Termos de uso</a>
+    </footer>
+</body>
+</html>

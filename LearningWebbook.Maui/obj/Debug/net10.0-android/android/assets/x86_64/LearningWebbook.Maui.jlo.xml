@@ -1,0 +1,15 @@
+<api>
+  <jcw-types>
+    <type name="MainActivity" package="crc6492f7ab92a589379d" application_java_class="android.app.Application" mono_runtime_initialization="mono.MonoPackageManager.LoadApplication (context);" extends_type="crc6488302ad6e9e4df1a.MauiAppCompatActivity" partial_assembly_qualified_name="LearningWebbook.Maui.MainActivity, LearningWebbook.Maui">
+      <constructors>
+        <constructor name="MainActivity" method="n_.ctor:()V:" jni_signature="()V" managed_parameters="" retval="void" is_dynamically_registered="True" />
+        <constructor name="MainActivity" method="n_.ctor:(I)V:" jni_signature="(I)V" managed_parameters="System.Int32, System.Private.CoreLib" params="int p0" retval="void" is_dynamically_registered="True" super_call="p0" activate_call="p0" />
+      </constructors>
+    </type>
+    <type name="MainApplication" package="crc6492f7ab92a589379d" application_java_class="android.app.Application" mono_runtime_initialization="mono.MonoPackageManager.LoadApplication (context);" extends_type="crc6488302ad6e9e4df1a.MauiApplication" is_application="True" partial_assembly_qualified_name="LearningWebbook.Maui.MainApplication, LearningWebbook.Maui" application_constructor="MainApplication" />
+  </jcw-types>
+  <acw-types partial-assembly-name="LearningWebbook.Maui" module-name="LearningWebbook.Maui.dll">
+    <type assembly-qualified-name="LearningWebbook.Maui.MainActivity, LearningWebbook.Maui, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null" compat-jni-name="learningwebbook.maui.MainActivity" java-key="crc6492f7ab92a589379d.MainActivity" managed-key="LearningWebbook.Maui.MainActivity" partial-assembly-qualified-name="LearningWebbook.Maui.MainActivity, LearningWebbook.Maui" />
+    <type assembly-qualified-name="LearningWebbook.Maui.MainApplication, LearningWebbook.Maui, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null" compat-jni-name="learningwebbook.maui.MainApplication" java-key="crc6492f7ab92a589379d.MainApplication" managed-key="LearningWebbook.Maui.MainApplication" partial-assembly-qualified-name="LearningWebbook.Maui.MainApplication, LearningWebbook.Maui" />
+  </acw-types>
+</api>

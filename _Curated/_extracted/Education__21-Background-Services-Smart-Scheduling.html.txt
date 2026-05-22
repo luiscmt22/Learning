@@ -1,0 +1,803 @@
+Background Services & Smart Scheduling — The Night Watchmen of Your Application
+Background Services & Smart Scheduling
+Tutorial #21 — The Night Watchmen of Your Application
+1. What Are Background Services?
+Every web application has work that should not happen inside an HTTP request. Sending birthday notifications,
+auto-closing forgotten attendance records, cleaning up old data, polling email servers — these are all tasks
+that need to run independently of any user clicking a button. In .NET, we call these
+background services .
+A background service is like a night watchman — they patrol the building on a schedule, but a
+smart watchman goes straight to the wing where the alarm just triggered instead of walking the
+whole building every hour.
+The recipe is simple — three ingredients:
+Inherit from BackgroundService (which implements IHostedService )
+Override ExecuteAsync ( CancellationToken stoppingToken )
+Register with builder .Services. AddHostedService < T >()
+They start when the application starts, and stop when the application shuts down. The
+stoppingToken is how .NET tells your service "the app is shutting down,
+please finish what you're doing."
+// The simplest possible background service
+public class MyBackgroundService : BackgroundService
+{
+protected override async Task ExecuteAsync ( CancellationToken stoppingToken )
+{
+while (! stoppingToken .IsCancellationRequested)
+{
+// Do some work...
+await Task . Delay ( TimeSpan . FromMinutes ( 5 ), stoppingToken );
+}
+}
+}
+Application Lifecycle
+=====================
+App Starts
+|
+v
+Host calls ExecuteAsync() on ALL registered BackgroundServices
+|
++--> AutoCheckOutBackgroundService.ExecuteAsync() [runs in parallel]
++--> NotificationSchedulerService.ExecuteAsync() [runs in parallel]
++--> NotificationCleanupService.ExecuteAsync() [runs in parallel]
++--> EmailPollingBackgroundService.ExecuteAsync() [runs in parallel]
++--> EmployeeDayScheduleExtensionService.ExecuteAsync() [runs in parallel]
++--> ChatCleanupService.ExecuteAsync() [runs in parallel]
+|
+| ... all running concurrently, each on their own schedule ...
+|
+App Shutdown Signal (Ctrl+C, IIS recycle, etc.)
+|
+v
+stoppingToken is cancelled --> each service exits its loop gracefully
+2. The 6 Background Services in GivingCare
+GivingCare runs six background services, each with a different scheduling strategy:
+Service
+Purpose
+Strategy
+Interval
+AutoCheckOutBackgroundService
+Auto-close forgotten attendance records
+Event-driven (smart)
+Dynamic
+EmailPollingBackgroundService
+Check IMAP for new emails
+Config-driven
+1-5 min
+NotificationSchedulerService
+Birthday/expiry notifications
+Daily @ 08:00
+Once/day
+NotificationCleanupService
+Delete old/expired notifications
+Fixed interval
+Every 6h
+EmployeeDayScheduleExtensionService
+Extend rolling schedule windows
+Daily @ 03:00
+Once/day
+ChatCleanupService
+Delete old chat messages
+Fixed interval
+Every 12h
+Notice that these fall into three distinct patterns. Understanding when to use each pattern is the key
+insight of this tutorial.
+3. Three Scheduling Patterns
+Pattern A: Smart / Event-Driven (AutoCheckOut)
+This is the most sophisticated pattern. Instead of blindly polling every N minutes, the service
+calculates exactly when the next work is due and sleeps until that moment.
+When there is nothing pending, it falls back to a reasonable polling interval.
+Here is the full AutoCheckOutBackgroundService — our gold-standard example:
+public class AutoCheckOutBackgroundService : BackgroundService
+{
+private readonly IServiceProvider _serviceProvider ;
+private readonly ILogger < AutoCheckOutBackgroundService > _logger ;
+private static readonly TimeSpan FallbackInterval = TimeSpan . FromMinutes ( 10 );
+private static readonly TimeSpan MinCheckInterval = TimeSpan . FromSeconds ( 30 );
+public AutoCheckOutBackgroundService (
+IServiceProvider serviceProvider ,
+ILogger < AutoCheckOutBackgroundService > logger )
+{
+_serviceProvider = serviceProvider ;
+_logger = logger ;
+}
+protected override async Task ExecuteAsync ( CancellationToken stoppingToken )
+{
+_logger . LogInformation ( "AutoCheckOutBackgroundService started" );
+// Initial delay to allow app startup
+await Task . Delay ( TimeSpan . FromSeconds ( 30 ), stoppingToken );
+while (! stoppingToken .IsCancellationRequested)
+{
+try
+{
+await ProcessAutoCheckOutCycleAsync ( stoppingToken );
+}
+catch ( OperationCanceledException ) when ( stoppingToken .IsCancellationRequested)
+{
+break ; // Graceful shutdown
+}
+catch ( Exception ex )
+{
+_logger . LogError ( ex , "Error in auto-checkout cycle. Retrying in {Interval}..." , FallbackInterval );
+await Task . Delay ( FallbackInterval , stoppingToken );
+}
+}
+_logger . LogInformation ( "AutoCheckOutBackgroundService stopped" );
+}
+}
+The Core Cycle: ProcessAutoCheckOutCycleAsync
+This method does three things each cycle: create a scope, iterate all tenant databases, and calculate when to wake up next.
+private async Task ProcessAutoCheckOutCycleAsync ( CancellationToken stoppingToken )
+{
+using var scope = _serviceProvider . CreateScope ();
+var autoCheckOutService = scope .ServiceProvider. GetRequiredService < IAutoCheckOutService >();
+// Get all company databases that have auto-checkout enabled
+var databases = await autoCheckOutService . GetCompanyDatabasesWithAutoCheckOutAsync ();
+if ( databases .Count == 0 )
+{
+_logger . LogDebug ( "No company databases found. Waiting {Interval}..." , FallbackInterval );
+await Task . Delay ( FallbackInterval , stoppingToken );
+return ;
+}
+// Process due checkouts and find next scheduled time
+DateTime ? earliestNextCheckout = null ;
+foreach ( var database in databases )
+{
+if ( stoppingToken .IsCancellationRequested) break ;
+try
+{
+// Process any due checkouts for this tenant
+await ProcessDueCheckoutsForDatabaseAsync ( autoCheckOutService , database , stoppingToken );
+// Get next scheduled checkout for this database
+var nextCheckout = await autoCheckOutService . GetNextAutoCheckOutTimeAsync ( database );
+if ( nextCheckout .HasValue)
+{
+if (! earliestNextCheckout .HasValue || nextCheckout .Value < earliestNextCheckout .Value)
+{
+earliestNextCheckout = nextCheckout .Value;
+}
+}
+}
+catch ( Exception ex )
+{
+_logger . LogWarning ( ex , "Error processing auto-checkout for database {Database}" , database );
+}
+}
+// Wait for next scheduled checkout or fallback interval
+var waitTime = CalculateWaitTime ( earliestNextCheckout );
+_logger . LogDebug ( "Next auto-checkout check in {WaitTime} (next scheduled: {NextTime})" ,
+waitTime , earliestNextCheckout ?. ToString ( "HH:mm:ss" ) ?? "none" );
+await Task . Delay ( waitTime , stoppingToken );
+}
+Per-Database Processing
+Each tenant database is processed independently. If one fails, the others still get processed:
+private async Task ProcessDueCheckoutsForDatabaseAsync (
+IAutoCheckOutService autoCheckOutService ,
+string database ,
+CancellationToken stoppingToken )
+{
+var candidates = await autoCheckOutService . GetAutoCheckOutCandidatesAsync ( database );
+if ( candidates .Count == 0 ) return ;
+_logger . LogInformation ( "Found {Count} auto-checkout candidates for {Database}" ,
+candidates .Count, database );
+foreach ( var candidate in candidates )
+{
+if ( stoppingToken .IsCancellationRequested) break ;
+try
+{
+var result = await autoCheckOutService . ProcessAutoCheckOutAsync (
+candidate .AttendanceId, database );
+if ( result .Success)
+_logger . LogInformation ( "Auto-checkout completed: {Employee} (Attendance {Id})" ,
+candidate .EmployeeName, candidate .AttendanceId);
+else
+_logger . LogWarning ( "Auto-checkout failed for {Employee}: {Message}" ,
+candidate .EmployeeName, result .Message);
+}
+catch ( Exception ex )
+{
+_logger . LogError ( ex , "Error processing auto-checkout for Attendance {Id}" ,
+candidate .AttendanceId);
+}
+}
+}
+The Smart Part: CalculateWaitTime
+private TimeSpan CalculateWaitTime ( DateTime ? nextScheduledCheckout )
+{
+if (! nextScheduledCheckout .HasValue)
+{
+return FallbackInterval ; // Nothing pending? Check again in 10 minutes
+}
+var now = DateTime .Now;
+var delay = nextScheduledCheckout .Value - now ;
+// If checkout is due now or in the past, use minimum interval
+if ( delay <= TimeSpan .Zero)
+{
+return MinCheckInterval ; // 30 seconds
+}
+// Add small buffer (30s) to ensure we're past the scheduled time
+delay = delay . Add ( TimeSpan . FromSeconds ( 30 ));
+// Cap at fallback interval to ensure regular checks
+if ( delay > FallbackInterval )
+{
+return FallbackInterval ;
+}
+return delay ;
+}
+CalculateWaitTime reads as: "When is the next thing due? Wait until then. Nothing pending?
+Check again in 10 minutes. Already overdue? Check in 30 seconds. Due in 45 minutes? Wait 45 minutes plus
+a 30-second buffer."
+Visualizing the Smart Schedule
+Time: 10:00 10:30 11:15 11:25 12:00
+| | | | |
+v v v v v
+Service Process Process No more Fallback:
+starts, checkout. checkout. pending. check in
+queries Query next Query next Return 10 min
+next due --> 11:15 --> none FallbackInterval
+--> 10:30
+Wait 30min Wait 45min Wait 10min Wait 10min
+(dynamic!) (dynamic!) (fallback!) (fallback!)
+Compared to fixed 5-minute polling:
+10:00 10:05 10:10 10:15 10:20 10:25 10:30 ...
+| | | | | | |
+v v v v v v v
+check check check check check check WORK!
+Smart: 3 wake-ups to process 2 checkouts
+Fixed: 7+ wake-ups to process 2 checkouts (and the work still waits!)
+Pattern B: Daily Scheduled (NotificationScheduler + ScheduleExtension)
+Some work only needs to run once per day. Birthday notifications make no sense to check every 5 minutes —
+a birthday either is today or it is not. For these, we calculate the delay until a specific target time
+and sleep until then.
+NotificationSchedulerService (runs at 08:00)
+private static readonly TimeSpan ScheduledTime = new ( 8 , 0 , 0 ); // 08:00
+protected override async Task ExecuteAsync ( CancellationToken stoppingToken )
+{
+_logger . LogInformation ( "NotificationSchedulerService started" );
+// Initial delay to allow app startup
+await Task . Delay ( TimeSpan . FromSeconds ( 30 ), stoppingToken );
+while (! stoppingToken .IsCancellationRequested)
+{
+try
+{
+var now = DateTime .Now;
+var targetTime = new DateTime (
+now .Year, now .Month, now .Day,
+ScheduledTime .Hours, ScheduledTime .Minutes, 0 );
+// If we've passed today's scheduled time, wait until tomorrow
+if ( now > targetTime )
+targetTime = targetTime . AddDays ( 1 );
+var delay = targetTime - now ;
+_logger . LogInformation ( "Next notification schedule check at {Time} (in {Delay})" ,
+targetTime . ToString ( "dd/MM/yyyy HH:mm" ), delay );
+await Task . Delay ( delay , stoppingToken );
+await ProcessDailyNotificationsAsync ( stoppingToken );
+}
+catch ( OperationCanceledException ) when ( stoppingToken .IsCancellationRequested)
+{
+break ;
+}
+catch ( Exception ex )
+{
+_logger . LogError ( ex , "Error in notification scheduler. Retrying in 1 hour..." );
+await Task . Delay ( TimeSpan . FromHours ( 1 ), stoppingToken );
+}
+}
+_logger . LogInformation ( "NotificationSchedulerService stopped" );
+}
+EmployeeDayScheduleExtensionService (runs at 03:00)
+The same pattern, but at 03:00 — chosen deliberately as an off-peak hour when no users are active:
+private static readonly TimeSpan ScheduledTime = new ( 3 , 0 , 0 ); // 03:00 (off-peak)
+protected override async Task ExecuteAsync ( CancellationToken stoppingToken )
+{
+_logger . LogInformation ( "EmployeeDayScheduleExtensionService started" );
+await Task . Delay ( TimeSpan . FromMinutes ( 2 ), stoppingToken ); // Longer initial delay
+while (! stoppingToken .IsCancellationRequested)
+{
+try
+{
+var now = DateTime .Now;
+var targetTime = new DateTime ( now .Year, now .Month, now .Day,
+ScheduledTime .Hours, ScheduledTime .Minutes, 0 );
+if ( now > targetTime )
+targetTime = targetTime . AddDays ( 1 );
+var delay = targetTime - now ;
+await Task . Delay ( delay , stoppingToken );
+await ExtendAllCompaniesAsync ( stoppingToken );
+}
+catch ( OperationCanceledException ) when ( stoppingToken .IsCancellationRequested)
+{ break ; }
+catch ( Exception ex )
+{
+_logger . LogError ( ex , "Error in schedule extension service. Retrying in 1 hour..." );
+await Task . Delay ( TimeSpan . FromHours ( 1 ), stoppingToken );
+}
+}
+}
+The target-time calculation is the key insight:
+Current time: 10:30 AM on March 17
+Target: 08:00 on March 17 targetTime --> targetTime.AddDays(1)
+New target: 08:00 on March 18
+Delay: 21 hours 30 minutes
+Current time: 06:45 AM on March 18
+Target: 08:00 on March 18 use as-is
+Delay: 1 hour 15 minutes
+Current time: 08:00 AM on March 18
+--> Service wakes up, does work
+--> Loop restarts, calculates next target: 08:00 March 19
+Pattern C: Fixed Interval (NotificationCleanup + ChatCleanup)
+The simplest pattern. Do the work, sleep for a fixed time, repeat. No intelligence, no calculation —
+just a metronome. This is perfect for maintenance tasks where exact timing does not matter.
+NotificationCleanupService (every 6 hours)
+public class NotificationCleanupService : BackgroundService
+{
+private readonly IServiceProvider _serviceProvider ;
+private readonly ILogger < NotificationCleanupService > _logger ;
+private readonly TimeSpan _period = TimeSpan . FromHours ( 6 );
+protected override async Task ExecuteAsync ( CancellationToken stoppingToken )
+{
+while (! stoppingToken .IsCancellationRequested)
+{
+try
+{
+await DoCleanupWork ();
+await Task . Delay ( _period , stoppingToken );
+}
+catch ( Exception ex )
+{
+_logger . LogError ( ex , "Erro durante a limpeza de notificacoes" );
+await Task . Delay ( TimeSpan . FromMinutes ( 30 ), stoppingToken ); // Retry fallback
+}
+}
+}
+private async Task DoCleanupWork ()
+{
+using var scope = _serviceProvider . CreateScope ();
+var notificationService = scope .ServiceProvider
+. GetRequiredService < INotificationService >();
+try
+{
+var expiredDeleted = await notificationService . DeleteExpiredNotificationsAsync ();
+await notificationService . CleanupInactiveConnectionsAsync ();
+_logger . LogInformation (
+"Cleanup completed. Expired notifications removed: {Count}" , expiredDeleted );
+}
+catch ( Exception ex )
+{
+_logger . LogError ( ex , "Error during cleanup execution" );
+}
+}
+}
+ChatCleanupService (every 12 hours)
+public class ChatCleanupService : BackgroundService
+{
+private readonly IServiceProvider _serviceProvider ;
+private readonly ILogger < ChatCleanupService > _logger ;
+private readonly TimeSpan _period = TimeSpan . FromHours ( 12 );
+protected override async Task ExecuteAsync ( CancellationToken stoppingToken )
+{
+while (! stoppingToken .IsCancellationRequested)
+{
+try
+{
+await DoCleanupWork ();
+await Task . Delay ( _period , stoppingToken );
+}
+catch ( OperationCanceledException ) when ( stoppingToken .IsCancellationRequested)
+{ break ; }
+catch ( Exception ex )
+{
+_logger . LogError ( ex , "Error during chat cleanup" );
+await Task . Delay ( TimeSpan . FromMinutes ( 30 ), stoppingToken );
+}
+}
+}
+private async Task DoCleanupWork ()
+{
+using var scope = _serviceProvider . CreateScope ();
+var chatService = scope .ServiceProvider. GetRequiredService < IChatService >();
+var deletedCount = await chatService . DeleteOldMessagesAsync ( 30 ); // older than 30 days
+_logger . LogInformation ( "Chat cleanup completed. Messages deleted: {Count}" , deletedCount );
+}
+}
+Bonus Pattern: Config-Driven (EmailPolling)
+The EmailPollingBackgroundService is a hybrid. It uses a fixed interval, but the interval
+is read from the database — each company can configure how often their email accounts are polled.
+The service uses the shortest interval across all companies as its global cycle time.
+public class EmailPollingBackgroundService : BackgroundService
+{
+private static readonly TimeSpan MinInterval = TimeSpan . FromMinutes ( 1 );
+private static readonly TimeSpan DefaultInterval = TimeSpan . FromMinutes ( 5 );
+protected override async Task ExecuteAsync ( CancellationToken stoppingToken )
+{
+await Task . Delay ( TimeSpan . FromSeconds ( 30 ), stoppingToken ); // Initial delay
+while (! stoppingToken .IsCancellationRequested)
+{
+var nextInterval = DefaultInterval ;
+try
+{
+// PollAllCompaniesAsync returns the minimum interval from all companies
+nextInterval = await PollAllCompaniesAsync ( stoppingToken );
+}
+catch ( Exception ex ) when ( ex is not OperationCanceledException )
+{
+_logger . LogError ( ex , "Unhandled error in email polling cycle" );
+}
+// Enforce minimum interval to prevent runaway polling
+if ( nextInterval < MinInterval )
+nextInterval = MinInterval ;
+await Task . Delay ( nextInterval , stoppingToken );
+}
+}
+}
+Inside PollAllCompaniesAsync , each company's configured monitoring interval is read:
+// Get the minimum interval from active monitored accounts
+var minAccountInterval = await companyContext . Set < EmailAccount >()
+. AsNoTracking ()
+. Where ( a => a .IsActive && a .MonitoringEnabled)
+. MinAsync ( a => ( int ?) a .MonitoringIntervalMinutes, ct );
+var companyInterval = TimeSpan . FromMinutes ( minAccountInterval .Value);
+if ( companyInterval < globalMinInterval )
+globalMinInterval = companyInterval ; // The shortest interval wins
+4. Critical Pattern: IServiceProvider.CreateScope()
+This is the single most important technical detail about background services. If you get this wrong,
+your service will crash at runtime.
+BackgroundService is registered as AddHostedService but it is actually a
+singleton . You CANNOT inject scoped services ( DbContext ,
+IMyService , etc.) directly into the constructor — you must create a scope first.
+Why This Matters
+In .NET, services have lifetimes . A DbContext is typically registered as
+Scoped — meaning one instance per HTTP request. But a background service has no HTTP request.
+It is a singleton that lives for the entire application lifetime. If you inject a scoped service into a
+singleton, the scoped service would live forever too, leading to stale data, memory leaks, and connection
+pool exhaustion.
+Wrong: Direct injection (will throw at startup or leak resources)
+=================================================================
+BackgroundService (singleton)
+|
++-- constructor injects IMyService (scoped) DbContext disposed --> connections returned to pool
+Every single background service in GivingCare follows this exact pattern:
+private async Task DoWork ()
+{
+using var scope = _serviceProvider . CreateScope ();
+var myService = scope .ServiceProvider. GetRequiredService < IMyService >();
+var contextFactory = scope .ServiceProvider. GetRequiredService < IDbContextFactoryService >();
+// Now use these services safely
+await myService . DoSomethingAsync ();
+// When scope is disposed, all scoped services are cleaned up
+}
+5. Error Handling & Resilience
+A background service that crashes kills the entire application. This is why error handling in background
+services must be paranoid . GivingCare uses a three-layer try/catch pattern.
+The Three Layers
+protected override async Task ExecuteAsync ( CancellationToken stoppingToken )
+{
+while (! stoppingToken .IsCancellationRequested)
+{
+try // LAYER 1 (outer): Catches OperationCanceledException for graceful shutdown
+{
+await ProcessCycleAsync ( stoppingToken );
+}
+catch ( OperationCanceledException ) when ( stoppingToken .IsCancellationRequested)
+{
+break ; // App is shutting down — exit gracefully
+}
+catch ( Exception ex ) // LAYER 2 (middle): Full cycle crash — retry with backoff
+{
+_logger . LogError ( ex , "Error in cycle. Retrying..." );
+await Task . Delay ( FallbackInterval , stoppingToken );
+}
+}
+}
+private async Task ProcessCycleAsync ( CancellationToken stoppingToken )
+{
+foreach ( var database in databases )
+{
+try // LAYER 3 (inner): Per-database/per-item — log and continue
+{
+await ProcessDatabaseAsync ( database );
+}
+catch ( Exception ex )
+{
+_logger . LogWarning ( ex , "Error for {Database}. Continuing..." , database );
+// DON'T rethrow — continue to next database
+}
+}
+}
+Always handle OperationCanceledException and check stoppingToken . A service
+that does not respect cancellation is a service that hangs your app on shutdown.
+Error Recovery Intervals
+Failure Level
+AutoCheckOut
+NotificationScheduler
+Cleanup Services
+Full cycle crash
+Retry in 10 min
+Retry in 1 hour
+Retry in 30 min
+Single database
+Log warning, continue
+Log warning, continue
+N/A (single DB)
+Single item
+Log error, continue
+Log warning, continue
+N/A
+The key principle: failures at a lower level must never cascade upward . If one employee's
+auto-checkout fails, the other 49 employees must still be processed. If one company database is unreachable,
+the other 10 companies must still be served.
+6. Multi-Tenant Awareness
+GivingCare is a multi-tenant application. Each company has its own database. Background services must
+iterate through all company databases — they cannot just process one.
+Getting the List of Company Databases
+private async Task < List < string >> GetCompanyDatabasesAsync (
+IDbContextFactoryService contextFactory )
+{
+try
+{
+await using var baseContext = contextFactory . CreateBaseControleContext ();
+return await baseContext .Companies
+. Where ( e => e .DatabaseName != null )
+. Select ( e => e .DatabaseName!)
+. Distinct ()
+. ToListAsync ();
+}
+catch ( Exception ex )
+{
+_logger . LogError ( ex , "Error getting company databases" );
+return new List < string >();
+}
+}
+The Multi-Tenant Processing Pattern
+BaseControle Database (central)
+|
++-- Companies table
+|
++-- Company "Acme" --> Database: "Acme_GivingCare"
++-- Company "Beta" --> Database: "Beta_GivingCare"
++-- Company "Gamma" --> Database: "Gamma_GivingCare"
+Background Service Cycle:
+|
++-- Get all company databases from BaseControle
+|
++-- foreach database:
+|
++-- try:
+| +-- Create DynamicCompanyContext(database)
+| +-- Process all items for this company
+| +-- Dispose context
+|
++-- catch:
++-- Log warning
++-- Continue to NEXT database (never stop the loop!)
+This is exactly what AutoCheckOutBackgroundService does with
+GetCompanyDatabasesWithAutoCheckOutAsync() and what
+NotificationSchedulerService does with its GetCompanyDatabasesAsync() .
+Each service gets the list of tenants, then processes each one independently within its own try/catch.
+7. The Initial Delay Pattern
+Every background service in GivingCare starts with a deliberate delay before beginning its work.
+This is a critical pattern that prevents a category of startup failures.
+protected override async Task ExecuteAsync ( CancellationToken stoppingToken )
+{
+// Wait for the application to fully start before doing any work
+await Task . Delay ( TimeSpan . FromSeconds ( 30 ), stoppingToken );
+// Now the app is ready — start the work loop
+while (! stoppingToken .IsCancellationRequested) { ... }
+}
+Why Is This Necessary?
+ExecuteAsync is called during application startup , before the HTTP pipeline
+is fully configured. At that point:
+Database migrations may not have completed yet
+Other services might not be fully initialized
+SignalR hubs might not be mapped yet
+The Kestrel web server might not be listening yet
+If a background service immediately tries to query the database or send a SignalR message, it will fail.
+The initial delay gives everything time to settle.
+Service
+Initial Delay
+Reason
+AutoCheckOutBackgroundService
+30 seconds
+Standard — needs DB access quickly for attendance
+EmailPollingBackgroundService
+30 seconds
+Standard — needs DB + IMAP connectivity
+NotificationSchedulerService
+30 seconds
+Standard — then sleeps until 08:00 anyway
+EmployeeDayScheduleExtensionService
+2 minutes
+Longer — not urgent, waits for 03:00
+NotificationCleanupService
+None (immediate)
+Simple cleanup — tolerates early failure via catch
+ChatCleanupService
+None (immediate)
+Simple cleanup — same reason
+8. Registration in Program.cs
+All six services are registered in Program.cs using AddHostedService :
+// ---- Attendance ----
+builder .Services. AddHostedService < AutoCheckOutBackgroundService >();
+// ---- HR Scheduling ----
+builder .Services. AddHostedService < EmployeeDayScheduleExtensionService >();
+// ---- Notifications ----
+builder .Services. AddHostedService < NotificationCleanupService >();
+builder .Services. AddHostedService < NotificationSchedulerService >();
+// ---- Email ----
+builder .Services. AddHostedService < EmailPollingBackgroundService >();
+// ---- Chat ----
+builder .Services. AddHostedService < ChatCleanupService >();
+Notice they are scattered throughout Program.cs , grouped by feature area — not lumped
+together. This matches the principle that each feature owns its registrations.
+Despite the name AddHostedService , the DI lifetime is singleton .
+The framework creates exactly one instance and calls ExecuteAsync once on it.
+That is why you need the scope pattern from Section 4 — you are inside a singleton.
+9. When to Use Each Pattern
+Use Case
+Pattern
+Why
+"Do X when Y is due"
+Smart / Event-driven
+No wasted cycles. Wakes up exactly when needed.
+"Do X once per day at 3am"
+Daily scheduled
+Predictable, runs during off-peak hours.
+"Clean up old data periodically"
+Fixed interval
+Does not need precision. Simplicity wins.
+"Process a queue ASAP"
+Minimum-interval polling
+Responsiveness matters. Floor prevents runaway.
+"Poll an external system"
+Config-driven interval
+Users control the pace. Adapts per-tenant.
+Decision Flowchart
+Does the work have a KNOWN due time?
+|
++-- YES --> Can you query "when is the next one due?"
+| |
+| +-- YES --> Pattern A: Smart/Event-driven (AutoCheckOut)
+| |
+| +-- NO --> Pattern B: Daily scheduled at a fixed time
+|
++-- NO --> Does timing precision matter?
+|
++-- YES --> Is the interval user-configurable?
+| |
+| +-- YES --> Config-driven (EmailPolling)
+| +-- NO --> Fixed interval with short period
+|
++-- NO --> Pattern C: Fixed interval (Cleanup services)
+10. Building a New Background Service
+Here is a complete template with all the proper patterns applied. Copy this when creating a new service.
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+namespace GivingCare.Services.MyFeature ;
+/// <summary>
+/// Background service that [describe what it does].
+/// Uses [Pattern A/B/C] scheduling.
+/// </summary>
+public class MyFeatureBackgroundService : BackgroundService
+{
+private readonly IServiceProvider _serviceProvider ;
+private readonly ILogger < MyFeatureBackgroundService > _logger ;
+// Configuration constants
+private static readonly TimeSpan FallbackInterval = TimeSpan . FromMinutes ( 10 );
+private static readonly TimeSpan InitialDelay = TimeSpan . FromSeconds ( 30 );
+public MyFeatureBackgroundService (
+IServiceProvider serviceProvider ,
+ILogger < MyFeatureBackgroundService > logger )
+{
+_serviceProvider = serviceProvider ;
+_logger = logger ;
+}
+protected override async Task ExecuteAsync ( CancellationToken stoppingToken )
+{
+_logger . LogInformation ( "MyFeatureBackgroundService started" );
+// Step 1: Initial delay to allow app startup
+await Task . Delay ( InitialDelay , stoppingToken );
+// Step 2: Main loop
+while (! stoppingToken .IsCancellationRequested)
+{
+try
+{
+await ProcessCycleAsync ( stoppingToken );
+}
+catch ( OperationCanceledException ) when ( stoppingToken .IsCancellationRequested)
+{
+break ; // Graceful shutdown — exit the loop
+}
+catch ( Exception ex )
+{
+// Full cycle crash — log and retry after fallback interval
+_logger . LogError ( ex , "Error in cycle. Retrying in {Interval}..." , FallbackInterval );
+await Task . Delay ( FallbackInterval , stoppingToken );
+}
+}
+_logger . LogInformation ( "MyFeatureBackgroundService stopped" );
+}
+private async Task ProcessCycleAsync ( CancellationToken stoppingToken )
+{
+// Step 3: Create a scope to resolve scoped services
+using var scope = _serviceProvider . CreateScope ();
+var contextFactory = scope .ServiceProvider
+. GetRequiredService < IDbContextFactoryService >();
+var myService = scope .ServiceProvider
+. GetRequiredService < IMyService >();
+// Step 4: Get all company databases
+await using var baseContext = contextFactory . CreateBaseControleContext ();
+var databases = await baseContext .Companies
+. Where ( c => c .DatabaseName != null )
+. Select ( c => c .DatabaseName!)
+. Distinct ()
+. ToListAsync ( stoppingToken );
+// Step 5: Process each tenant independently
+foreach ( var database in databases )
+{
+if ( stoppingToken .IsCancellationRequested) break ;
+try
+{
+await myService . ProcessAsync ( database );
+_logger . LogDebug ( "Processed {Database} successfully" , database );
+}
+catch ( Exception ex )
+{
+// Per-database failure — log and continue to next tenant
+_logger . LogWarning ( ex , "Error processing {Database}. Continuing..." , database );
+}
+}
+// Step 6: Wait before next cycle
+await Task . Delay ( FallbackInterval , stoppingToken );
+}
+}
+Registration Checklist
+After creating the service, register it in Program.cs :
+// In Program.cs, near the relevant feature's other registrations
+builder .Services. AddHostedService < MyFeatureBackgroundService >();
+And that is it. The host will start your service automatically on application startup.
+Summary: The Complete Picture
+GivingCare Background Services Architecture
+=============================================
+Program.cs
+|
++-- AddHostedService<AutoCheckOutBackgroundService>()
+| Pattern A: Smart/Event-driven
+| Waits for exact next checkout time
+| Falls back to 10-minute polling
+|
++-- AddHostedService<EmailPollingBackgroundService>()
+| Pattern D: Config-driven interval
+| Reads interval from each company's DB config
+| Minimum 1 min, default 5 min
+|
++-- AddHostedService<NotificationSchedulerService>()
+| Pattern B: Daily scheduled at 08:00
+| Birthdays, document expiry, contract expiry
+|
++-- AddHostedService<NotificationCleanupService>()
+| Pattern C: Fixed every 6 hours
+| Deletes expired notifications + stale connections
+|
++-- AddHostedService<EmployeeDayScheduleExtensionService>()
+| Pattern B: Daily scheduled at 03:00
+| Extends rolling schedule windows by 3 months
+|
++-- AddHostedService<ChatCleanupService>()
+Pattern C: Fixed every 12 hours
+Deletes chat messages older than 30 days
+All services share:
+- IServiceProvider for scope creation (Section 4)
+- Three-layer error handling (Section 5)
+- Multi-tenant database iteration (Section 6)
+- Initial startup delay (Section 7)
+Key takeaways:
+Pattern A (Smart) : Use when you can query "when is the next thing due?" — eliminates
+wasted cycles entirely
+Pattern B (Daily) : Use for once-a-day tasks — calculate delay until target time, sleep,
+execute, loop
+Pattern C (Fixed) : Use for maintenance tasks where exact timing does not matter — the
+simplest and most readable pattern
+Pattern D (Config-driven) : Use when the interval should be controllable per tenant or
+per configuration
+Always create a scope before resolving scoped services — this is the single most common
+mistake in background services
+Never let an exception crash the loop — catch at every level, log, and continue
+Always respect stoppingToken — check it in loops and pass it to Task.Delay

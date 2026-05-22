@@ -1,0 +1,100 @@
+@inherits LayoutComponentBase
+@inject ContentService ContentService
+@inject ProgressService ProgressService
+@inject ThemeService ThemeService
+@inject NavigationService NavigationService
+@inject IJSRuntime JS
+
+<div class="layout">
+    <button class="sidebar-toggle" @onclick="ToggleSidebar">&#9776;</button>
+
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">Learning Webbook</div>
+            <div class="sidebar-sub">A Curated Developer Journey</div>
+        </div>
+
+        <ThemeSwitcher />
+
+        <SearchBar SearchQuery="@_searchQuery" SearchQueryChanged="OnSearchChanged" />
+
+        <div class="nav-tree" id="navTree">
+            @if (_phases is not null)
+            {
+                @foreach (var phase in _phases)
+                {
+                    <NavMenu Phase="@phase"
+                             ActiveTopicId="@_activeTopicId"
+                             SearchQuery="@_searchQuery"
+                             OnTopicSelected="OnTopicSelected" />
+                }
+            }
+        </div>
+
+        <div class="progress-section">
+            <div class="progress-label">
+                <span>Journey Progress</span>
+                <span>@ProgressService.ReadCount / @_totalTopics</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width:@(ProgressService.GetPercentage(_totalTopics))%"></div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content" id="mainContent">
+        <CascadingValue Value="@_searchQuery" Name="SearchQuery">
+            @Body
+        </CascadingValue>
+    </main>
+</div>
+
+@code {
+    private List<Phase>? _phases;
+    private int _totalTopics;
+    private string _searchQuery = "";
+    private string? _activeTopicId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _phases = await ContentService.GetPhasesAsync();
+        _totalTopics = await ContentService.GetTotalTopicsAsync();
+        ProgressService.OnProgressChanged += OnProgressChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await ThemeService.ApplyCurrentThemeAsync();
+        }
+    }
+
+    private void OnProgressChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnSearchChanged(string query)
+    {
+        _searchQuery = query;
+        StateHasChanged();
+    }
+
+    private async Task OnTopicSelected(string topicId)
+    {
+        _activeTopicId = topicId;
+        NavigationService.RequestTopic(topicId);
+        await JS.InvokeVoidAsync("sidebarInterop.closeSidebar");
+    }
+
+    private async Task ToggleSidebar()
+    {
+        await JS.InvokeVoidAsync("sidebarInterop.toggleSidebar");
+    }
+
+    public void Dispose()
+    {
+        ProgressService.OnProgressChanged -= OnProgressChanged;
+    }
+}

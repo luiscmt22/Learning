@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SistemaProduçãoChãoFábricaDocumentaçãoFormal</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 16-Domain-Examples-FactoryFloor</div>
+  <h1>SistemaProduçãoChãoFábricaDocumentaçãoFormal</h1>
+  <div class="meta">Source: <code>Education/FactoryFloor/PT/SistemaProduçãoChãoFábricaDocumentaçãoFormal.pdf</code> &middot; <a href="SistemaProduçãoChãoFábricaDocumentaçãoFormal.pdf">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<div class="dup-banner"><strong>Same-stem variants</strong> (likely same content, different format): <code>Education/FactoryFloor/PT/SistemaProduçãoChãoFábricaDocumentaçãoFormal.docx</code></div><div class="pdf-page"><h3>Page 1</h3><pre>Sistema de Produção de Chão de Fábrica -
+Documentação Técnica
+
+Índice
+
+    1. Visão Geral do Sistema
+    2. Arquitetura
+    3. Documentação de Componentes
+    4. Camada de Serviços
+    5. Modelos de Dados
+    6. Referência da API
+    7. Gestão de Estado
+    8. Pontos de Integração
+    9. Segurança
+    10. Considerações de Performance
+
+Visão Geral do Sistema
+
+Objetivo
+
+O Sistema de Produção de Chão de Fábrica é um sistema de execução de manufatura (MES)
+em tempo real, projetado para rastrear ordens de produção, consumo de materiais e
+movimentos de inventário num ambiente de produção.
+
+Funcionalidades Principais
+
+    • Gestão de ordens de produção em tempo real
+    • Rastreamento de consumo de materiais com análise de variância
+    • Geração automática de movimentos de stock
+    • Análise de padrões históricos de consumo
+    • Suporte para produção multi-máquina
+    • Integração com sistema ERP Primavera
+
+Stack Tecnológica
+
+    • Frontend: Blazor Server (.NET 8)
+    • Framework UI: MudBlazor
+    • Backend: ASP.NET Core
+    • Base de Dados: Entity Framework Core
+    • Integração Externa: Primavera ERP</pre></div>
+<div class="pdf-page"><h3>Page 2</h3><pre>Arquitetura
+
+Diagrama de Arquitetura do Sistema
+
+┌─────────────────────────────────────────────────────────┐
+
+│                  Camada de Apresentação                   │
+
+│ ┌──────────────┐ ┌─────────────────────────────┐          │
+
+│ │Factory_New │ │MaterialConsumptionModal         │        │
+
+│ │ (.razor) │ │      (.razor)                     │        │
+
+│ └──────┬───────┘ └────────────┬────────────────┘          │
+
+└─────────┼───────────────────────┼───────────────────────┘
+
+    │                        │
+
+┌─────────▼───────────────────────▼──────────────────────┐
+
+│                  Camada de Serviços                 │
+
+│ ┌─────────────────────────────────────────────────┐ │
+
+││     IFactoryFloorService                           ││
+
+││     FactoryFloorService                            ││
+
+│ └─────────────────┬───────────────────────────────┘ │
+
+└────────────────────┼───────────────────────────────────┘
+
+                   │
+
+┌────────────────────▼───────────────────────────────────┐
+
+│                  Camada de Acesso a Dados           │
+
+│ ┌──────────────────┐ ┌────────────────────────┐     │
+
+│ │BioBragaContext │ │IPrimaveraRepository │          │
+
+│ │(Entity Framework)│ │(Integração ERP)     │        │
+
+│ └──────────────────┘ └────────────────────────┘     │
+
+└────────────────────────────────────────────────────────┘
+
+Padrões de Design
+
+    • Padrão Repository: Abstração de acesso a dados
+    • Padrão Service Layer: Encapsulamento de lógica de negócio
+    • Injeção de Dependência: Container IoC para baixo acoplamento
+    • Unit of Work: Gestão de transações via EF Core
+
+Documentação de Componentes
+
+Factory_New.razor
+
+Objetivo
+
+Interface principal do chão de fábrica fornecendo visualização em tempo real de ordens de
+produção e mecanismos de controlo.
+
+Estrutura do Componente
+
+@page &quot;/factory_new&quot;
+@page &quot;/factory_new/{maquinaid}&quot;
+@layout FactoryLayout</pre></div>
+<div class="pdf-page"><h3>Page 3</h3><pre>Propriedades Principais
+
+Propriedade                       Tipo                                 Descrição
+
+maquinaid                string?         Parâmetro de rota para filtragem de
+                                         máquina
+
+CurrentWorker            CrmUtilizador?  Parâmetro em cascata para
+                                         trabalhador autenticado
+
+allProductionOrders      List&lt;OrdemProducao&gt; Coleção completa de ordens
+
+filteredProductionOrders List&lt;OrdemProducao&gt; Ordens filtradas por máquina
+
+selectedMachine          CrmEquipamento? Máquina atualmente selecionada
+
+todayStats               ProductionStatsDto? Métricas de produção de hoje
+
+Métodos do Ciclo de Vida
+
+OnInitializedAsync()
+
+protected override async Task OnInitializedAsync()
+{
+
+       await LoadInitialData();
+       isDataLoaded = true;
+}
+
+    • Carrega máquinas e ordens de produção
+    • Define flag de dados iniciais carregados
+
+OnParametersSetAsync()
+
+protected override async Task OnParametersSetAsync()
+
+    • Gere mudanças de parâmetros URL
+    • Gere navegação do browser (voltar/avançar)
+    • Atualiza dados filtrados baseado na seleção de máquina
+
+Métodos Principais
+
+SelectMachine(string? machineId)
+
+    • Atualiza URL para bookmarking
+    • Filtra ordens localmente sem roundtrip ao servidor
+    • Atualiza estatísticas de produção
+
+RequestPinForAction(OrdemProducao order, ProductionAction action)
+
+    • Abre diálogo de autenticação PIN
+    • Valida credenciais do trabalhador
+    • Executa ação de produção após autenticação bem-sucedida
+
+ExecuteProductionAction(OrdemProducao order, ProductionAction action)
+
+    • Processa ações Iniciar/Pausar/Parar</pre></div>
+<div class="pdf-page"><h3>Page 4</h3><pre>• Abre modal de consumo de material para Pausar/Parar
+• Atualiza estado da ordem via camada de serviço
+
+MaterialConsumptionModal.razor
+
+Objetivo
+
+Diálogo modal para registar consumo real de materiais e quantidades de produção.
+
+Funcionalidades Principais
+
+    • Carregamento dinâmico de materiais baseado na quantidade de produção
+    • Cálculo de variância em tempo real
+    • Exibição de padrões históricos de consumo
+    • Validação de disponibilidade de stock
+    • Indicador de progresso de submissão multi-passo
+
+Propriedades do Componente
+
+Propriedade               Tipo                         Descrição
+
+OrdemProducao OrdemProducao?    Ordem de produção a processar
+
+WorkerId     int                ID do trabalhador autenticado
+
+QuantityProduced decimal        Quantidade real produzida
+
+Waste        decimal            Quantidade de desperdício
+
+Materials    List&lt;MaterialConsumptionDto&gt; Lista de consumo de materiais
+
+Estratégia de Carregamento de Materiais
+
+private async Task OnQuantityProducedChanged(decimal value)
+{
+
+       // Mecanismo de debounce com 1.5s de atraso
+       _loadMaterialsCts?.Cancel();
+       _loadMaterialsCts = new CancellationTokenSource();
+       await Task.Delay(1500, token);
+
+       if (!token.IsCancellationRequested)
+              await LoadMaterials();
+
+}
+
+Processo de Submissão
+
+    1. Validar dados
+    2. Atualizar quantidades da ordem
+    3. Gerar movimentos de stock
+    4. Registar consumo de material
+    5. Enviar para Primavera ERP
+    6. Finalizar transação</pre></div>
+<div class="pdf-page"><h3>Page 5</h3><pre>Rastreamento de Progresso
+
+private async Task UpdateProgress(int step, string message)
+{
+
+       CurrentStepNumber = step;
+       CurrentStep = message;
+       StateHasChanged();
+       await Task.Yield(); // Permitir atualização UI
+}
+
+Camada de Serviços
+
+Interface IFactoryFloorService
+
+Operações Principais
+
+Gestão de Ordens de Produção
+
+Task&lt;List&lt;OrdemProducao&gt;&gt; GetProductionOrdersAsync(string? maquinaId =
+null);
+Task&lt;OrdemProducao?&gt; GetProductionOrderByIdAsync(int orderId,
+BioBragaContext? existingContext = null);
+
+Controlo de Produção
+
+Task&lt;(bool success, string message)&gt; StartProductionAsync(int orderId, int
+userId);
+Task&lt;(bool success, string message)&gt; PauseProductionAsync(int orderId, int
+userId);
+Task&lt;(bool success, string message)&gt; EndProductionAsync(int orderId, int
+userId);
+
+Gestão de Materiais
+
+Task&lt;List&lt;MaterialConsumptionDto&gt;&gt; GetMaterialsForProductionAsync(int
+orderId, decimal quantityProduced);
+Task&lt;(bool success, string message)&gt; RegisterProductionAsync(
+
+       int orderId, int userId, decimal quantityProduced,
+       decimal waste, List&lt;MaterialConsumptionDto&gt; actualConsumption);
+
+Implementação FactoryFloorService
+
+Injeção de Dependências
+
+public FactoryFloorService(
+       IDbContextFactory&lt;BioBragaContext&gt; contextFactory,
+       IPrimaveraRepository primaveraRepo,
+       ILogger&lt;FactoryFloorService&gt; logger,
+       IConfiguration configuration)
+
+Algoritmo de Cálculo de Material
+
+Lógica GetMaterialsForProductionAsync
+
+// Cálculo principal para consumo proporcional de material</pre></div>
+<div class="pdf-page"><h3>Page 6</h3><pre>var totalPlannedForOrder = mat.gf.Quantidade ?? 0;
+var orderQuantity = order.Quantidade ?? 1;
+var perUnitQuantity = totalPlannedForOrder / orderQuantity;
+var proportionalQty = Math.Round(perUnitQuantity * quantityProduced, 6);
+
+// Consideração de média histórica
+decimal? suggestedQty = null;
+if (mat.gf.QuantidadeMedia.HasValue &amp;&amp; mat.gf.QuantidadeMedia.Value &gt; 0)
+{
+
+       suggestedQty = Math.Round(mat.gf.QuantidadeMedia.Value *
+quantityProduced, 6);
+}
+
+Gestão de Transações
+
+Fluxo de Transação RegisterProductionAsync
+
+using var transaction = await context.Database.BeginTransactionAsync();
+try
+{
+
+       // 1. Atualizar quantidades da ordem
+       order.QuantidadeFeita += quantityProduced;
+       order.QuantidadeFalta -= quantityProduced;
+
+       // 2. Atualizar rastreamento de consumo
+       gastoFase.QuantidadeConsumida += material.ActualQuantity;
+       gastoFase.NumeroProducoes++;
+
+       // 3. Gerar movimentos de stock
+       await GenerateStockMovementsAsync(...);
+
+       // 4. Confirmar transação
+       await transaction.CommitAsync();
+}
+catch
+{
+       await transaction.RollbackAsync();
+       throw;
+}
+
+Geração de Movimentos de Stock
+
+Padrão de Geração de Documentos
+
+    1. Entrada de Stock (ENTSTOCK): Regista produtos acabados
+    2. Saída de Stock (SAIDASTOCK): Regista consumo de material
+    3. Documento de Desperdício (DESP): Regista desperdício de produção
+
+private async Task GenerateStockEntryAsync(
+       BioBragaContext context,
+       OrdemProducao order,
+       int userId,
+       decimal quantity)
+
+{
+       // Criação do cabeçalho do documento
+       var doc = new CrmDocumento
+       {
+              Tipodocumentoid = tipoDoc.Id,</pre></div>
+<div class="pdf-page"><h3>Page 7</h3><pre>              Numero = await GetNextDocumentNumber(),
+              Data = DateTime.Now,
+              DocumentoOrdemFabrico = order.op.Id
+       };
+
+       // Linhas do documento para produto e referência
+}
+
+Modelos de Dados
+
+DTOs Principais
+
+MaterialConsumptionDto
+
+public class MaterialConsumptionDto
+{
+
+       public int GastosFaseId { get; set; }
+       public int? ArtigoId { get; set; }
+       public string ArtigoNome { get; set; }
+       public string ArtigoCodigo { get; set; }
+       public string Unidade { get; set; }
+
+       // Quantidades
+       public decimal PlannedQuantity { get; set; }
+       public decimal ActualQuantity { get; set; }
+       public decimal Stock { get; set; }
+
+       // Análise de Variância
+       public decimal Variance =&gt; ActualQuantity - PlannedQuantity;
+       public decimal VariancePercentage =&gt;
+
+              PlannedQuantity != 0 ? (Variance / PlannedQuantity) * 100 : 0;
+
+       // Dados Históricos
+       public decimal? HistoricalAverage { get; set; }
+       public decimal? TotalConsumed { get; set; }
+       public int? ProductionCount { get; set; }
+}
+
+ProductionStatsDto
+
+public class ProductionStatsDto
+{
+
+       public decimal? TotalProduced { get; set; }
+       public decimal? TotalPending { get; set; }
+}</pre></div>
+<div class="pdf-page"><h3>Page 8</h3><pre>Modelos de Entidade
+
+OrdemProducao (Modelo Composto)
+
+public class OrdemProducao
+{
+
+       public CrmOrdemProducao op { get; set; }
+       public CrmDocumentoDetalhe docline { get; set; }
+       public CrmDocumento doc { get; set; }
+       public CrmArtigo artigo { get; set; }
+       public List&lt;ComponenteProd&gt; ListaComponentes { get; set; }
+}
+
+Referência da API
+
+Registo de Serviços
+
+// Program.cs ou Startup.cs
+services.AddScoped&lt;IFactoryFloorService, FactoryFloorService&gt;();
+services.AddDbContextFactory&lt;BioBragaContext&gt;(options =&gt;
+
+       options.UseSqlServer(connectionString));
+
+Padrões de Endpoints
+
+    • /factory_new - Vista geral de produção
+    • /factory_new/{maquinaid} - Vista específica de máquina
+
+Gestão de Estado
+
+Fluxo de Estado do Componente
+
+Ação Utilizador → Evento Componente → Chamada Serviço → Atualização BD → Refresh UI
+              ↑
+
+↓
+              └──────────────── StateHasChanged() ←─────────────────────────────┘
+
+Parâmetros em Cascata
+
+[CascadingParameter] public CrmUtilizador? CurrentWorker { get; set; }
+[CascadingParameter] public EventCallback&lt;CrmUtilizador?&gt; OnWorkerChanged {
+get; set; }
+
+Persistência de Estado
+
+    • Estado baseado em URL para seleção de máquina
+    • Autenticação de trabalhador baseada em sessão
+    • Estado de produção persistido em base de dados</pre></div>
+<div class="pdf-page"><h3>Page 9</h3><pre>Pontos de Integração
+
+Integração Primavera ERP
+
+await _primaveraRepo.SendMovimentacaoStock(doc, lines);
+
+Gestão de Contexto de Base de Dados
+
+// Padrão de reutilização de contexto para transações
+var shouldDisposeContext = existingContext == null;
+var context = existingContext ?? await
+_contextFactory.CreateDbContextAsync();
+try
+{
+
+       // Operações
+}
+finally
+{
+
+       if (shouldDisposeContext)
+              await context.DisposeAsync();
+
+}
+
+Segurança
+
+Fluxo de Autenticação
+
+    1. Autenticação de trabalhador baseada em PIN
+    2. Armazenamento de PIN com hash (Utils.Hash(pin))
+    3. Validação de utilizador ativo
+    4. Requisitos de autenticação ao nível da ação
+
+Verificações de Autorização
+
+if (CurrentWorker == null) return;
+if (worker != null &amp;&amp; worker.Isactive != true) return null;
+
+Trilha de Auditoria
+
+    • Todas as ações registadas com ID de utilizador e timestamp
+    • Logs de produção armazenados em CrmOrdemProducaoLog
+    • Criação de documentos rastreada com campo Criadopor
+
+Considerações de Performance
+
+Estratégias de Otimização
+
+Debouncing
+
+// Debounce de 1.5 segundos para carregamento de materiais
+await Task.Delay(1500, token);</pre></div>
+<div class="pdf-page"><h3>Page 10</h3><pre>Eager Loading
+
+var query = from op in context.CrmOrdemProducaos
+                     join docDetail in context.CrmDocumentoDetalhes...
+                     // Múltiplos joins para dados completos
+
+Filtragem Local
+
+private void FilterOrdersByMachine()
+{
+
+       // Filtragem client-side para evitar roundtrip ao servidor
+       filteredProductionOrders = allProductionOrders
+
+              .Where(o =&gt; o.op.Equipamentoid.ToString() == maquinaid)
+              .ToList();
+}
+
+Considerações de Escalabilidade
+
+    • Pool de conexões de base de dados via IDbContextFactory
+    • Operações assíncronas em todo o sistema
+    • Minimização de âmbito de transações
+    • Queries de base de dados indexadas em campos frequentemente acedidos
+
+Pontos de Monitorização
+
+    • Performance de query de ordens de produção
+    • Tempo de resposta de cálculo de materiais
+    • Duração de geração de movimentos de stock
+    • Latência de integração Primavera
+
+Tratamento de Erros
+
+Padrão da Camada de Serviço
+
+try
+{
+
+       // Operação
+       return (true, &quot;Mensagem de sucesso&quot;);
+}
+catch (Exception ex)
+{
+       _logger.LogError(ex, &quot;Descrição do erro&quot;);
+       return (false, $&quot;Mensagem de erro: {ex.Message}&quot;);
+}
+
+Feedback de Erro na UI
+
+Snackbar.Add($&quot;Mensagem de erro&quot;, Severity.Error);</pre></div>
+<div class="pdf-page"><h3>Page 11</h3><pre>Considerações de Deployment
+
+Requisitos de Configuração
+
+    • Connection strings para base de dados BioBraga
+    • Endpoints da API Primavera
+    • Configuração de logging
+    • Configuração de caminho de armazenamento de imagens
+
+Variáveis de Ambiente
+
+{
+   &quot;ConnectionStrings&quot;: {
+       &quot;DefaultConnection&quot;: &quot;Server=...;Database=BioBraga;...&quot;
+   },
+   &quot;Primavera&quot;: {
+       &quot;ApiEndpoint&quot;: &quot;https://...&quot;
+   }
+
+}
+
+Health Checks
+
+    • Conectividade de base de dados
+    • Disponibilidade da API Primavera
+    • Responsividade da camada de serviço
+
+Manutenção e Suporte
+
+Estratégia de Logging
+
+    • Logging estruturado com IDs de correlação
+    • Métricas de performance para operações chave
+    • Rastreamento de erros com stack traces
+    • Trilha de auditoria de ações do utilizador
+
+Manutenção de Base de Dados
+
+    • Otimização regular de índices
+    • Arquivo de logs históricos de produção
+    • Procedimentos de reconciliação de níveis de stock
+    • Limpeza de ordens canceladas/concluídas
+
+Controlo de Versões
+
+    • Versionamento semântico para releases
+    • Scripts de migração de base de dados
+    • Considerações de compatibilidade retroativa
+    • Implementação de feature flags para rollouts graduais</pre></div>
+</div>
+</body>
+</html>

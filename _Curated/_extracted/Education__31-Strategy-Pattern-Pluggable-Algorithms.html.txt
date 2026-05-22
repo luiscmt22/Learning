@@ -1,0 +1,525 @@
+Strategy Pattern — Pluggable Algorithms
+Strategy Pattern — Pluggable Algorithms
+Tutorial #31 — Same interface, different algorithm, chosen at runtime
+1. The Problem: if/else Algorithm Selection
+Imagine you need to detect scheduling conflicts. Employees have conflicts with job schedules and day schedules. Equipment has conflicts with equipment schedules. The naive approach stuffs all of this into one massive method:
+public async Task< List < Conflict >> DetectConflicts (
+string entityType , int entityId , DateTime date , string db )
+{
+if ( entityType == "Employee" )
+{
+// 100 lines of employee conflict logic...
+// Query JobSchedule table
+// Query EmployeeDaySchedule table
+// Check feature flags for Jobs and Scheduling modules
+// Check approved leaves
+// Calculate cross-midnight overlaps
+}
+else if ( entityType == "Equipment" )
+{
+// 100 lines of equipment conflict logic...
+// Query JobEquipmentSchedule table
+// Different overlap rules (no leave checks)
+}
+else if ( entityType == "Vehicle" ) // future
+{
+// ...yet another 100 lines
+}
+}
+Why This Is Bad
+Violates the Open/Closed Principle — every new entity type means modifying this method, risking bugs in existing logic
+Massive method — 300+ lines with completely unrelated algorithms interleaved
+Impossible to test in isolation — you cannot test employee conflict logic without also having equipment logic in scope
+Dependency chaos — the method needs every dependency for every entity type, even when only one is used
+If you find yourself writing if (type == X) do algorithm A, else if (type == Y) do algorithm B , you need the Strategy Pattern. Each algorithm should be its own class.
+2. The Strategy Pattern — Classic GoF
+The Strategy Pattern extracts each algorithm into its own class, all implementing the same interface. A "router" (context/detector) picks the right one at runtime based on a key.
+IScheduleConflictStrategy (interface)
+├── EntityType: string
+├── GetScheduleConflictsAsync ()
+├── GetDetailedConflictsAsync ()
+├── WouldCreateConflictAsync ()
+├── HasTimeOverlapAsync ()
+└── CalculateDailyHoursAsync ()
+▲
+┌────────┴─────────────┐
+EmployeeScheduleConflict EquipmentScheduleConflict
+Strategy Strategy
+EntityType = "Employee" EntityType = "Equipment"
+Queries: Queries:
+- JobSchedule - JobEquipmentSchedule
+- EmployeeDaySchedule
+- LeaveRequest
+Checks feature flags No feature flags needed
+(Jobs + Scheduling)
+The caller never knows which concrete strategy runs. It just says "detect conflicts for this entity type" and the right algorithm executes.
+A strategy is like a USB port — the laptop (context) doesn't care what's plugged in (keyboard, mouse, printer). It just calls the same interface. Plug in a new device? Works instantly without changing the laptop.
+3. The Interface — IScheduleConflictStrategy
+This is the contract that every conflict detection algorithm must implement. It lives at Services/Core/Scheduling/ConflictDetection/IScheduleConflictStrategy.cs :
+/// Strategy interface for entity-specific conflict detection.
+/// Each entity type (Employee, Equipment) has its own strategy.
+/// Follows OCP - add new entities by creating new strategies without modifying existing code.
+/// Follows DIP - detector depends on this abstraction, not concrete implementations.
+public interface IScheduleConflictStrategy
+{
+/// The entity type this strategy handles (e.g., "Employee", "Equipment")
+string EntityType { get ; }
+/// Detects scheduling conflicts for an entity on a specific date
+Task < List < ScheduleConflict >> GetScheduleConflictsAsync (
+int entityId ,
+DateTime date ,
+string companyDatabase );
+/// Gets detailed conflict analysis including time overlaps and daily hours
+Task < DetailedConflictInfo > GetDetailedConflictsAsync (
+int entityId ,
+DateTime scheduleDate ,
+DateTime endDate ,
+TimeSpan startTime ,
+TimeSpan endTime ,
+int ? excludeScheduleId ,
+string companyDatabase ,
+ConflictSourceType ? excludeSourceType = null );
+/// Checks if adding a new schedule would create a conflict
+Task < bool > WouldCreateConflictAsync (
+int entityId ,
+DateTime date ,
+int ? excludeJobId ,
+string companyDatabase );
+/// Advanced time-based overlap detection for cross-midnight shifts
+Task < bool > HasTimeOverlapAsync (
+int entityId ,
+DateTime startDate ,
+TimeSpan startTime ,
+DateTime endDate ,
+TimeSpan endTime ,
+int ? excludeJobId ,
+string companyDatabase );
+/// Calculates total hours an entity is scheduled for on a specific date
+Task < decimal > CalculateDailyHoursAsync (
+int entityId ,
+DateTime date ,
+string companyDatabase ,
+int ? excludeScheduleId = null ,
+ConflictSourceType ? excludeSourceType = null );
+}
+Key design decisions in this interface:
+EntityType property — each strategy self-declares which entity it handles. The router uses this to find the right strategy.
+companyDatabase parameter on every method — supports GivingCare's multi-tenant architecture
+excludeScheduleId + ConflictSourceType — prevents false positives when editing an existing schedule (don't detect conflicts against yourself)
+5 methods covering different levels of detail — from a simple "would this conflict?" boolean to a fully detailed analysis
+4. Two Implementations — Same Interface, Different Algorithms
+EmployeeScheduleConflictStrategy
+The employee strategy is the more complex one. It must query two separate schedule tables and check feature flags to know which modules are active:
+public class EmployeeScheduleConflictStrategy : IScheduleConflictStrategy
+{
+private readonly IDbContextFactoryService _contextFactory ;
+private readonly ICompanyFeatureFlagService _featureFlagService ;
+private readonly ILogger < EmployeeScheduleConflictStrategy > _logger ;
+public string EntityType => ConflictEntityTypes .Employee; // "Employee"
+public async Task < List < ScheduleConflict >> GetScheduleConflictsAsync (
+int entityId , DateTime date , string companyDatabase )
+{
+await using var context = _contextFactory . CreateCompanyContext ( companyDatabase );
+var conflicts = new List < ScheduleConflict >();
+// Check which modules are enabled for this company
+var jobsEnabled = await _featureFlagService
+. IsFeatureEnabledAsync ( companyDatabase , FeatureKeys .JobsModule);
+var schedulingEnabled = await _featureFlagService
+. IsFeatureEnabledAsync ( companyDatabase , FeatureKeys .SchedulingModule);
+var allEntries = new List <...>();
+// Source 1: JobSchedule table (if Jobs module is enabled)
+if ( jobsEnabled )
+{
+var jobSchedules = await context .Set< JobSchedule >()
+. Include (s => s.Job)
+. Where (s => s.EmployeeId == entityId && s.ScheduleDate.Date == date .Date)
+. ToListAsync ();
+// Add to allEntries...
+}
+// Source 2: EmployeeDaySchedule table (if Scheduling module is enabled)
+if ( schedulingEnabled )
+{
+var daySchedules = await context .Set< EmployeeDaySchedule >()
+. Include (eds => eds.EmployeeSchedule)
+. ThenInclude (es => es.Schedule)
+. Where (eds => eds.EmployeeId == entityId && eds.ScheduleDate.Date == date .Date)
+. ToListAsync ();
+// Add to allEntries...
+}
+// Detect conflicts across both sources
+if ( allEntries .Count > 1 ) { /* build conflict list */ }
+return conflicts ;
+}
+// Also checks approved LeaveRequests (blocking conflicts)
+// Also calculates cross-midnight shift overlaps
+// ... 450+ lines of employee-specific logic
+}
+Key things about the employee strategy:
+Queries two tables : JobSchedule and EmployeeDaySchedule
+Gated by feature flags — only queries tables for enabled modules
+Checks approved leaves — employees can have leave conflicts, equipment cannot
+Needs ICompanyFeatureFlagService as a dependency
+EquipmentScheduleConflictStrategy
+The equipment strategy is simpler. It only queries one table and has no feature flags or leave checks:
+public class EquipmentScheduleConflictStrategy : IScheduleConflictStrategy
+{
+private readonly IDbContextFactoryService _contextFactory ;
+private readonly ILogger < EquipmentScheduleConflictStrategy > _logger ;
+public string EntityType => ConflictEntityTypes .Equipment; // "Equipment"
+public async Task < List < ScheduleConflict >> GetScheduleConflictsAsync (
+int entityId , DateTime date , string companyDatabase )
+{
+await using var context = _contextFactory . CreateCompanyContext ( companyDatabase );
+// Only one source: JobEquipmentSchedule
+var equipmentSchedules = await context .Set< JobEquipmentSchedule >()
+. Include (s => s.Job)
+. Where (s => s.EquipmentId == entityId && s.ScheduleDate.Date == date .Date)
+. ToListAsync ();
+var conflicts = new List < ScheduleConflict >();
+if ( equipmentSchedules .Count > 1 )
+{
+foreach ( var schedule in equipmentSchedules )
+{
+conflicts . Add ( new ScheduleConflict
+{
+ScheduleId = schedule .Id,
+JobId = schedule .JobId,
+JobCode = schedule .Job?.Code ?? string .Empty,
+JobName = schedule .Job?.Name ?? string .Empty,
+ScheduleDate = schedule .ScheduleDate,
+CheckInTime = schedule .CheckInTime,
+CheckOutTime = schedule .CheckOutTime,
+ConflictType = "DoubleBooking"
+});
+}
+}
+return conflicts ;
+}
+// No feature flags needed
+// No leave checking (equipment doesn't take holidays)
+// ... ~300 lines of equipment-specific logic
+}
+Notice how each strategy has different dependencies . The employee strategy needs ICompanyFeatureFlagService ; the equipment strategy doesn't. This is a major benefit — each algorithm class only injects what it actually needs.
+5. The Router — ScheduleConflictDetector
+The ScheduleConflictDetector is the facade that callers interact with. It receives ALL registered strategies via DI and routes to the correct one based on entityType . This is the actual production code from Services/Core/Scheduling/ConflictDetection/ScheduleConflictDetector.cs :
+public class ScheduleConflictDetector : IScheduleConflictDetector
+{
+private readonly IEnumerable < IScheduleConflictStrategy > _strategies ;
+private readonly ILogger < ScheduleConflictDetector > _logger ;
+public ScheduleConflictDetector (
+IEnumerable < IScheduleConflictStrategy > strategies ,
+ILogger < ScheduleConflictDetector > logger )
+{
+_strategies = strategies ;
+_logger = logger ;
+}
+public async Task < List < ScheduleConflict >> GetScheduleConflictsAsync (
+string entityType , int entityId ,
+DateTime date , string companyDatabase )
+{
+var strategy = GetStrategy ( entityType );
+return await strategy . GetScheduleConflictsAsync ( entityId , date , companyDatabase );
+}
+public async Task < DetailedConflictInfo > GetDetailedConflictsAsync (
+string entityType , int entityId ,
+DateTime scheduleDate , DateTime endDate ,
+TimeSpan startTime , TimeSpan endTime ,
+int ? excludeScheduleId , string companyDatabase ,
+ConflictSourceType ? excludeSourceType = null )
+{
+var strategy = GetStrategy ( entityType );
+return await strategy . GetDetailedConflictsAsync (
+entityId , scheduleDate , endDate ,
+startTime , endTime , excludeScheduleId ,
+companyDatabase , excludeSourceType );
+}
+public async Task < bool > WouldCreateConflictAsync (
+string entityType , int entityId ,
+DateTime date , int ? excludeJobId , string companyDatabase )
+{
+var strategy = GetStrategy ( entityType );
+return await strategy . WouldCreateConflictAsync (
+entityId , date , excludeJobId , companyDatabase );
+}
+public async Task < bool > HasTimeOverlapAsync (
+string entityType , int entityId ,
+DateTime startDate , TimeSpan startTime ,
+DateTime endDate , TimeSpan endTime ,
+int ? excludeJobId , string companyDatabase )
+{
+var strategy = GetStrategy ( entityType );
+return await strategy . HasTimeOverlapAsync (
+entityId , startDate , startTime ,
+endDate , endTime , excludeJobId , companyDatabase );
+}
+public async Task < decimal > CalculateDailyHoursAsync (
+string entityType , int entityId ,
+DateTime date , string companyDatabase ,
+int ? excludeScheduleId = null ,
+ConflictSourceType ? excludeSourceType = null )
+{
+var strategy = GetStrategy ( entityType );
+return await strategy . CalculateDailyHoursAsync (
+entityId , date , companyDatabase ,
+excludeScheduleId , excludeSourceType );
+}
+/// Gets the appropriate strategy for the entity type.
+/// Throws if no strategy is registered for the type.
+private IScheduleConflictStrategy GetStrategy ( string entityType )
+{
+var strategy = _strategies . FirstOrDefault (s =>
+s.EntityType. Equals ( entityType , StringComparison .OrdinalIgnoreCase));
+if ( strategy == null )
+{
+_logger . LogError (
+"No conflict detection strategy registered for entity type: {EntityType}" ,
+entityType );
+throw new ArgumentException (
+$"No conflict detection strategy registered for entity type: { entityType }" );
+}
+return strategy ;
+}
+}
+GetStrategy(entityType) reads as: "Find the strategy that handles this entity type and give it to me. If none exists, throw an error."
+Notice the pattern in every public method — it's always the same two lines:
+var strategy = GetStrategy(entityType); — pick the right algorithm
+return await strategy.SomeMethodAsync(...); — delegate to it
+The detector itself contains zero business logic . It is purely a routing mechanism. All the real work happens inside the strategies.
+6. DI Registration — The Magic Glue
+In Extensions/ServiceCollectionExtensions.cs , the strategies are registered like this:
+// Register each strategy as an implementation of the interface
+builder.Services. AddScoped < IScheduleConflictStrategy , EmployeeScheduleConflictStrategy >();
+builder.Services. AddScoped < IScheduleConflictStrategy , EquipmentScheduleConflictStrategy >();
+// Register the detector (router)
+builder.Services. AddScoped < IScheduleConflictDetector , ScheduleConflictDetector >();
+How Does This Work?
+When you register multiple implementations of the same interface, .NET DI collects them all. If a constructor asks for IEnumerable<IScheduleConflictStrategy> , it receives a collection containing every registered implementation.
+DI Container:
+IScheduleConflictStrategy #1 --> EmployeeScheduleConflictStrategy
+IScheduleConflictStrategy #2 --> EquipmentScheduleConflictStrategy
+ScheduleConflictDetector constructor asks for:
+IEnumerable<IScheduleConflictStrategy>
+DI delivers:
+[ EmployeeScheduleConflictStrategy, EquipmentScheduleConflictStrategy ]
+GetStrategy("Employee") --> scans the list --> returns #1
+GetStrategy("Equipment") --> scans the list --> returns #2
+GetStrategy("Vehicle") --> scans the list --> null --> THROWS
+This is the key insight: DI becomes the strategy registry . You don't need to maintain a manual dictionary or factory method. Just register new strategies, and the detector discovers them automatically.
+7. Other Strategy Patterns in GivingCare
+The conflict detector isn't the only place GivingCare uses the Strategy Pattern. The attendance export system uses it twice:
+IExportGenerator — Different Format, Same Data
+Three generators, one interface. Each produces a different file format from the same ReportData :
+public interface IExportGenerator
+{
+ExportFormat Format { get ; } // The key: Excel, Csv, or Pdf
+string ContentType { get ; } // MIME type for HTTP response
+string FileExtension { get ; } // .xlsx, .csv, or .pdf
+byte [] Generate ( ReportData data , ExportOptions options );
+}
+public class PdfExportGenerator : IExportGenerator
+{
+public ExportFormat Format => ExportFormat .Pdf;
+public string ContentType => "application/pdf" ;
+public string FileExtension => ".pdf" ;
+// Uses QuestPDF library for PDF generation
+}
+public class ExcelExportGenerator : IExportGenerator
+{
+public ExportFormat Format => ExportFormat .Excel;
+public string ContentType => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ;
+public string FileExtension => ".xlsx" ;
+// Uses ClosedXML library for Excel generation
+}
+public class CsvExportGenerator : IExportGenerator
+{
+public ExportFormat Format => ExportFormat .Csv;
+public string ContentType => "text/csv" ;
+public string FileExtension => ".csv" ;
+// Uses StringBuilder + pt-PT culture for CSV
+}
+IReportBuilder — Different Report, Same Pipeline
+Six builders, one interface. Each gathers data for a different type of attendance report:
+public interface IReportBuilder
+{
+ReportType ReportType { get ; } // The key: AttendanceSummary, LeaveMap, etc.
+Task < ReportData > BuildAsync ( ReportBuildContext context );
+}
+Builder ReportType Key What It Builds
+AttendanceSummaryBuilder AttendanceSummary Overall attendance rates, daily breakdown, employee breakdown
+EmployeeDetailsBuilder EmployeeDetails Individual attendance records with check-in/out times
+JobReportBuilder JobReport Per-job hours and employee breakdown
+LeaveMapBuilder LeaveMap Leave calendar with type counts
+ScheduledVsActualBuilder ScheduledVsActual Planned hours vs. actual worked hours variance
+TrendsBuilder Trends Daily/weekly/monthly attendance trend lines
+The Export Service — Using Two Strategies Together
+The AttendanceExportService combines both strategies in a single pipeline. It selects one builder (by report type) and one generator (by format):
+public class AttendanceExportService : IAttendanceExportService
+{
+private readonly IEnumerable < IReportBuilder > _builders ;
+private readonly IEnumerable < IExportGenerator > _generators ;
+public async Task < ExportResult > GenerateReportAsync (
+ExportRequest request , string companyDatabase )
+{
+// Strategy #1: Pick the right report builder
+var builder = _builders . FirstOrDefault (b => b.ReportType == request .ReportType);
+if ( builder == null )
+return ExportResult . Failure ( $"Tipo de relatorio nao suportado: {request.ReportType}" );
+// Strategy #2: Pick the right format generator
+var generator = _generators . FirstOrDefault (g => g.Format == request .Format);
+if ( generator == null )
+return ExportResult . Failure ( $"Formato nao suportado: {request.Format}" );
+// Build the data (strategy #1)
+var reportData = await builder . BuildAsync ( context );
+// Generate the file (strategy #2)
+var bytes = generator . Generate ( reportData , request .Options);
+return ExportResult . Ok ( fileName , bytes , generator .ContentType);
+}
+}
+This gives you a matrix of combinations : 6 report types x 3 formats = 18 possible exports, all from composing two simple strategy selections. No if/else chain in sight.
+Honorable Mention: ICheckInValidator / ICheckOutValidator
+These use a related pattern (Chain of Responsibility, covered in Tutorial #29). The key difference: validators ALL run in sequence, while strategies select ONE. More on this distinction in Section 8.
+8. Strategy vs Chain of Responsibility
+Both patterns use interfaces and DI injection of multiple implementations. But they serve fundamentally different purposes:
+Aspect
+Strategy
+Chain of Responsibility
+Selection
+ONE strategy chosen by type/key
+ALL validators run in sequence
+Purpose
+Different algorithm per context
+Multiple independent checks
+Termination
+Selected strategy runs completely
+First failure stops the chain
+DI Injection
+IEnumerable<T> — pick one via key
+IEnumerable<T> — iterate all
+GivingCare Example
+ConflictDetector picks Employee OR Equipment
+CheckIn runs ALL 4 validators
+Router Code
+_strategies.FirstOrDefault(s => s.Key == type)
+foreach (var v in _validators) v.Validate()
+The Strategy Pattern is about SELECTING one algorithm at runtime. Chain of Responsibility is about running MULTIPLE handlers in sequence. They look similar (both use interfaces + DI) but serve different purposes.
+Strategy Pattern (pick ONE):
+"Employee" ─── GetStrategy() ───> EmployeeScheduleConflictStrategy ✓ RUNS
+EquipmentScheduleConflictStrategy ✗ skipped
+Chain of Responsibility (run ALL):
+CheckIn Request ──> ActiveCheckInValidator ✓ pass
+──> ScheduleSourceValidator ✓ pass
+──> TimeWindowValidator ✓ pass
+──> GeolocationValidator ✗ FAIL --> STOP
+9. Adding a New Strategy — Step by Step
+Let's say you need to add vehicle scheduling conflict detection. Here's exactly what you do:
+Step 1: Create the Strategy Class
+namespace GivingCare.Services.Core.Scheduling.ConflictDetection.Strategies;
+public class VehicleScheduleConflictStrategy : IScheduleConflictStrategy
+{
+private readonly IDbContextFactoryService _contextFactory ;
+private readonly ILogger < VehicleScheduleConflictStrategy > _logger ;
+public string EntityType => "Vehicle" ; // Step 2: Self-declare the entity type
+public VehicleScheduleConflictStrategy (
+IDbContextFactoryService contextFactory ,
+ILogger < VehicleScheduleConflictStrategy > logger )
+{
+_contextFactory = contextFactory ;
+_logger = logger ;
+}
+// Step 3: Implement all 5 interface methods with vehicle-specific logic
+public async Task < List < ScheduleConflict >> GetScheduleConflictsAsync (
+int entityId , DateTime date , string companyDatabase )
+{
+await using var context = _contextFactory . CreateCompanyContext ( companyDatabase );
+// Query VehicleSchedule table (vehicle-specific logic)
+var vehicleSchedules = await context .Set< VehicleSchedule >()
+. Include (s => s.Job)
+. Where (s => s.VehicleId == entityId && s.ScheduleDate.Date == date .Date)
+. ToListAsync ();
+// Vehicle-specific: check fuel range, maintenance windows, driver assignments...
+return conflicts ;
+}
+// ... implement remaining 4 methods ...
+}
+Step 4: Register in DI
+// In Extensions/ServiceCollectionExtensions.cs — add ONE line:
+builder.Services. AddScoped < IScheduleConflictStrategy , VehicleScheduleConflictStrategy >();
+Step 5: Done
+That's it. The ScheduleConflictDetector automatically discovers the new strategy because DI adds it to the IEnumerable<IScheduleConflictStrategy> collection. No changes needed to the detector, no changes to existing strategies, no changes to any other file.
+Before (2 strategies):
+DI: [ EmployeeStrategy, EquipmentStrategy ]
+GetStrategy("Vehicle") --> null --> THROWS
+After (3 strategies, ONE line of DI registration):
+DI: [ EmployeeStrategy, EquipmentStrategy, VehicleStrategy ]
+GetStrategy("Vehicle") --> VehicleStrategy --> works!
+This is the Open/Closed Principle in action: the system is open for extension (add new strategies) but closed for modification (existing code doesn't change).
+10. Strategy Pattern Beyond Conflict Detection
+The Strategy Pattern appears anywhere you have "same interface, different implementation chosen at runtime." Here are common applications:
+Domain Interface Strategies Selection Key
+Payment Processing
+IPaymentProcessor
+CreditCard, PayPal, BankTransfer, MBWay
+PaymentMethod enum
+Notification Delivery
+INotificationSender
+EmailSender, SmsSender, PushSender
+NotificationChannel enum
+Export Formats
+IExportGenerator
+PdfGenerator, ExcelGenerator, CsvGenerator
+ExportFormat enum
+Pricing Rules
+IPricingStrategy
+StandardPricing, VolumePricing, PromoPricing
+CustomerType or DiscountCode
+Report Building
+IReportBuilder
+SummaryBuilder, DetailsBuilder, TrendsBuilder
+ReportType enum
+Conflict Detection
+IScheduleConflictStrategy
+EmployeeStrategy, EquipmentStrategy
+EntityType string
+The Pattern Template
+Every strategy implementation follows this shape:
+// 1. The interface with a key property
+public interface IMyStrategy
+{
+string Key { get ; }
+Task < Result > ExecuteAsync ( Input input );
+}
+// 2. Concrete implementations
+public class StrategyA : IMyStrategy { public string Key => "A" ; ... }
+public class StrategyB : IMyStrategy { public string Key => "B" ; ... }
+// 3. The router/context
+public class StrategyRouter
+{
+private readonly IEnumerable < IMyStrategy > _strategies ;
+public async Task < Result > ExecuteAsync ( string key , Input input )
+{
+var strategy = _strategies . FirstOrDefault (s => s.Key == key )
+?? throw new ArgumentException ( $"No strategy for {key}" );
+return await strategy . ExecuteAsync ( input );
+}
+}
+// 4. DI registration
+builder.Services. AddScoped < IMyStrategy , StrategyA >();
+builder.Services. AddScoped < IMyStrategy , StrategyB >();
+builder.Services. AddScoped < StrategyRouter >();
+The Decision Flowchart
+Do you have multiple algorithms/behaviors for the same operation?
+│
+├── YES: Are they selected ONE-at-a-time based on a key?
+│ │
+│ ├── YES ──> Strategy Pattern
+│ │ (ConflictDetector, ExportGenerator, ReportBuilder)
+│ │
+│ └── NO: Do ALL run in sequence?
+│ │
+│ ├── YES ──> Chain of Responsibility
+│ │ (CheckInValidators, CheckOutValidators)
+│ │
+│ └── NO ──> Consider other patterns
+│
+└── NO ──> You probably don't need a pattern here
+The key insight: when you have "same interface, different implementation chosen at runtime" , reach for the Strategy Pattern. It keeps each algorithm isolated, testable, and independently deployable — and adding new ones never touches existing code.

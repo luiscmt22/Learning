@@ -1,0 +1,487 @@
+C# Deep Dive: Generics, Builders & Everything In Between
+Generics, Builders & Everything In Between
+From Class<T> to Functional Builders — a complete walkthrough using your codebase
+Table of Contents
+Part 1: Generics — "A Class with a Blank"
+Part 2: Constraints — "Not Just Any Blank"
+Part 3: Recursive Generics — "Tell Me Who You Are"
+Part 4: Returning Interfaces — "You Can Only See This Much"
+Part 5: Extension Methods — "Adding Methods From Outside"
+Part 6: Delegates as Data — "Storing Behavior in a List"
+Part 7: The Functional Builder — "Putting It All Together"
+Part 8: Aggregate — "The Assembly Line"
+Part 9: Practice Exercises
+Part 1: Generics
+"A class with a blank to fill in later"
+Think of a generic class like a form with a blank field .
+A Box<T> is like a shipping label that says: "Contents: ________" . When you create Box<int> , you fill in the blank with "int". The box doesn't care what's inside — it just needs to know so it can handle it properly.
+The Simplest Generic
+public class Box < T >
+{
+public T Content { get ; set ; }
+}
+T is not a real type. It's a placeholder that becomes real when you use the class:
+var intBox = new Box < int >(); // T = int → Content is an int
+var strBox = new Box < string >(); // T = string → Content is a string
+var pBox = new Box < Person >(); // T = Person → Content is a Person
+Box<T> → "A Box that holds something , and that something is called T."
+Box<int> → "A Box where T is int."
+Box<Person> → "A Box where T is Person."
+You Already Use This Every Day
+List < int > // "A list where T is int"
+List < string > // "A list where T is string"
+List < HtmlElement > // "A list where T is HtmlElement"
+HashSet <( Person , Relationship , Person )> // "A hashset where T is that tuple"
+List<T> is just a class that said: "I'm a list, but I don't know what I hold yet — you tell me."
+Multiple Type Parameters
+A class can have more than one blank:
+public class Pair < TFirst , TSecond >
+{
+public TFirst First { get ; set ; }
+public TSecond Second { get ; set ; }
+}
+var pair = new Pair < string , int >(); // First is string, Second is int
+pair .First = "age" ;
+pair .Second = 25 ;
+Pair<string, int> → "A Pair where the first thing is a string and the second thing is an int."
+Why Not Just Use object ?
+Without Generics (object)
+public class Box
+{
+public object Content { get ; set ; }
+}
+var box = new Box ();
+box.Content = 42 ;
+// Have to cast — could crash at runtime!
+string s = ( string )box.Content; // BOOM
+With Generics
+public class Box < T >
+{
+public T Content { get ; set ; }
+}
+var box = new Box < int >();
+box.Content = 42 ;
+// Compiler stops you BEFORE running
+string s = box.Content; // Compile error!
+Generics give you: write once, fully type-safe . No casting, no runtime crashes.
+Generic = a class/method with a type placeholder ( T ) that gets filled in when you use it. It lets you write code once that works with many types, without losing compile-time safety.
+Part 2: Constraints
+"Not just any blank — I have requirements"
+If a generic is a form with a blank, a constraint is the fine print next to the blank: "Must be at least 18 years old" or "Must have a valid ID."
+It restricts what you're allowed to fill in.
+The Syntax
+public class Repo < T > where T : class
+// ↑ "T must be a reference type (not int, bool, etc.)"
+public class Sorter < T > where T : IComparable < T >
+// ↑ "T must implement IComparable"
+public class Zoo < T > where T : Animal
+// ↑ "T must be Animal or a subclass of Animal"
+public class Factory < T > where T : new ()
+// ↑ "T must have a parameterless constructor"
+public class Wrapper < T > where T : struct
+// ↑ "T must be a value type (int, bool, double, enums, custom structs)"
+Reference Types vs Value Types
+class and struct constraints are mutually exclusive — you pick one or neither:
+Constraint Allows Examples
+where T : class Reference types only string , Person , List<int> , any class
+where T : struct Value types only int , bool , double , DateTime , enums, custom structs
+public class RefOnly < T > where T : class { }
+public class ValOnly < T > where T : struct { }
+RefOnly < string > ok1; // string is a reference type ✓
+RefOnly < int > fail1; // int is a value type ✗ COMPILE ERROR
+ValOnly < int > ok2; // int is a value type ✓
+ValOnly < string > fail2; // string is a reference type ✗ COMPILE ERROR
+Note: The struct constraint also guarantees T is non-nullable — you can't pass int? ( Nullable<int> ). If you want to allow both reference and value types but require neither to be null, C# 8+ has where T : notnull .
+where T : Animal → "T can be anything, as long as it's an Animal or a subclass of Animal."
+where T : new() → "T must have a parameterless constructor, so I can do new T() ."
+Why Constraints Matter
+Without constraints, the compiler only knows T is "some type" — it can't assume anything about what T can do:
+public class Factory < T >
+{
+public T Create ()
+{
+return new T (); // ERROR! What if T doesn't have a constructor?
+}
+}
+// With the constraint, the compiler trusts you:
+public class Factory < T > where T : new ()
+{
+public T Create ()
+{
+return new T (); // OK! The constraint guarantees T has a constructor.
+}
+}
+In your FunctionalBuilder<TSubject, TSelf> :
+where TSubject : new() — this is why Build() can do new TSubject() . Without it, the compiler would say: "I don't know if TSubject has a parameterless constructor!"
+Multiple Constraints
+You can stack them, and you can constrain multiple type parameters:
+public class FunctionalBuilder < TSubject , TSelf >
+where TSelf : FunctionalBuilder < TSubject , TSelf > // constraint on TSelf
+where TSubject : new () // constraint on TSubject
+Read it as: "TSelf must extend FunctionalBuilder, AND TSubject must have a parameterless constructor."
+Constraint = a restriction on what types can fill in a generic parameter. It tells the compiler "T isn't just anything — it has these guarantees" , which unlocks operations that need those guarantees (like new T() ).
+Part 3: Recursive Generics
+"Tell me who you are, so I can return you"
+Imagine a relay race . The baton-passing rule says: "When you hand off the baton, it must go back to the same team."
+The parent class holds the baton (the return type). It says: "I'll pass the baton, but I need to know which team you're on." The child says: "I'm on team PersonJobBuilder." Now the parent can hand the baton back to the right team.
+The Problem
+In fluent builders, every method returns this so you can chain. But with inheritance, the parent returns itself , not the child:
+public class PersonInfoBuilder
+{
+public PersonInfoBuilder Called ( string name ) // returns PersonInfoBuilder
+{
+person.name = name;
+return this ;
+}
+}
+public class PersonJobBuilder : PersonInfoBuilder
+{
+public PersonJobBuilder WorksAsA ( string position ) { ... }
+}
+// THE PROBLEM:
+new PersonJobBuilder ()
+. Called ( "John" ) // returns PersonInfoBuilder ← NOT PersonJobBuilder!
+. WorksAsA ( "dev" ) // COMPILE ERROR! PersonInfoBuilder has no WorksAsA()
+The Solution
+public class PersonInfoBuilder < TSelf >
+where TSelf : PersonInfoBuilder < TSelf >
+{
+public TSelf Called ( string name ) // returns TSelf — whatever the child is!
+{
+person.name = name;
+return ( TSelf ) this ;
+}
+}
+The child fills in the blank with itself :
+public class PersonJobBuilder : PersonInfoBuilder < PersonJobBuilder >
+// ↑ TSelf = me!
+Now Called() returns PersonJobBuilder (because TSelf = PersonJobBuilder), and the chain works:
+new PersonJobBuilder ()
+. Called ( "John" ) // TSelf = PersonJobBuilder → returns PersonJobBuilder!
+. WorksAsA ( "dev" ) // Works! Still on PersonJobBuilder.
+. Build ()
+The pattern: class Child : Parent<Child>
+The child passes ITSELF as the type argument.
+The parent uses it as the return type.
+Parent says: "Whoever inherits me, tell me your type."
+Child says: "TSelf is me."
+Parent says: "Great, I'll return you."
+The generic <TSelf> is NOT about "working with data of type TSelf." It's a trick to let the parent class return the child's type without knowing which child it is. It's purely about return types for fluent chaining.
+Recursive generic = class Child : Parent<Child> . The child passes itself as the type argument so the parent can return the child's type. This keeps fluent method chains working across inheritance.
+Part 4: Returning Interfaces
+"You can only see this much"
+Imagine a person who is simultaneously a driver , a mechanic , and a salesman . They're all the same person.
+When you return them as IDriver , the caller can only ask them to drive. They can't ask about car repairs or prices — even though the person knows how to do those things. The interface acts as a mask that hides everything except one role.
+The Core Idea
+You can't instantiate an interface. But you CAN return an object that implements it . The return type just controls what the caller can see .
+public interface ISpecifyCarType
+{
+ISpecifyWheelSize OfType ( CarType type); // returns "something that can specify wheels"
+}
+public interface ISpecifyWheelSize
+{
+IBuildCar WithWheels ( int size); // returns "something that can build"
+}
+public interface IBuildCar
+{
+Car Build (); // returns the finished car
+}
+Your CarBuilder.Impl class implements all three interfaces. But each method returns this typed as the next interface:
+private class Impl : ISpecifyCarType , ISpecifyWheelSize , IBuildCar
+{
+public ISpecifyWheelSize OfType ( CarType type)
+{
+car.Type = type;
+return this ; // same object, but caller only sees ISpecifyWheelSize
+}
+}
+How It Enforces Order
+CarBuilder.Create() → returns ISpecifyCarType
+You can ONLY call: .OfType()
+.OfType(CarType.Sedan) → returns ISpecifyWheelSize
+You can ONLY call: .WithWheels()
+.WithWheels(18) → returns IBuildCar
+You can ONLY call: .Build()
+.Build() → returns Car (done!)
+Try calling them out of order:
+CarBuilder . Create (). Build (); // ERROR: ISpecifyCarType has no Build()
+CarBuilder . Create (). WithWheels ( 18 ); // ERROR: ISpecifyCarType has no WithWheels()
+What the object IS: What you can SEE at each step:
+┌─────────────────────┐
+│ Impl │
+│ │
+│ .OfType() │ ◄── ISpecifyCarType shows only this
+│ .WithWheels() │ ◄── ISpecifyWheelSize shows only this
+│ .Build() │ ◄── IBuildCar shows only this
+│ │
+└─────────────────────┘
+Same object, three different "masks."
+Each mask reveals only the next step.
+Returning an interface = returning an object, but the caller only sees the methods defined on that interface. Use this to restrict what's available at each step. The object has all methods; the interface is a mask.
+Part 5: Extension Methods
+"Adding methods from outside a class"
+Imagine a toolbox (a class). It's sealed shut — you can't put new tools inside. But you can attach a tool to the outside using a magnet. Anyone holding the toolbox can use it as if it were built in.
+Extension methods are those magnetic tools.
+The Syntax
+public static class PersonBuilderExtensions
+{
+public static PersonBuilder WithPosition (
+this PersonBuilder builder , // ← "this" = extension method
+string position )
+{
+return builder. Do ( p => p.position = position);
+}
+}
+The this before the first parameter is the magic word. It tells C#: "this method can be called AS IF it were a method on PersonBuilder."
+Called as static method
+PersonBuilderExtensions
+. WithPosition (builder, "dev" );
+Called as extension method
+builder. WithPosition ( "dev" );
+// looks like it belongs to
+// PersonBuilder, but it doesn't!
+These two are identical . The compiler rewrites the second into the first.
+Rules for Extension Methods
+Must be in a static class
+Must be a static method
+First parameter must have this keyword
+The type after this determines what type the method "attaches" to
+Why This Matters for Builders
+PersonBuilder is sealed — you can't inherit from it. Without extension methods, the only way to add new builder steps is to modify the class itself. Extensions let you add methods without touching the original :
+// Anyone, anywhere, can write this:
+public static PersonBuilder WithAge ( this PersonBuilder builder , int age )
+=> builder. Do ( p => p.age = age);
+// And now this works:
+new PersonBuilder (). Called ( "John" ). WithAge ( 30 ). Build ();
+LINQ works exactly this way!
+.Where() , .Select() , .OrderBy() , .Aggregate() — none of these are on List<T> . They're all extension methods defined in System.Linq . That's why you need using System.Linq; — without it, the compiler can't find them.
+Extension method = a static method with this on the first parameter, letting you call it like it's a member of that type. Adds functionality without modifying the original class.
+Part 6: Delegates as Data
+"Storing behavior in a list"
+Think of a recipe book . Each page is an instruction: "chop onions" , "add salt" , "stir for 5 minutes."
+The recipe book doesn't DO anything by itself. It just collects instructions . The cooking only happens when someone reads the book and follows each step.
+A List<Func<Person, Person>> is that recipe book. Each function is a page. Build() is the cook.
+Functions as Values
+In C#, functions can be stored in variables, put in lists, and passed around:
+// A single function stored in a variable
+Func < int , int > doubler = x => x * 2 ;
+// A LIST of functions!
+var operations = new List < Func < int , int >>();
+operations. Add ( x => x * 2 ); // add "double" to the list
+operations. Add ( x => x + 10 ); // add "plus 10" to the list
+operations. Add ( x => x / 3 ); // add "divide by 3" to the list
+// Run them all on a value:
+int result = 5 ;
+foreach ( var op in operations)
+{
+result = op (result); // 5 → 10 → 20 → 6
+}
+The Action → Func Wrapping
+The builder stores Func<Person, Person> (takes a Person, returns a Person). But it's more convenient for callers to use Action<Person> (takes a Person, returns nothing). So the builder wraps each Action:
+What the caller provides
+Action < Person >
+p => p.name = "John"
+// sets name, returns NOTHING
+What the list needs
+Func < Person , Person >
+p => { p.name = "John" ; return p; }
+// sets name, returns the person
+The AddAction method bridges the gap:
+private TSelf AddAction ( Action < TSubject > action )
+{
+actions. Add ( s => // "given a subject s..."
+{
+action (s); // "run the action on s" (e.g., set s.name = "John")
+return s; // "hand s back" (so the next function gets it)
+});
+return ( TSelf ) this ;
+}
+action(s) — "I can call action with s because action is an Action<Person> — a variable holding a method that takes a Person."
+Calling a delegate is just like calling a method: action(s) = "run whatever method action is pointing to, and pass it s ."
+The Key Insight: Nothing Runs Yet
+new PersonBuilder ()
+. Called ( "John" ) // adds a recipe: "set name to John"
+. WithPosition ( "dev" ) // adds a recipe: "set position to dev"
+// At this point: NO Person exists. Just two recipes in a list.
+. Build (); // NOW a Person is created and recipes are executed.
+Writing a lambda doesn't execute it. It's like writing a note: "when you get a package, open it." The note sits in a list until Build() actually hands out the package. .Called("John") writes the note. .Build() runs it.
+Part 7: The Functional Builder
+"Putting it all together"
+Now let's see how all the pieces combine in your actual code:
+The Generic Base Class
+public abstract class FunctionalBuilder < TSubject , TSelf >
+where TSelf : FunctionalBuilder < TSubject , TSelf > // recursive generic (Part 3)
+where TSubject : new () // constraint (Part 2)
+{
+private readonly List < Func < TSubject , TSubject >> actions = []; // delegates as data (Part 6)
+private TSelf AddAction ( Action < TSubject > action ) // Action→Func wrapping (Part 6)
+{
+actions. Add ( s => { action (s); return s; });
+return ( TSelf ) this ; // returns child type (Part 3)
+}
+public TSelf Do ( Action < TSubject > action ) => AddAction (action);
+public TSubject Build () => actions. Aggregate ( new TSubject (), ( s , f ) => f (s)); // Part 8
+}
+Type Parameter Means For PersonBuilder For CarBuilder
+TSubject "What am I building?" Person Car
+TSelf "What's the concrete builder?" PersonBuilder CarBuilder
+The Concrete Builders
+// PersonBuilder fills in both blanks:
+public sealed class PersonBuilder
+: FunctionalBuilder < Person , PersonBuilder >
+// ↑ TSubject ↑ TSelf
+{
+public PersonBuilder Called ( string name )
+=> Do ( p => p.name = name); // Do() is inherited from base class!
+}
+// CarBuilder fills in the SAME blanks, different types:
+public class CarBuilder
+: FunctionalBuilder < Car , CarBuilder >
+// ↑ TSubject ↑ TSelf
+{
+public CarBuilder WithMake ( string make ) => Do ( c => c.Make = make);
+public CarBuilder WithModel ( string model ) => Do ( c => c.Model = model);
+}
+What the Base Class Looks Like After Substitution
+When PersonBuilder fills in the blanks, mentally replace every TSubject with Person and every TSelf with PersonBuilder :
+// What PersonBuilder inherits (after mental substitution):
+private readonly List < Func < Person , Person >> actions = [];
+// ↑ TSubject = Person
+private PersonBuilder AddAction ( Action < Person > action )
+// ↑ TSelf = PersonBuilder ↑ TSubject = Person
+public PersonBuilder Do ( Action < Person > action ) ...
+public Person Build () => actions. Aggregate ( new Person (), ...);
+// ↑ TSubject = Person ↑ new() constraint allows this
+Extensions Add Even More Methods
+// Without modifying PersonBuilder or FunctionalBuilder:
+public static PersonBuilder WithPosition (
+this PersonBuilder builder , // extension method (Part 5)
+string position )
+{
+return builder. Do ( p => p.position = position);
+}
+The Full Chain
+var person = new PersonBuilder () // creates a builder with an empty actions list
+. Called ( "John Doe" ) // adds recipe: "set name" (method on PersonBuilder)
+. Do ( p => p.gender = "Masculine" ) // adds recipe: "set gender" (inherited from base)
+. WithPosition ( "Software Engineer" ) // adds recipe: "set position" (extension method)
+. Build (); // creates Person, runs ALL recipes on it
+The Functional Builder combines: generics (reusable base), recursive generics (fluent chaining), constraints ( new() ), delegates as data (actions list), and extension methods (add steps from outside).
+Part 8: Aggregate
+"The assembly line"
+Imagine a factory assembly line . A blank car frame enters at one end. At station 1, someone adds the engine. At station 2, someone paints it. At station 3, someone adds wheels. The same car passes through every station, getting modified at each one, and comes out finished at the end.
+Aggregate is that assembly line.
+The Signature
+actions. Aggregate (
+new TSubject (), // seed: the starting value (blank car frame)
+( s , f ) => f (s) // for each action: apply it to s, result becomes new s
+)
+Parameter What it is In your builder
+seed The starting value new Person() — a fresh, empty person
+s The accumulated result (carries forward) The Person being built up
+f The current item from the list One function from the actions list
+f(s) Apply the function to the result Run the recipe on the person
+Concrete Trace
+For: .Called("John").Do(p => p.position = "dev").Build()
+Start
+s = new Person() — fresh, empty person
+Step 1
+f = p => { p.name = "John"; return p; }
+s = f(s) → s.name is now "John"
+Step 2
+f = p => { p.position = "dev"; return p; }
+s = f(s) → s.position is now "dev"
+Result
+s = Person { name: "John", position: "dev" }
+Aggregate Without the Magic (Just a Loop)
+If Aggregate feels too abstract, this is the exact same thing:
+public TSubject Build ()
+{
+var s = new TSubject (); // the seed
+foreach ( var f in actions) // walk through each function
+{
+s = f (s); // apply it, carry result forward
+}
+return s; // return the finished product
+}
+// Aggregate is just this loop compressed into one line:
+public TSubject Build () => actions. Aggregate ( new TSubject (), ( s , f ) => f (s));
+The Full Signature Explained
+public static TAccumulate Aggregate < TSource , TAccumulate >(
+this IEnumerable < TSource > source , // the list to walk through
+TAccumulate seed , // starting value
+Func < TAccumulate , TSource , TAccumulate > func // how to combine
+)
+Type Parameter Means In your builder In a simpler example
+TSource
+Type of items in the list
+Func<Person, Person>
+string (list of words)
+TAccumulate
+Type of the result being carried
+Person
+int (a running total)
+They can be different types! The list can hold one type and accumulate into another:
+var words = new List < string > { "hello" , "world" , "foo" };
+// TSource = string (items in the list)
+// TAccumulate = int (the thing we're building up)
+int totalLength = words. Aggregate (
+0 , // seed: start at 0
+( count , word ) => count + word.Length // add each word's length
+);
+// Step 0: count = 0
+// Step 1: count = 0 + 5 ("hello") → 5
+// Step 2: count = 5 + 5 ("world") → 10
+// Step 3: count = 10 + 3 ("foo") → 13
+Aggregate = walk a list, carry a value, combine them at each step. It's a loop in one line. The seed is the starting value, and the lambda says how to combine each list item with the running result.
+Part 9: Practice Exercises
+Exercise 1: Read the Generics
+What are TSubject and TSelf in this declaration?
+public class CarBuilder : FunctionalBuilder < Car , CarBuilder > { }
+Show Answer
+TSubject = Car (what we're building), TSelf = CarBuilder (the concrete builder type for fluent chaining). Every Do() call returns CarBuilder . Every Build() call returns Car .
+Exercise 2: Trace the Aggregate
+What does this return?
+var nums = new List < int > { 1 , 2 , 3 , 4 };
+var result = nums. Aggregate ( 10 , ( acc , n ) => acc + n);
+Show Answer
+20 . Trace: 10 → 10+1=11 → 11+2=13 → 13+3=16 → 16+4=20.
+The seed is 10, then each number in the list is added to the running total.
+Exercise 3: Extension Method
+Write an extension method WithYear for CarBuilder that sets the car's year. (Don't look at your code!)
+Show Answer
+public static CarBuilder WithYear ( this CarBuilder builder , int year )
+=> builder. Do ( c => c.Year = year);
+// Or with full body syntax:
+public static CarBuilder WithYear ( this CarBuilder builder , int year )
+{
+return builder. Do ( c => c.Year = year);
+}
+Exercise 4: Identify the Concepts
+For each numbered comment, which concept from this guide is being used?
+public abstract class FunctionalBuilder < TSubject , TSelf > // 1.
+where TSelf : FunctionalBuilder < TSubject , TSelf > // 2.
+where TSubject : new () // 3.
+{
+private readonly List < Func < TSubject , TSubject >> actions = []; // 4.
+public TSubject Build () =>
+actions. Aggregate ( new TSubject (), ( s , f ) => f (s)); // 5.
+}
+Show Answers
+1. Generics (Part 1) — two type parameters
+2. Recursive generic / constraint (Parts 2 & 3) — TSelf must extend the builder itself
+3. Constraint (Part 2) — TSubject must have a parameterless constructor
+4. Delegates as data (Part 6) — storing functions in a list
+5. Aggregate (Part 8) — assembly line that runs all functions on a new TSubject
+Exercise 5: Why Does return (TSelf)this Work?
+In AddAction , why is the cast (TSelf)this safe and not dangerous?
+Show Answer
+Because of the constraint where TSelf : FunctionalBuilder<TSubject, TSelf> . TSelf must be a subclass of FunctionalBuilder. And when you instantiate new PersonBuilder() , this IS a PersonBuilder at runtime. The cast just tells the compiler what it already is. The constraint guarantees no invalid type can sneak in.
+Quick Reference Card
+Class<T> = class with a type placeholder, filled in later
+where T : X = restrict what T can be
+class Child : Parent<Child> = recursive generic, for fluent return types
+IFoo Method() = returns an object, but caller only sees IFoo's methods
+this Type param = extension method, adds methods from outside
+List<Func<...>> = storing functions as data (recipe book)
+.Aggregate(seed, (acc, item) => ...) = assembly line loop in one line

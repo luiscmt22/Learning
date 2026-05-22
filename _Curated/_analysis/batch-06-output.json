@@ -1,0 +1,465 @@
+[
+  {
+    "src_rel": "Education/19-Feature-Flags-Hierarchy-Dependencies.html",
+    "title": "Feature Flags with Hierarchy & Dependencies",
+    "doc_type": "applied-implementation",
+    "topic_family": null,
+    "domain": "feature-flags",
+    "topic_slug": "givingcare-feature-flags-hierarchy",
+    "complexity": "advanced",
+    "one_line_summary": "A per-tenant feature flag system where modules have states, access tiers, parent-child cascading, and cross-module dependencies, all resolved through a single recursive algorithm.",
+    "executive_summary": "This tutorial walks through GivingCare's full feature flag architecture: the FeatureKeys registry of 18 modules, the dual-dimensional model (State x AccessTier), the ChildModules and DependsOn dictionaries, and the recursive IsEffectivelyEnabled algorithm that checks own state, parent state, and transitive dependencies while guarding against cycles. It covers the CompanyFeatureFlag EF entity stored in BaseControle, the dual-layer IMemoryCache strategy, AuthenticatedComponentBase integration via RequiredFeatures, the FeatureBlocked page, and six real Razor usage patterns (CanWrite, HasFullAccess, tier-aware dialogs). The 'default to enabled, only store overrides' philosophy is the key design insight.",
+    "key_concepts": [
+      "FeatureState enum (Enabled/Disabled/Maintenance)",
+      "AccessTier enum (ReadOnly/Simple/Full)",
+      "parent-child cascade",
+      "cross-module DependsOn",
+      "IsEffectivelyEnabled recursion",
+      "IMemoryCache dual caching",
+      "fail-open design"
+    ],
+    "prerequisites": [
+      "C# dictionaries",
+      "EF Core basics",
+      "Blazor component lifecycle",
+      "dependency injection"
+    ],
+    "builds_toward": [
+      "multi-tenant SaaS architecture",
+      "authorization policies",
+      "runtime configuration systems"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": {
+      "why_it_exists": "GivingCare is a multi-tenant product where every company may use a completely different combination of modules. Hard-coding module availability would require separate deployments per customer. Feature flags let Sales enable HR+Jobs+Attendance for one company and CRM+Leads+Documents for another, without restarting the app or touching code. More importantly, modules aren't independent - HR has children (Attendance, Leave, Courses), and Documents depends on Articles+Entities - so disabling one module has to correctly cascade to everything that relies on it, without ever leaving a user stranded on a broken page.",
+      "what_it_does": "It implements a per-tenant feature-flag system with two orthogonal dimensions (is the module on? what tier of capability?), a hierarchy of parent-child relationships (HR parent cascades to Attendance, Leave, etc.), and cross-module dependencies (Documents requires Articles+Entities, Stock requires Articles). A single recursive method, IsEffectivelyEnabled, resolves whether a module is truly usable by checking own state, parent state, and all transitive dependencies, while a HashSet guards against circular references. Pages declare their requirements via overrides, AuthenticatedComponentBase enforces them during OnInitializedAsync, and a FeatureBlocked page renders friendly Disabled/Maintenance states. Razor templates use CanWrite() and HasFullAccess() to conditionally show buttons, tabs, and dialog fields.",
+      "how_it_works": "FeatureKeys.cs is the single source of truth - string constants, ChildModules dict (parent -> children array), DependsOn dict (module -> prerequisite modules), and SupportedTiers dict. CompanyFeatureFlag is an EF entity in BaseControle DB with one row per (CompanyId, FeatureKey). CompanyFeatureFlagService loads all flags for a company in a single query, caches in IMemoryCache for 5 minutes sliding, and exposes read/write APIs via companyId or databaseName overloads. A second cache maps databaseName->companyId for 30 minutes. Writes invalidate the cache. AuthenticatedComponentBase runs CheckAuthentication on OnInitializedAsync: loads EnabledFeatures + AccessTiers dictionaries, runs IsEffectivelyEnabled for each RequiredFeatures entry, and navigates to /FeatureBlocked/{key}/{state} on failure - OnAuthenticatedInitializedAsync never even runs. Convenience methods (IsFeatureEnabled, GetAccessTier, CanWrite, HasFullAccess) operate on the already-loaded dictionaries so Razor templates stay sync. Missing rows default to Enabled/Full, so graceful DB failure keeps the system accessible."
+    },
+    "suggested_metaphor": "It's a house with smart circuit breakers. FeatureState is the breaker itself (on, off, or tripped for maintenance). AccessTier is the fuse rating behind it - you can leave the breaker on but still limit how much current flows. HR is a master breaker that powers Attendance, Leave, and Jobs downstream - flip HR off and they all go dark. And some appliances have two plugs: Documents needs both the Articles circuit and the Entities circuit live, or it simply won't start.",
+    "suggested_intro_hook": "Imagine you sell one piece of software to 200 companies. Company A paid for HR and Attendance. Company B only wants CRM. Company C is mid-contract and their Scheduling module is temporarily broken. You absolutely cannot recompile for each customer - so how do you make features appear, disappear, downgrade to read-only, and cascade through dependencies without ever letting a user click into a half-broken page?",
+    "what_it_teaches": "How to design a runtime feature toggle system that handles not just on/off but tiered capabilities, hierarchical parent/child cascades, and cross-module dependency chains - all resolved by one recursive algorithm with a cycle guard. It also teaches fail-open design, two-level cache strategies, and how to wire the whole thing into a Blazor component base so that guards run before any page logic loads.",
+    "key_takeaways": [
+      "State and tier are orthogonal - separate 'is it on' from 'how much can they do'",
+      "Default to enabled, only persist overrides - backward compatible and fail-safe",
+      "IsEffectivelyEnabled checks self -> parent -> dependencies recursively, with a HashSet guard against cycles",
+      "AddTransient multiple implementations of the same interface collect into IEnumerable<T>",
+      "Cache reads aggressively (5 min sliding), invalidate on writes, and gracefully degrade on DB failure",
+      "Run feature gates in OnInitializedAsync so blocked pages never execute derived logic"
+    ],
+    "cross_references": [
+      "givingcare-validator-pipeline",
+      "blazor-component-base",
+      "ef-core-multi-tenant",
+      "memory-cache-patterns",
+      "authenticated-component-base"
+    ],
+    "quality_notes": "Exceptionally thorough and well-structured. Includes schema, algorithm, DI wiring, page integration, six real-world Razor snippets, and a complete 'how to add a new flag' checklist. The metaphor callouts and ASCII diagrams make the hierarchy concrete.",
+    "reading_difficulty_minutes": 25,
+    "is_part_of_series": true,
+    "series_name": "GivingCare Education Tutorials (#19)"
+  },
+  {
+    "src_rel": "Education/29-Validator-Pipeline-Chain-Of-Responsibility.html",
+    "title": "Validator Pipeline: Chain of Responsibility & Strategy Pattern",
+    "doc_type": "applied-implementation",
+    "topic_family": null,
+    "domain": "scheduling",
+    "topic_slug": "givingcare-validator-pipeline",
+    "complexity": "advanced",
+    "one_line_summary": "The GivingCare check-in/check-out validation system uses Chain of Responsibility for sequential validators and Strategy for entity-type routing, both powered by DI's IEnumerable<T> feature.",
+    "executive_summary": "This tutorial breaks down how GivingCare replaces a monolithic 'CanPerformCheckIn' method with a pipeline of single-responsibility validator classes, each implementing ICheckInValidator with an Order property. The CheckInValidationService receives all validators via IEnumerable<T>, sorts them once, and runs them sequentially - first failure stops the chain. It covers four check-in validators (ActiveCheckIn, ScheduleSource, TimeWindow, Geolocation), three check-out validators (AttendanceExists, BreakStatus, Geolocation - the last never blocks by design), and how the same DI trick powers a Strategy pattern for schedule conflict detection that routes Employee vs Equipment to different implementations by EntityType key.",
+    "key_concepts": [
+      "Chain of Responsibility pattern",
+      "Strategy pattern",
+      "Open/Closed Principle",
+      "IEnumerable<T> DI registration",
+      "Order-based pipeline sorting",
+      "side-effects via shared context",
+      "fail-open business rules"
+    ],
+    "prerequisites": [
+      "C# interfaces",
+      "dependency injection basics",
+      "SOLID principles",
+      "records and static factories"
+    ],
+    "builds_toward": [
+      "middleware pipelines",
+      "CQRS validators",
+      "FluentValidation",
+      "approval workflows"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": {
+      "why_it_exists": "The attendance module needs to run several checks before letting an employee clock in: are they already checked in, do they have a schedule today, is it too early, are they inside the geofence? Stuffing all of this into one method produced a 100+ line monster that violated the Open/Closed Principle - every new rule meant editing the same method, triggering merge conflicts and regressions. Worse, testing any single rule required building the entire context. This pattern refactor isolates each rule so it can be written, tested, reordered, and deleted in isolation.",
+      "what_it_does": "Each validation rule becomes its own class implementing ICheckInValidator (Order int + Validate method). The CheckInValidationService receives IEnumerable<ICheckInValidator> from DI, orders once in the constructor, and runs a single foreach loop that stops on the first failure. Check-in has four validators (10-ActiveCheckIn, 20-ScheduleSource, 30-TimeWindow, 40-Geolocation) and check-out has three (10-AttendanceExists, 20-BreakStatus, 30-Geolocation). Adding a new rule is literally 'create the class + register it' - the service never changes. Schedule conflict detection reuses the same DI trick but with Strategy pattern instead: a ScheduleConflictDetector matches an EntityType string to one of the registered IScheduleConflictStrategy implementations (Employee vs Equipment).",
+      "how_it_works": "ICheckInValidator has int Order and Validate(context, options) returning a CheckInValidationResult record (Ok/Fail static factories). Validators can set side-effects on the shared context - ScheduleSourceValidator writes ResolvedSource, which TimeWindowValidator then reads in the next iteration. DI registers multiple validators under the same interface via AddTransient<ICheckInValidator, XxxValidator>(), and .NET's built-in container collects them into IEnumerable<ICheckInValidator>. The service constructor does OrderBy(v => v.Order) once. The main loop is simply foreach (var v in _validators) { var r = v.Validate(ctx, opts); if (!r.IsValid) return (false, r.Message); }. Order numbers use gaps of 10 (same as BASIC line numbers) so new validators slot in at 15 or 25 without renumbering. The check-out Geolocation validator deliberately always returns Ok() - recording location in the context but never blocking, because business policy says you should always be able to leave work. For Strategy pattern, ScheduleConflictDetector iterates the IEnumerable and picks one via FirstOrDefault(s => s.EntityType == key) instead of running all of them."
+    },
+    "suggested_metaphor": "The validator chain is airport security. You arrive at the terminal and must pass checkpoints in order: boarding pass check, ID verification, bag scan, metal detector. Any checkpoint can stop you cold - you don't get to skip to the metal detector if your ID failed. Each checkpoint is staffed by a different specialist, adding a new checkpoint doesn't disrupt the others, and the order matters because the metal detector can't work until you've actually entered the secure zone.",
+    "suggested_intro_hook": "You open CheckInService.cs and see a 120-line method with nested ifs, four unrelated concerns tangled together, and a comment that says '// TODO: also check probation status'. You know adding that one check is going to break three existing tests and trigger a merge conflict with the colleague who's adding a certification rule in the same method. What pattern makes this file stop hurting forever?",
+    "what_it_teaches": "How to apply Chain of Responsibility in a .NET codebase by combining single-responsibility validator classes with DI's ability to inject IEnumerable<T>. Also shows when to use Chain (run all) versus Strategy (pick one by key) using the exact same DI mechanism. Reinforces Open/Closed Principle with a concrete before/after, and demonstrates how to use shared context for inter-validator communication while keeping each class independently testable.",
+    "key_takeaways": [
+      "Each validator does exactly one thing - if you're writing 'and also check...', you need a new class",
+      "IEnumerable<T> with multiple registrations is the .NET DI superpower for pipelines and strategies",
+      "Sort validators by Order once in the constructor, not on every call",
+      "Order numbers in gaps of 10 so you can insert new ones without renumbering",
+      "Validators can share state through the context object when later steps depend on earlier resolution",
+      "Same DI plumbing + different consumption pattern = Chain (foreach) vs Strategy (FirstOrDefault by key)",
+      "Sometimes not blocking is the business rule - record the issue and let it flow (check-out geolocation)"
+    ],
+    "cross_references": [
+      "solid-principles",
+      "dependency-injection-lifetimes",
+      "strategy-pattern",
+      "chain-of-responsibility",
+      "open-closed-principle",
+      "givingcare-feature-flags-hierarchy"
+    ],
+    "quality_notes": "Top-tier tutorial. Clear problem statement, full interface + implementation listings, a concrete 'add a new validator' walkthrough, and an honest comparison table between Chain and Strategy. Bonus: the observation about check-out Geolocation never blocking is a great real-world business-rule lesson.",
+    "reading_difficulty_minutes": 20,
+    "is_part_of_series": true,
+    "series_name": "GivingCare Education Tutorials (#29)"
+  },
+  {
+    "src_rel": "Microsoft_Fullstack/The Complete Guide to Unit Testing.docx",
+    "title": "The Complete Guide to Unit Testing in .NET",
+    "doc_type": "core-concept",
+    "topic_family": "testing",
+    "domain": null,
+    "topic_slug": "dotnet-unit-testing-fundamentals",
+    "complexity": "intermediate",
+    "one_line_summary": "A comprehensive end-to-end guide to unit testing in .NET covering the AAA pattern, NUnit/xUnit/MSTest attributes, Fluent Assertions, Moq mocking, coverage, and common flaky-test pitfalls.",
+    "executive_summary": "This guide walks a developer from zero to productive unit testing in .NET. It explains the testing pyramid, the Arrange-Act-Assert pattern, test fixture setup, project layout conventions, and the three major frameworks (NUnit, xUnit, MSTest) with their attribute cheat sheets. It goes deep on Fluent Assertions (why, how, and common patterns), Moq for mocking dependencies, data-driven tests via TestCase/TestCaseSource, async method testing, coverage targets, and a troubleshooting section on flaky tests caused by shared state, time dependencies, and race conditions. The F.I.R.S.T. principles anchor the philosophy.",
+    "key_concepts": [
+      "AAA pattern (Arrange-Act-Assert)",
+      "F.I.R.S.T. principles",
+      "test fixture & attributes",
+      "Fluent Assertions",
+      "Moq Setup/Verify",
+      "parameterized tests (TestCase)",
+      "code coverage metrics"
+    ],
+    "prerequisites": [
+      "C# fundamentals",
+      ".NET project structure",
+      "NuGet packages",
+      "Visual Studio or dotnet CLI"
+    ],
+    "builds_toward": [
+      "TDD",
+      "integration testing",
+      "BDD with SpecFlow",
+      "mutation testing",
+      "CI/CD test automation"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": null,
+    "suggested_metaphor": "Unit tests are like the individual quality checks on a car assembly line. Nobody waits until the entire vehicle is welded together to test if the steering column works - you bolt it to a rig, turn the wheel, and verify the rack moves the right distance. Each test is cheap, fast, and runs independently, so when the final car fails inspection you already know which of the 10,000 subcomponents was the problem. Tests are also the net under the trapeze: you don't feel them when the code is stable, but the moment you refactor and fall, they catch you before you hit the ground.",
+    "suggested_intro_hook": "You change one line in a helper method and deploy. Three hours later, support is drowning in tickets because an unrelated feature in a different module now throws. What if, before you hit deploy, a ten-second script had flagged the exact test that would have prevented all of this? That's what a unit test suite is - an army of tiny assertions watching your back every time you touch code.",
+    "what_it_teaches": "How to set up a .NET test project with NUnit + Moq + Fluent Assertions, write well-named tests using the AAA pattern, handle async methods, parameterize tests, mock dependencies with Setup/Verify, measure coverage with Coverlet, diagnose and fix flaky tests, and apply F.I.R.S.T. principles consistently across a codebase.",
+    "key_takeaways": [
+      "Every test follows Arrange-Act-Assert, and test names should follow MethodName_StateUnderTest_ExpectedBehavior",
+      "Tests must be Fast, Independent, Repeatable, Self-Validating, and Timely",
+      "Fluent Assertions produce readable tests and better failure messages than traditional asserts",
+      "Moq's Setup/Verify/It.IsAny<T> covers most mocking needs; use SetupSequence for progressive returns",
+      "Inject IDateTimeProvider instead of calling DateTime.Now to eliminate time-flaky tests",
+      "80-90% line coverage is a reasonable goal - don't write meaningless tests just to chase the number",
+      "Shared state between tests is the #1 cause of 'passes alone, fails together' bugs"
+    ],
+    "cross_references": [
+      "tdd-fundamentals",
+      "mocking-patterns",
+      "integration-testing",
+      "solid-principles",
+      "dependency-injection-testing"
+    ],
+    "quality_notes": "Comprehensive and polished reference guide. Covers the entire lifecycle from project setup to debugging flaky tests. Good balance of theory (F.I.R.S.T., testing pyramid) and practice (NUnit attributes, Moq patterns, coverage commands). The anti-patterns section (meaningless tests, time-dependent code) is especially valuable. Could add more on integration test boundaries and test data builders.",
+    "reading_difficulty_minutes": 30,
+    "is_part_of_series": false,
+    "series_name": null
+  },
+  {
+    "src_rel": "Education/Educational_ML/neural-network-journeyV0.html",
+    "title": "Neural Networks from Scratch: The 20 Questions Journey",
+    "doc_type": "core-concept",
+    "topic_family": "ml",
+    "domain": null,
+    "topic_slug": "neural-networks-from-scratch-20-questions",
+    "complexity": "intermediate",
+    "one_line_summary": "A slide-deck walkthrough of building a neural network from scratch in C# through the lens of the 20 Questions game, covering classification, the neuron, sigmoid, multi-class outputs, hidden layers, and backpropagation.",
+    "executive_summary": "This interactive 20-slide presentation teaches neural network fundamentals by building a C# implementation of a learning 20 Questions game. It progresses through 11 modules: feature vectors and classification, the single neuron with weights+bias+sigmoid, multi-class output layers, EF Core data management, hidden layers as intermediate representations, and backpropagation as credit-assignment via reversed weight flow. The final modules (training at scale, persistence, smart question selection, library comparisons, UI) are outlined but marked upcoming. Key insights include 'identical feature vectors are indistinguishable by any algorithm' (feature engineering matters more than the model) and 'the same weights that carry signals forward carry errors backward.'",
+    "key_concepts": [
+      "feature vectors",
+      "Manhattan distance",
+      "neuron (weight x input + bias)",
+      "sigmoid activation",
+      "one-neuron-per-class output",
+      "hidden layers",
+      "backpropagation",
+      "sigmoid derivative"
+    ],
+    "prerequisites": [
+      "C# basics",
+      "arrays and loops",
+      "basic algebra",
+      "EF Core fundamentals"
+    ],
+    "builds_toward": [
+      "gradient descent variants (SGD, mini-batch)",
+      "regularization",
+      "convolutional networks",
+      "ML.NET and TensorFlow comparisons",
+      "model persistence"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": null,
+    "suggested_metaphor": "A neuron is a gossipy bouncer at a club door. Each incoming feature whispers something ('it has fur', 'it swims'), the bouncer gives each whisper a weight based on how trustworthy that source has been, adds up the rumors with a bias mood modifier, then runs the total through the sigmoid - a soft volume knob that squashes any amount of gossip down to a simple 'yes, let them in' or 'no'. Training the network is just watching who the bouncer lets through wrong, then nudging how much weight they give each whisper next time. Stack several bouncers in a row (hidden layers) and early ones start noticing abstract patterns like 'aquatic mammal vibes' before the final bouncer makes the call.",
+    "suggested_intro_hook": "If you can teach a computer to play 20 Questions that actually gets smarter every time it guesses wrong, you've basically built the same thing Netflix uses to pick your next show, just smaller. The animal-guessing game is a toy, but every ingredient - feature vectors, weights, sigmoid, hidden layers, backprop - scales to production ML. And you can write it all in C# without a single import from TensorFlow.",
+    "what_it_teaches": "How a neural network actually works at the primitive level: how numeric feature vectors encode objects, how weights+bias+activation compute an output, why sigmoid is chosen, how hidden layers learn intermediate abstractions, and how backpropagation assigns blame to hidden neurons by flowing error through the same weights in reverse. It also teaches feature engineering (identical vectors = unsolvable problem) and why the sigmoid derivative (output * (1-output)) is what lets saturated neurons 'rest' during learning.",
+    "key_takeaways": [
+      "A feature vector is the object's fingerprint - identical vectors mean identical to any model",
+      "A neuron = sigmoid(sum of weight*input + bias); weights encode learned knowledge",
+      "Training adjusts weights by: weight += learningRate * error * input",
+      "Hidden layers learn abstract intermediate features (e.g. 'aquatic mammal') that make the final classification linear",
+      "Backpropagation shares blame via the same weights used in the forward pass - beautiful symmetry",
+      "Sigmoid derivative is max (0.25) at output=0.5 and near zero at saturation - self-regulating learning rate",
+      "Feature engineering ceilings any algorithm's performance - better questions beat fancier models"
+    ],
+    "cross_references": [
+      "ml-laptop-pricing",
+      "ml-aggression-scorer",
+      "classification-fundamentals",
+      "gradient-descent",
+      "feature-engineering"
+    ],
+    "quality_notes": "Excellent teaching format - presentation-style with visuals, emoji anchors, SVG sigmoid curve, and 'key insight' callouts on each module. The 'bugs that taught us the most' section is pedagogically gold (reference vs value types, loop variable scope, Random reuse). Marked V0 and modules 7-11 are upcoming - so it's incomplete relative to its own roadmap. The code snippets are truncated in the extracted text which slightly hurts usability as a reference.",
+    "reading_difficulty_minutes": 18,
+    "is_part_of_series": true,
+    "series_name": "Neural Networks 20 Questions Journey (V0)"
+  },
+  {
+    "src_rel": "Education/FactoryFloor/PT/SistemaProduçãoChãoFábricaInfoGráfico.docx",
+    "title": "Sistema de Produção de Chão de Fábrica - O Guia 'Para Totós'",
+    "doc_type": "applied-implementation",
+    "topic_family": null,
+    "domain": "factory-floor",
+    "topic_slug": "factory-floor-system-pt-infographic",
+    "complexity": "beginner",
+    "one_line_summary": "A non-technical, analogy-driven Portuguese walkthrough of the FactoryFloor production tracking system explaining what workers see, what managers get, and how materials flow through the three main components.",
+    "executive_summary": "This document is a beginner-friendly Portuguese 'dummies guide' to the FactoryFloor production system. It frames the system around three parts: Factory_New.razor (the shop-floor dashboard where operators pick machines and start/pause/stop work orders), MaterialConsumptionModal.razor (the post-shift form that records produced units, waste, and actual material usage with smart suggestions based on history), and FactoryFloorService.cs (the backend that updates stock, pushes data to accounting, and calculates expected consumption). A full 'day in the life' scenario follows operator João through PIN-based check-ins, a lunch pause that triggers material confirmation, and the manager Maria seeing live production stats at end of day. Wraps with common scenarios (wrong quantity, machine breakdown, out of stock, forgotten PIN) and the emergent benefits for workers, managers, and the company.",
+    "key_concepts": [
+      "Factory_New.razor shop-floor page",
+      "MaterialConsumptionModal confirmation flow",
+      "FactoryFloorService orchestration",
+      "PIN-based worker authentication",
+      "Primavera accounting integration",
+      "historical consumption averages",
+      "real-time dashboard"
+    ],
+    "prerequisites": [
+      "basic understanding of what a factory is"
+    ],
+    "builds_toward": [
+      "stock-service integration",
+      "Blazor component architecture",
+      "Primavera ERP integration",
+      "production KPI dashboards"
+    ],
+    "has_code_examples": false,
+    "has_diagrams_or_visuals": false,
+    "tutorial_structure": {
+      "why_it_exists": "Before this system existed, factory workers wrote production numbers on paper that got lost or mistyped, managers had no visibility into what was happening on the floor, material consumption was mostly guesswork, and stock counts drifted from reality constantly. Month-end was a painful reconciliation exercise and waste went unnoticed. The FactoryFloor system replaces paper with tablets on the shop floor, gives managers live production dashboards, tracks exact material usage, and auto-syncs stock and accounting so the business always knows where it stands.",
+      "what_it_does": "Operators arrive at their shift, open the system on a shop-floor tablet, enter their PIN, pick their machine, and see today's work orders in two columns: 'To Start' and 'In Progress'. They click Start on an order (re-entering PIN for security), work, and click Pause or Stop which triggers the Material Consumption Modal - a form that shows what was ordered, quantity produced, waste, materials planned vs actually used, current stock levels (red when low), and historical averages ('last time we made 100 we used 15kg'). Confirming automatically decrements stock, adds the finished goods, logs waste with timestamps, and pushes the transaction to the Primavera accounting system. Managers get a live dashboard of completed vs pending units and can detect anomalous material use in near-real-time.",
+      "how_it_works": "Factory_New.razor is the primary UI (the kitchen order screen metaphor): it queries the active work orders for a selected machine and renders Start/Pause/Stop buttons. When production transitions (Start/Pause/Stop), the page asks for PIN verification and calls FactoryFloorService to update order state and log the event with timestamp, machine, and operator. On Pause/Stop, MaterialConsumptionModal.razor opens - it loads planned materials from the BOM, fetches historical averages, calculates expected consumption based on actual units produced (if BOM says 100 units need 100kg but only 25 were made, it suggests 25kg), and lets the operator adjust before confirming. On confirm, the service updates stock levels, adds produced units to inventory, records waste, writes everything to an audit log, and pushes the transaction to Primavera. The smart helper behavior - learning from history, warning about low stock before starting, blocking negative quantities, and requiring supervisor override for exceptions - is what turns it from 'just a form' into an operator assistant."
+    },
+    "suggested_metaphor": "The entire system is a restaurant kitchen. Factory_New.razor is the order screen hanging over the pass ('Table 12 wants risotto, Table 7 is waiting'), MaterialConsumptionModal is the chef's prep sheet where they mark off what ingredients they actually pulled from the walk-in, and FactoryFloorService is the sous chef in the background quietly updating the pantry inventory, alerting the manager that the arborio rice is running low, and handing the receipt to the accountant - all while the chef is already starting the next ticket.",
+    "suggested_intro_hook": "Every month, the factory accountant and the warehouse manager sit in a meeting trying to reconcile why the stock count is off by 12%. The operators blame the system, the managers blame the operators, and nobody can reconstruct what actually happened on the floor three weeks ago. This is a story about replacing that monthly blame session with a tablet that knows everything the moment it happens.",
+    "what_it_teaches": "The business context and user experience of the FactoryFloor system - essentially the 'why would anyone build this' layer that makes the technical docs meaningful. It maps each component to a real-world analogy (kitchen, video game lobby), explains the workflow with a concrete day-in-the-life narrative, and lists the emergent benefits stakeholder by stakeholder. It does not teach code.",
+    "key_takeaways": [
+      "Three components: Factory_New (shop floor UI), MaterialConsumptionModal (post-shift form), FactoryFloorService (backend brain)",
+      "PIN verification gates every state transition (Start, Pause, Stop) as a lightweight audit trail",
+      "The system suggests material consumption from history but always lets operators override",
+      "Stock, production, and accounting (Primavera) stay in sync automatically - single source of truth",
+      "Low-stock warnings block order starts before work begins, not after waste has occurred",
+      "Managers get real-time visibility instead of month-end Excel archaeology"
+    ],
+    "cross_references": [
+      "factory-floor-system",
+      "stock-service",
+      "primavera-integration",
+      "blazor-modal-patterns",
+      "pin-authentication"
+    ],
+    "quality_notes": "Portuguese non-technical companion to the FactoryFloor documentation. Written in a friendly, analogy-heavy 'guide for beginners' style with scenarios and emoji. Zero code, zero architecture diagrams - this is a stakeholder/onboarding doc, not a developer reference. Very useful for building intuition but should be read alongside a technical deep-dive.",
+    "reading_difficulty_minutes": 10,
+    "is_part_of_series": false,
+    "series_name": null
+  },
+  {
+    "src_rel": "Actions&Events.docx",
+    "title": "C# Events and Async Patterns for Godot Developers",
+    "doc_type": "core-concept",
+    "topic_family": "language",
+    "domain": null,
+    "topic_slug": "csharp-events-godot-bridge",
+    "complexity": "intermediate",
+    "one_line_summary": "A Godot-to-C# translation guide that maps Godot signals onto C# events, explains why async void is required (but dangerous) in event handlers, and shows the manual cleanup C# needs compared to Godot's automatic disconnection.",
+    "executive_summary": "This document bridges the mental gap between Godot's signal system and C#'s event/delegate system for Godot developers learning .NET. It maps signal/emit_signal/connect directly to event/Invoke/+= with side-by-side code examples, shows Action<T> as the parametric delegate equivalent, and walks through the Observer pattern that underpins both. The second half tackles async void: why it's dangerous in general (exceptions escape the Task, can crash the app), why events MUST use async void (Action returns void, not Task), and how to safely use it by always wrapping the body in try/catch. It closes with a full ThemeChangeService example in both Godot and C#, discussing thread safety via InvokeAsync and the three DI lifetimes (Singleton=AutoLoad, Scoped=per-user, Transient=rare).",
+    "key_concepts": [
+      "C# event vs Godot signal",
+      "Action<T> delegate types",
+      "Observer pattern",
+      "async void exception trap",
+      "try/catch in event handlers",
+      "IDisposable manual unsubscribe",
+      "InvokeAsync thread marshaling",
+      "DI lifetimes (Singleton/Scoped/Transient)"
+    ],
+    "prerequisites": [
+      "Godot signals or similar observer patterns",
+      "basic C# syntax",
+      "async/await introduction"
+    ],
+    "builds_toward": [
+      "MediatR in-process messaging",
+      "SignalR client events",
+      "Blazor component lifecycle",
+      "reactive extensions (Rx)"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": false,
+    "tutorial_structure": null,
+    "suggested_metaphor": "Godot is like a landlord who automatically changes the locks when a tenant moves out. You can hand out as many keys (connect to signals) as you want and when the node leaves the tree Godot quietly recalls every key. C# is a landlord who writes down every key you give out and hands you a checklist on move-out day - if you forget to return even one, that key is still open and the old tenant (your handler) can walk back into your memory forever. That checklist is IDisposable.Dispose(). Miss it once and you've got a memory leak haunting the building.",
+    "suggested_intro_hook": "You spent two years writing emit_signal('health_changed', 50) in Godot and everything just worked. You move to Blazor, type OnHealthChanged?.Invoke(50), and six weeks later production is crashing with unhandled exceptions that don't even have a stack trace pointing to your code. What changed? Nothing, and everything - the signal metaphor is identical, but C# will happily let your events leak memory, eat exceptions, and crash your app if you don't follow three rules.",
+    "what_it_teaches": "That C# events are mechanically just like Godot signals (same Observer pattern) but manually managed. Specifically: how to declare and fire events with Action<T>, why event handlers must return void (and must therefore be async void), why async void swallows exceptions silently unless you wrap them in try/catch, why C# requires explicit -= in Dispose() to prevent memory leaks, why UI-touching handlers must go through InvokeAsync for thread safety, and how DI lifetimes map to Godot's AutoLoad singleton concept.",
+    "key_takeaways": [
+      "C# events = Godot signals - same Observer pattern, different plumbing",
+      "Action<T> is a delegate type defining parameter signatures, not a base class",
+      "Events must return void, so async event handlers must be async void",
+      "ALWAYS wrap async void handlers in try/catch - unhandled exceptions can crash the app",
+      "Always implement IDisposable and -= unsubscribe, or handlers leak memory forever",
+      "Use await InvokeAsync(StateHasChanged) in Blazor - events may fire from any thread",
+      "Singleton service = Godot AutoLoad; Scoped = per-user session; Transient = rare"
+    ],
+    "cross_references": [
+      "csharp-async-await",
+      "blazor-component-lifecycle",
+      "dependency-injection-lifetimes",
+      "observer-pattern",
+      "memory-leaks-dotnet"
+    ],
+    "quality_notes": "A focused and useful niche guide aimed at Godot developers making the jump to .NET. The side-by-side GDScript/C# examples are excellent for building intuition. Best parts: the explicit 'async void is usually bad BUT events require it' explanation and the memory management comparison. Could use a concrete memory leak demo to drive the unsubscribe point home.",
+    "reading_difficulty_minutes": 12,
+    "is_part_of_series": false,
+    "series_name": null
+  },
+  {
+    "src_rel": "Education/05-Polite-Code-Style.md",
+    "title": "Polite Code Style Guide",
+    "doc_type": "core-concept",
+    "topic_family": "patterns",
+    "domain": null,
+    "topic_slug": "polite-code-style",
+    "complexity": "beginner",
+    "one_line_summary": "A short style guide arguing that readable 'polite' code uses boolean properties named as questions, compound conditions that parse as English sentences, and descriptive identifiers over terse abbreviations.",
+    "executive_summary": "This guide defines 'polite code' as self-documenting, readable, and expressive code that tells you what it does at a glance. It presents four key principles: (1) boolean properties with clear names like IsSuperAdmin, IsAdminOrAbove, HasLinkedEmployee; (2) compound conditions that read like English sentences; (3) descriptive variable names over cryptic abbreviations; and (4) using properties over direct nested member access. Real examples from an HR module show authorization checks, conditional UI rendering, and service method naming. The migration strategy recommends adding IsXxx/HasXxx/CanXxx properties and replacing direct checks. The core mantra: 'Code is read far more often than it's written. Invest in readability.'",
+    "key_concepts": [
+      "self-documenting code",
+      "boolean-as-question naming",
+      "IsXxx/HasXxx/CanXxx properties",
+      "compound conditions as English",
+      "intent over implementation",
+      "property encapsulation"
+    ],
+    "prerequisites": [
+      "basic C#",
+      "Razor/Blazor basics"
+    ],
+    "builds_toward": [
+      "clean code principles",
+      "domain-driven design",
+      "authorization policies"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": false,
+    "tutorial_structure": null,
+    "suggested_metaphor": "Polite code is like a well-labeled spice rack versus a collection of unlabeled jars in a drawer. With the labeled rack, anyone walking into the kitchen knows exactly what 'paprika' is and can cook from a recipe without opening jars to smell them. With the drawer, even you - the person who put the jars there - will get confused in three weeks and waste five minutes every time you need cumin. IsAdminOrAbove is a label. RoleLevel >= 80 is an unlabeled jar.",
+    "suggested_intro_hook": "Open a file you wrote six months ago and read the first if-statement. Did you understand it instantly, or did you have to scroll up to find what _role and _coId actually meant? That pause - that tiny moment of 'wait, what is this checking?' - is the tax of impolite code, and it compounds every time anyone reads the codebase.",
+    "what_it_teaches": "A concrete naming discipline for boolean properties and conditions that makes code read like natural English. The technique is simple: instead of scattered numeric comparisons and member chains, define expressive properties (IsSuperAdmin, CanWrite, HasLinkedEmployee) in a base class and reference them everywhere. It also teaches that property-based encapsulation reduces cognitive load when reading conditional UI blocks.",
+    "key_takeaways": [
+      "Name booleans as yes/no questions: IsXxx, HasXxx, CanXxx",
+      "Compound conditions should parse as English when read aloud",
+      "Use expressive local properties instead of inlining session/user member chains",
+      "Method names should express what they answer, not how they work internally",
+      "Refactor by adding the polite property first, then replacing direct checks one file at a time",
+      "Code is read 10x more than it's written - readability is a force multiplier"
+    ],
+    "cross_references": [
+      "clean-code-principles",
+      "solid-principles",
+      "authorization-patterns",
+      "authenticated-component-base"
+    ],
+    "quality_notes": "Short, focused, and opinionated - exactly what a style guide should be. The before/after examples are concrete and drawn from a real HRModule codebase. Could benefit from 1-2 more anti-pattern examples (e.g., magic number constants) and guidance on when NOT to add a boolean property (to avoid a proliferation of one-use helpers).",
+    "reading_difficulty_minutes": 5,
+    "is_part_of_series": true,
+    "series_name": "GivingCare Education Tutorials (#05)"
+  },
+  {
+    "src_rel": "JScript/Exemplo2Buttons.html",
+    "title": "Catálogo de Botões Padrão",
+    "doc_type": "core-concept",
+    "topic_family": "frontend",
+    "domain": null,
+    "topic_slug": "button-catalog-design-system",
+    "complexity": "beginner",
+    "one_line_summary": "A Portuguese-language standalone HTML/CSS demo page cataloging a button design system with primary, file, navigation, secondary, tertiary, and icon-only button variants.",
+    "executive_summary": "This is a self-contained HTML page that renders a visual catalog of reusable button styles organized into categories: Primary (Add/Save/Edit/Delete/Clone), File Actions (Download/Export PDF/Import), Navigation (Back/Refresh/Sync/Login), Secondary (Details/Cancel/Complete/Reopen), Tertiary (List/Close/Expand/Collapse), and System (icon-only buttons with CSS tooltips for Menu/Settings/Show/Hide/User). It uses Font Awesome icons, CSS variables for theming, and defines hover animations. The page contains almost no prose - it's effectively a live style guide for copy-pasting button markup. There is no JavaScript despite being in the JScript folder.",
+    "key_concepts": [
+      "button design system",
+      "CSS variables for theming",
+      "Font Awesome integration",
+      "category-based grouping",
+      "icon-only buttons with tooltips",
+      "hover state patterns"
+    ],
+    "prerequisites": [
+      "HTML basics",
+      "CSS basics"
+    ],
+    "builds_toward": [
+      "component library design",
+      "design tokens",
+      "accessibility (ARIA)",
+      "Blazor button component"
+    ],
+    "has_code_examples": true,
+    "has_diagrams_or_visuals": true,
+    "tutorial_structure": null,
+    "suggested_metaphor": "This is the swatch book a painter carries to every job. Before you start mixing colors on site, you flip to the page with all the standard shades - 'wall primary', 'trim secondary', 'danger red' - and point at what you want. Doing it this way guarantees every room in every house painted by your crew looks like it belongs to the same company, and no junior painter has to guess whether red means 'delete' or 'accent'.",
+    "suggested_intro_hook": "The fourth time you catch yourself copy-pasting a MudButton with the same color and icon, you know it's time. Left to evolve organically, a codebase grows 37 slightly-different Save buttons - nine blue, twelve green, a rogue purple, and one that someone made orange for a demo and never fixed. This page is the antidote: one file that says 'this is the Save button, here is what it looks like, copy this markup.'",
+    "what_it_teaches": "By example rather than explanation, this page teaches that a button design system needs semantic categories (primary actions, file operations, navigation, secondary, tertiary, system), consistent color coding (red=delete, green=success, yellow=edit, blue=info), CSS variables for theming, and icon+text conventions. It also demonstrates the icon-only pattern with CSS ::after tooltips as a fallback when JavaScript tooltip libraries aren't available.",
+    "key_takeaways": [
+      "Group buttons by semantic intent (primary/file/navigation/secondary/tertiary/system), not by color",
+      "Use CSS variables for theme colors so the palette can change in one place",
+      "Font Awesome gives you a consistent icon vocabulary across the design system",
+      "Icon-only buttons need hover tooltips - CSS :after attr(data-tooltip) is a zero-JS solution",
+      "A visual catalog page is the cheapest form of design system documentation"
+    ],
+    "cross_references": [
+      "mudblazor-components",
+      "css-variables",
+      "font-awesome",
+      "design-tokens",
+      "accessibility-basics"
+    ],
+    "quality_notes": "Very thin as a learning document - only 48 words of prose. It's a copy-paste reference more than a tutorial. Misnamed location (JScript folder, but contains no JS). Useful as a visual catalog when building consistent UI, but requires existing design system knowledge to extract the principles. No accessibility considerations (aria-label, focus states) are shown.",
+    "reading_difficulty_minutes": 3,
+    "is_part_of_series": false,
+    "series_name": null
+  }
+]

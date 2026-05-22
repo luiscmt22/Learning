@@ -1,0 +1,1887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Networks from Scratch: The 20 Questions Journey</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            line-height: 1.7;
+        }
+
+        /* Navigation */
+        .nav {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 1000;
+            background: rgba(15, 15, 26, 0.95);
+            padding: 15px 25px;
+            border-radius: 50px;
+            box-shadow: 0 5px 30px rgba(0, 217, 255, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .nav button {
+            background: #1a1a2e;
+            color: #00d9ff;
+            border: 2px solid #00d9ff;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .nav button:hover:not(:disabled) {
+            background: #00d9ff;
+            color: #0f0f1a;
+            transform: scale(1.05);
+        }
+
+        .nav button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #00d9ff, #00ffcc, #4ade80);
+            transition: width 0.3s;
+            z-index: 1000;
+        }
+
+        .slide-counter {
+            color: #94a3b8;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Slides */
+        .slides-container {
+            min-height: 100vh;
+            padding-bottom: 100px;
+        }
+
+        .slide {
+            min-height: 100vh;
+            padding: 60px 40px 120px 40px;
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .slide.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .slide-content {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* Typography */
+        h1 {
+            font-size: 2.8em;
+            color: #00d9ff;
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(0, 217, 255, 0.3);
+        }
+
+        h2 {
+            font-size: 2em;
+            color: #00ffcc;
+            margin: 40px 0 20px 0;
+            padding-top: 20px;
+            border-top: 1px solid #334155;
+        }
+
+        h2:first-of-type {
+            border-top: none;
+            margin-top: 20px;
+        }
+
+        h3 {
+            font-size: 1.4em;
+            color: #f59e0b;
+            margin: 30px 0 15px 0;
+        }
+
+        p {
+            margin: 15px 0;
+            font-size: 1.1em;
+        }
+
+        .subtitle {
+            font-size: 1.3em;
+            color: #94a3b8;
+            margin-bottom: 30px;
+        }
+
+        .lead {
+            font-size: 1.25em;
+            color: #cbd5e1;
+            margin: 25px 0;
+        }
+
+        /* Highlight styles */
+        .highlight {
+            color: #00ffcc;
+            font-weight: 600;
+        }
+
+        .keyword {
+            color: #f59e0b;
+            font-weight: 600;
+        }
+
+        .important {
+            color: #f87171;
+            font-weight: 600;
+        }
+
+        /* Boxes */
+        .box {
+            background: linear-gradient(135deg, #16213e 0%, #1a1a2e 100%);
+            border-radius: 15px;
+            padding: 25px 30px;
+            margin: 25px 0;
+            border: 1px solid #334155;
+        }
+
+        .box.insight {
+            border-left: 4px solid #00ffcc;
+            border-radius: 0 15px 15px 0;
+        }
+
+        .box.warning {
+            border-left: 4px solid #f59e0b;
+            border-radius: 0 15px 15px 0;
+        }
+
+        .box.danger {
+            border-left: 4px solid #f87171;
+            border-radius: 0 15px 15px 0;
+        }
+
+        .box-title {
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .box.insight .box-title { color: #00ffcc; }
+        .box.warning .box-title { color: #f59e0b; }
+        .box.danger .box-title { color: #f87171; }
+
+        /* Analogy box */
+        .analogy {
+            background: linear-gradient(135deg, #1e3a5f 0%, #16213e 100%);
+            border-radius: 15px;
+            padding: 25px 30px;
+            margin: 25px 0;
+            border: 2px solid #3b82f6;
+        }
+
+        .analogy-title {
+            color: #60a5fa;
+            font-weight: 700;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Code blocks */
+        .code-block {
+            background: #0d1117;
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+            border: 1px solid #30363d;
+        }
+
+        .code-header {
+            background: #161b22;
+            padding: 10px 15px;
+            font-size: 0.85em;
+            color: #8b949e;
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .code-content {
+            padding: 20px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+
+        .code-content .comment { color: #8b949e; }
+        .code-content .keyword { color: #ff7b72; }
+        .code-content .type { color: #79c0ff; }
+        .code-content .string { color: #a5d6ff; }
+        .code-content .number { color: #79c0ff; }
+        .code-content .function { color: #d2a8ff; }
+        .code-content .variable { color: #ffa657; }
+
+        /* Challenge boxes */
+        .challenge {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 2px solid #8b5cf6;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+        }
+
+        .challenge-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .challenge-icon {
+            background: #8b5cf6;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .challenge-title {
+            color: #a78bfa;
+            font-size: 1.3em;
+            font-weight: 700;
+        }
+
+        .challenge-question {
+            font-size: 1.15em;
+            color: #e0e0e0;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(139, 92, 246, 0.1);
+            border-radius: 10px;
+        }
+
+        .reveal-btn {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin-top: 15px;
+        }
+
+        .reveal-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .answer {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(74, 222, 128, 0.1);
+            border: 1px solid #4ade80;
+            border-radius: 10px;
+        }
+
+        .answer.visible {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .answer-title {
+            color: #4ade80;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        /* Visual diagrams */
+        .diagram {
+            background: #0f172a;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 25px 0;
+            text-align: center;
+            border: 1px solid #334155;
+        }
+
+        .diagram-caption {
+            color: #94a3b8;
+            font-size: 0.9em;
+            margin-top: 15px;
+            font-style: italic;
+        }
+
+        /* Network visualization */
+        .network-visual {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            flex-wrap: wrap;
+        }
+
+        .layer {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .layer-label {
+            color: #00d9ff;
+            font-weight: 700;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .neuron {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 11px;
+            color: white;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .neuron:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px currentColor;
+        }
+
+        .neuron.input { background: linear-gradient(135deg, #64748b, #475569); }
+        .neuron.hidden { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+        .neuron.output { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+
+        .arrow {
+            font-size: 35px;
+            color: #475569;
+        }
+
+        /* Cards */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+
+        .card {
+            background: linear-gradient(135deg, #16213e 0%, #1a1a2e 100%);
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid #334155;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 217, 255, 0.15);
+        }
+
+        .card h4 {
+            color: #00d9ff;
+            margin-bottom: 12px;
+            font-size: 1.15em;
+        }
+
+        .card p {
+            font-size: 1em;
+            color: #cbd5e1;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 15px 20px;
+            text-align: left;
+            border: 1px solid #334155;
+        }
+
+        th {
+            background: #1e3a5f;
+            color: #00d9ff;
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) { background: #1a1a2e; }
+        tr:nth-child(odd) { background: #16213e; }
+
+        /* Two columns */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 25px 0;
+        }
+
+        @media (max-width: 800px) {
+            .two-col { grid-template-columns: 1fr; }
+            h1 { font-size: 2em; }
+            .slide { padding: 40px 20px 120px 20px; }
+        }
+
+        /* Formula */
+        .formula {
+            background: linear-gradient(135deg, #1e3a5f 0%, #16213e 100%);
+            padding: 25px 35px;
+            border-radius: 15px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 1.3em;
+            text-align: center;
+            margin: 25px 0;
+            color: #00ffcc;
+            border: 2px solid #00d9ff;
+        }
+
+        /* Steps */
+        .steps {
+            counter-reset: step;
+        }
+
+        .step {
+            position: relative;
+            padding-left: 80px;
+            margin: 30px 0;
+        }
+
+        .step::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 55px;
+            height: 55px;
+            background: linear-gradient(135deg, #00d9ff, #00ffcc);
+            color: #0f0f1a;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.4em;
+        }
+
+        .step h4 {
+            color: #00d9ff;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        /* Lists */
+        ul, ol {
+            margin: 15px 0 15px 25px;
+        }
+
+        li {
+            margin: 10px 0;
+            font-size: 1.05em;
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .badge.complete { background: #166534; color: #4ade80; }
+        .badge.current { background: #78350f; color: #fbbf24; }
+        .badge.upcoming { background: #1e3a5f; color: #64748b; }
+
+        /* Title slide */
+        .title-slide {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            min-height: calc(100vh - 180px);
+        }
+
+        .title-slide h1 {
+            font-size: 3.5em;
+            margin-bottom: 15px;
+        }
+
+        .big-emoji {
+            font-size: 100px;
+            margin: 30px 0;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        /* Interactive slider */
+        .slider-container {
+            background: #0f172a;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 25px 0;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            color: #94a3b8;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #334155;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #00d9ff;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 217, 255, 0.5);
+        }
+
+        .slider-output {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+
+        /* Centered */
+        .center { text-align: center; }
+
+        /* Separator */
+        hr {
+            border: none;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #334155, transparent);
+            margin: 40px 0;
+        }
+
+        /* Quiz options */
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .quiz-option {
+            background: #1a1a2e;
+            border: 2px solid #334155;
+            padding: 15px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1.05em;
+        }
+
+        .quiz-option:hover {
+            border-color: #8b5cf6;
+            background: #16213e;
+        }
+
+        .quiz-option.correct {
+            border-color: #4ade80;
+            background: rgba(74, 222, 128, 0.1);
+        }
+
+        .quiz-option.incorrect {
+            border-color: #f87171;
+            background: rgba(248, 113, 113, 0.1);
+        }
+
+        /* Emoji markers */
+        .emoji-marker {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Progress dots for sub-sections */
+        .section-progress {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 30px 0;
+        }
+
+        .section-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #334155;
+        }
+
+        .section-dot.active {
+            background: #00d9ff;
+        }
+
+        .section-dot.complete {
+            background: #4ade80;
+        }
+    </style>
+</head>
+<body>
+    <div class="progress" id="progress"></div>
+
+    <div class="slides-container">
+
+        <!-- ==================== SLIDE 1: TITLE ==================== -->
+        <div class="slide active" id="slide-1">
+            <div class="slide-content title-slide">
+                <div class="big-emoji">🧠</div>
+                <h1>Neural Networks from Scratch</h1>
+                <p class="subtitle">The 20 Questions Journey</p>
+                <p style="color: #94a3b8; margin-top: 30px; max-width: 600px;">
+                    A complete guide to understanding how computers learn — no programming experience required.
+                    We'll build an AI that plays 20 Questions and actually gets smarter over time.
+                </p>
+                <p style="color: #475569; margin-top: 40px;">
+                    Use <span class="highlight">← →</span> arrow keys or buttons below to navigate
+                </p>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 2: WHAT WE'RE BUILDING ==================== -->
+        <div class="slide" id="slide-2">
+            <div class="slide-content">
+                <h1>What We're Building</h1>
+                <p class="subtitle">A game that learns from its mistakes</p>
+
+                <div class="analogy">
+                    <div class="analogy-title">🎮 The Game</div>
+                    <p>You've probably played 20 Questions before. Think of an animal. I ask yes/no questions. I try to guess what you're thinking of.</p>
+                    <p style="margin-top: 15px;"><strong>Simple rules, but here's the twist:</strong> Our computer won't have a list of rules like "if it flies AND it's a bird, guess Eagle." Instead, it will <span class="highlight">figure out the patterns itself</span> by looking at examples.</p>
+                </div>
+
+                <h2>Why This Matters</h2>
+
+                <p>This is exactly how modern AI works — from ChatGPT to self-driving cars. They don't follow hand-written rules. They <span class="keyword">learn patterns from data</span>.</p>
+
+                <div class="two-col">
+                    <div class="box">
+                        <div class="box-title">❌ Traditional Programming</div>
+                        <p><strong>Human writes rules:</strong></p>
+                        <p>"If it swims AND has fins → Fish"</p>
+                        <p>"If it flies AND has feathers → Bird"</p>
+                        <p style="color: #f87171; margin-top: 15px;">Problem: What about penguins? Flying fish? Edge cases explode!</p>
+                    </div>
+                    <div class="box">
+                        <div class="box-title">✅ Machine Learning</div>
+                        <p><strong>Human provides examples:</strong></p>
+                        <p>"Here's a salmon. It swims."</p>
+                        <p>"Here's an eagle. It flies."</p>
+                        <p style="color: #4ade80; margin-top: 15px;">The computer figures out its own rules!</p>
+                    </div>
+                </div>
+
+                <div class="challenge">
+                    <div class="challenge-header">
+                        <div class="challenge-icon">🤔</div>
+                        <div class="challenge-title">Think About It</div>
+                    </div>
+                    <div class="challenge-question">
+                        If you had to teach a 5-year-old to tell the difference between cats and dogs, would you give them a rulebook, or show them lots of pictures of cats and dogs?
+                    </div>
+                    <button class="reveal-btn" onclick="toggleAnswer(this)">Reveal the connection</button>
+                    <div class="answer">
+                        <div class="answer-title">💡 The Connection</div>
+                        <p>You'd show them examples! That's exactly what neural networks do. They look at many examples and gradually figure out what makes a cat a cat and a dog a dog.</p>
+                        <p style="margin-top: 10px;">The child doesn't memorize "cats have triangular ears" — they develop an <em>intuition</em>. Neural networks do the same thing, but with numbers.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 3: THE CORE PROBLEM ==================== -->
+        <div class="slide" id="slide-3">
+            <div class="slide-content">
+                <h1>The Core Problem: Classification</h1>
+                <p class="subtitle">Teaching computers to put things in categories</p>
+
+                <p class="lead">At its heart, 20 Questions is a <span class="keyword">classification</span> problem: given some information (your answers), put the thing into the right category (which animal).</p>
+
+                <div class="analogy">
+                    <div class="analogy-title">📬 Real-World Analogy: The Mailroom</div>
+                    <p>Imagine you work in a mailroom. Letters arrive, and you need to put each one in the correct mailbox. You look at the address, the name, maybe the return address — and you decide which box it goes in.</p>
+                    <p style="margin-top: 15px;">That's classification! You're looking at <span class="highlight">features</span> (address, name) and making a <span class="highlight">decision</span> (which mailbox).</p>
+                </div>
+
+                <h2>Examples of Classification</h2>
+
+                <div class="card-grid">
+                    <div class="card">
+                        <h4>📧 Email Spam Filter</h4>
+                        <p><strong>Features:</strong> Words in email, sender, links</p>
+                        <p><strong>Categories:</strong> Spam or Not Spam</p>
+                    </div>
+                    <div class="card">
+                        <h4>🏥 Medical Diagnosis</h4>
+                        <p><strong>Features:</strong> Symptoms, test results, age</p>
+                        <p><strong>Categories:</strong> Different diseases</p>
+                    </div>
+                    <div class="card">
+                        <h4>📷 Photo Recognition</h4>
+                        <p><strong>Features:</strong> Pixels, colors, shapes</p>
+                        <p><strong>Categories:</strong> Cat, Dog, Car, Person...</p>
+                    </div>
+                    <div class="card">
+                        <h4>🎮 Our 20 Questions</h4>
+                        <p><strong>Features:</strong> Answers to questions</p>
+                        <p><strong>Categories:</strong> Different animals</p>
+                    </div>
+                </div>
+
+                <div class="box insight">
+                    <div class="box-title">💡 Key Insight</div>
+                    <p>Classification is everywhere in AI. Once you understand how to classify things, you understand the foundation of most machine learning systems.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 4: FEATURE VECTORS ==================== -->
+        <div class="slide" id="slide-4">
+            <div class="slide-content">
+                <span class="badge complete">MODULE 1</span>
+                <h1>Representing Animals as Numbers</h1>
+                <p class="subtitle">Creating a "fingerprint" for each animal</p>
+
+                <p class="lead">Computers don't understand "penguin" or "flies" — they only understand numbers. So our first job is to turn animals into numbers.</p>
+
+                <h2>The Questions We Ask</h2>
+
+                <p>We'll ask 4 simple yes/no questions about each animal:</p>
+
+                <table>
+                    <tr>
+                        <th>#</th>
+                        <th>Question</th>
+                        <th>No = 0</th>
+                        <th>Maybe = 1</th>
+                        <th>Yes = 2</th>
+                    </tr>
+                    <tr><td>1</td><td>Does it fly?</td><td>Doesn't fly</td><td>Glides/sometimes</td><td>Definitely flies</td></tr>
+                    <tr><td>2</td><td>Does it swim?</td><td>Doesn't swim</td><td>Can swim</td><td>Lives in water</td></tr>
+                    <tr><td>3</td><td>Is it a mammal?</td><td>No</td><td>—</td><td>Yes</td></tr>
+                    <tr><td>4</td><td>Is it a bird?</td><td>No</td><td>—</td><td>Yes</td></tr>
+                </table>
+
+                <h2>Turning Animals into Numbers</h2>
+
+                <p>Now we can describe each animal as a list of 4 numbers — its <span class="keyword">feature vector</span>:</p>
+
+                <div class="diagram">
+                    <table style="max-width: 700px; margin: 0 auto;">
+                        <tr>
+                            <th>Animal</th>
+                            <th>Flies?</th>
+                            <th>Swims?</th>
+                            <th>Mammal?</th>
+                            <th>Bird?</th>
+                            <th>Feature Vector</th>
+                        </tr>
+                        <tr><td>🐧 Penguin</td><td>0</td><td>2</td><td>0</td><td>2</td><td style="color: #00ffcc; font-family: monospace;">[0, 2, 0, 2]</td></tr>
+                        <tr><td>🐕 Dog</td><td>0</td><td>0</td><td>2</td><td>0</td><td style="color: #00ffcc; font-family: monospace;">[0, 0, 2, 0]</td></tr>
+                        <tr><td>🦅 Eagle</td><td>2</td><td>0</td><td>0</td><td>2</td><td style="color: #00ffcc; font-family: monospace;">[2, 0, 0, 2]</td></tr>
+                        <tr><td>🦈 Shark</td><td>0</td><td>2</td><td>0</td><td>0</td><td style="color: #00ffcc; font-family: monospace;">[0, 2, 0, 0]</td></tr>
+                    </table>
+                    <p class="diagram-caption">Each animal is now a unique "fingerprint" of numbers</p>
+                </div>
+
+                <div class="analogy">
+                    <div class="analogy-title">🏠 Think of it like an address</div>
+                    <p>Your home address is a way to uniquely identify where you live using numbers and text. A feature vector is like an "address" in animal-space — it tells the computer exactly where this animal is located in the space of all possible animals.</p>
+                </div>
+
+                <div class="challenge">
+                    <div class="challenge-header">
+                        <div class="challenge-icon">✏️</div>
+                        <div class="challenge-title">Your Turn</div>
+                    </div>
+                    <div class="challenge-question">
+                        What would the feature vector be for a <strong>Bat</strong>?<br>
+                        (Hint: Bats fly, don't swim, ARE mammals, and are NOT birds)
+                    </div>
+                    <button class="reveal-btn" onclick="toggleAnswer(this)">Check your answer</button>
+                    <div class="answer">
+                        <div class="answer-title">✅ Answer</div>
+                        <p><strong>Bat = [2, 0, 2, 0]</strong></p>
+                        <ul>
+                            <li>Flies? <strong>Yes (2)</strong></li>
+                            <li>Swims? <strong>No (0)</strong></li>
+                            <li>Mammal? <strong>Yes (2)</strong></li>
+                            <li>Bird? <strong>No (0)</strong></li>
+                        </ul>
+                        <p style="margin-top: 15px;">Notice how a bat has a different fingerprint than an eagle [2, 0, 0, 2] — the mammal/bird questions separate them!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 5: SIMILARITY AS DISTANCE ==================== -->
+        <div class="slide" id="slide-5">
+            <div class="slide-content">
+                <h1>Similar Things Are Close Together</h1>
+                <p class="subtitle">Measuring similarity with distance</p>
+
+                <p class="lead">Here's a powerful idea: if we can turn things into numbers, we can measure how <span class="highlight">similar</span> they are by measuring the <span class="highlight">distance</span> between them.</p>
+
+                <div class="analogy">
+                    <div class="analogy-title">🗺️ Think about a map</div>
+                    <p>On a map, cities that are close together are... close together! Paris and London are more similar (geographically) than Paris and Tokyo. We can measure this with distance.</p>
+                    <p style="margin-top: 15px;">Feature vectors work the same way. Animals with similar features have vectors that are "close" to each other.</p>
+                </div>
+
+                <h2>Calculating Distance</h2>
+
+                <p>We'll use a simple method: add up the differences between each number.</p>
+
+                <div class="box">
+                    <div class="box-title">📏 Example: How similar is a player's answer to each animal?</div>
+                    <p style="margin-top: 15px;">Player answers: <span style="color: #00ffcc; font-family: monospace;">[0, 2, 0, 2]</span> (doesn't fly, swims, not mammal, is bird)</p>
+
+                    <div style="margin-top: 20px;">
+                        <p><strong>vs Penguin [0, 2, 0, 2]:</strong></p>
+                        <p style="font-family: monospace; color: #94a3b8; margin-left: 20px;">|0-0| + |2-2| + |0-0| + |2-2| = 0 + 0 + 0 + 0 = <span style="color: #4ade80; font-weight: bold;">0</span> ← Perfect match!</p>
+                    </div>
+
+                    <div style="margin-top: 15px;">
+                        <p><strong>vs Dog [0, 0, 2, 0]:</strong></p>
+                        <p style="font-family: monospace; color: #94a3b8; margin-left: 20px;">|0-0| + |2-0| + |0-2| + |2-0| = 0 + 2 + 2 + 2 = <span style="color: #f87171; font-weight: bold;">6</span> ← Very different!</p>
+                    </div>
+
+                    <div style="margin-top: 15px;">
+                        <p><strong>vs Shark [0, 2, 0, 0]:</strong></p>
+                        <p style="font-family: monospace; color: #94a3b8; margin-left: 20px;">|0-0| + |2-2| + |0-0| + |2-0| = 0 + 0 + 0 + 2 = <span style="color: #fbbf24; font-weight: bold;">2</span> ← Close, but not exact</p>
+                    </div>
+                </div>
+
+                <p style="margin-top: 25px;">The smallest distance wins! In this case: <strong>Penguin (distance 0)</strong> is the best match.</p>
+
+                <div class="box insight">
+                    <div class="box-title">💡 Key Insight</div>
+                    <p>This simple approach is called <span class="keyword">k-Nearest Neighbors (k-NN)</span>. It's one of the oldest machine learning algorithms, and it works surprisingly well! But it has a problem we'll discover next...</p>
+                </div>
+
+                <div class="challenge">
+                    <div class="challenge-header">
+                        <div class="challenge-icon">🤔</div>
+                        <div class="challenge-title">The Problem</div>
+                    </div>
+                    <div class="challenge-question">
+                        Look at Dog [0, 0, 2, 0] and Cat [0, 0, 2, 0].<br><br>
+                        Both don't fly, don't swim, ARE mammals, and aren't birds.<br><br>
+                        <strong>What's the distance between them?</strong> And why is that a problem?
+                    </div>
+                    <button class="reveal-btn" onclick="toggleAnswer(this)">Reveal the problem</button>
+                    <div class="answer">
+                        <div class="answer-title">⚠️ The Problem</div>
+                        <p><strong>Distance = 0!</strong> They have identical feature vectors.</p>
+                        <p style="margin-top: 15px; color: #f87171;">This means no algorithm can tell them apart! If the player is thinking of a cat, and we calculate distances, cat and dog are tied. We'd have to guess randomly.</p>
+                        <p style="margin-top: 15px; color: #4ade80;"><strong>Solution:</strong> We need better questions! "Is it a feline?" would give Cat = Yes (2), Dog = No (0).</p>
+                        <p style="margin-top: 15px; font-style: italic;">This teaches us a crucial lesson: the quality of your questions (features) determines the ceiling of your AI's intelligence.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 6: INTRO TO LEARNING ==================== -->
+        <div class="slide" id="slide-6">
+            <div class="slide-content">
+                <span class="badge complete">MODULE 2</span>
+                <h1>From Lookup to Learning</h1>
+                <p class="subtitle">What if the computer figured out patterns itself?</p>
+
+                <p class="lead">So far, we've been doing "lookup" — comparing the player's answers directly to stored animal profiles. But what if we could teach the computer to <span class="highlight">learn</span> which features matter most?</p>
+
+                <div class="analogy">
+                    <div class="analogy-title">👨‍🎓 Learning vs. Memorizing</div>
+                    <p><strong>Memorizing:</strong> A student memorizes "2 + 2 = 4, 2 + 3 = 5, 2 + 4 = 6..." for every possible problem.</p>
+                    <p><strong>Learning:</strong> A student understands "to add, count up by the second number" — and can solve ANY addition problem.</p>
+                    <p style="margin-top: 15px;">We want our computer to <em>learn</em>, not just memorize!</p>
+                </div>
+
+                <h2>Introducing: The Artificial Neuron</h2>
+
+                <p>We're going to build a tiny "brain cell" — inspired by how real neurons in your brain work.</p>
+
+                <div class="diagram">
+                    <svg width="600" height="250" viewBox="0 0 600 250">
+                        <!-- Inputs -->
+                        <circle cx="80" cy="60" r="30" fill="#64748b"/>
+                        <text x="80" y="65" fill="white" text-anchor="middle" font-size="12">Flies?</text>
+
+                        <circle cx="80" cy="130" r="30" fill="#64748b"/>
+                        <text x="80" y="135" fill="white" text-anchor="middle" font-size="12">Swims?</text>
+
+                        <circle cx="80" cy="200" r="30" fill="#64748b"/>
+                        <text x="80" y="205" fill="white" text-anchor="middle" font-size="12">Mammal?</text>
+
+                        <!-- Weights on connections -->
+                        <line x1="110" y1="60" x2="250" y2="130" stroke="#00d9ff" stroke-width="3"/>
+                        <text x="170" y="80" fill="#00d9ff" font-size="14">×0.1</text>
+
+                        <line x1="110" y1="130" x2="250" y2="130" stroke="#00d9ff" stroke-width="3"/>
+                        <text x="170" y="120" fill="#00d9ff" font-size="14">×0.8</text>
+
+                        <line x1="110" y1="200" x2="250" y2="130" stroke="#00d9ff" stroke-width="3"/>
+                        <text x="170" y="180" fill="#00d9ff" font-size="14">×0.3</text>
+
+                        <!-- Neuron -->
+                        <circle cx="300" cy="130" r="50" fill="#8b5cf6"/>
+                        <text x="300" y="125" fill="white" text-anchor="middle" font-size="14">Add up</text>
+                        <text x="300" y="145" fill="white" text-anchor="middle" font-size="14">& squash</text>
+
+                        <!-- Output -->
+                        <line x1="350" y1="130" x2="450" y2="130" stroke="#4ade80" stroke-width="3" marker-end="url(#arrowhead)"/>
+
+                        <defs>
+                            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                <polygon points="0 0, 10 3.5, 0 7" fill="#4ade80"/>
+                            </marker>
+                        </defs>
+
+                        <rect x="460" y="105" rx="10" width="120" height="50" fill="#16213e" stroke="#4ade80" stroke-width="2"/>
+                        <text x="520" y="135" fill="#4ade80" text-anchor="middle" font-size="14">0.73</text>
+
+                        <!-- Labels -->
+                        <text x="80" y="240" fill="#94a3b8" text-anchor="middle" font-size="12">Inputs</text>
+                        <text x="180" y="240" fill="#00d9ff" text-anchor="middle" font-size="12">Weights</text>
+                        <text x="300" y="240" fill="#8b5cf6" text-anchor="middle" font-size="12">Neuron</text>
+                        <text x="520" y="170" fill="#4ade80" text-anchor="middle" font-size="12">Output (0-1)</text>
+                    </svg>
+                    <p class="diagram-caption">A neuron multiplies each input by a weight, adds them up, and outputs a number between 0 and 1</p>
+                </div>
+
+                <h2>The Three Key Parts</h2>
+
+                <div class="steps">
+                    <div class="step">
+                        <h4>Inputs</h4>
+                        <p>The answers to our questions: [0, 2, 0, 2] for a penguin. These are the facts we know.</p>
+                    </div>
+                    <div class="step">
+                        <h4>Weights</h4>
+                        <p>Numbers that say <em>how important</em> each input is. A high weight means "pay attention to this!" A low weight means "ignore this."</p>
+                        <p style="margin-top: 10px;"><strong>This is what the neuron LEARNS.</strong> It adjusts weights based on feedback.</p>
+                    </div>
+                    <div class="step">
+                        <h4>Output</h4>
+                        <p>A single number between 0 and 1. Think of it as confidence: 0 = "definitely not", 1 = "definitely yes", 0.5 = "unsure".</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 7: THE MATH (SIMPLE VERSION) ==================== -->
+        <div class="slide" id="slide-7">
+            <div class="slide-content">
+                <h1>How a Neuron Thinks</h1>
+                <p class="subtitle">The math behind the magic (it's easier than you think!)</p>
+
+                <p class="lead">A neuron does just three things: multiply, add, and squash. Let's see each step.</p>
+
+                <h2>Step 1: Multiply Each Input by Its Weight</h2>
+
+                <div class="box">
+                    <p>Let's say we have inputs <span style="color: #00ffcc;">[2, 0, 0, 2]</span> (an eagle) and weights <span style="color: #f59e0b;">[0.5, 0.3, 0.1, 0.8]</span></p>
+
+                    <div class="code-block">
+                        <div class="code-header">Multiplication</div>
+                        <div class="code-content">
+Input 1 (flies=2)  × Weight 1 (0.5) = <span class="number">1.0</span>
+Input 2 (swims=0)  × Weight 2 (0.3) = <span class="number">0.0</span>
+Input 3 (mammal=0) × Weight 3 (0.1) = <span class="number">0.0</span>
+Input 4 (bird=2)   × Weight 4 (0.8) = <span class="number">1.6</span>
+                        </div>
+                    </div>
+                </div>
+
+                <h2>Step 2: Add Them All Up</h2>
+
+                <div class="formula">
+                    1.0 + 0.0 + 0.0 + 1.6 = <span style="color: #f59e0b;">2.6</span>
+                </div>
+
+                <p>We also add a <span class="keyword">bias</span> (like a starting point). Let's say bias = -1.0:</p>
+
+                <div class="formula">
+                    2.6 + (-1.0) = <span style="color: #f59e0b;">1.6</span>
+                </div>
+
+                <h2>Step 3: Squash to 0-1 (The Sigmoid Function)</h2>
+
+                <p>The sum could be any number (-1000 to +1000). We need to squash it into a nice 0 to 1 range.</p>
+
+                <div class="diagram">
+                    <svg width="500" height="200" viewBox="0 0 500 200">
+                        <!-- Axes -->
+                        <line x1="50" y1="170" x2="450" y2="170" stroke="#64748b" stroke-width="2"/>
+                        <line x1="250" y1="20" x2="250" y2="180" stroke="#64748b" stroke-width="1" stroke-dasharray="5,5"/>
+
+                        <!-- Curve -->
+                        <path d="M 50 165 Q 150 165, 200 150 Q 250 100, 300 50 Q 350 35, 450 35"
+                              fill="none" stroke="#00d9ff" stroke-width="4"/>
+
+                        <!-- Labels -->
+                        <text x="50" y="190" fill="#94a3b8" font-size="12">-∞</text>
+                        <text x="250" y="190" fill="#94a3b8" font-size="12">0</text>
+                        <text x="440" y="190" fill="#94a3b8" font-size="12">+∞</text>
+                        <text x="30" y="170" fill="#94a3b8" font-size="12">0</text>
+                        <text x="30" y="40" fill="#94a3b8" font-size="12">1</text>
+                        <text x="30" y="105" fill="#94a3b8" font-size="12">0.5</text>
+
+                        <!-- Dotted line at 0.5 -->
+                        <line x1="50" y1="100" x2="450" y2="100" stroke="#334155" stroke-width="1" stroke-dasharray="3,3"/>
+
+                        <!-- Our example point -->
+                        <circle cx="320" cy="45" r="8" fill="#f59e0b"/>
+                        <text x="340" y="50" fill="#f59e0b" font-size="14">1.6 → 0.83</text>
+                    </svg>
+                    <p class="diagram-caption">The sigmoid function: big positive numbers → close to 1, big negative numbers → close to 0</p>
+                </div>
+
+                <div class="box insight">
+                    <div class="box-title">💡 What does 0.83 mean?</div>
+                    <p>If this neuron is trying to detect "is this an eagle?", then <strong>0.83</strong> means "83% confident this is an eagle."</p>
+                    <p style="margin-top: 10px;">If we fed in a dog's features, we'd want this neuron to output something low, like 0.12 (12% confidence).</p>
+                </div>
+
+                <div class="challenge">
+                    <div class="challenge-header">
+                        <div class="challenge-icon">✏️</div>
+                        <div class="challenge-title">Your Turn</div>
+                    </div>
+                    <div class="challenge-question">
+                        Why do you think we need to squash the output to 0-1?<br>
+                        What would happen if we just used the raw sum (like 2.6)?
+                    </div>
+                    <button class="reveal-btn" onclick="toggleAnswer(this)">Reveal why</button>
+                    <div class="answer">
+                        <div class="answer-title">💡 Why Squashing Matters</div>
+                        <p>Three reasons:</p>
+                        <ol style="margin-top: 10px;">
+                            <li><strong>Interpretable:</strong> 0-1 is easy to understand as confidence/probability</li>
+                            <li><strong>Comparable:</strong> We can compare neurons fairly (otherwise one might output 1000, another 0.001)</li>
+                            <li><strong>Stable:</strong> Without squashing, numbers can explode to infinity and break the math</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 8: HOW LEARNING HAPPENS ==================== -->
+        <div class="slide" id="slide-8">
+            <div class="slide-content">
+                <h1>How Learning Happens</h1>
+                <p class="subtitle">Adjusting weights based on mistakes</p>
+
+                <p class="lead">Here's the beautiful part: a neuron learns by <span class="highlight">making mistakes and adjusting</span>. Just like humans!</p>
+
+                <div class="analogy">
+                    <div class="analogy-title">🏀 Learning to Shoot Free Throws</div>
+                    <p>When you miss a shot, you don't just keep shooting the exact same way. You adjust:</p>
+                    <ul>
+                        <li>Shot went left? Aim a little right next time.</li>
+                        <li>Shot was short? Put more power next time.</li>
+                    </ul>
+                    <p style="margin-top: 15px;">Each miss gives you information about <em>how</em> to adjust. Neural networks work the same way!</p>
+                </div>
+
+                <h2>The Learning Recipe</h2>
+
+                <div class="steps">
+                    <div class="step">
+                        <h4>Make a Prediction</h4>
+                        <p>Feed in an eagle [2, 0, 0, 2]. Neuron outputs 0.4</p>
+                    </div>
+                    <div class="step">
+                        <h4>Check the Answer</h4>
+                        <p>We wanted 1.0 (yes, it's an eagle!). We got 0.4.</p>
+                        <p><strong>Error = 1.0 - 0.4 = 0.6</strong> (we were too low by 0.6)</p>
+                    </div>
+                    <div class="step">
+                        <h4>Adjust the Weights</h4>
+                        <p>The error tells us we need to increase our output. So we nudge the weights UP a little bit.</p>
+                    </div>
+                    <div class="step">
+                        <h4>Repeat!</h4>
+                        <p>Do this thousands of times with different examples. The weights gradually settle into values that work well.</p>
+                    </div>
+                </div>
+
+                <h2>The Weight Update Rule</h2>
+
+                <div class="formula">
+                    new weight = old weight + (learning rate × error × input)
+                </div>
+
+                <div class="box">
+                    <div class="box-title">📝 Let's trace through an example</div>
+                    <p style="margin-top: 15px;">The "flies" weight is 0.5. The input was 2 (yes, flies). The error was 0.6. Learning rate is 0.1.</p>
+
+                    <div class="code-block">
+                        <div class="code-header">Weight Update Calculation</div>
+                        <div class="code-content">
+new weight = 0.5 + (0.1 × 0.6 × 2)
+           = 0.5 + 0.12
+           = <span class="number">0.62</span>
+                        </div>
+                    </div>
+
+                    <p style="margin-top: 15px;">The "flies" weight went from 0.5 to 0.62. Next time, the neuron will pay MORE attention to flying things!</p>
+                </div>
+
+                <div class="box insight">
+                    <div class="box-title">💡 Why multiply by the input?</div>
+                    <p>If an input was 0 (not important for this example), we don't want to change its weight — it didn't contribute to the error!</p>
+                    <p style="margin-top: 10px;">If an input was 2 (very relevant), we want to adjust its weight more — it was important for this decision.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 9: MULTIPLE NEURONS ==================== -->
+        <div class="slide" id="slide-9">
+            <div class="slide-content">
+                <span class="badge complete">MODULE 3</span>
+                <h1>One Neuron Per Animal</h1>
+                <p class="subtitle">Building a network that recognizes many categories</p>
+
+                <p class="lead">A single neuron can only answer one question: "Is this a penguin? (yes/no)". But we have 8 animals! Solution: <span class="highlight">use 8 neurons</span>, one for each animal.</p>
+
+                <div class="network-visual">
+                    <div class="layer">
+                        <div class="layer-label">Questions (Inputs)</div>
+                        <div class="neuron input">Flies?</div>
+                        <div class="neuron input">Swims?</div>
+                        <div class="neuron input">Mammal?</div>
+                        <div class="neuron input">Bird?</div>
+                    </div>
+
+                    <div class="arrow">→</div>
+
+                    <div class="layer">
+                        <div class="layer-label">Animal Detectors</div>
+                        <div class="neuron output">🐧</div>
+                        <div class="neuron output">🐕</div>
+                        <div class="neuron output">🦅</div>
+                        <div class="neuron output">🦈</div>
+                        <div class="neuron output">🐱</div>
+                        <div class="neuron output">🐋</div>
+                        <div class="neuron output">🦇</div>
+                        <div class="neuron output">🐟</div>
+                    </div>
+
+                    <div class="arrow">→</div>
+
+                    <div class="layer">
+                        <div class="layer-label">Pick Highest</div>
+                        <div style="font-size: 60px;">🏆</div>
+                    </div>
+                </div>
+
+                <h2>How It Works</h2>
+
+                <div class="box">
+                    <p>Feed in penguin's features [0, 2, 0, 2]. Each neuron outputs its confidence:</p>
+
+                    <table style="max-width: 500px; margin: 20px auto;">
+                        <tr><th>Neuron</th><th>Output</th><th>Meaning</th></tr>
+                        <tr><td>🐧 Penguin</td><td style="color: #4ade80; font-weight: bold;">0.92</td><td>92% confident</td></tr>
+                        <tr><td>🐕 Dog</td><td>0.15</td><td>15% confident</td></tr>
+                        <tr><td>🦅 Eagle</td><td>0.23</td><td>23% confident</td></tr>
+                        <tr><td>🦈 Shark</td><td>0.45</td><td>45% confident</td></tr>
+                        <tr><td>... etc</td><td>...</td><td>...</td></tr>
+                    </table>
+
+                    <p style="text-align: center;"><strong>Winner: 🐧 Penguin with 0.92!</strong></p>
+                </div>
+
+                <h2>Training: Everyone Learns at Once</h2>
+
+                <p>When we show the network a penguin, we tell ALL neurons what they should output:</p>
+
+                <div class="code-block">
+                    <div class="code-header">Expected Outputs for Penguin</div>
+                    <div class="code-content">
+Penguin neuron: should output <span class="number">1.0</span> (yes, this IS a penguin)
+Dog neuron:     should output <span class="number">0.0</span> (no, this is NOT a dog)
+Eagle neuron:   should output <span class="number">0.0</span> (no, this is NOT an eagle)
+... and so on for all 8 neurons
+                    </div>
+                </div>
+
+                <p>Each neuron calculates its own error and adjusts its own weights. They learn independently but work together!</p>
+
+                <div class="box insight">
+                    <div class="box-title">💡 Key Insight</div>
+                    <p><strong>A network is just neurons working together.</strong> Each neuron specializes in detecting one thing. The collective behavior produces intelligent classification.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 10: THE PROBLEM WITH ONE LAYER ==================== -->
+        <div class="slide" id="slide-10">
+            <div class="slide-content">
+                <span class="badge complete">MODULE 5</span>
+                <h1>Why One Layer Isn't Enough</h1>
+                <p class="subtitle">The limits of simple networks</p>
+
+                <p class="lead">Our network works! But it has a fundamental limitation. Let's discover it together.</p>
+
+                <div class="challenge">
+                    <div class="challenge-header">
+                        <div class="challenge-icon">🤔</div>
+                        <div class="challenge-title">Spot the Problem</div>
+                    </div>
+                    <div class="challenge-question">
+                        Can a single neuron learn to recognize this pattern?<br><br>
+                        <table style="max-width: 300px; margin: 20px auto;">
+                            <tr><th>Input A</th><th>Input B</th><th>Output</th></tr>
+                            <tr><td>0</td><td>0</td><td>0</td></tr>
+                            <tr><td>0</td><td>1</td><td style="color: #4ade80;">1</td></tr>
+                            <tr><td>1</td><td>0</td><td style="color: #4ade80;">1</td></tr>
+                            <tr><td>1</td><td>1</td><td>0</td></tr>
+                        </table>
+                        <p style="text-align: center; color: #94a3b8;">Output is 1 when inputs are <em>different</em>, 0 when they're the <em>same</em></p>
+                    </div>
+                    <button class="reveal-btn" onclick="toggleAnswer(this)">Reveal the answer</button>
+                    <div class="answer">
+                        <div class="answer-title">❌ No, it can't!</div>
+                        <p>This is called the <strong>XOR problem</strong> (exclusive or). It's impossible for a single neuron to solve.</p>
+                        <p style="margin-top: 15px;">Why? A single neuron can only draw one straight line to separate "yes" from "no". But look at this pattern:</p>
+                        <div style="text-align: center; margin: 20px 0; font-family: monospace;">
+                            <p>     B</p>
+                            <p>     ↑</p>
+                            <p>  1  |  NO    YES</p>
+                            <p>     |   ●      ●</p>
+                            <p>     |</p>
+                            <p>  0  |  YES   NO</p>
+                            <p>     |   ●      ●</p>
+                            <p>     +------------→ A</p>
+                            <p>        0      1</p>
+                        </div>
+                        <p>You can't draw ONE straight line that puts YES on one side and NO on the other. You'd need two lines!</p>
+                    </div>
+                </div>
+
+                <h2>The Solution: Add a Hidden Layer</h2>
+
+                <p>What if we had neurons <em>between</em> the inputs and outputs? These "hidden" neurons can detect <span class="keyword">combinations of features</span>.</p>
+
+                <div class="network-visual">
+                    <div class="layer">
+                        <div class="layer-label">Inputs</div>
+                        <div class="neuron input">A</div>
+                        <div class="neuron input">B</div>
+                    </div>
+
+                    <div class="arrow">→</div>
+
+                    <div class="layer">
+                        <div class="layer-label">Hidden Layer</div>
+                        <div class="neuron hidden">H1</div>
+                        <div class="neuron hidden">H2</div>
+                    </div>
+
+                    <div class="arrow">→</div>
+
+                    <div class="layer">
+                        <div class="layer-label">Output</div>
+                        <div class="neuron output">XOR</div>
+                    </div>
+                </div>
+
+                <div class="box">
+                    <div class="box-title">🧩 What the hidden neurons learn</div>
+                    <ul style="margin-top: 15px;">
+                        <li><strong>H1 might learn:</strong> "A OR B" (at least one is 1)</li>
+                        <li><strong>H2 might learn:</strong> "A AND B" (both are 1)</li>
+                    </ul>
+                    <p style="margin-top: 15px;">The output neuron combines these: "H1 but NOT H2" = XOR!</p>
+                </div>
+
+                <div class="box insight">
+                    <div class="box-title">💡 Key Insight</div>
+                    <p><strong>Hidden layers learn intermediate representations.</strong> In our animal game, a hidden neuron might learn to detect "aquatic mammal" (whale, dolphin) or "flying non-bird" (bat). These abstract features make the final classification easier.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 11: OUR DEEP NETWORK ==================== -->
+        <div class="slide" id="slide-11">
+            <div class="slide-content">
+                <h1>Our Multi-Layer Network</h1>
+                <p class="subtitle">Adding depth to our animal classifier</p>
+
+                <div class="network-visual" style="flex-wrap: nowrap; overflow-x: auto; padding: 20px 0;">
+                    <div class="layer">
+                        <div class="layer-label">Inputs (6)</div>
+                        <div class="neuron input" style="font-size: 10px;">Flies?</div>
+                        <div class="neuron input" style="font-size: 10px;">Swims?</div>
+                        <div class="neuron input" style="font-size: 10px;">Mammal?</div>
+                        <div class="neuron input" style="font-size: 10px;">Bird?</div>
+                        <div class="neuron input" style="font-size: 10px;">Feline?</div>
+                        <div class="neuron input" style="font-size: 10px;">Danger?</div>
+                    </div>
+
+                    <div class="arrow">→</div>
+
+                    <div class="layer">
+                        <div class="layer-label">Hidden (6)</div>
+                        <div class="neuron hidden">H0</div>
+                        <div class="neuron hidden">H1</div>
+                        <div class="neuron hidden">H2</div>
+                        <div class="neuron hidden">H3</div>
+                        <div class="neuron hidden">H4</div>
+                        <div class="neuron hidden">H5</div>
+                    </div>
+
+                    <div class="arrow">→</div>
+
+                    <div class="layer">
+                        <div class="layer-label">Output (8)</div>
+                        <div class="neuron output">🐧</div>
+                        <div class="neuron output">🐕</div>
+                        <div class="neuron output">🦅</div>
+                        <div class="neuron output">🦈</div>
+                        <div class="neuron output">🐱</div>
+                        <div class="neuron output">🐋</div>
+                        <div class="neuron output">🦇</div>
+                        <div class="neuron output">🐟</div>
+                    </div>
+                </div>
+
+                <h2>How Data Flows Through</h2>
+
+                <div class="steps">
+                    <div class="step">
+                        <h4>Input → Hidden</h4>
+                        <p>Each of the 6 hidden neurons receives ALL 6 inputs. Each has its own weights (6 weights + 1 bias = 7 parameters per neuron).</p>
+                        <p style="margin-top: 10px; color: #94a3b8;">Hidden layer total: 6 neurons × 7 parameters = 42 learnable values</p>
+                    </div>
+                    <div class="step">
+                        <h4>Hidden → Output</h4>
+                        <p>Each of the 8 output neurons receives outputs from ALL 6 hidden neurons. Each output neuron has 6 weights + 1 bias = 7 parameters.</p>
+                        <p style="margin-top: 10px; color: #94a3b8;">Output layer total: 8 neurons × 7 parameters = 56 learnable values</p>
+                    </div>
+                </div>
+
+                <div class="box">
+                    <div class="box-title">🔢 Total Parameters</div>
+                    <p style="font-size: 1.3em; text-align: center; margin-top: 10px;">
+                        42 + 56 = <span class="highlight">98 learnable values</span>
+                    </p>
+                    <p style="text-align: center; margin-top: 10px; color: #94a3b8;">
+                        These 98 numbers are what the network "learns" during training!
+                    </p>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">C# — The Key Code</div>
+                    <div class="code-content">
+<span class="comment">// Data flows through each layer, output becomes next input</span>
+<span class="keyword">public double</span>[] <span class="function">Compute</span>(<span class="keyword">double</span>[] inputs)
+{
+    <span class="keyword">var</span> outputs = <span class="keyword">new double</span>[] { };
+
+    <span class="keyword">foreach</span> (<span class="keyword">var</span> layer <span class="keyword">in</span> Layers)
+    {
+        outputs = <span class="function">ComputeSingleLayer</span>(inputs, layer);
+        inputs = outputs;  <span class="comment">// ← This line is the magic!</span>
+    }
+
+    <span class="keyword">return</span> outputs;
+}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 12: THE BACKPROPAGATION PROBLEM ==================== -->
+        <div class="slide" id="slide-12">
+            <div class="slide-content">
+                <span class="badge complete">MODULE 6</span>
+                <h1>The Credit Assignment Problem</h1>
+                <p class="subtitle">When something goes wrong, who's to blame?</p>
+
+                <p class="lead">With multiple layers, we have a problem: if the network makes a mistake, <span class="highlight">which neurons are responsible?</span></p>
+
+                <div class="analogy">
+                    <div class="analogy-title">⚽ The Soccer Team Analogy</div>
+                    <p>Your team loses a match. Who's at fault?</p>
+                    <ul style="margin-top: 15px;">
+                        <li>The striker who missed the shot?</li>
+                        <li>The midfielder who made a bad pass?</li>
+                        <li>The defender who let someone through?</li>
+                        <li>The goalkeeper who didn't save it?</li>
+                    </ul>
+                    <p style="margin-top: 15px;">Usually, it's <em>everyone a little bit</em> — and we need to figure out how much each player contributed to the loss.</p>
+                    <p style="margin-top: 10px; color: #f59e0b;"><strong>This is exactly the problem neural networks face!</strong></p>
+                </div>
+
+                <h2>The Output Layer Is Easy</h2>
+
+                <div class="box">
+                    <p>For output neurons, we know exactly what they <em>should</em> have output:</p>
+                    <div class="code-block">
+                        <div class="code-header">Output Error</div>
+                        <div class="code-content">
+Expected: [0, 0, 0, 0, <span class="number">1</span>, 0, 0, 0]  <span class="comment">// Cat (index 4)</span>
+Actual:   [0.1, 0.2, 0.1, 0.3, <span class="number">0.6</span>, 0.1, 0.1, 0.1]
+
+Error for Cat neuron: 1.0 - 0.6 = <span class="number">+0.4</span>  <span class="comment">// Too low!</span>
+Error for Dog neuron: 0.0 - 0.2 = <span class="number">-0.2</span>  <span class="comment">// Too high!</span>
+                        </div>
+                    </div>
+                </div>
+
+                <h2>But the Hidden Layer? 🤔</h2>
+
+                <div class="box warning">
+                    <div class="box-title">⚠️ The Challenge</div>
+                    <p>Hidden neurons don't have "expected outputs." There's no teacher saying "H3 should have output 0.7."</p>
+                    <p style="margin-top: 15px;">So how do we train them?</p>
+                </div>
+
+                <div class="challenge">
+                    <div class="challenge-header">
+                        <div class="challenge-icon">🤔</div>
+                        <div class="challenge-title">Think About It</div>
+                    </div>
+                    <div class="challenge-question">
+                        Hidden neuron H2 connects to output neuron "Dog" with a <strong>very strong weight (0.9)</strong>.<br><br>
+                        The Dog neuron had a big error (it fired when it shouldn't have).<br><br>
+                        Does this tell us anything about H2's responsibility?
+                    </div>
+                    <button class="reveal-btn" onclick="toggleAnswer(this)">Reveal the insight</button>
+                    <div class="answer">
+                        <div class="answer-title">💡 The Key Insight</div>
+                        <p><strong>Yes!</strong> If H2 has a strong connection to Dog, and Dog made a big mistake, then H2 probably contributed significantly to that mistake.</p>
+                        <p style="margin-top: 15px;">The blame H2 receives should be proportional to:</p>
+                        <ul>
+                            <li>How big the Dog's error was</li>
+                            <li>How strong the connection from H2 to Dog was</li>
+                        </ul>
+                        <p style="margin-top: 15px; color: #00ffcc;"><strong>This is the core idea of backpropagation!</strong></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 13: BACKPROPAGATION EXPLAINED ==================== -->
+        <div class="slide" id="slide-13">
+            <div class="slide-content">
+                <h1>Backpropagation: Blame Flows Backward</h1>
+                <p class="subtitle">The algorithm that made deep learning possible</p>
+
+                <p class="lead">Backpropagation is just a method for figuring out how much each neuron contributed to the error, so we know how much to adjust each weight.</p>
+
+                <h2>The Core Idea</h2>
+
+                <div class="formula">
+                    Hidden Error = Σ (Output Error × Connection Weight)
+                </div>
+
+                <div class="box">
+                    <div class="box-title">📐 Concrete Example</div>
+                    <p style="margin-top: 15px;">Hidden neuron H2 connects to three output neurons:</p>
+
+                    <table style="max-width: 600px; margin: 20px auto;">
+                        <tr><th>Output Neuron</th><th>Its Error</th><th>Weight from H2</th><th>Blame to H2</th></tr>
+                        <tr><td>Dog</td><td>-0.2</td><td>0.9</td><td>-0.18</td></tr>
+                        <tr><td>Cat</td><td>+0.4</td><td>0.3</td><td>+0.12</td></tr>
+                        <tr><td>Eagle</td><td>-0.1</td><td>0.2</td><td>-0.02</td></tr>
+                    </table>
+
+                    <p style="text-align: center;"><strong>H2's total error:</strong> -0.18 + 0.12 + (-0.02) = <span style="color: #00ffcc;">-0.08</span></p>
+                    <p style="text-align: center; color: #94a3b8;">H2 should decrease its output slightly (negative error)</p>
+                </div>
+
+                <h2>Visual: Forward vs. Backward</h2>
+
+                <div class="diagram">
+                    <svg width="700" height="250" viewBox="0 0 700 250">
+                        <!-- Neurons -->
+                        <circle cx="150" cy="80" r="30" fill="#64748b"/>
+                        <text x="150" y="85" fill="white" text-anchor="middle" font-size="12">Input</text>
+
+                        <circle cx="350" cy="80" r="35" fill="#8b5cf6"/>
+                        <text x="350" y="75" fill="white" text-anchor="middle" font-size="12">Hidden</text>
+                        <text x="350" y="95" fill="white" text-anchor="middle" font-size="12">H2</text>
+
+                        <circle cx="550" cy="80" r="30" fill="#06b6d4"/>
+                        <text x="550" y="85" fill="white" text-anchor="middle" font-size="12">Output</text>
+
+                        <!-- Forward arrow -->
+                        <line x1="185" y1="60" x2="500" y2="60" stroke="#00d9ff" stroke-width="3"/>
+                        <polygon points="500,55 510,60 500,65" fill="#00d9ff"/>
+                        <text x="350" y="45" fill="#00d9ff" text-anchor="middle" font-size="14" font-weight="bold">FORWARD: Signals</text>
+
+                        <!-- Backward arrow -->
+                        <line x1="515" y1="110" x2="200" y2="110" stroke="#f59e0b" stroke-width="3" stroke-dasharray="8,4"/>
+                        <polygon points="200,105 190,110 200,115" fill="#f59e0b"/>
+                        <text x="350" y="130" fill="#f59e0b" text-anchor="middle" font-size="14" font-weight="bold">BACKWARD: Errors</text>
+
+                        <!-- Explanation -->
+                        <text x="150" y="180" fill="#94a3b8" text-anchor="middle" font-size="12">Weights AMPLIFY</text>
+                        <text x="150" y="195" fill="#94a3b8" text-anchor="middle" font-size="12">signals forward</text>
+
+                        <text x="550" y="180" fill="#94a3b8" text-anchor="middle" font-size="12">Same weights DISTRIBUTE</text>
+                        <text x="550" y="195" fill="#94a3b8" text-anchor="middle" font-size="12">blame backward</text>
+                    </svg>
+                </div>
+
+                <div class="box insight">
+                    <div class="box-title">💡 The Beautiful Symmetry</div>
+                    <p>The same weights that carry signals forward also carry errors backward. It's like the network is asking each neuron: "Given how much you contributed to the output, how much did you contribute to the error?"</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 14: SIGMOID DERIVATIVE ==================== -->
+        <div class="slide" id="slide-14">
+            <div class="slide-content">
+                <h1>The Sigmoid Derivative</h1>
+                <p class="subtitle">Why confident neurons learn slowly</p>
+
+                <p class="lead">There's one more piece to backpropagation: we need to account for how "responsive" each neuron is.</p>
+
+                <div class="analogy">
+                    <div class="analogy-title">🚗 The Gas Pedal Analogy</div>
+                    <p>Imagine you're driving:</p>
+                    <ul>
+                        <li><strong>Going 30 mph:</strong> Pressing the gas makes a big difference. The car responds!</li>
+                        <li><strong>Going 120 mph:</strong> Pressing the gas barely changes anything. You're near the limit.</li>
+                    </ul>
+                    <p style="margin-top: 15px;">Neurons work similarly. A neuron outputting 0.5 is very responsive. A neuron outputting 0.99 is "maxed out" — it can barely change.</p>
+                </div>
+
+                <h2>The Sigmoid Derivative</h2>
+
+                <div class="formula">
+                    derivative = output × (1 - output)
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Output: 0 (very low)</span>
+                        <span>Output: 1 (very high)</span>
+                    </div>
+                    <input type="range" id="derivSlider" min="0" max="100" value="50" oninput="updateDerivative()">
+                    <div class="slider-output">
+                        <p>Output: <span id="outputVal" class="highlight">0.50</span></p>
+                        <p>Derivative: <span id="derivVal" style="color: #f59e0b; font-weight: bold;">0.250</span></p>
+                        <p id="derivExplain" style="color: #94a3b8; font-size: 0.9em;">Neuron is very responsive — learns quickly!</p>
+                    </div>
+                </div>
+
+                <table>
+                    <tr><th>Output</th><th>Derivative</th><th>Meaning</th></tr>
+                    <tr><td>0.01</td><td>0.01</td><td style="color: #f87171;">Almost no learning — neuron says "definitely no"</td></tr>
+                    <tr><td>0.5</td><td>0.25</td><td style="color: #4ade80;">Maximum learning — neuron is uncertain</td></tr>
+                    <tr><td>0.99</td><td>0.01</td><td style="color: #f87171;">Almost no learning — neuron says "definitely yes"</td></tr>
+                </table>
+
+                <div class="box insight">
+                    <div class="box-title">💡 Why This Matters</div>
+                    <p>Without the derivative, a neuron outputting 0.99 would get the same error signal as one outputting 0.5. But the 0.99 neuron can barely move! Including the derivative prevents wasting updates on "stubborn" neurons.</p>
+                    <p style="margin-top: 15px; color: #4ade80;"><strong>Result:</strong> The network generalizes better and doesn't overfit to training examples.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 15: THE COMPLETE ALGORITHM ==================== -->
+        <div class="slide" id="slide-15">
+            <div class="slide-content">
+                <h1>Backpropagation: The Complete Algorithm</h1>
+                <p class="subtitle">Putting it all together</p>
+
+                <div class="steps">
+                    <div class="step">
+                        <h4>Forward Pass</h4>
+                        <p>Feed inputs through the network. Save each layer's outputs — we'll need them later!</p>
+                        <div class="code-block">
+                            <div class="code-header">Step 1</div>
+                            <div class="code-content">
+hiddenOutputs = <span class="function">ComputeLayer</span>(inputs, hiddenLayer)
+finalOutputs = <span class="function">ComputeLayer</span>(hiddenOutputs, outputLayer)
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <h4>Calculate Output Errors</h4>
+                        <p>Compare predictions to expected values. Include the sigmoid derivative!</p>
+                        <div class="code-block">
+                            <div class="code-header">Step 2</div>
+                            <div class="code-content">
+<span class="keyword">for each</span> output neuron i:
+    rawError = expected[i] - actual[i]
+    outputErrors[i] = rawError × actual[i] × (1 - actual[i])
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <h4>Backpropagate to Hidden Layer</h4>
+                        <p>For each hidden neuron, sum up the blame from all outputs it connects to.</p>
+                        <div class="code-block">
+                            <div class="code-header">Step 3</div>
+                            <div class="code-content">
+<span class="keyword">for each</span> hidden neuron h:
+    sum = 0
+    <span class="keyword">for each</span> output neuron o:
+        sum += outputErrors[o] × weight[h → o]
+
+    hiddenErrors[h] = sum × hiddenOutput[h] × (1 - hiddenOutput[h])
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <h4>Update All Weights</h4>
+                        <p>Each layer adjusts its weights based on its errors and inputs.</p>
+                        <div class="code-block">
+                            <div class="code-header">Step 4</div>
+                            <div class="code-content">
+<span class="comment">// Output layer learns from hidden layer outputs</span>
+outputLayer.<span class="function">Train</span>(hiddenOutputs, outputErrors, learningRate)
+
+<span class="comment">// Hidden layer learns from original inputs</span>
+hiddenLayer.<span class="function">Train</span>(inputs, hiddenErrors, learningRate)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="box insight">
+                    <div class="box-title">💡 That's It!</div>
+                    <p>This simple algorithm — forward pass, calculate errors, backpropagate, update weights — is the foundation of all modern deep learning. GPT, image recognition, self-driving cars... they all use this same core idea, just at massive scale.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 16: WHAT'S NEXT ==================== -->
+        <div class="slide" id="slide-16">
+            <div class="slide-content">
+                <h1>The Journey Continues...</h1>
+                <p class="subtitle">What we've built, and what's ahead</p>
+
+                <h2>✅ What We've Built</h2>
+
+                <div class="card-grid">
+                    <div class="card" style="border-color: #4ade80;">
+                        <h4>🧠 Neural Network</h4>
+                        <p>From scratch, no libraries. You understand every line.</p>
+                    </div>
+                    <div class="card" style="border-color: #4ade80;">
+                        <h4>📊 Multi-Layer Architecture</h4>
+                        <p>Hidden layers that learn abstract features.</p>
+                    </div>
+                    <div class="card" style="border-color: #4ade80;">
+                        <h4>⚡ Backpropagation</h4>
+                        <p>The algorithm that teaches hidden neurons.</p>
+                    </div>
+                    <div class="card" style="border-color: #4ade80;">
+                        <h4>💾 Database Integration</h4>
+                        <p>EF Core for storing animals and questions.</p>
+                    </div>
+                </div>
+
+                <h2>⏳ What's Ahead</h2>
+
+                <div class="card-grid">
+                    <div class="card upcoming">
+                        <h4>Module 7: Training at Scale</h4>
+                        <p>Batch training, learning rate schedules, preventing overfitting.</p>
+                    </div>
+                    <div class="card upcoming">
+                        <h4>Module 8: Persistence</h4>
+                        <p>Save trained networks so you don't retrain every time.</p>
+                    </div>
+                    <div class="card upcoming">
+                        <h4>Module 9: Smart Questions</h4>
+                        <p>Information theory — which question gives the most info?</p>
+                    </div>
+                    <div class="card upcoming">
+                        <h4>Module 11: Beautiful UI</h4>
+                        <p>Blazor + MudBlazor — make it actually fun to play!</p>
+                    </div>
+                </div>
+
+                <hr>
+
+                <h2>Key Takeaways</h2>
+
+                <div class="box insight">
+                    <ol style="line-height: 2;">
+                        <li><strong>Features matter:</strong> Good questions (features) determine the ceiling of your AI's intelligence.</li>
+                        <li><strong>Weights encode knowledge:</strong> Training is just adjusting weights until errors shrink.</li>
+                        <li><strong>Hidden layers find patterns:</strong> They learn intermediate representations that humans never explicitly designed.</li>
+                        <li><strong>Errors flow backward:</strong> Backpropagation assigns credit (blame) proportional to influence.</li>
+                        <li><strong>Understanding > memorizing:</strong> Build it yourself, and you'll never forget how it works.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 17: THANK YOU ==================== -->
+        <div class="slide" id="slide-17">
+            <div class="slide-content title-slide">
+                <div class="big-emoji">🎉</div>
+                <h1>Congratulations!</h1>
+                <p class="subtitle">You understand how neural networks really work.</p>
+
+                <div style="max-width: 600px; margin: 40px auto; text-align: left;">
+                    <p style="font-size: 1.2em; line-height: 2;">Not just how to use a library. Not just the buzzwords. But the actual <span class="highlight">math</span>, the <span class="highlight">intuition</span>, and the <span class="highlight">code</span>.</p>
+
+                    <p style="margin-top: 30px; font-size: 1.2em;">Most people who talk about AI can't explain what a weight is. You can build one from scratch.</p>
+                </div>
+
+                <div style="margin-top: 50px; color: #64748b;">
+                    <p>Built with 🧠 by a human and an AI, learning together.</p>
+                    <p style="margin-top: 10px;">GitHub: <a href="https://github.com/luiscmt22/TwentyQ" style="color: #00d9ff;">github.com/luiscmt22/TwentyQ</a></p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="nav">
+        <button onclick="prevSlide()" id="prevBtn">← Previous</button>
+        <div class="slide-counter">
+            <span id="currentSlide">1</span> / <span id="totalSlides">17</span>
+        </div>
+        <button onclick="nextSlide()" id="nextBtn">Next →</button>
+    </div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 17;
+
+        function showSlide(n) {
+            document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+            document.getElementById(`slide-${n}`).classList.add('active');
+            document.getElementById('currentSlide').textContent = n;
+            document.getElementById('progress').style.width = `${(n / totalSlides) * 100}%`;
+            document.getElementById('prevBtn').disabled = (n === 1);
+            document.getElementById('nextBtn').disabled = (n === totalSlides);
+            currentSlide = n;
+            window.scrollTo(0, 0);
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) showSlide(currentSlide + 1);
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) showSlide(currentSlide - 1);
+        }
+
+        function toggleAnswer(btn) {
+            const answer = btn.nextElementSibling;
+            answer.classList.toggle('visible');
+            btn.textContent = answer.classList.contains('visible') ? 'Hide answer' : 'Reveal the answer';
+        }
+
+        function updateDerivative() {
+            const slider = document.getElementById('derivSlider');
+            const output = slider.value / 100;
+            const derivative = output * (1 - output);
+
+            document.getElementById('outputVal').textContent = output.toFixed(2);
+            document.getElementById('derivVal').textContent = derivative.toFixed(3);
+
+            const explain = document.getElementById('derivExplain');
+            if (output > 0.3 && output < 0.7) {
+                explain.textContent = "Neuron is responsive — learns quickly! 🚀";
+                explain.style.color = "#4ade80";
+            } else if (output > 0.15 && output < 0.85) {
+                explain.textContent = "Neuron is somewhat responsive — moderate learning";
+                explain.style.color = "#fbbf24";
+            } else {
+                explain.textContent = "Neuron is saturated — learns very slowly 🐌";
+                explain.style.color = "#f87171";
+            }
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
+                nextSlide();
+            }
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                prevSlide();
+            }
+        });
+
+        document.getElementById('totalSlides').textContent = totalSlides;
+        showSlide(1);
+    </script>
+</body>
+</html>

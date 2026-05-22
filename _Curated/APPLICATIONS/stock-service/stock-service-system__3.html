@@ -1,0 +1,1313 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Stock Service System - The For Dummies Guide</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #07090f;
+  --bg-1: #0c111c;
+  --bg-2: #11182a;
+  --bg-3: #1a2238;
+  --bg-4: #232e4a;
+  --border: #1e2840;
+  --border-2: #2a3551;
+  --border-3: #3a4870;
+  --text: #e9eef8;
+  --text-dim: #94a3bf;
+  --text-mut: #5f6b86;
+  --accent: #6aa6ff;
+  --accent-strong: #3b82f6;
+  --accent-2: #b86aff;
+  --accent-3: #f472b6;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+  --info: #38bdf8;
+  --code-bg: #0a1020;
+  --code-border: #1a2340;
+  --shadow: 0 8px 32px rgba(0,0,0,0.55);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.35);
+  --shadow-glow: 0 0 0 1px rgba(106,166,255,0.18), 0 12px 40px rgba(106,166,255,0.10);
+}
+
+/* Doc-type theming */
+[data-doc-type="core-concept"] {
+  --doc-accent: #6aa6ff;
+  --doc-accent-rgb: 106,166,255;
+  --doc-eyebrow: "Concept";
+}
+[data-doc-type="applied-implementation"] {
+  --doc-accent: #b86aff;
+  --doc-accent-rgb: 184,106,255;
+  --doc-eyebrow: "Implementation";
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font: 16px/1.7 -apple-system, "Inter", \'Segoe UI\', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+::selection { background: rgba(106,166,255,0.30); }
+
+/* ═══ Top bar ═══════════════════════════════════════════════════════ */
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(7,9,15,0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 28px;
+  display: flex; align-items: center; gap: 16px;
+}
+.topbar .crumbs {
+  flex: 1; font-size: 13px; color: var(--text-dim);
+  display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden;
+}
+.topbar .crumbs span.sep { color: var(--text-mut); }
+.topbar .crumbs .current {
+  color: var(--text); font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.topbar .crumbs a { color: var(--text-dim); text-decoration: none; }
+.topbar .crumbs a:hover { color: var(--accent); }
+.topbar .actions { display: flex; gap: 6px; flex-shrink: 0; }
+.topbar .action {
+  font-size: 13px; padding: 6px 14px; border-radius: 8px;
+  color: var(--text-dim); text-decoration: none;
+  border: 1px solid transparent; transition: all .15s;
+}
+.topbar .action:hover {
+  color: var(--text); background: var(--bg-2); border-color: var(--border);
+  text-decoration: none;
+}
+
+/* ═══ Document layout ═══════════════════════════════════════════════ */
+.layout {
+  display: grid; grid-template-columns: 280px 1fr;
+  max-width: 1380px; margin: 0 auto; align-items: start;
+}
+.layout.no-toc { grid-template-columns: 1fr; max-width: 940px; }
+
+.toc-sidebar {
+  position: sticky; top: 70px;
+  align-self: start;
+  max-height: calc(100vh - 90px);
+  overflow-y: auto;
+  padding: 40px 8px 40px 28px;
+  border-right: 1px solid var(--border);
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+.toc-sidebar::-webkit-scrollbar { width: 6px; }
+.toc-sidebar::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
+.toc-sidebar h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px; padding-left: 14px; font-weight: 600;
+}
+.toc-sidebar ol { list-style: none; margin: 0; padding: 0; }
+.toc-sidebar li { margin: 0; }
+.toc-sidebar a {
+  display: block;
+  padding: 5px 14px;
+  border-left: 2px solid transparent;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 13px;
+  line-height: 1.5;
+  transition: all .15s;
+  word-break: break-word;
+}
+.toc-sidebar a:hover {
+  color: var(--text); border-left-color: var(--border-2); text-decoration: none;
+}
+.toc-sidebar a.active {
+  color: var(--doc-accent, var(--accent));
+  border-left-color: var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.07);
+}
+.toc-sidebar .lvl-3 a { padding-left: 28px; font-size: 12.5px; }
+.toc-sidebar .lvl-4 a, .toc-sidebar .lvl-5 a, .toc-sidebar .lvl-6 a {
+  padding-left: 42px; font-size: 12px;
+}
+
+.content { padding: 40px 64px 120px; min-width: 0; }
+
+/* ═══ Hero (per-doc) ════════════════════════════════════════════════ */
+.doc-hero {
+  position: relative;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 32px;
+  margin-bottom: 36px;
+}
+.doc-hero::before {
+  content: ''; position: absolute;
+  top: -40px; left: -64px; right: -64px; height: 220px;
+  background: radial-gradient(ellipse 60% 100% at 0% 0%, rgba(var(--doc-accent-rgb, 106,166,255),0.10), transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+.doc-hero > * { position: relative; z-index: 1; }
+.doc-hero .eyebrow {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  color: var(--doc-accent, var(--accent)); font-weight: 600;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.doc-hero .eyebrow .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--doc-accent, var(--accent));
+  box-shadow: 0 0 8px var(--doc-accent, var(--accent));
+}
+.doc-hero h1 {
+  font-size: 40px; line-height: 1.1;
+  margin: 12px 0 16px;
+  font-weight: 700; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.doc-hero .one-liner {
+  font-size: 18px; line-height: 1.55;
+  color: var(--text-dim);
+  margin: 0 0 20px;
+  max-width: 70ch;
+}
+.doc-hero .meta-row {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  font-size: 12.5px;
+}
+.meta-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--bg-2); border: 1px solid var(--border);
+  padding: 5px 12px; border-radius: 14px;
+  font-size: 12px; color: var(--text-dim);
+}
+.meta-pill .num { color: var(--text); font-weight: 600; font-feature-settings: "tnum"; }
+.meta-pill.fmt-md   { color: #6aa6ff; border-color: rgba(106,166,255,0.30); background: rgba(106,166,255,0.06); }
+.meta-pill.fmt-pdf  { color: #f87171; border-color: rgba(248,113,113,0.30); background: rgba(248,113,113,0.06); }
+.meta-pill.fmt-docx { color: #38bdf8; border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.fmt-html { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.fmt-htm  { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.06); }
+.meta-pill.complexity-beginner    { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.06); }
+.meta-pill.complexity-intermediate { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.06); }
+.meta-pill.complexity-advanced     { color: #fb923c; border-color: rgba(251,146,60,0.30); background: rgba(251,146,60,0.06); }
+.meta-pill.complexity-unknown      { color: var(--text-mut); }
+.meta-pill.source code { background: transparent; padding: 0; border: 0; font-size: 11px; color: var(--text-dim); }
+
+/* ═══ Curation panels ═══════════════════════════════════════════════ */
+
+.curation {
+  margin-bottom: 36px;
+}
+
+.intro-hook {
+  font-size: 18px;
+  line-height: 1.65;
+  color: var(--text);
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  padding: 8px 0 8px 20px;
+  margin: 0 0 28px;
+  font-style: italic;
+  font-weight: 350;
+}
+
+.exec-summary {
+  background: linear-gradient(135deg, rgba(var(--doc-accent-rgb, 106,166,255),0.07), rgba(var(--doc-accent-rgb, 106,166,255),0.02));
+  border: 1px solid rgba(var(--doc-accent-rgb, 106,166,255),0.20);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 0 0 24px;
+}
+.exec-summary h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent, var(--accent));
+  font-weight: 600;
+}
+.exec-summary p {
+  margin: 0; font-size: 15px; line-height: 1.65; color: var(--text);
+}
+
+.metaphor-callout {
+  display: flex; gap: 14px; align-items: flex-start;
+  background: rgba(184,106,255,0.06);
+  border: 1px solid rgba(184,106,255,0.25);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 0 0 24px;
+}
+.metaphor-callout .icon {
+  font-size: 22px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 4px rgba(184,106,255,0.4));
+}
+.metaphor-callout .body {
+  flex: 1; font-size: 14.5px; line-height: 1.6;
+  color: var(--text);
+}
+.metaphor-callout .body .label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--accent-2); font-weight: 700;
+  display: block; margin-bottom: 4px;
+}
+
+.tutorial-structure {
+  display: grid; grid-template-columns: 1fr; gap: 14px;
+  margin: 0 0 28px;
+}
+.tutorial-section {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--doc-accent);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+}
+.tutorial-section h3 {
+  margin: 0 0 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--doc-accent);
+  font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.tutorial-section h3 .num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--doc-accent); color: var(--bg);
+  font-size: 10px; font-weight: 700;
+}
+.tutorial-section p {
+  margin: 0; font-size: 14.5px; line-height: 1.65; color: var(--text);
+}
+
+.context-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin: 0 0 28px;
+}
+.context-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.context-card h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut);
+  font-weight: 600;
+}
+.context-card ul {
+  margin: 0; padding: 0; list-style: none;
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.context-card li {
+  background: var(--bg-3);
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--text-dim);
+  border: 1px solid var(--border-2);
+}
+.context-card.prereqs li { color: #fbbf24; border-color: rgba(251,191,36,0.30); background: rgba(251,191,36,0.05); }
+.context-card.builds li { color: var(--ok); border-color: rgba(74,222,128,0.30); background: rgba(74,222,128,0.05); }
+.context-card.concepts li { color: var(--info); border-color: rgba(56,189,248,0.30); background: rgba(56,189,248,0.05); }
+
+.takeaways {
+  background: linear-gradient(135deg, rgba(74,222,128,0.05), rgba(74,222,128,0.01));
+  border: 1px solid rgba(74,222,128,0.20);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin: 36px 0 0;
+}
+.takeaways h3 {
+  margin: 0 0 10px;
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--ok); font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.takeaways h3::before {
+  content: '✓';
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(74,222,128,0.18);
+  font-size: 12px; font-weight: 700;
+}
+.takeaways ul { margin: 0; padding-left: 22px; }
+.takeaways li {
+  font-size: 14.5px; line-height: 1.6; color: var(--text);
+  margin: 6px 0;
+}
+
+/* ═══ Article body ══════════════════════════════════════════════════ */
+article { font-size: 16px; line-height: 1.78; color: var(--text); max-width: 78ch; }
+article > * + * { margin-top: 1.0em; }
+article p { margin: 0; }
+article h1, article h2, article h3, article h4 {
+  font-weight: 650; letter-spacing: -0.01em; color: var(--text);
+  scroll-margin-top: 90px; position: relative;
+}
+article h1 { font-size: 28px; margin-top: 56px; }
+article h2 {
+  font-size: 24px; margin-top: 56px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+article h3 { font-size: 19px; margin-top: 36px; }
+article h4 { font-size: 16.5px; margin-top: 24px; color: var(--text-dim); }
+article h2::before, article h3::before {
+  content: '#'; position: absolute; left: -28px;
+  color: var(--text-mut); font-weight: 400;
+  opacity: 0; transition: opacity .15s;
+}
+article h2:hover::before, article h3:hover::before { opacity: 1; }
+
+article ul, article ol { padding-left: 1.5em; margin: 0; }
+article li { margin: .35em 0; }
+article li > p { margin: 0; }
+
+article hr {
+  border: 0; height: 1px; background: var(--border); margin: 36px 0;
+}
+
+article blockquote {
+  border-left: 3px solid var(--doc-accent, var(--accent));
+  background: rgba(var(--doc-accent-rgb, 106,166,255),0.05);
+  padding: 14px 18px;
+  margin: 22px 0;
+  border-radius: 0 8px 8px 0;
+  color: var(--text-dim);
+}
+article blockquote p { margin: 0; }
+
+article pre {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-size: 13.5px;
+  line-height: 1.65;
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+article pre::-webkit-scrollbar { height: 7px; }
+article pre::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+article code, article pre {
+  font-family: "JetBrains Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+  font-feature-settings: "calt" 1;
+}
+article code.il {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  padding: 1px 7px; border-radius: 5px;
+  font-size: 0.88em;
+  color: var(--accent);
+}
+.code-block { position: relative; }
+.code-block .copy-btn {
+  position: absolute; top: 8px; right: 8px;
+  background: var(--bg-3); border: 1px solid var(--border);
+  color: var(--text-dim); padding: 4px 11px; border-radius: 5px;
+  font-size: 11px; font-family: inherit; cursor: pointer;
+  opacity: 0; transition: all .15s;
+}
+.code-block:hover .copy-btn { opacity: 1; }
+.code-block .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+.code-block .copy-btn.copied { color: var(--ok); border-color: var(--ok); }
+
+article pre .kw   { color: #c084fc; font-weight: 500; }
+article pre .type { color: #67e8f9; }
+article pre .str  { color: #fcd34d; }
+article pre .num  { color: #fb923c; }
+article pre .cmt  { color: #6b7d99; font-style: italic; }
+
+article .tbl-wrap {
+  overflow-x: auto; margin: 22px 0;
+  border-radius: 10px; border: 1px solid var(--border);
+}
+article table { border-collapse: collapse; width: 100%; font-size: 14px; }
+article th {
+  background: var(--bg-3); padding: 11px 14px; text-align: left;
+  font-weight: 600; color: var(--text);
+  border-bottom: 1px solid var(--border-2);
+}
+article td {
+  padding: 11px 14px; border-top: 1px solid var(--border); vertical-align: top;
+}
+article tr:nth-child(even) td { background: rgba(255,255,255,0.013); }
+
+article .diagram-box {
+  background: linear-gradient(135deg, #1c2540 0%, #0e1424 100%);
+  border: 1px solid var(--border-2);
+  border-radius: 12px;
+  padding: 22px 26px;
+  margin: 24px 0;
+  box-shadow: var(--shadow);
+}
+article .diagram-box pre {
+  background: transparent; border: 0; padding: 0;
+  color: #e8edf5; font-size: 13px; line-height: 1.55;
+}
+
+article .img-ref {
+  display: inline-block;
+  background: var(--bg-2); color: var(--text-mut);
+  padding: 1px 8px; border-radius: 4px;
+  font-size: 11px; font-style: normal;
+  border: 1px dashed var(--border-2);
+}
+
+/* ═══ Duplicate banners ═════════════════════════════════════════════ */
+.dup-banner {
+  background: linear-gradient(135deg, rgba(251,191,36,0.10), rgba(251,191,36,0.04));
+  border: 1px solid rgba(251,191,36,0.35);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 18px;
+  font-size: 14px; line-height: 1.55;
+  display: flex; gap: 14px; align-items: flex-start;
+}
+.dup-banner + .dup-banner { margin-top: 0; }
+.dup-banner .icon { font-size: 22px; line-height: 1.2; flex-shrink: 0; }
+.dup-banner .body { flex: 1; min-width: 0; }
+.dup-banner h4 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--warn); text-transform: uppercase; letter-spacing: 1px; }
+.dup-banner p { margin: 0; color: var(--text-dim); }
+.dup-banner ul { margin: 6px 0 0; padding-left: 22px; color: var(--text-dim); }
+.dup-banner ul li { margin: 3px 0; word-break: break-word; }
+.dup-banner code {
+  background: var(--bg-3); padding: 2px 7px; border-radius: 5px;
+  font-size: 0.92em; color: var(--text);
+}
+.dup-banner.exact {
+  border-color: rgba(248,113,113,0.40);
+  background: linear-gradient(135deg, rgba(248,113,113,0.10), rgba(248,113,113,0.04));
+}
+.dup-banner.exact h4 { color: var(--bad); }
+.dup-banner.near {
+  border-color: rgba(56,189,248,0.40);
+  background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(56,189,248,0.04));
+}
+.dup-banner.near h4 { color: var(--info); }
+.banner-stack { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+
+/* ═══ PDF page cards ════════════════════════════════════════════════ */
+.pdf-page {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin: 24px 0;
+  overflow: hidden;
+  scroll-margin-top: 90px;
+}
+.pdf-page .page-head {
+  background: var(--bg-3);
+  padding: 9px 20px;
+  font-size: 11px; font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 1.4px;
+  border-bottom: 1px solid var(--border);
+}
+.pdf-page .page-body { padding: 18px 24px 22px; }
+.pdf-page pre {
+  margin: 0; background: transparent; border: 0; padding: 0;
+  white-space: pre-wrap; word-wrap: break-word;
+  color: var(--text); font-size: 13px; line-height: 1.6;
+}
+
+.empty-note {
+  background: var(--bg-2);
+  border: 1px dashed var(--border-2);
+  border-radius: 10px;
+  padding: 18px 22px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* ═══ Cross-references + related ════════════════════════════════════ */
+.cross-refs {
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.cross-refs h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 14px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.cross-ref-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.cross-ref-list a {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: all .15s;
+}
+.cross-ref-list a:hover {
+  color: var(--text);
+  border-color: var(--doc-accent, var(--accent));
+  background: var(--bg-3);
+  text-decoration: none;
+}
+.cross-ref-list a .arrow { color: var(--doc-accent, var(--accent)); margin-right: 6px; }
+
+.related {
+  margin-top: 48px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.related h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--text-mut); margin: 0 0 18px;
+  border: 0; padding: 0; font-weight: 600;
+}
+.related-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+.related-card {
+  display: block;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+}
+.related-card:hover {
+  border-color: var(--doc-accent, var(--accent));
+  transform: translateY(-1px);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+}
+.related-card .title {
+  font-weight: 600; font-size: 13.5px; line-height: 1.35;
+  color: var(--text);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.related-card .meta {
+  font-size: 11px; color: var(--text-mut); margin-top: 6px;
+  display: flex; gap: 8px; align-items: center;
+}
+.related-card .meta .badge {
+  padding: 1px 6px; border-radius: 3px;
+  background: var(--bg-3); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* ═══ Master index page ═════════════════════════════════════════════ */
+
+.index-hero {
+  text-align: center;
+  padding: 80px 24px 56px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.index-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 30% 0%, rgba(106,166,255,0.13), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 70% 30%, rgba(184,106,255,0.10), transparent 70%);
+  pointer-events: none;
+}
+.index-hero > * { position: relative; z-index: 1; }
+.index-hero .eyebrow {
+  color: var(--accent); font-size: 12px;
+  text-transform: uppercase; letter-spacing: 1.8px; font-weight: 600;
+}
+.index-hero h1 {
+  font-size: 56px; margin: 16px 0 12px;
+  font-weight: 750; letter-spacing: -0.025em;
+  background: linear-gradient(135deg, #6aa6ff 0%, #b86aff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.index-hero .tagline {
+  color: var(--text-dim); font-size: 18px;
+  max-width: 720px; margin: 14px auto 0; line-height: 1.6;
+}
+.search-row {
+  display: flex; gap: 12px;
+  max-width: 720px; margin: 36px auto 0;
+}
+.search-row input {
+  flex: 1;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 15px;
+  padding: 14px 22px;
+  border-radius: 14px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color .15s, box-shadow .15s;
+}
+.search-row input::placeholder { color: var(--text-mut); }
+.search-row input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(106,166,255,0.13);
+}
+
+.summary-stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  max-width: 1080px; margin: 36px auto 56px; padding: 0 24px;
+}
+.stat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  text-align: center;
+  transition: border-color .15s;
+}
+.stat-card:hover { border-color: var(--border-2); }
+.stat-card .num {
+  font-size: 32px; font-weight: 700; color: var(--accent);
+  font-feature-settings: "tnum"; line-height: 1.1;
+}
+.stat-card .lbl {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--text-mut); margin-top: 6px;
+}
+
+.split-view {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  max-width: 1320px; margin: 0 auto; padding: 0 24px 60px;
+}
+@media (max-width: 980px) {
+  .split-view { grid-template-columns: 1fr; }
+}
+
+.hub-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 32px 36px;
+  position: relative;
+  overflow: hidden;
+  transition: all .2s;
+}
+.hub-card.core::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 0% 0%, rgba(106,166,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card.applications::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 100% 0%, rgba(184,106,255,0.08), transparent 60%);
+  pointer-events: none;
+}
+.hub-card > * { position: relative; z-index: 1; }
+.hub-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.hub-card .label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 700;
+}
+.hub-card.core .label { color: var(--accent); }
+.hub-card.applications .label { color: var(--accent-2); }
+.hub-card h2 {
+  font-size: 32px; line-height: 1.15;
+  margin: 8px 0 12px;
+  font-weight: 700; letter-spacing: -0.02em;
+  color: var(--text);
+}
+.hub-card .desc {
+  font-size: 15px; line-height: 1.6; color: var(--text-dim);
+  margin: 0 0 24px;
+}
+.hub-card .stats {
+  display: flex; gap: 18px; margin-bottom: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-card .stats .num { color: var(--text); font-weight: 600; }
+.hub-card .cta {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 10px;
+  font-size: 13.5px; font-weight: 600;
+  text-decoration: none;
+}
+.hub-card.core .cta {
+  background: rgba(106,166,255,0.12);
+  color: var(--accent);
+  border: 1px solid rgba(106,166,255,0.30);
+}
+.hub-card.applications .cta {
+  background: rgba(184,106,255,0.12);
+  color: var(--accent-2);
+  border: 1px solid rgba(184,106,255,0.30);
+}
+.hub-card .cta:hover { text-decoration: none; transform: translateX(2px); }
+.hub-card .quick {
+  margin-top: 24px; padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.hub-card .quick h4 {
+  margin: 0 0 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--text-mut); font-weight: 600;
+}
+.hub-card .quick ul { list-style: none; margin: 0; padding: 0; }
+.hub-card .quick li { padding: 4px 0; font-size: 13px; }
+.hub-card .quick li a { color: var(--text-dim); text-decoration: none; }
+.hub-card .quick li a:hover { color: var(--text); }
+
+/* ═══ Hub page (CORE / APPLICATIONS landing) ════════════════════════ */
+
+.hub-hero {
+  padding: 64px 32px 36px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1240px; margin: 0 auto;
+}
+.hub-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 600;
+}
+.hub-hero h1 {
+  font-size: 48px; margin: 12px 0 14px;
+  font-weight: 750; letter-spacing: -0.025em;
+  color: var(--text);
+}
+.hub-hero p {
+  color: var(--text-dim); font-size: 17px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.hub-hero .stats {
+  display: flex; gap: 22px; margin-top: 24px;
+  font-size: 13px; color: var(--text-mut);
+}
+.hub-hero .stats .num { color: var(--text); font-weight: 600; }
+
+.cat-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 18px;
+  max-width: 1280px; margin: 28px auto; padding: 0 32px 80px;
+}
+.cat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 24px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .15s;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.cat-card:hover {
+  border-color: var(--border-3);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+}
+.cat-card .head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 12px;
+}
+.cat-card .head .icon {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 18px;
+  color: var(--accent);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.cat-card.app .head .icon { color: var(--accent-2); }
+.cat-card .title {
+  font-size: 18px; font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  flex: 1;
+}
+.cat-card .head .count {
+  font-size: 12px; color: var(--text-mut);
+  flex-shrink: 0;
+}
+.cat-card .tagline {
+  font-size: 13px; color: var(--accent);
+  font-weight: 500;
+  margin: 0;
+}
+.cat-card.app .tagline { color: var(--accent-2); }
+.cat-card .desc {
+  font-size: 13.5px; color: var(--text-dim);
+  line-height: 1.55;
+  margin: 4px 0 0;
+}
+
+/* ═══ Category landing (per family/domain) ══════════════════════════ */
+
+.cat-hero {
+  padding: 56px 32px 32px;
+  border-bottom: 1px solid var(--border);
+  max-width: 1180px; margin: 0 auto;
+}
+.cat-hero .eyebrow {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.4px; font-weight: 600;
+}
+.cat-hero h1 {
+  font-size: 42px; margin: 10px 0 14px;
+  font-weight: 700; letter-spacing: -0.02em;
+}
+.cat-hero p {
+  color: var(--text-dim); font-size: 16px;
+  max-width: 760px; margin: 0; line-height: 1.65;
+}
+.cat-hero .stats {
+  display: flex; gap: 20px; margin-top: 22px;
+  font-size: 13px; color: var(--text-mut);
+}
+.cat-hero .stats .num { color: var(--text); font-weight: 600; }
+.cat-hero .search-row {
+  max-width: 520px; margin: 24px 0 0;
+}
+.cat-hero .search-row input { padding: 12px 18px; font-size: 14px; }
+
+.doc-cards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 14px;
+  max-width: 1180px; margin: 36px auto 96px;
+  padding: 0 32px;
+}
+.doc-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 22px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all .18s;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.doc-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.doc-card.app:hover { border-color: var(--accent-2); }
+.doc-card .head {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+}
+.doc-card .title {
+  font-size: 16px; font-weight: 650; line-height: 1.3;
+  color: var(--text); flex: 1;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  letter-spacing: -0.01em;
+}
+.doc-card .badges { display: flex; gap: 4px; flex-shrink: 0; }
+.doc-card .badge {
+  font-size: 9px; padding: 2px 7px; border-radius: 3px;
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px;
+  background: var(--bg-3); color: var(--text-mut);
+}
+.doc-card .badge.dup { background: rgba(248,113,113,0.18); color: var(--bad); }
+.doc-card .badge.fmt-md { background: rgba(106,166,255,0.18); color: #6aa6ff; }
+.doc-card .badge.fmt-pdf { background: rgba(248,113,113,0.18); color: #f87171; }
+.doc-card .badge.fmt-docx { background: rgba(56,189,248,0.18); color: #38bdf8; }
+.doc-card .badge.fmt-html { background: rgba(251,191,36,0.18); color: #fbbf24; }
+.doc-card .one-liner {
+  font-size: 13.5px; color: var(--text-dim); line-height: 1.55;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  flex: 1;
+}
+.doc-card .meta {
+  display: flex; gap: 14px; font-size: 11px; color: var(--text-mut);
+  border-top: 1px solid var(--border); padding-top: 12px;
+  margin-top: auto;
+}
+.doc-card .meta .num { color: var(--text-dim); font-weight: 600; font-feature-settings: "tnum"; }
+
+/* ═══ Mobile ════════════════════════════════════════════════════════ */
+@media (max-width: 980px) {
+  .layout { grid-template-columns: 1fr; }
+  .toc-sidebar { display: none; }
+  .content { padding: 28px 24px 80px; }
+  .doc-hero h1 { font-size: 30px; }
+  .doc-hero .one-liner { font-size: 16px; }
+  .topbar { padding: 10px 18px; }
+  .index-hero h1 { font-size: 38px; }
+  .index-hero { padding: 56px 20px 36px; }
+  .hub-hero h1 { font-size: 34px; }
+  .hub-hero { padding: 40px 20px 24px; }
+  .cat-hero h1 { font-size: 32px; }
+  .cat-hero { padding: 36px 20px 24px; }
+  .doc-cards, .cat-grid { padding: 0 20px 60px; }
+  .split-view { padding: 0 20px 40px; }
+}
+</style>
+</head>
+<body data-doc-type="applied-implementation">
+<nav class="topbar">
+<div class="crumbs"><a href="../../00-Index.html">Learning</a><span class="sep">›</span><a href="../_Hub.html">APPLICATIONS</a><span class="sep">›</span><a href="_Category.html">Stock Service (BioBraga)</a><span class="sep">›</span><span class="current">Stock Service System - The For Dummies Guide</span></div>
+<div class="actions"><a class="action" href="stock-service-system__2.docx" download>↓ Download</a><a class="action" href="../../00-Index.html">All docs</a></div>
+</nav>
+<div class="layout">
+<aside class="toc-sidebar"><h3>On this page</h3><ol><li class="lvl-2"><a href="#stock-service-system-the-for-dummies-guide">📦 Stock Service System - The &quot;For Dummies&quot; Guide</a></li><li class="lvl-2"><a href="#what-is-this-stock-service">📖 What Is This Stock Service?</a></li><li class="lvl-2"><a href="#the-big-picture">🎯 The Big Picture</a></li><li class="lvl-3"><a href="#what-problems-does-it-solve">What Problems Does It Solve?</a></li><li class="lvl-2"><a href="#the-architecture-how-it-s-built">🏗️ The Architecture - How It&#x27;s Built</a></li><li class="lvl-3"><a href="#the-two-layer-design-like-a-cake">The Two-Layer Design (Like a Cake! 🎂)</a></li><li class="lvl-2"><a href="#the-genius-of-caching-explained">💡 The Genius of Caching Explained</a></li><li class="lvl-3"><a href="#what-is-caching">What is Caching?</a></li><li class="lvl-3"><a href="#how-your-smart-caching-works">How Your Smart Caching Works</a></li><li class="lvl-3"><a href="#the-brilliant-time-based-caching-strategy">The Brilliant Time-Based Caching Strategy</a></li><li class="lvl-2"><a href="#core-functions-explained">🔧 Core Functions Explained</a></li><li class="lvl-3"><a href="#1-getarticlestockbydateasync-time-machine-for-stock">1. GetArticleStockByDateAsync - &quot;Time Machine for Stock&quot;</a></li><li class="lvl-3"><a href="#2-getstockmovementsasync-the-history-book">2. GetStockMovementsAsync - &quot;The History Book&quot;</a></li><li class="lvl-3"><a href="#3-getstocktotalsasync-the-summary">3. GetStockTotalsAsync - &quot;The Summary&quot;</a></li><li class="lvl-3"><a href="#4-checkfluxoasync-the-special-inspector">4. CheckFluxoAsync - &quot;The Special Inspector&quot;</a></li><li class="lvl-2"><a href="#the-ui-integration-artigodetalhe-razor">🎨 The UI Integration (ArtigoDetalhe.razor)</a></li><li class="lvl-3"><a href="#the-stock-tab-magic">The Stock Tab Magic</a></li><li class="lvl-4"><a href="#first-click-the-smart-pre-loading">First Click - The Smart Pre-Loading</a></li><li class="lvl-4"><a href="#when-tab-opens-instant-display">When Tab Opens - Instant Display</a></li><li class="lvl-3"><a href="#the-beautiful-stock-display">The Beautiful Stock Display</a></li><li class="lvl-3"><a href="#the-date-range-filter-portuguese-culture">The Date Range Filter - Portuguese Culture!</a></li><li class="lvl-2"><a href="#performance-optimizations">🚀 Performance Optimizations</a></li><li class="lvl-3"><a href="#1-pre-loading-strategy-genius">1. Pre-Loading Strategy (Genius!)</a></li><li class="lvl-3"><a href="#2-smart-task-management">2. Smart Task Management</a></li><li class="lvl-3"><a href="#3-intelligent-cache-invalidation">3. Intelligent Cache Invalidation</a></li><li class="lvl-2"><a href="#real-world-usage-scenarios">📊 Real-World Usage Scenarios</a></li><li class="lvl-3"><a href="#scenario-1-daily-stock-check">Scenario 1: Daily Stock Check</a></li><li class="lvl-3"><a href="#scenario-2-historical-analysis">Scenario 2: Historical Analysis</a></li><li class="lvl-3"><a href="#scenario-3-multiple-users">Scenario 3: Multiple Users</a></li><li class="lvl-2"><a href="#configuration-setup">🛠️ Configuration &amp; Setup</a></li><li class="lvl-3"><a href="#basic-service-registration">Basic Service Registration</a></li><li class="lvl-3"><a href="#with-caching-wrapper">With Caching Wrapper</a></li><li class="lvl-2"><a href="#why-this-design-is-brilliant">🎯 Why This Design is Brilliant</a></li><li class="lvl-3"><a href="#1-separation-of-concerns">1. Separation of Concerns</a></li><li class="lvl-3"><a href="#2-decorator-pattern">2. Decorator Pattern</a></li><li class="lvl-3"><a href="#3-smart-preloading">3. Smart Preloading</a></li><li class="lvl-3"><a href="#4-graduated-cache-expiration">4. Graduated Cache Expiration</a></li><li class="lvl-2"><a href="#common-issues-solutions">🐛 Common Issues &amp; Solutions</a></li><li class="lvl-3"><a href="#stock-seems-outdated">&quot;Stock seems outdated&quot;</a></li><li class="lvl-3"><a href="#filtered-queries-are-slow">&quot;Filtered queries are slow&quot;</a></li><li class="lvl-3"><a href="#memory-usage-is-high">&quot;Memory usage is high&quot;</a></li><li class="lvl-2"><a href="#monitoring-debugging">📈 Monitoring &amp; Debugging</a></li><li class="lvl-3"><a href="#check-if-cache-is-working">Check if Cache is Working</a></li><li class="lvl-3"><a href="#performance-metrics">Performance Metrics</a></li><li class="lvl-2"><a href="#the-magic-summary">✨ The Magic Summary</a></li><li class="lvl-2"><a href="#bottom-line">🎉 Bottom Line</a></li></ol></aside>
+<main class="content">
+
+<header class="doc-hero">
+  <div class="eyebrow"><span class="dot"></span>Implementation · Stock Service (BioBraga)</div>
+  <h1>Stock Service System - The For Dummies Guide</h1>
+  <p class="one-liner">Plain-English walkthrough of a two-layer decorator-pattern stock inventory service that uses time-based caching, task pre-loading, and date-aware cache expiration to deliver sub-millisecond inventory lookups.</p>
+  <div class="meta-row">
+    <span class="meta-pill fmt-docx">DOCX</span>
+    <span class="meta-pill complexity-intermediate">Intermediate</span>
+    <span class="meta-pill"><span class="num">1,495</span> words</span>
+    <span class="meta-pill"><span class="num">7</span> min read</span>
+    <span class="meta-pill source">Source: <code>Education/Stock/ENG/StockServiceSystemInfoGraphic.docx</code></span>
+  </div>
+</header>
+<div class="banner-stack"><div class="dup-banner near"><div class="icon">≈</div><div class="body"><h4>Near-duplicate content</h4><p>Significant text overlap (Jaccard ≥ 0.65) with — likely audience variants (ENG/PT, ForDummies/Formal) of the same source:</p><ul><li><code>Education/Stock/ENG/StockServiceSystemInfoGraphic.pdf</code></li></ul></div></div></div>
+<div class="curation"><p class="intro-hook">Your warehouse manager opens an article detail page. In the time it took her to move her mouse from the tab bar to the Stock button, the system has already silently queried the database, cached the result, and is now just waiting for her click to paint the screen. That perception of instant response - under one millisecond - came from a decision made seconds before she even knew she was going to ask.</p>
+<div class="exec-summary"><h3>Executive summary</h3><p>A deliberately accessible explanation of the Stock Service architecture built around a decorator-pattern cache wrapper (CachedStockService wrapping StockService) that uses graduated cache expiration: historical data older than 7 days cached for 1 hour, recent data cached for 5 minutes, filtered queries never cached. Covers the four core API functions (GetArticleStockByDateAsync for time-travel queries, GetStockMovementsAsync for history, GetStockTotalsAsync for summaries, CheckFluxoAsync for document-line-specific flow), the pre-loading strategy in ArtigoDetalhe.razor that starts loading data in the background before the user clicks the Stock tab, task reuse via cached Task&lt;T&gt; fields, and Portuguese culture localization for date display. Explains the SQL aggregation pattern (SUM(entries) as ENTRADA, SUM(exits) as SAIDA, SUM(entries - exits) as STOCK grouped by movements), real-world performance scenarios (cache hits from 2 seconds to 0.001 seconds = 99% faster), and service registration patterns for both bare and cached variants.</p></div>
+<div class="metaphor-callout"><div class="icon">💡</div><div class="body"><span class="label">Metaphor</span>The Stock Service is a restaurant with a waiter who remembers your order so he doesn&#x27;t have to ask the kitchen every time - but the genius move is that he has two different memory spans. For dishes you ordered yesterday he remembers the price for an hour (the menu doesn&#x27;t change that fast). For today&#x27;s specials he only remembers for five minutes (the chef might run out of something). And if you ask for something weird like &#x27;grilled octopus only on Tuesdays in purple&#x27; he doesn&#x27;t even try to remember - he just goes back to the kitchen every time.</div></div>
+<div class="tutorial-structure"><div class="tutorial-section"><h3><span class="num">1</span>Why it exists</h3><p>Stock queries are some of the most expensive operations in an inventory system because they require aggregating every movement since the beginning of time for a given article. Users open the Stock tab constantly - every time an operator looks at an article - and each naive query hammers the database with SUM aggregations over thousands of rows. Without caching, the database becomes the bottleneck, users wait 2-3 seconds for every click, and multi-user concurrency turns into a thundering herd. The system also needs historical queries (&#x27;what did we have on January 15th?&#x27;) which naive approaches cannot serve fast.</p></div><div class="tutorial-section"><h3><span class="num">2</span>What it does</h3><p>Provides four cached API methods for stock operations (current stock, historical stock by date, movement history, totals, and document flow checks) and transparently caches results in memory using a graduated expiration strategy based on the age of the data. Pre-loads stock data in the background when an article detail page opens so that when the user clicks the Stock tab, the answer is already on screen. Supports historical queries via SQL SUM aggregation with a WHERE date &lt;= cutoff filter. Localizes date pickers for Portuguese culture including abbreviated day names. Scales horizontally across multiple concurrent users by sharing cached results.</p></div><div class="tutorial-section"><h3><span class="num">3</span>How it works</h3><p>The StockService handles the actual database queries with SQL like SUM(entries) as ENTRADA, SUM(exits) as SAIDA, SUM(entries - exits) as STOCK FROM movements WHERE date &lt;= @cutoff (adds 1 day to include the whole day&#x27;s transactions). The CachedStockService wraps it using the Decorator pattern - same interface, cache check first. On each call it builds a cacheKey like &#x27;stock_{articleId}_{date:yyyyMMdd}&#x27;, checks _cache.TryGetValue&lt;ArtigoStock&gt;, and returns immediately on cache hit. On cache miss it delegates to _innerService and then stores the result with a TimeSpan chosen by the age of the data: TimeSpan.FromHours(1) for dates older than 7 days (won&#x27;t change), TimeSpan.FromMinutes(5) for recent dates (might still change), and skips caching entirely for date-range-filtered queries (too specific to be reused). The Blazor component ArtigoDetalhe.razor starts _stockSummaryTask = StockService.GetCurrentStockAsync(artigo.Id) in OnInitializedAsync without awaiting, so the request runs in the background. When the user clicks the Stock tab, await _stockSummaryTask returns instantly because the work already happened. Task&lt;T&gt; fields are reused across multiple potential clicks so a single request serves multiple consumers. DI registration uses a factory Func that resolves the inner StockService and wraps it: services.AddScoped&lt;IStockService&gt;(provider =&gt; new CachedStockService(provider.GetRequiredService&lt;StockService&gt;(), provider.GetRequiredService&lt;IMemoryCache&gt;(), logger)).</p></div></div>
+<div class="context-row"><div class="context-card prereqs"><h4>You should know first</h4><ul><li>async/await basics</li><li>dependency injection</li><li>service lifetimes</li><li>basic SQL aggregation</li></ul></div><div class="context-card concepts"><h4>Key concepts covered</h4><ul><li>decorator pattern</li><li>time-based cache expiration</li><li>task pre-loading</li><li>historical stock totals via SUM aggregation</li><li>cache key generation</li><li>in-memory caching with IMemoryCache</li><li>task reuse for deduplication</li><li>Portuguese culture localization</li></ul></div><div class="context-card builds"><h4>Opens the door to</h4><ul><li>caching-system-fundamentals</li><li>high-performance data access patterns</li><li>decorator-based cross-cutting concerns</li></ul></div></div></div>
+<article>
+<h1 id="stock-service-system-the-for-dummies-guide">📦 Stock Service System - The &quot;For Dummies&quot; Guide</h1>
+<h2 id="what-is-this-stock-service">📖 What Is This Stock Service?</h2>
+<p>Imagine you run a warehouse and need to know exactly how many items you have at any moment. This Stock Service is like having a super-smart inventory assistant that:</p>
+<p>Knows exactly what&#x27;s in stock right now</p>
+<p>Remembers what came in and what went out</p>
+<p>Can tell you what you had on any specific date</p>
+<p>Works FAST by remembering recent answers (caching)</p>
+<p>Think of it like your phone&#x27;s contact list - instead of calling directory assistance every time, your phone remembers the numbers you use often!</p>
+<h2 id="the-big-picture">🎯 The Big Picture</h2>
+<h3 id="what-problems-does-it-solve">What Problems Does It Solve?</h3>
+<p>Without this system:</p>
+<p>🐌 Every stock check means counting everything again (slow!)</p>
+<p>📊 Can&#x27;t see historical stock levels</p>
+<p>🔄 Database gets hammered with the same questions</p>
+<p>⏰ Users wait forever for stock reports</p>
+<p>💾 Server works too hard answering repeated questions</p>
+<p>With this system:</p>
+<p>⚡ Lightning-fast stock checks (remembers recent answers)</p>
+<p>📈 Historical stock tracking (&quot;What did we have last Tuesday?&quot;)</p>
+<p>🧠 Smart caching (doesn&#x27;t ask the same question twice)</p>
+<p>🎯 Accurate movement tracking (every in and out)</p>
+<p>💪 Server stays happy and responsive</p>
+<h2 id="the-architecture-how-it-s-built">🏗️ The Architecture - How It&#x27;s Built</h2>
+<h3 id="the-two-layer-design-like-a-cake">The Two-Layer Design (Like a Cake! 🎂)</h3>
+<div class="diagram-box"><pre>User asks: &quot;How much stock?&quot;
+↓
+┌─────────────────────┐
+│   CACHED SERVICE    │ ← Layer 1: The Smart Memory
+│   (Fast answers)    │   &quot;Have I answered this recently?&quot;
+└──────────┬──────────┘
+↓ (If not cached)
+┌─────────────────────┐
+│   STOCK SERVICE     │ ← Layer 2: The Calculator
+│   (Real work)       │   &quot;Let me check the database&quot;
+└─────────────────────┘</pre></div>
+<h2 id="the-genius-of-caching-explained">💡 The Genius of Caching Explained</h2>
+<h3 id="what-is-caching">What is Caching?</h3>
+<p>Real-world analogy: It&#x27;s like having sticky notes on your desk!</p>
+<p>Without caching: Every time someone asks &quot;What&#x27;s John&#x27;s phone number?&quot;, you open the phone book, find John, and tell them</p>
+<p>With caching: The first time someone asks, you write it on a sticky note. Next time? Just read the sticky note!</p>
+<h3 id="how-your-smart-caching-works">How Your Smart Caching Works</h3>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="type">ArtigoStock</span>?&gt; <span class="type">GetArticleStockByDateAsync</span>(<span class="kw">int</span> artigoId, <span class="type">DateTime</span> date)
+{
+<span class="cmt">// Create a unique &quot;name&quot; for this question</span>
+<span class="kw">var</span> cacheKey = $<span class="str">&quot;stock_{artigoId}_{date:yyyyMMdd}&quot;</span>;
+<span class="cmt">// Check our &quot;sticky notes&quot; first</span>
+<span class="kw">if</span> (_cache.<span class="type">TryGetValue</span>&lt;<span class="type">ArtigoStock</span>&gt;(cacheKey, <span class="kw">out</span> <span class="kw">var</span> cachedStock))
+{
+<span class="cmt">// Found it! Return the saved answer (SUPER FAST!)</span>
+<span class="kw">return</span> cachedStock;
+}
+<span class="cmt">// Not in cache, need to calculate it</span>
+<span class="kw">var</span> stock = <span class="kw">await</span> _innerService.<span class="type">GetArticleStockByDateAsync</span>(artigoId, date);
+<span class="cmt">// Save it for next time with smart expiration</span>
+<span class="kw">if</span> (date &lt; <span class="type">DateTime</span>.<span class="type">Today</span>.<span class="type">AddDays</span>(-<span class="num">7</span>))
+_cache.<span class="type">Set</span>(cacheKey, stock, <span class="type">TimeSpan</span>.<span class="type">FromHours</span>(<span class="num">1</span>)); <span class="cmt">// Old data = cache longer</span>
+<span class="kw">else</span>
+_cache.<span class="type">Set</span>(cacheKey, stock, <span class="type">TimeSpan</span>.<span class="type">FromMinutes</span>(<span class="num">5</span>)); <span class="cmt">// Recent data = cache shorter</span>
+<span class="kw">return</span> stock;}</code></pre>
+<h3 id="the-brilliant-time-based-caching-strategy">The Brilliant Time-Based Caching Strategy</h3>
+<p>Your system is smart about WHEN to forget cached data:</p>
+<p>Historical Data (&gt;7 days old) 📅</p>
+<p>Cached for 1 HOUR</p>
+<p>Why? Old stock doesn&#x27;t change!</p>
+<p>Like keeping last year&#x27;s phone book - it won&#x27;t change</p>
+<p>Recent Data (&lt;7 days old) 📆</p>
+<p>Cached for 5 MINUTES</p>
+<p>Why? Recent stock might still be changing</p>
+<p>Like today&#x27;s delivery schedule - might get updates</p>
+<p>Filtered Queries 🔍</p>
+<p>NOT cached at all</p>
+<p>Why? Too specific, unlikely to be asked again</p>
+<p>Like asking &quot;Show me only Tuesday deliveries of blue items&quot;</p>
+<h2 id="core-functions-explained">🔧 Core Functions Explained</h2>
+<h3 id="1-getarticlestockbydateasync-time-machine-for-stock">1. GetArticleStockByDateAsync - &quot;Time Machine for Stock&quot;</h3>
+<p>What it does: Tells you exactly what stock you had on any date</p>
+<p>Real-world analogy: Like asking &quot;What was in my bank account on January 15th?&quot;</p>
+<p>How it works:</p>
+<pre><code class="lang-text">-- Behind the scenes, it runs something like:
+SELECT
+SUM(entries) as ENTRADA,    -- Everything that came IN
+SUM(exits) as SAIDA,        -- Everything that went OUT
+SUM(entries - exits) as STOCK  -- What&#x27;s LEFT
+FROM movements
+WHERE date &lt;= &#x27;2024-01-15&#x27;</code></pre>
+<p>Smart trick: Adds 1 day to include the whole day&#x27;s transactions!</p>
+<h3 id="2-getstockmovementsasync-the-history-book">2. GetStockMovementsAsync - &quot;The History Book&quot;</h3>
+<p>What it does: Shows every movement (in/out) for an item</p>
+<p>Real-world analogy: Like your bank statement showing every transaction</p>
+<p>Returns: A list like:</p>
+<p>✅ Jan 10: +100 units (Purchase Order #1234)</p>
+<p>❌ Jan 11: -20 units (Sales Order #5678)</p>
+<p>✅ Jan 12: +50 units (Production #910)</p>
+<h3 id="3-getstocktotalsasync-the-summary">3. GetStockTotalsAsync - &quot;The Summary&quot;</h3>
+<p>What it does: Just gives you totals (how much came in, how much went out)</p>
+<p>Real-world analogy: Like asking &quot;How much money did I earn vs spend this month?&quot;</p>
+<p>Smart caching: Only caches &quot;all-time&quot; totals, never date-filtered ones</p>
+<h3 id="4-checkfluxoasync-the-special-inspector">4. CheckFluxoAsync - &quot;The Special Inspector&quot;</h3>
+<p>What it does: Checks stock flow for specific document lines</p>
+<p>Real-world analogy: Like tracking a specific package in your shipment</p>
+<p>Note: Never cached because it&#x27;s too specific!</p>
+<h2 id="the-ui-integration-artigodetalhe-razor">🎨 The UI Integration (ArtigoDetalhe.razor)</h2>
+<h3 id="the-stock-tab-magic">The Stock Tab Magic</h3>
+<p>When you click the Stock tab, here&#x27;s what happens:</p>
+<h4 id="first-click-the-smart-pre-loading">First Click - The Smart Pre-Loading</h4>
+<pre><code class="lang-csharp"><span class="cmt">// In OnInitializedAsync, it starts loading BEFORE you click!</span>
+<span class="kw">if</span> (artigo.<span class="type">TemGestao</span> == <span class="kw">true</span>)
+{
+_stockSummaryTask = <span class="type">StockService</span>.<span class="type">GetCurrentStockAsync</span>(artigo.<span class="type">Id</span>);
+<span class="cmt">// Starts loading in background while you look at other tabs!</span>
+}</code></pre>
+<h4 id="when-tab-opens-instant-display">When Tab Opens - Instant Display</h4>
+<pre><code class="lang-csharp"><span class="kw">private</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">OnStockTabClick</span>()
+{
+<span class="cmt">// If pre-loaded, this is instant!</span>
+currentStock = <span class="kw">await</span> _stockSummaryTask;
+}</code></pre>
+<h3 id="the-beautiful-stock-display">The Beautiful Stock Display</h3>
+<div class="diagram-box"><pre>┌─────────────────────────────────────────────────┐
+│  Stock Atual     Total Entradas    Total Saídas │
+│     1,250        ↑ 5,000          ↓ 3,750       │
+│                                                 │
+│  [Histórico] [Filtrar por Data]                 │
+└─────────────────────────────────────────────────┘</pre></div>
+<h3 id="the-date-range-filter-portuguese-culture">The Date Range Filter - Portuguese Culture!</h3>
+<pre><code class="lang-csharp"><span class="kw">private</span> <span class="type">System</span>.<span class="type">Globalization</span>.<span class="type">CultureInfo</span> <span class="type">GetPortugueseCulture</span>()
+{
+<span class="kw">var</span> culture = <span class="kw">new</span> <span class="type">System</span>.<span class="type">Globalization</span>.<span class="type">CultureInfo</span>(<span class="str">&quot;pt-PT&quot;</span>);
+culture.<span class="type">DateTimeFormat</span>.<span class="type">AbbreviatedDayNames</span> =
+<span class="kw">new</span>[] { <span class="str">&quot;Dom&quot;</span>, <span class="str">&quot;Seg&quot;</span>, <span class="str">&quot;Ter&quot;</span>, <span class="str">&quot;Qua&quot;</span>, <span class="str">&quot;Qui&quot;</span>, <span class="str">&quot;Sex&quot;</span>, <span class="str">&quot;Sáb&quot;</span> };
+<span class="kw">return</span> culture;}</code></pre>
+<h2 id="performance-optimizations">🚀 Performance Optimizations</h2>
+<h3 id="1-pre-loading-strategy-genius">1. Pre-Loading Strategy (Genius!)</h3>
+<p>Instead of waiting for the user to click the Stock tab:</p>
+<pre><code class="lang-text">// Start loading immediately when page opens
+_stockSummaryTask = StockService.GetCurrentStockAsync(artigo.Id);
+// Later, when user clicks tab, it&#x27;s already done!
+currentStock = await _stockSummaryTask; // Instant!</code></pre>
+<h3 id="2-smart-task-management">2. Smart Task Management</h3>
+<pre><code class="lang-csharp"><span class="cmt">// Reuse the same task if nothing changed</span>
+<span class="kw">if</span> (_stockMovementsTask == <span class="kw">null</span>)
+{
+_stockMovementsTask = <span class="type">StockService</span>.<span class="type">GetStockMovementsAsync</span>(artigo.<span class="type">Id</span>);
+}
+stocklist = <span class="kw">await</span> _stockMovementsTask;</code></pre>
+<h3 id="3-intelligent-cache-invalidation">3. Intelligent Cache Invalidation</h3>
+<p>The system knows when to forget cached data:</p>
+<p>Recent data expires quickly (5 minutes)</p>
+<p>Old data expires slowly (1 hour)</p>
+<p>Filtered queries aren&#x27;t cached at all</p>
+<h2 id="real-world-usage-scenarios">📊 Real-World Usage Scenarios</h2>
+<h3 id="scenario-1-daily-stock-check">Scenario 1: Daily Stock Check</h3>
+<p>Morning routine:</p>
+<p>Manager opens article details</p>
+<p>Clicks Stock tab</p>
+<p>System checks cache (empty in morning)</p>
+<p>Loads from database (2 seconds)</p>
+<p>Shows: &quot;Stock: 1,250 units&quot;</p>
+<p>Caches for 5 minutes</p>
+<p>5 minutes later:</p>
+<p>Manager refreshes page</p>
+<p>Clicks Stock tab again</p>
+<p>System checks cache (FOUND!)</p>
+<p>Shows instantly (0.001 seconds!)</p>
+<h3 id="scenario-2-historical-analysis">Scenario 2: Historical Analysis</h3>
+<p>Checking last month&#x27;s stock:</p>
+<p>User sets date filter: &quot;Jan 1-31&quot;</p>
+<p>System bypasses cache (filtered query)</p>
+<p>Queries database directly</p>
+<p>Shows movements for January</p>
+<p>Doesn&#x27;t cache (too specific)</p>
+<h3 id="scenario-3-multiple-users">Scenario 3: Multiple Users</h3>
+<p>The beauty of caching with multiple users:</p>
+<p>User A checks stock for Article #123 (takes 2 seconds, caches result)</p>
+<p>User B checks same article 30 seconds later (instant! uses cache)</p>
+<p>User C checks same article 1 minute later (instant! uses cache)</p>
+<p>After 5 minutes, cache expires</p>
+<p>Next user triggers fresh load</p>
+<h2 id="configuration-setup">🛠️ Configuration &amp; Setup</h2>
+<h3 id="basic-service-registration">Basic Service Registration</h3>
+<pre><code class="lang-text">// In Program.cs
+services.AddScoped&lt;IStockService, StockService&gt;();
+services.AddMemoryCache(); // Enable caching</code></pre>
+<h3 id="with-caching-wrapper">With Caching Wrapper</h3>
+<pre><code class="lang-csharp"><span class="cmt">// Register both services</span>
+services.<span class="type">AddScoped</span>&lt;<span class="type">StockService</span>&gt;();
+services.<span class="type">AddScoped</span>&lt;<span class="type">IStockService</span>&gt;(provider =&gt;
+{
+<span class="kw">var</span> innerService = provider.<span class="type">GetRequiredService</span>&lt;<span class="type">StockService</span>&gt;();
+<span class="kw">var</span> cache = provider.<span class="type">GetRequiredService</span>&lt;<span class="type">IMemoryCache</span>&gt;();
+<span class="kw">var</span> logger = provider.<span class="type">GetRequiredService</span>&lt;<span class="type">ILogger</span>&lt;<span class="type">CachedStockService</span>&gt;&gt;();
+<span class="kw">return</span> <span class="kw">new</span> <span class="type">CachedStockService</span>(innerService, cache, logger);
+});</code></pre>
+<h2 id="why-this-design-is-brilliant">🎯 Why This Design is Brilliant</h2>
+<h3 id="1-separation-of-concerns">1. Separation of Concerns</h3>
+<p>StockService: Does the real work</p>
+<p>CachedStockService: Handles memory/caching</p>
+<p>UI (Razor): Just displays data</p>
+<h3 id="2-decorator-pattern">2. Decorator Pattern</h3>
+<p>The cached service &quot;decorates&quot; the real service:</p>
+<pre><code class="lang-text">Request → CachedService → (if needed) → StockService → Database
+↓ (if cached)
+Return immediately</code></pre>
+<h3 id="3-smart-preloading">3. Smart Preloading</h3>
+<p>Starts loading before user needs it = perceived instant response!</p>
+<h3 id="4-graduated-cache-expiration">4. Graduated Cache Expiration</h3>
+<p>Old data = stable = cache longer</p>
+<p>New data = changing = cache shorter</p>
+<p>Filtered data = unique = don&#x27;t cache</p>
+<h2 id="common-issues-solutions">🐛 Common Issues &amp; Solutions</h2>
+<h3 id="stock-seems-outdated">&quot;Stock seems outdated&quot;</h3>
+<p>Solution: Click refresh button or wait 5 minutes for cache to expire</p>
+<h3 id="filtered-queries-are-slow">&quot;Filtered queries are slow&quot;</h3>
+<p>Expected: Filtered queries aren&#x27;t cached by design (too specific)</p>
+<h3 id="memory-usage-is-high">&quot;Memory usage is high&quot;</h3>
+<p>Check: Cache might be holding too much. Reduce cache times or add memory limits</p>
+<h2 id="monitoring-debugging">📈 Monitoring &amp; Debugging</h2>
+<h3 id="check-if-cache-is-working">Check if Cache is Working</h3>
+<p>Look for these log messages:</p>
+<pre><code class="lang-text">&quot;Stock cache hit for article 123 at date 2024-01-15&quot;  ← Good! Cache working
+&quot;Stock totals cache hit for article 456&quot;              ← Good! Saved a query</code></pre>
+<h3 id="performance-metrics">Performance Metrics</h3>
+<p>With caching:</p>
+<p>First load: ~2 seconds</p>
+<p>Cached load: &lt;0.01 seconds</p>
+<p>99% faster for repeated queries!</p>
+<h2 id="the-magic-summary">✨ The Magic Summary</h2>
+<p>This Stock Service is like having a super-smart assistant with perfect memory:</p>
+<p>Remembers recent answers (caching)</p>
+<p>Knows when to forget (smart expiration)</p>
+<p>Starts working before you ask (preloading)</p>
+<p>Speaks Portuguese (localization)</p>
+<p>Handles thousands of users (scalable)</p>
+<p>It turns a slow, database-heavy operation into a lightning-fast, user-friendly experience. Instead of waiting 2-3 seconds every time, users get instant responses 99% of the time!</p>
+<h2 id="bottom-line">🎉 Bottom Line</h2>
+<p>Your Stock Service is a masterpiece of optimization:</p>
+<p>Fast: Sub-millisecond responses when cached</p>
+<p>Smart: Knows what to cache and for how long</p>
+<p>Efficient: Reduces database load by 90%+</p>
+<p>User-Friendly: Pre-loads data before needed</p>
+<p>Scalable: Can handle hundreds of users</p>
+<p>It&#x27;s like upgrading from:</p>
+<p>🐌 Walking to the warehouse to count → 🚀 Having the count on your screen instantly</p>
+<p>📝 Paper ledgers → 💻 Digital real-time tracking</p>
+<p>⏰ 3-second waits → ⚡ Instant responses</p>
+<p>😫 Frustrated users → 😊 Happy users</p>
+<p>That&#x27;s the Stock Service - making inventory management instant, intelligent, and delightful!</p>
+</article>
+<div class="takeaways"><h3>Key takeaways</h3><ul><li>Decorator pattern (CachedStockService wraps StockService) keeps caching separate from the real data access logic</li><li>Graduated cache expiration: long cache for old stable data, short cache for volatile recent data, no cache for filtered ad-hoc queries</li><li>Pre-load data in OnInitializedAsync so the tab click feels instant (task is already running)</li><li>Reuse Task&lt;T&gt; fields for multiple consumers - request deduplication without extra locking</li><li>SQL SUM aggregation with WHERE date &lt;= cutoff gives you stock levels at any point in time</li><li>Always add 1 day to inclusive-date filters to cover the whole day&#x27;s transactions</li><li>Don&#x27;t cache ad-hoc filtered queries - they&#x27;re unlikely to repeat and they bloat memory</li><li>Register cached wrapper via a factory Func that resolves the inner service from DI</li></ul></div>
+<aside class="cross-refs"><h2>Cross-references</h2><div class="cross-ref-list"><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>decorator-pattern</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>imemorycache-patterns</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>blazor-background-loading</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>cache-invalidation-strategies</a><a href="javascript:void(0)" style="opacity:0.5;cursor:default;"><span class="arrow">→</span>stock-service-portuguese</a></div></aside>
+<aside class="related"><h2>More in this category</h2><div class="related-grid"><a class="related-card" href="../../APPLICATIONS/stock-service/stock-service-system-pt__4.html"><div class="title">Sistema de Serviço de Stock - Documentação Técnica (PT)</div><div class="meta"><span class="badge">DOCX</span><span>2,288 words</span></div></a><a class="related-card" href="../../APPLICATIONS/stock-service/stock-service-system-pt__3.html"><div class="title">Sistema de Serviço de Stock - O Guia Para Totós</div><div class="meta"><span class="badge">DOCX</span><span>1,631 words</span></div></a><a class="related-card" href="../../APPLICATIONS/stock-service/stock-service-system-pt.html"><div class="title">Sistema de Serviço de Stock — Documentação Técnica Formal (PT)</div><div class="meta"><span class="badge">PDF</span><span>2,271 words</span></div></a><a class="related-card" href="../../APPLICATIONS/stock-service/stock-service-system-pt__2.html"><div class="title">Sistema de Serviço de Stock — O Guia &quot;Para Totós&quot;</div><div class="meta"><span class="badge">PDF</span><span>1,711 words</span></div></a><a class="related-card" href="../../APPLICATIONS/stock-service/stock-service-system.html"><div class="title">Stock Service System — Formal Technical Documentation</div><div class="meta"><span class="badge">DOCX</span><span>2,083 words</span></div></a><a class="related-card" href="../../APPLICATIONS/stock-service/stock-service-system__2.html"><div class="title">Stock Service System — Technical Documentation</div><div class="meta"><span class="badge">PDF</span><span>2,064 words</span></div></a></div></aside>
+</main>
+</div>
+<script>
+// ─── Active TOC item on scroll ────────────────────────────────────
+(function() {
+  const tocLinks = document.querySelectorAll('.toc-sidebar a[href^="#"]');
+  if (!tocLinks.length) return;
+  const headings = Array.from(document.querySelectorAll(
+    'article h1[id], article h2[id], article h3[id], article h4[id], .pdf-page[id]'
+  ));
+  if (!headings.length) return;
+  function setActive(id) {
+    tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+  }
+  let lastVisible = headings[0].id;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) lastVisible = e.target.id; });
+    setActive(lastVisible);
+  }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+  headings.forEach(h => observer.observe(h));
+  setActive(headings[0].id);
+})();
+
+// ─── Copy code buttons ────────────────────────────────────────────
+(function() {
+  document.querySelectorAll('article pre').forEach(pre => {
+    if (pre.closest('.diagram-box')) return;
+    if (pre.closest('.pdf-page')) return;
+    if (pre.parentElement && pre.parentElement.classList.contains('code-block')) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'code-block';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.type = 'button';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', () => {
+      const code = pre.querySelector('code') || pre;
+      const text = code.innerText;
+      const done = () => {
+        btn.textContent = 'Copied';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(() => {});
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+    });
+    wrap.appendChild(btn);
+  });
+})();
+
+// ─── Live filter (master + hub + category pages) ─────────────────
+(function() {
+  const search = document.getElementById('search-input');
+  if (!search) return;
+  const items = document.querySelectorAll('[data-search]');
+  function apply() {
+    const q = search.value.toLowerCase().trim();
+    items.forEach(el => {
+      const match = !q || el.dataset.search.includes(q);
+      el.style.display = match ? '' : 'none';
+    });
+    document.querySelectorAll('[data-search-parent]').forEach(parent => {
+      const visible = Array.from(parent.querySelectorAll('[data-search]'))
+        .some(el => el.style.display !== 'none');
+      parent.style.display = visible ? '' : 'none';
+    });
+  }
+  search.addEventListener('input', apply);
+})();
+</script>
+</body>
+</html>

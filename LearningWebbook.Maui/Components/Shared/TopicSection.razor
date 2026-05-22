@@ -1,0 +1,98 @@
+@inject ProgressService ProgressService
+@inject IJSRuntime JS
+
+<section class="topic-section @(_expanded ? "expanded" : "")" id="@Topic.Id">
+    <div class="topic-header" @onclick="ToggleExpand">
+        <div>
+            <h3>@Topic.Title</h3>
+            @if (!string.IsNullOrEmpty(Topic.Prerequisites))
+            {
+                <div class="prereqs"><strong>Prerequisites:</strong> @Topic.Prerequisites</div>
+            }
+        </div>
+        <div class="topic-meta">
+            @{
+                var levelClass = Topic.Level switch
+                {
+                    "beginner" => "lvl-b",
+                    "intermediate" => "lvl-i",
+                    "advanced" => "lvl-a",
+                    _ => ""
+                };
+            }
+            <span class="lvl @levelClass">@Topic.Level</span>
+            <span class="expand-icon">&#x25BC;</span>
+        </div>
+    </div>
+
+    @if (_expanded)
+    {
+        @if (Topic.ForDummiesHtml is not null)
+        {
+            <ForDummiesToggle TopicId="@Topic.Id" ContentHtml="@Topic.ForDummiesHtml" />
+        }
+
+        <div class="topic-body" id="body-@Topic.Id">
+            @((MarkupString)Topic.ContentHtml)
+        </div>
+
+        @if (Topic.NextTopicId is not null)
+        {
+            <div class="next-up">
+                <a @onclick="() => NavigateToNext(Topic.NextTopicId)" @onclick:preventDefault>
+                    Next: @Topic.NextTopicTitle &rarr;
+                </a>
+            </div>
+        }
+    }
+</section>
+
+@code {
+    [Parameter] public Topic Topic { get; set; } = default!;
+    [Parameter] public EventCallback<string> OnNavigateToTopic { get; set; }
+
+    private bool _expanded;
+    private bool _needsScriptActivation;
+
+    private void ToggleExpand()
+    {
+        _expanded = !_expanded;
+        if (_expanded)
+        {
+            ProgressService.MarkRead(Topic.Id);
+            _needsScriptActivation = true;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_needsScriptActivation && _expanded)
+        {
+            _needsScriptActivation = false;
+            // Activate any <script> tags that were injected via MarkupString
+            await JS.InvokeVoidAsync("activateScripts", $"body-{Topic.Id}");
+        }
+    }
+
+    public void Expand()
+    {
+        if (!_expanded)
+        {
+            _expanded = true;
+            _needsScriptActivation = true;
+            ProgressService.MarkRead(Topic.Id);
+            StateHasChanged();
+        }
+    }
+
+    public void Collapse()
+    {
+        _expanded = false;
+        StateHasChanged();
+    }
+
+    private async Task NavigateToNext(string topicId)
+    {
+        await OnNavigateToTopic.InvokeAsync(topicId);
+    }
+}

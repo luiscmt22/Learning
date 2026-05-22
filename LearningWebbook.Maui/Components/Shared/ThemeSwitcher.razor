@@ -1,0 +1,18 @@
+@inject ThemeService ThemeService
+
+<div class="theme-sw">
+    <button class="theme-btn @(ThemeService.CurrentTheme == ThemeOption.Dark ? "active" : "")"
+            @onclick="() => SetTheme(ThemeOption.Dark)">Dark</button>
+    <button class="theme-btn @(ThemeService.CurrentTheme == ThemeOption.Light ? "active" : "")"
+            @onclick="() => SetTheme(ThemeOption.Light)">Light</button>
+    <button class="theme-btn @(ThemeService.CurrentTheme == ThemeOption.Warm ? "active" : "")"
+            @onclick="() => SetTheme(ThemeOption.Warm)">Warm</button>
+</div>
+
+@code {
+    private async Task SetTheme(ThemeOption theme)
+    {
+        await ThemeService.SetThemeAsync(theme);
+        StateHasChanged();
+    }
+}

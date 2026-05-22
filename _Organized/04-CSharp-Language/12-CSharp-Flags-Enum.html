@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>12-CSharp-Flags-Enum</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 04-CSharp-Language</div>
+  <h1>12-CSharp-Flags-Enum</h1>
+  <div class="meta">Source: <code>Education/12-CSharp-Flags-Enum.md</code> &middot; <a href="12-CSharp-Flags-Enum.md">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<h1 id="c-flags-enum-guide">C# Flags Enum Guide</h1>
+<h2 id="what-is-the-flags-attribute">What is the [Flags] Attribute?</h2>
+<p>The <code class="il">[Flags]</code> attribute allows an enum to represent <strong>multiple values simultaneously</strong> using bitwise operations. It&#x27;s ideal for situations where an entity can have multiple characteristics at the same time.</p>
+<h2 id="practical-example-employee-warnings">Practical Example: Employee Warnings</h2>
+<pre><code class="lang-csharp">[<span class="type">Flags</span>]
+<span class="kw">public</span> <span class="kw">enum</span> <span class="type">EmployeeWarning</span>
+{
+    <span class="type">None</span> = <span class="num">0</span>,                   <span class="cmt">// 00000000 (binary)</span>
+    <span class="type">GeoLockNoLocation</span> = <span class="num">1</span>,      <span class="cmt">// 00000001</span>
+    <span class="type">JobBoundNoSchedule</span> = <span class="num">2</span>,     <span class="cmt">// 00000010</span>
+    <span class="type">InvalidLocationCheckIn</span> = <span class="num">4</span>, <span class="cmt">// 00000100</span>
+    <span class="type">PendingValidation</span> = <span class="num">8</span>,      <span class="cmt">// 00001000</span>
+    <span class="type">CheckInsDisabled</span> = <span class="num">16</span>,      <span class="cmt">// 00010000</span>
+    <span class="type">NoScheduleAssigned</span> = <span class="num">32</span>,    <span class="cmt">// 00100000</span>
+    <span class="type">NoLocationAssigned</span> = <span class="num">64</span>,    <span class="cmt">// 01000000</span>
+    <span class="type">NoConfiguration</span> = <span class="num">128</span>       <span class="cmt">// 10000000</span>
+}</code></pre>
+<h2 id="golden-rule-powers-of-2">Golden Rule: Powers of 2</h2>
+<p><strong>Each value MUST be a power of 2:</strong></p>
+<ul>
+<li>1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024...</li>
+</ul>
+<p>This is because each value occupies a <strong>unique bit</strong> in the binary representation:</p>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Value</th>
+<th>Binary</th>
+<th>Bit Position</th>
+</tr></thead><tbody>
+<tr>
+<td>1</td>
+<td>0000 0001</td>
+<td>0</td>
+</tr>
+<tr>
+<td>2</td>
+<td>0000 0010</td>
+<td>1</td>
+</tr>
+<tr>
+<td>4</td>
+<td>0000 0100</td>
+<td>2</td>
+</tr>
+<tr>
+<td>8</td>
+<td>0000 1000</td>
+<td>3</td>
+</tr>
+<tr>
+<td>16</td>
+<td>0001 0000</td>
+<td>4</td>
+</tr>
+<tr>
+<td>32</td>
+<td>0010 0000</td>
+<td>5</td>
+</tr>
+<tr>
+<td>64</td>
+<td>0100 0000</td>
+<td>6</td>
+</tr>
+<tr>
+<td>128</td>
+<td>1000 0000</td>
+<td>7</td>
+</tr>
+</tbody></table></div>
+<h2 id="basic-operations">Basic Operations</h2>
+<h3 id="1-add-a-flag">1. Add a Flag</h3>
+<p>Use the <code class="il">|=</code> operator (bitwise OR):</p>
+<pre><code class="lang-csharp"><span class="kw">var</span> warnings = <span class="type">EmployeeWarning</span>.<span class="type">None</span>;
+
+<span class="cmt">// Add NoConfiguration</span>
+warnings |= <span class="type">EmployeeWarning</span>.<span class="type">NoConfiguration</span>;
+<span class="cmt">// warnings = 128 (10000000)</span>
+
+<span class="cmt">// Add NoScheduleAssigned</span>
+warnings |= <span class="type">EmployeeWarning</span>.<span class="type">NoScheduleAssigned</span>;
+<span class="cmt">// warnings = 160 (10100000) = 128 + 32</span></code></pre>
+<h3 id="2-check-if-a-flag-is-set">2. Check if a Flag is Set</h3>
+<p>Use <code class="il">.HasFlag()</code>:</p>
+<pre><code class="lang-csharp"><span class="kw">if</span> (warnings.<span class="type">HasFlag</span>(<span class="type">EmployeeWarning</span>.<span class="type">NoConfiguration</span>))
+{
+    <span class="cmt">// This flag is active!</span>
+}
+
+<span class="cmt">// Alternative (more performant but less readable):</span>
+<span class="kw">if</span> ((warnings &amp; <span class="type">EmployeeWarning</span>.<span class="type">NoConfiguration</span>) != <span class="num">0</span>)
+{
+    <span class="cmt">// This flag is active!</span>
+}</code></pre>
+<h3 id="3-remove-a-flag">3. Remove a Flag</h3>
+<p>Use <code class="il">&amp;= ~</code> (AND with NOT):</p>
+<pre><code class="lang-csharp"><span class="cmt">// Remove NoConfiguration</span>
+warnings &amp;= ~<span class="type">EmployeeWarning</span>.<span class="type">NoConfiguration</span>;</code></pre>
+<h3 id="4-check-if-any-flag-is-set">4. Check if ANY Flag is Set</h3>
+<pre><code class="lang-csharp"><span class="kw">if</span> (warnings != <span class="type">EmployeeWarning</span>.<span class="type">None</span>)
+{
+    <span class="cmt">// Has at least one flag active</span>
+}</code></pre>
+<h3 id="5-clear-all-flags">5. Clear All Flags</h3>
+<pre><code class="lang-csharp">warnings = <span class="type">EmployeeWarning</span>.<span class="type">None</span>;</code></pre>
+<h2 id="real-world-example-liveinsightsservice">Real-World Example: LiveInsightsService</h2>
+<pre><code class="lang-csharp"><span class="kw">var</span> insight = <span class="kw">new</span> <span class="type">LiveEmployeeInsight</span>();
+
+<span class="cmt">// Check employee configuration</span>
+<span class="kw">var</span> config = employee.<span class="type">Configuration</span>;
+
+<span class="kw">if</span> (config == <span class="kw">null</span>)
+{
+    <span class="cmt">// Add warning: no configuration</span>
+    insight.<span class="type">Warnings</span> |= <span class="type">EmployeeWarning</span>.<span class="type">NoConfiguration</span>;
+}
+<span class="kw">else</span>
+{
+    <span class="cmt">// Check if JobBound but missing schedule</span>
+    <span class="kw">if</span> (config.<span class="type">IsJobBound</span> &amp;&amp; !hasAnyJobScheduleToday)
+    {
+        insight.<span class="type">Warnings</span> |= <span class="type">EmployeeWarning</span>.<span class="type">JobBoundNoSchedule</span>;
+    }
+
+    <span class="cmt">// Check if GeoLock required but no location source</span>
+    <span class="kw">if</span> (config.<span class="type">RequiresGeolocation</span> &amp;&amp; !hasAnyLocationSource)
+    {
+        insight.<span class="type">Warnings</span> |= <span class="type">EmployeeWarning</span>.<span class="type">GeoLockNoLocation</span>;
+    }
+}
+
+<span class="cmt">// At the end, the employee can have MULTIPLE warnings:</span>
+<span class="cmt">// warnings = GeoLockNoLocation | NoScheduleAssigned = 1 + 32 = 33</span></code></pre>
+<h2 id="usage-in-blazor-razor">Usage in Blazor/Razor</h2>
+<pre><code class="lang-razor"><span class="kw">@if</span> (emp.<span class="type">HasWarnings</span>)
+{
+    &lt;div <span class="kw">class</span>=<span class="str">&quot;d-flex gap-1&quot;</span>&gt;
+        <span class="kw">@if</span> (emp.<span class="type">Warnings</span>.<span class="type">HasFlag</span>(<span class="type">EmployeeWarning</span>.<span class="type">NoConfiguration</span>))
+        {
+            &lt;<span class="type">MudTooltip</span> <span class="type">Text</span>=<span class="str">&quot;No HR configuration found!&quot;</span>&gt;
+                &lt;<span class="type">MudIcon</span> <span class="type">Icon</span>=<span class="str">&quot;@Icons.Material.Filled.Settings&quot;</span> <span class="type">Color</span>=<span class="str">&quot;Color.Error&quot;</span> /&gt;
+            &lt;/<span class="type">MudTooltip</span>&gt;
+        }
+        <span class="kw">@if</span> (emp.<span class="type">Warnings</span>.<span class="type">HasFlag</span>(<span class="type">EmployeeWarning</span>.<span class="type">JobBoundNoSchedule</span>))
+        {
+            &lt;<span class="type">MudTooltip</span> <span class="type">Text</span>=<span class="str">&quot;JobBound but no schedule assigned&quot;</span>&gt;
+                &lt;<span class="type">MudIcon</span> <span class="type">Icon</span>=<span class="str">&quot;@Icons.Material.Filled.EventBusy&quot;</span> <span class="type">Color</span>=<span class="str">&quot;Color.Warning&quot;</span> /&gt;
+            &lt;/<span class="type">MudTooltip</span>&gt;
+        }
+        @* ... more flags ... *@
+    &lt;/div&gt;
+}</code></pre>
+<h2 id="pre-defined-combinations">Pre-defined Combinations</h2>
+<p>You can define common combinations:</p>
+<pre><code class="lang-csharp">[<span class="type">Flags</span>]
+<span class="kw">public</span> <span class="kw">enum</span> <span class="type">EmployeeWarning</span>
+{
+    <span class="type">None</span> = <span class="num">0</span>,
+    <span class="type">GeoLockNoLocation</span> = <span class="num">1</span>,
+    <span class="type">JobBoundNoSchedule</span> = <span class="num">2</span>,
+    <span class="type">InvalidLocationCheckIn</span> = <span class="num">4</span>,
+
+    <span class="cmt">// Combination: all urgent warnings</span>
+    <span class="type">AllUrgent</span> = <span class="type">GeoLockNoLocation</span> | <span class="type">JobBoundNoSchedule</span>,  <span class="cmt">// = 3</span>
+
+    <span class="cmt">// Combination: all configuration issues</span>
+    <span class="type">AllConfigIssues</span> = <span class="type">GeoLockNoLocation</span> | <span class="type">JobBoundNoSchedule</span> | <span class="type">InvalidLocationCheckIn</span>  <span class="cmt">// = 7</span>
+}</code></pre>
+<h2 id="common-mistakes">Common Mistakes</h2>
+<h3 id="using-values-that-are-not-powers-of-2">❌ Using Values That Are NOT Powers of 2</h3>
+<pre><code class="lang-csharp"><span class="cmt">// WRONG!</span>
+[<span class="type">Flags</span>]
+<span class="kw">public</span> <span class="kw">enum</span> <span class="type">BadExample</span>
+{
+    <span class="type">None</span> = <span class="num">0</span>,
+    <span class="type">First</span> = <span class="num">1</span>,
+    <span class="type">Second</span> = <span class="num">2</span>,
+    <span class="type">Third</span> = <span class="num">3</span>,  <span class="cmt">// ❌ 3 = 1 + 2, will conflict!</span>
+    <span class="type">Fourth</span> = <span class="num">4</span>
+}</code></pre>
+<h3 id="forgetting-the-0-value-none">❌ Forgetting the 0 Value (None)</h3>
+<pre><code class="lang-csharp"><span class="cmt">// WRONG!</span>
+[<span class="type">Flags</span>]
+<span class="kw">public</span> <span class="kw">enum</span> <span class="type">BadExample</span>
+{
+    <span class="type">First</span> = <span class="num">1</span>,
+    <span class="type">Second</span> = <span class="num">2</span>
+    <span class="cmt">// Without None = 0, there&#x27;s no way to represent &quot;nothing&quot;</span>
+}</code></pre>
+<h3 id="using-instead-of-hasflag">❌ Using == Instead of HasFlag</h3>
+<pre><code class="lang-csharp"><span class="kw">var</span> warnings = <span class="type">EmployeeWarning</span>.<span class="type">NoConfiguration</span> | <span class="type">EmployeeWarning</span>.<span class="type">NoScheduleAssigned</span>;
+
+<span class="cmt">// WRONG - only true if warnings is EXACTLY NoConfiguration</span>
+<span class="kw">if</span> (warnings == <span class="type">EmployeeWarning</span>.<span class="type">NoConfiguration</span>) { } <span class="cmt">// false!</span>
+
+<span class="cmt">// CORRECT - checks if NoConfiguration is included</span>
+<span class="kw">if</span> (warnings.<span class="type">HasFlag</span>(<span class="type">EmployeeWarning</span>.<span class="type">NoConfiguration</span>)) { } <span class="cmt">// true!</span></code></pre>
+<h2 id="quick-reference">Quick Reference</h2>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Operation</th>
+<th>Code</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>Add</td>
+<td>`flags \</td>
+<td>= Flag`</td>
+<td>Bitwise OR</td>
+</tr>
+<tr>
+<td>Remove</td>
+<td><code class="il">flags &amp;= ~Flag</code></td>
+<td>AND with NOT</td>
+</tr>
+<tr>
+<td>Check</td>
+<td><code class="il">flags.HasFlag(Flag)</code></td>
+<td>Returns bool</td>
+</tr>
+<tr>
+<td>Clear All</td>
+<td><code class="il">flags = None</code></td>
+<td>Full reset</td>
+</tr>
+<tr>
+<td>Has Any?</td>
+<td><code class="il">flags != None</code></td>
+<td>Any flag active</td>
+</tr>
+</tbody></table></div>
+<h2 id="when-to-use-flags">When to Use [Flags]?</h2>
+<p>✅ <strong>Use when:</strong></p>
+<ul>
+<li>An entity can have multiple simultaneous characteristics</li>
+<li>You need to filter by combinations of characteristics</li>
+<li>You want to represent permissions, states, or warnings</li>
+</ul>
+<p>❌ <strong>Don&#x27;t use when:</strong></p>
+<ul>
+<li>Values are mutually exclusive (use regular enum)</li>
+<li>You need more than ~32 different values (use a different approach)</li>
+<li>Logic is too complex (consider using classes instead)</li>
+</ul>
+<hr>
+<p><em>Created for HRModule project - See <code class="il">EmployeeWarning</code> in <code class="il">Services/Attendance/AttendanceModels.cs</code></em></p>
+</div>
+</body>
+</html>

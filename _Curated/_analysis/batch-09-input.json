@@ -1,0 +1,74 @@
+[
+  {
+    "src_rel": "Education/generics-builders-deep-dive.html",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\generics-builders-deep-dive.html",
+    "src_ext": ".html",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__generics-builders-deep-dive.html.txt",
+    "word_count": 4353,
+    "category_legacy": "04-CSharp-Language"
+  },
+  {
+    "src_rel": "JScript/Document 1.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\JScript\\Document 1.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\JScript__Document 1.docx.txt",
+    "word_count": 3237,
+    "category_legacy": "12-JavaScript"
+  },
+  {
+    "src_rel": "Education/11-SignalR-Real-Time-Communication.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\11-SignalR-Real-Time-Communication.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__11-SignalR-Real-Time-Communication.md.txt",
+    "word_count": 2412,
+    "category_legacy": "09-Realtime-SignalR"
+  },
+  {
+    "src_rel": "Education/FactoryFloor/PT/SistemaProduçãoChãoFábricaDocumentaçãoFormal.docx",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\FactoryFloor\\PT\\SistemaProduçãoChãoFábricaDocumentaçãoFormal.docx",
+    "src_ext": ".docx",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__FactoryFloor__PT__SistemaProduçãoChãoFábricaDocumentaçãoFormal.docx.txt",
+    "word_count": 1695,
+    "category_legacy": "16-Domain-Examples-FactoryFloor"
+  },
+  {
+    "src_rel": "Education/ForDummies/08-Design-Patterns-For-Dummies.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\ForDummies\\08-Design-Patterns-For-Dummies.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__ForDummies__08-Design-Patterns-For-Dummies.md.txt",
+    "word_count": 1383,
+    "category_legacy": "19-For-Dummies"
+  },
+  {
+    "src_rel": "Education/ForDummies/14-SignalR-Notification-System-ForDummies.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\ForDummies\\14-SignalR-Notification-System-ForDummies.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__ForDummies__14-SignalR-Notification-System-ForDummies.md.txt",
+    "word_count": 1127,
+    "category_legacy": "19-For-Dummies"
+  },
+  {
+    "src_rel": "Education/03-Adapter-Pattern-Explained.md",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Education\\03-Adapter-Pattern-Explained.md",
+    "src_ext": ".md",
+    "has_text": true,
+    "text_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\_Curated\\_extracted\\Education__03-Adapter-Pattern-Explained.md.txt",
+    "word_count": 532,
+    "category_legacy": "02-Architecture-and-Patterns"
+  },
+  {
+    "src_rel": "Identity/IdentityProjectKnowledge.pdf",
+    "src_abs": "C:\\Users\\User\\Desktop\\AGILE\\Learning\\Identity\\IdentityProjectKnowledge.pdf",
+    "src_ext": ".pdf",
+    "has_text": false,
+    "text_abs": null,
+    "word_count": 0,
+    "category_legacy": "06-Auth-and-Identity"
+  }
+]

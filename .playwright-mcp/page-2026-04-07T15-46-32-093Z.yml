@@ -1,0 +1,601 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "Learning" [ref=e4] [cursor=pointer]:
+        - /url: ../../00-Index.html
+      - generic [ref=e5]: ›
+      - link "APPLICATIONS" [ref=e6] [cursor=pointer]:
+        - /url: ../_Hub.html
+      - generic [ref=e7]: ›
+      - link "Stock Service (BioBraga)" [ref=e8] [cursor=pointer]:
+        - /url: _Category.html
+      - generic [ref=e9]: ›
+      - generic [ref=e10]: Stock Service System — Formal Technical Documentation
+    - generic [ref=e11]:
+      - link "↓ Download" [ref=e12] [cursor=pointer]:
+        - /url: stock-service-system.docx
+      - link "All docs" [ref=e13] [cursor=pointer]:
+        - /url: ../../00-Index.html
+  - generic [ref=e14]:
+    - complementary [ref=e15]:
+      - heading "On this page" [level=3] [ref=e16]
+      - list [ref=e17]:
+        - listitem [ref=e18]:
+          - link "Stock Service System - Technical Documentation" [ref=e19] [cursor=pointer]:
+            - /url: "#stock-service-system-technical-documentation"
+        - listitem [ref=e20]:
+          - link "Table of Contents" [ref=e21] [cursor=pointer]:
+            - /url: "#table-of-contents"
+        - listitem [ref=e22]:
+          - link "System Overview" [ref=e23] [cursor=pointer]:
+            - /url: "#system-overview"
+        - listitem [ref=e24]:
+          - link "Purpose" [ref=e25] [cursor=pointer]:
+            - /url: "#purpose"
+        - listitem [ref=e26]:
+          - link "Key Features" [ref=e27] [cursor=pointer]:
+            - /url: "#key-features"
+        - listitem [ref=e28]:
+          - link "Architecture Philosophy" [ref=e29] [cursor=pointer]:
+            - /url: "#architecture-philosophy"
+        - listitem [ref=e30]:
+          - link "Architecture" [ref=e31] [cursor=pointer]:
+            - /url: "#architecture"
+        - listitem [ref=e32]:
+          - link "System Architecture Diagram" [ref=e33] [cursor=pointer]:
+            - /url: "#system-architecture-diagram"
+        - listitem [ref=e34]:
+          - link "Component Interaction Flow" [ref=e35] [cursor=pointer]:
+            - /url: "#component-interaction-flow"
+        - listitem [ref=e36]:
+          - link "Core Services" [ref=e37] [cursor=pointer]:
+            - /url: "#core-services"
+        - listitem [ref=e38]:
+          - link "IStockService Interface" [ref=e39] [cursor=pointer]:
+            - /url: "#istockservice-interface"
+        - listitem [ref=e40]:
+          - link "StockService Implementation" [ref=e41] [cursor=pointer]:
+            - /url: "#stockservice-implementation"
+        - listitem [ref=e42]:
+          - link "GetArticleStockByDateAsync" [ref=e43] [cursor=pointer]:
+            - /url: "#getarticlestockbydateasync"
+        - listitem [ref=e44]:
+          - link "GetStockMovementsAsync" [ref=e45] [cursor=pointer]:
+            - /url: "#getstockmovementsasync"
+        - listitem [ref=e46]:
+          - link "Caching Strategy" [ref=e47] [cursor=pointer]:
+            - /url: "#caching-strategy"
+        - listitem [ref=e48]:
+          - link "Multi-Tier Cache Architecture" [ref=e49] [cursor=pointer]:
+            - /url: "#multi-tier-cache-architecture"
+        - listitem [ref=e50]:
+          - link "Cache Key Generation" [ref=e51] [cursor=pointer]:
+            - /url: "#cache-key-generation"
+        - listitem [ref=e52]:
+          - link "Graduated Expiration Strategy" [ref=e53] [cursor=pointer]:
+            - /url: "#graduated-expiration-strategy"
+        - listitem [ref=e54]:
+          - link "Cache Decision Matrix" [ref=e55] [cursor=pointer]:
+            - /url: "#cache-decision-matrix"
+        - listitem [ref=e56]:
+          - link "Cache Invalidation Patterns" [ref=e57] [cursor=pointer]:
+            - /url: "#cache-invalidation-patterns"
+        - listitem [ref=e58]:
+          - link "Time-Based Expiration" [ref=e59] [cursor=pointer]:
+            - /url: "#time-based-expiration"
+        - listitem [ref=e60]:
+          - link "Manual Invalidation (Extension)" [ref=e61] [cursor=pointer]:
+            - /url: "#manual-invalidation-extension"
+        - listitem [ref=e62]:
+          - link "Database Integration" [ref=e63] [cursor=pointer]:
+            - /url: "#database-integration"
+        - listitem [ref=e64]:
+          - link "SQL Server Functions" [ref=e65] [cursor=pointer]:
+            - /url: "#sql-server-functions"
+        - listitem [ref=e66]:
+          - link "fn_ArtigoStockByDate" [ref=e67] [cursor=pointer]:
+            - /url: "#fn-artigostockbydate"
+        - listitem [ref=e68]:
+          - link "fn_ArtigoUsedInFluxo" [ref=e69] [cursor=pointer]:
+            - /url: "#fn-artigousedinfluxo"
+        - listitem [ref=e70]:
+          - link "Connection Management" [ref=e71] [cursor=pointer]:
+            - /url: "#connection-management"
+        - listitem [ref=e72]:
+          - link "UI Integration" [ref=e73] [cursor=pointer]:
+            - /url: "#ui-integration"
+        - listitem [ref=e74]:
+          - link "Pre-Loading Strategy in ArtigoDetalhe.razor" [ref=e75] [cursor=pointer]:
+            - /url: "#pre-loading-strategy-in-artigodetalhe-razor"
+        - listitem [ref=e76]:
+          - link "Initialization Phase" [ref=e77] [cursor=pointer]:
+            - /url: "#initialization-phase"
+        - listitem [ref=e78]:
+          - link "Tab Activation" [ref=e79] [cursor=pointer]:
+            - /url: "#tab-activation"
+        - listitem [ref=e80]:
+          - link "Date Filtering with Task Management" [ref=e81] [cursor=pointer]:
+            - /url: "#date-filtering-with-task-management"
+        - listitem [ref=e82]:
+          - link "Performance Optimization" [ref=e83] [cursor=pointer]:
+            - /url: "#performance-optimization"
+        - listitem [ref=e84]:
+          - link "Optimization Techniques" [ref=e85] [cursor=pointer]:
+            - /url: "#optimization-techniques"
+        - listitem [ref=e86]:
+          - link "1. Task Pre-Loading" [ref=e87] [cursor=pointer]:
+            - /url: "#1-task-pre-loading"
+        - listitem [ref=e88]:
+          - link "2. Connection Pooling" [ref=e89] [cursor=pointer]:
+            - /url: "#2-connection-pooling"
+        - listitem [ref=e90]:
+          - link "3. Query Optimization" [ref=e91] [cursor=pointer]:
+            - /url: "#3-query-optimization"
+        - listitem [ref=e92]:
+          - link "4. Graduated Cache Expiration" [ref=e93] [cursor=pointer]:
+            - /url: "#4-graduated-cache-expiration"
+        - listitem [ref=e94]:
+          - link "Performance Metrics" [ref=e95] [cursor=pointer]:
+            - /url: "#performance-metrics"
+        - listitem [ref=e96]:
+          - link "Memory Management" [ref=e97] [cursor=pointer]:
+            - /url: "#memory-management"
+        - listitem [ref=e98]:
+          - link "API Reference" [ref=e99] [cursor=pointer]:
+            - /url: "#api-reference"
+        - listitem [ref=e100]:
+          - link "Extension Methods" [ref=e101] [cursor=pointer]:
+            - /url: "#extension-methods"
+        - listitem [ref=e102]:
+          - link "Data Transfer Objects" [ref=e103] [cursor=pointer]:
+            - /url: "#data-transfer-objects"
+        - listitem [ref=e104]:
+          - link "Configuration" [ref=e105] [cursor=pointer]:
+            - /url: "#configuration"
+        - listitem [ref=e106]:
+          - link "Service Registration" [ref=e107] [cursor=pointer]:
+            - /url: "#service-registration"
+        - listitem [ref=e108]:
+          - link "Basic Configuration" [ref=e109] [cursor=pointer]:
+            - /url: "#basic-configuration"
+        - listitem [ref=e110]:
+          - link "Advanced Configuration with Caching" [ref=e111] [cursor=pointer]:
+            - /url: "#advanced-configuration-with-caching"
+        - listitem [ref=e112]:
+          - link "Configuration Settings" [ref=e113] [cursor=pointer]:
+            - /url: "#configuration-settings"
+        - listitem [ref=e114]:
+          - link "Monitoring & Troubleshooting" [ref=e115] [cursor=pointer]:
+            - /url: "#monitoring-troubleshooting"
+        - listitem [ref=e116]:
+          - link "Logging Strategy" [ref=e117] [cursor=pointer]:
+            - /url: "#logging-strategy"
+        - listitem [ref=e118]:
+          - link "Health Checks" [ref=e119] [cursor=pointer]:
+            - /url: "#health-checks"
+        - listitem [ref=e120]:
+          - link "Performance Monitoring" [ref=e121] [cursor=pointer]:
+            - /url: "#performance-monitoring"
+        - listitem [ref=e122]:
+          - link "Common Issues & Solutions" [ref=e123] [cursor=pointer]:
+            - /url: "#common-issues-solutions"
+        - listitem [ref=e124]:
+          - link "Debug Helpers" [ref=e125] [cursor=pointer]:
+            - /url: "#debug-helpers"
+        - listitem [ref=e126]:
+          - link "Best Practices" [ref=e127] [cursor=pointer]:
+            - /url: "#best-practices"
+        - listitem [ref=e128]:
+          - link "Do's ✅" [ref=e129] [cursor=pointer]:
+            - /url: "#do-s"
+        - listitem [ref=e130]:
+          - link "Don'ts ❌" [ref=e131] [cursor=pointer]:
+            - /url: "#don-ts"
+        - listitem [ref=e132]:
+          - link "Future Enhancements" [ref=e133] [cursor=pointer]:
+            - /url: "#future-enhancements"
+        - listitem [ref=e134]:
+          - link "Proposed Improvements" [ref=e135] [cursor=pointer]:
+            - /url: "#proposed-improvements"
+    - main [ref=e136]:
+      - generic [ref=e137]:
+        - generic [ref=e138]: Implementation · Stock Service (BioBraga)
+        - heading "Stock Service System — Formal Technical Documentation" [level=1] [ref=e140]
+        - paragraph [ref=e141]: Formal technical reference for a high-performance inventory tracking system built around a decorator-pattern cached service layer, SQL Server functions, pre-loading tasks, and graduated cache expiration.
+        - generic [ref=e142]:
+          - generic [ref=e143]: DOCX
+          - generic [ref=e144]: Advanced
+          - generic [ref=e145]:
+            - generic [ref=e146]: 2,083
+            - text: words
+          - generic [ref=e147]:
+            - generic [ref=e148]: "10"
+            - text: min read
+          - generic [ref=e149]:
+            - text: "Source:"
+            - code [ref=e150]: Education/Stock/ENG/StockServiceSystemFormalDocumentation.docx
+      - generic [ref=e152]:
+        - generic [ref=e153]: ≈
+        - generic [ref=e154]:
+          - heading "Near-duplicate content" [level=4] [ref=e155]
+          - paragraph [ref=e156]: "Significant text overlap (Jaccard ≥ 0.65) with — likely audience variants (ENG/PT, ForDummies/Formal) of the same source:"
+          - list [ref=e157]:
+            - listitem [ref=e158]:
+              - code [ref=e159]: Education/Stock/ENG/StockServiceSystemFormalDocumentation.pdf
+      - generic [ref=e160]:
+        - paragraph [ref=e161]: Every time a user clicks the Stock tab on an article page, the database has to sum every inbound and outbound movement since the beginning of time to tell them how many units are on the shelf. That's expensive. Now imagine 40 users clicking that tab every minute across 50,000 articles. This is how you make that scream instead of crawl.
+        - generic [ref=e162]:
+          - heading "Executive summary" [level=3] [ref=e163]
+          - paragraph [ref=e164]: "This is the formal architecture document for the Stock Service — a three-layer system (UI/Service/Data) where a CachedStockService decorator wraps a StockService implementation that talks to SQL Server table-valued functions (fn_ArtigoStockByDate, fn_ArtigoUsedInFluxo) through a raw ADO.NET connection for performance. The caching strategy uses graduated expiration: 1 hour for historical data older than 7 days, 5 minutes for recent data, nothing at all for filtered queries. Razor components pre-load expensive operations as Tasks in OnInitializedAsync so that by the time the user clicks the Stock tab, the data is already there. The doc also covers extension methods, health checks, structured logging with cache-hit tagging, cache inspection endpoints, and future enhancements like Redis and SignalR-driven invalidation."
+        - generic [ref=e165]:
+          - generic [ref=e166]: 💡
+          - generic [ref=e167]:
+            - generic [ref=e168]: Metaphor
+            - text: The Stock Service is a coffee shop with a secret second menu — the barista keeps sticky notes of the most recent orders so that if you ask for the same drink someone just ordered, they hand it to you instantly. Regular espresso from yesterday? Sticky note lasts an hour because yesterday can't change. Today's cappuccino? Sticky note lasts five minutes because someone might modify it. A custom half-caf oat milk with exactly 1.5 pumps of vanilla? No sticky note — too specific, nobody else is ordering that.
+        - generic [ref=e169]:
+          - generic [ref=e170]:
+            - heading "1 Why it exists" [level=3] [ref=e171]:
+              - generic [ref=e172]: "1"
+              - text: Why it exists
+            - paragraph [ref=e173]: Inventory queries are the most asked question in a warehouse ERP, and they're brutally expensive because computing 'what did I have on January 15th?' means summing every movement from the beginning of time up to that date. Hitting the database for every query brings the system to its knees and users wait 2-3 seconds every single time. The Stock Service exists to eliminate that wait by caching aggressively for data that doesn't change (historical stock) and conservatively for data that might (today's stock), while never caching filtered queries that are too specific to repeat. The result is sub-millisecond responses for 99% of queries with the database staying cool.
+          - generic [ref=e174]:
+            - heading "2 What it does" [level=3] [ref=e175]:
+              - generic [ref=e176]: "2"
+              - text: What it does
+            - paragraph [ref=e177]: "Exposes an IStockService with four operations: GetArticleStockByDateAsync (point-in-time query), GetStockMovementsAsync (movement history with optional date filters), GetStockTotalsAsync (aggregate entradas/saídas), and CheckFluxoAsync (per-document-line flow). A CachedStockService wraps the real StockService as a decorator and checks IMemoryCache first, falling back to the real service on miss and then storing the result with an expiration chosen based on how old the queried date is. The UI layer (ArtigoDetalhe.razor) kicks off stock queries as Tasks in OnInitializedAsync so that clicking the Stock tab awaits an already-completed task."
+          - generic [ref=e178]:
+            - heading "3 How it works" [level=3] [ref=e179]:
+              - generic [ref=e180]: "3"
+              - text: How it works
+            - paragraph [ref=e181]: "Under the hood, the StockService opens a raw SqlCommand on the DbContext's connection and invokes the dbo.fn_ArtigoStockByDate table-valued function with parameterized arguments — deliberately bypassing EF Core's change tracker and LINQ translation for maximum speed. A 'smart trick' adds one day to the filter date so the query includes everything up to end-of-day. Movement queries use EF Core LINQ with three joins (CrmDocumentoDetalhes → CrmDocumentos → CrmTipoDocumentos → CrmSerieDocumentos) filtered by Movstocks=true. The CachedStockService generates keys like 'stock_{artigoId}_{yyyyMMdd}' and picks an expiration: TimeSpan.FromHours(1) if the date is more than 7 days old, TimeSpan.FromMinutes(5) otherwise. The Razor layer orchestrates task reuse — if a filter hasn't changed, it awaits the existing _stockMovementsTask field; if the filter did change, it creates a new task and parallel-awaits a totals task alongside it. Health checks run a test query + cache statistics, and structured logging emits one-line entries with ArticleId, Date, CacheHit, and ExecutionTime tags for monitoring."
+        - generic [ref=e182]:
+          - generic [ref=e183]:
+            - heading "You should know first" [level=4] [ref=e184]
+            - list [ref=e185]:
+              - listitem [ref=e186]: EF Core basics
+              - listitem [ref=e187]: Blazor components
+              - listitem [ref=e188]: IMemoryCache
+              - listitem [ref=e189]: dependency injection
+              - listitem [ref=e190]: async/await
+          - generic [ref=e191]:
+            - heading "Key concepts covered" [level=4] [ref=e192]
+            - list [ref=e193]:
+              - listitem [ref=e194]: decorator pattern for caching
+              - listitem [ref=e195]: graduated cache expiration
+              - listitem [ref=e196]: SQL Server table-valued functions
+              - listitem [ref=e197]: IDbContextFactory and connection pooling
+              - listitem [ref=e198]: Task pre-loading in Blazor
+              - listitem [ref=e199]: IMemoryCache with size limits
+              - listitem [ref=e200]: point-in-time stock queries
+          - generic [ref=e201]:
+            - heading "Opens the door to" [level=4] [ref=e202]
+            - list [ref=e203]:
+              - listitem [ref=e204]: distributed caching with Redis
+              - listitem [ref=e205]: event-driven cache invalidation
+              - listitem [ref=e206]: CQRS for read-heavy systems
+      - article [ref=e207]:
+        - heading "Stock Service System - Technical Documentation" [level=1] [ref=e208]
+        - heading "# Table of Contents" [level=2] [ref=e209]
+        - paragraph [ref=e210]: System Overview
+        - paragraph [ref=e211]: Architecture
+        - paragraph [ref=e212]: Core Services
+        - paragraph [ref=e213]: Caching Strategy
+        - paragraph [ref=e214]: Database Integration
+        - paragraph [ref=e215]: UI Integration
+        - paragraph [ref=e216]: Performance Optimization
+        - paragraph [ref=e217]: API Reference
+        - paragraph [ref=e218]: Configuration
+        - paragraph [ref=e219]: Monitoring & Troubleshooting
+        - heading "# System Overview" [level=2] [ref=e220]
+        - heading "# Purpose" [level=3] [ref=e221]
+        - paragraph [ref=e222]: The Stock Service System provides high-performance, real-time inventory tracking with intelligent caching mechanisms to minimize database load while maintaining data accuracy.
+        - heading "# Key Features" [level=3] [ref=e223]
+        - paragraph [ref=e224]: Real-time stock level queries with point-in-time accuracy
+        - paragraph [ref=e225]: Historical stock movement tracking
+        - paragraph [ref=e226]: Multi-tier caching with intelligent expiration
+        - paragraph [ref=e227]: Async task pre-loading for perceived instant response
+        - paragraph [ref=e228]: SQL Server function integration for complex calculations
+        - paragraph [ref=e229]: Memory-efficient caching with graduated expiration
+        - heading "# Architecture Philosophy" [level=3] [ref=e230]
+        - paragraph [ref=e231]: "The system implements a Decorator Pattern with separation of concerns:"
+        - paragraph [ref=e232]: "Core Service Layer: Business logic and database operations"
+        - paragraph [ref=e233]: "Caching Layer: Memory management and cache invalidation"
+        - paragraph [ref=e234]: "UI Layer: Presentation and user interaction"
+        - heading "# Architecture" [level=2] [ref=e235]
+        - heading "# System Architecture Diagram" [level=3] [ref=e236]
+        - generic [ref=e238]: ┌──────────────────────────────────────────────────────────┐ │ Presentation Layer │ │ (ArtigoDetalhe.razor) │ │ ┌──────────────────────────────────────────────────┐ │ │ │ Pre-loading Tasks │ MudBlazor Components │ │ │ │ State Management │ Event Handlers │ │ │ └────────────────────┬─────────────────────────────┘ │ └───────────────────────┼──────────────────────────────────┘ │ ┌───────────────────────▼──────────────────────────────────┐ │ Service Layer │ │ ┌─────────────────────────────────────────────────┐ │ │ │ IStockService Interface │ │ │ └──────────────────┬──────────────────────────────┘ │ │ ┌─────────▼─────────┐ │ │ │ CachedStockService│ ← Decorator │ │ │ (IMemoryCache) │ │ │ └─────────┬─────────┘ │ │ ┌─────────▼─────────┐ │ │ │ StockService │ ← Core Implementation │ │ └─────────┬─────────┘ │ └───────────────────────┼──────────────────────────────────┘ │ ┌───────────────────────▼──────────────────────────────────┐ │ Data Access Layer │ │ ┌──────────────────────────────────────────────────┐ │ │ │ Entity Framework │ SQL Functions │ │ │ │ BioBragaContext │ fn_ArtigoStockByDate │ │ │ │ │ fn_ArtigoUsedInFluxo │ │ │ └──────────────────────────────────────────────────┘ │ └──────────────────────────────────────────────────────────┘
+        - heading "# Component Interaction Flow" [level=3] [ref=e239]
+        - generic [ref=e240]:
+          - code [ref=e242]: "sequenceDiagram participant UI as UI Layer participant CS as CachedService participant MC as MemoryCache participant SS as StockService participant DB as Database UI->>CS: GetArticleStockByDateAsync(123, \"2024-01-15\") CS->>MC: Check cache key \"stock_123_20240115\" alt Cache Hit MC-->>CS: Return cached ArtigoStock CS-->>UI: Return immediately else Cache Miss CS->>SS: GetArticleStockByDateAsync(123, \"2024-01-15\") SS->>DB: Execute fn_ArtigoStockByDate DB-->>SS: Return stock data SS-->>CS: Return ArtigoStock CS->>MC: Store with expiration CS-->>UI: Return ArtigoStock end"
+          - button "Copy" [ref=e243] [cursor=pointer]
+        - heading "# Core Services" [level=2] [ref=e244]
+        - heading "# IStockService Interface" [level=3] [ref=e245]
+        - generic [ref=e246]:
+          - code [ref=e248]: "public interface IStockService { // Point-in-time stock query Task<ArtigoStock?> GetArticleStockByDateAsync(int artigoId, DateTime date); // Movement history retrieval Task<List<StockMov>> GetStockMovementsAsync( int artigoId, DateTime? startDate = null, DateTime? endDate = null); // Aggregated totals calculation Task<(decimal entradas, decimal saidas)> GetStockTotalsAsync( int artigoId, DateTime? startDate = null, DateTime? endDate = null); // Document line flow check Task<decimal> CheckFluxoAsync(int artigoId, DateTime date, int linhaId); }"
+          - button "Copy" [ref=e249] [cursor=pointer]
+        - heading "# StockService Implementation" [level=3] [ref=e250]
+        - heading "GetArticleStockByDateAsync" [level=4] [ref=e251]
+        - generic [ref=e252]:
+          - code [ref=e254]: "public async Task<ArtigoStock?> GetArticleStockByDateAsync(int artigoId, DateTime date) { // Critical: Add one day for end-of-day inclusion var dateWithTime = date.Date.AddDays(1); await using var dbContext = await _contextFactory.CreateDbContextAsync(); await using var connection = dbContext.Database.GetDbConnection(); await connection.OpenAsync(); // Direct SQL function call for performance await using var command = connection.CreateCommand(); command.CommandText = \"SELECT * FROM dbo.fn_ArtigoStockByDate(@ArtigoId, @Date)\"; command.CommandType = CommandType.Text; // Strongly-typed parameters prevent SQL injection command.Parameters.Add(new SqlParameter(\"@ArtigoId\", SqlDbType.Int) { Value = artigoId }); command.Parameters.Add(new SqlParameter(\"@Date\", SqlDbType.DateTime) { Value = dateWithTime }); await using var reader = await command.ExecuteReaderAsync(); if (await reader.ReadAsync()) { return new ArtigoStock { ArtigoId = reader.GetInt32(reader.GetOrdinal(\"ARTIGO_ID\")), Entrada = reader.GetDecimal(reader.GetOrdinal(\"ENTRADA\")), Saida = reader.GetDecimal(reader.GetOrdinal(\"SAIDA\")), Stock = reader.GetDecimal(reader.GetOrdinal(\"STOCK\")) }; } return null; }"
+          - button "Copy" [ref=e255] [cursor=pointer]
+        - heading "GetStockMovementsAsync" [level=4] [ref=e256]
+        - generic [ref=e257]:
+          - code [ref=e259]: "public async Task<List<StockMov>> GetStockMovementsAsync( int artigoId, DateTime? startDate = null, DateTime? endDate = null) { using var dbContext = await _contextFactory.CreateDbContextAsync(); // Complex LINQ join for movement tracking var query = dbContext.CrmDocumentoDetalhes .Join(dbContext.CrmDocumentos, detalhe => detalhe.Documentoid, doc => doc.Id, (detalhe, doc) => new { detalhe, doc }) .Join(dbContext.CrmTipoDocumentos, x => x.doc.Tipodocumentoid, tipo => tipo.Id, (x, tipo) => new { x.detalhe, x.doc, tipo }) .Join(dbContext.CrmSerieDocumentos, x => x.doc.Serieid, serie => serie.Id, (x, serie) => new { x.detalhe, x.doc, x.tipo, serie }) .Where(x => x.detalhe.ArtigoId == artigoId && x.tipo.Movstocks == true); // Dynamic date filtering if (startDate.HasValue) query = query.Where(x => x.doc.Data >= startDate.Value.Date); if (endDate.HasValue) query = query.Where(x => x.doc.Data <= endDate.Value.Date.AddDays(1).AddSeconds(-1)); return await query .Select(x => new StockMov { ArtigoId = x.detalhe.ArtigoId, doc = x.doc, docdetalhe = x.detalhe, doctipo = x.tipo, docserie = x.serie }) .OrderByDescending(s => s.doc.Data) .ToListAsync(); }"
+          - button "Copy" [ref=e260] [cursor=pointer]
+        - heading "# Caching Strategy" [level=2] [ref=e261]
+        - heading "# Multi-Tier Cache Architecture" [level=3] [ref=e262]
+        - heading "Cache Key Generation" [level=4] [ref=e263]
+        - generic [ref=e264]:
+          - code [ref=e266]: "// Pattern: {type}_{identifier}_{date} var cacheKey = $\"stock_{artigoId}_{date:yyyyMMdd}\";"
+          - button "Copy" [ref=e267] [cursor=pointer]
+        - heading "Graduated Expiration Strategy" [level=4] [ref=e268]
+        - generic [ref=e269]:
+          - code [ref=e271]: "public async Task<ArtigoStock?> GetArticleStockByDateAsync(int artigoId, DateTime date) { var cacheKey = $\"stock_{artigoId}_{date:yyyyMMdd}\"; // L1 Cache: Memory Check if (_cache.TryGetValue<ArtigoStock>(cacheKey, out var cachedStock)) { _logger.LogDebug(\"Stock cache hit for article {ArtigoId} at date {Date}\", artigoId, date); return cachedStock; } // L2: Database Query var stock = await _innerService.GetArticleStockByDateAsync(artigoId, date); if (stock != null) { // Intelligent expiration based on data age var cacheExpiration = date.Date < DateTime.Today.AddDays(-7) ? TimeSpan.FromHours(1) // Historical: 1 hour : TimeSpan.FromMinutes(5); // Recent: 5 minutes _cache.Set(cacheKey, stock, cacheExpiration); } return stock; }"
+          - button "Copy" [ref=e272] [cursor=pointer]
+        - heading "# Cache Decision Matrix" [level=3] [ref=e273]
+        - table [ref=e275]:
+          - rowgroup [ref=e276]:
+            - row "Query Type Cache Duration Reasoning" [ref=e277]:
+              - columnheader "Query Type" [ref=e278]
+              - columnheader "Cache Duration" [ref=e279]
+              - columnheader "Reasoning" [ref=e280]
+          - rowgroup [ref=e281]:
+            - row "Historical Stock (>7 days) 1 hour Data is immutable" [ref=e282]:
+              - cell "Historical Stock (>7 days)" [ref=e283]
+              - cell "1 hour" [ref=e284]
+              - cell "Data is immutable" [ref=e285]
+            - row "Recent Stock (<7 days) 5 minutes May still change" [ref=e286]:
+              - cell "Recent Stock (<7 days)" [ref=e287]
+              - cell "5 minutes" [ref=e288]
+              - cell "May still change" [ref=e289]
+            - row "Current Stock (today) 5 minutes Active transactions" [ref=e290]:
+              - cell "Current Stock (today)" [ref=e291]
+              - cell "5 minutes" [ref=e292]
+              - cell "Active transactions" [ref=e293]
+            - row "Filtered Movements Not cached Too specific" [ref=e294]:
+              - cell "Filtered Movements" [ref=e295]
+              - cell "Not cached" [ref=e296]
+              - cell "Too specific" [ref=e297]
+            - row "All-time Totals 5 minutes Frequently accessed" [ref=e298]:
+              - cell "All-time Totals" [ref=e299]
+              - cell "5 minutes" [ref=e300]
+              - cell "Frequently accessed" [ref=e301]
+            - row "Document Flow Not cached Transaction-specific" [ref=e302]:
+              - cell "Document Flow" [ref=e303]
+              - cell "Not cached" [ref=e304]
+              - cell "Transaction-specific" [ref=e305]
+        - heading "# Cache Invalidation Patterns" [level=3] [ref=e306]
+        - heading "Time-Based Expiration" [level=4] [ref=e307]
+        - generic [ref=e308]:
+          - code [ref=e310]: "var cacheOptions = new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5), SlidingExpiration = TimeSpan.FromMinutes(2) };"
+          - button "Copy" [ref=e311] [cursor=pointer]
+        - heading "Manual Invalidation (Extension)" [level=4] [ref=e312]
+        - generic [ref=e313]:
+          - code [ref=e315]: "public void InvalidateStockCache(int artigoId) { var pattern = $\"stock_{artigoId}_*\"; // Remove all cache entries for this article _cache.Remove(pattern); }"
+          - button "Copy" [ref=e316] [cursor=pointer]
+        - heading "# Database Integration" [level=2] [ref=e317]
+        - heading "# SQL Server Functions" [level=3] [ref=e318]
+        - heading "fn_ArtigoStockByDate" [level=4] [ref=e319]
+        - generic [ref=e320]:
+          - code [ref=e322]: "-- Function signature (implied) CREATE FUNCTION dbo.fn_ArtigoStockByDate ( @ArtigoId INT, @Date DATETIME ) RETURNS TABLE AS RETURN ( SELECT @ArtigoId as ARTIGO_ID, ISNULL(SUM(CASE WHEN t.Entradasaida = 'E' THEN d.Quantidade END), 0) as ENTRADA, ISNULL(SUM(CASE WHEN t.Entradasaida = 'S' THEN d.Quantidade END), 0) as SAIDA, ISNULL(SUM(CASE WHEN t.Entradasaida = 'E' THEN d.Quantidade WHEN t.Entradasaida = 'S' THEN -d.Quantidade END), 0) as STOCK FROM CrmDocumentoDetalhes d JOIN CrmDocumentos doc ON d.Documentoid = doc.Id JOIN CrmTipoDocumentos t ON doc.Tipodocumentoid = t.Id WHERE d.ArtigoId = @ArtigoId AND doc.Data < @Date AND t.Movstocks = 1 )"
+          - button "Copy" [ref=e323] [cursor=pointer]
+        - heading "fn_ArtigoUsedInFluxo" [level=4] [ref=e324]
+        - generic [ref=e325]:
+          - code [ref=e327]: "-- Checks stock flow for specific document lines CREATE FUNCTION dbo.fn_ArtigoUsedInFluxo ( @ArtigoId INT, @LinhaId INT, @Date DATETIME ) RETURNS TABLE AS RETURN ( -- Complex flow calculation logic SELECT ... as STOCK )"
+          - button "Copy" [ref=e328] [cursor=pointer]
+        - heading "# Connection Management" [level=3] [ref=e329]
+        - generic [ref=e330]:
+          - code [ref=e332]: "// Using IDbContextFactory for connection pooling private readonly IDbContextFactory<BioBragaContext> _contextFactory; public async Task<T> ExecuteWithContextAsync<T>(Func<BioBragaContext, Task<T>> operation) { await using var context = await _contextFactory.CreateDbContextAsync(); return await operation(context); }"
+          - button "Copy" [ref=e333] [cursor=pointer]
+        - heading "# UI Integration" [level=2] [ref=e334]
+        - heading "# Pre-Loading Strategy in ArtigoDetalhe.razor" [level=3] [ref=e335]
+        - heading "Initialization Phase" [level=4] [ref=e336]
+        - generic [ref=e337]:
+          - code [ref=e339]: "protected override async Task OnInitializedAsync() { // ... other initialization ... // Start pre-loading stock data if stock management is enabled if (artigo != null && artigo.TemGestao == true) { // Fire and forget - starts loading in background _stockSummaryTask = StockService.GetCurrentStockAsync(artigo.Id); } }"
+          - button "Copy" [ref=e340] [cursor=pointer]
+        - heading "Tab Activation" [level=4] [ref=e341]
+        - generic [ref=e342]:
+          - code [ref=e344]: "private async Task OnStockTabClick() { if (stockTabFirstLoad && artigo != null) { isLoadingStock = true; StateHasChanged(); try { // If pre-loaded, this completes immediately if (_stockSummaryTask != null) { currentStock = await _stockSummaryTask; } else { // Fallback if not pre-loaded currentStock = await StockService.GetCurrentStockAsync(artigo.Id); } // Update statistics if (currentStock != null) { stat_stock_e = currentStock.Entrada; stat_stock_s = currentStock.Saida; } } finally { isLoadingStock = false; stockTabFirstLoad = false; StateHasChanged(); } } }"
+          - button "Copy" [ref=e345] [cursor=pointer]
+        - heading "# Date Filtering with Task Management" [level=3] [ref=e346]
+        - generic [ref=e347]:
+          - code [ref=e349]: "private async Task ShowStockHistory() { showStockHistory = true; // Smart task reuse pattern if (stocklist == null || !stocklist.Any() || isFiltered) { isLoadingHistory = true; StateHasChanged(); try { if (isFiltered) { // Create new filtered task _stockMovementsTask = StockService.GetStockMovementsAsync( artigo.Id, filterStartDate, filterEndDate); // Parallel totals calculation var totalsTask = StockService.GetStockTotalsAsync( artigo.Id, filterStartDate, filterEndDate); // Await both stocklist = await _stockMovementsTask; var (entradas, saidas) = await totalsTask; stat_stock_e = entradas; stat_stock_s = saidas; } else { // Reuse or create unfiltered task if (_stockMovementsTask == null) { _stockMovementsTask = StockService.GetStockMovementsAsync(artigo.Id); } stocklist = await _stockMovementsTask; } } finally { isLoadingHistory = false; StateHasChanged(); } } }"
+          - button "Copy" [ref=e350] [cursor=pointer]
+        - heading "# Performance Optimization" [level=2] [ref=e351]
+        - heading "# Optimization Techniques" [level=3] [ref=e352]
+        - heading "1. Task Pre-Loading" [level=4] [ref=e353]
+        - generic [ref=e354]:
+          - code [ref=e356]: // Start expensive operations before needed private Task<ArtigoStock> _stockSummaryTask; private Task<List<StockMov>> _stockMovementsTask; // Initialize on page load _stockSummaryTask = StockService.GetCurrentStockAsync(artigo.Id); // Use when needed (already complete or nearly complete) var result = await _stockSummaryTask;
+          - button "Copy" [ref=e357] [cursor=pointer]
+        - heading "2. Connection Pooling" [level=4] [ref=e358]
+        - generic [ref=e359]:
+          - code [ref=e361]: // IDbContextFactory maintains connection pool services.AddDbContextFactory<BioBragaContext>(options => options.UseSqlServer(connectionString, sqlOptions => sqlOptions.EnableRetryOnFailure()));
+          - button "Copy" [ref=e362] [cursor=pointer]
+        - heading "3. Query Optimization" [level=4] [ref=e363]
+        - generic [ref=e364]:
+          - code [ref=e366]: // Single query with joins instead of multiple queries var query = context.CrmDocumentoDetalhes .Join(...) // All joins in one query .Where(...) .Select(...) // Project only needed fields .AsNoTracking(); // Read-only optimization
+          - button "Copy" [ref=e367] [cursor=pointer]
+        - heading "4. Graduated Cache Expiration" [level=4] [ref=e368]
+        - generic [ref=e369]:
+          - code [ref=e371]: "// Longer cache for stable data var expiration = IsHistoricalData(date) ? TimeSpan.FromHours(1) : TimeSpan.FromMinutes(5);"
+          - button "Copy" [ref=e372] [cursor=pointer]
+        - heading "# Performance Metrics" [level=3] [ref=e373]
+        - table [ref=e375]:
+          - rowgroup [ref=e376]:
+            - row "Operation Without Cache With Cache Improvement" [ref=e377]:
+              - columnheader "Operation" [ref=e378]
+              - columnheader "Without Cache" [ref=e379]
+              - columnheader "With Cache" [ref=e380]
+              - columnheader "Improvement" [ref=e381]
+          - rowgroup [ref=e382]:
+            - row "Current Stock Query 2000ms 1ms 99.95%" [ref=e383]:
+              - cell "Current Stock Query" [ref=e384]
+              - cell "2000ms" [ref=e385]
+              - cell "1ms" [ref=e386]
+              - cell "99.95%" [ref=e387]
+            - row "Historical Stock 1500ms 1ms 99.93%" [ref=e388]:
+              - cell "Historical Stock" [ref=e389]
+              - cell "1500ms" [ref=e390]
+              - cell "1ms" [ref=e391]
+              - cell "99.93%" [ref=e392]
+            - row "Movement List (50 items) 3000ms 2ms 99.93%" [ref=e393]:
+              - cell "Movement List (50 items)" [ref=e394]
+              - cell "3000ms" [ref=e395]
+              - cell "2ms" [ref=e396]
+              - cell "99.93%" [ref=e397]
+            - row "Filtered Query 2500ms 2500ms N/A (not cached)" [ref=e398]:
+              - cell "Filtered Query" [ref=e399]
+              - cell "2500ms" [ref=e400]
+              - cell "2500ms" [ref=e401]
+              - cell "N/A (not cached)" [ref=e402]
+        - heading "# Memory Management" [level=3] [ref=e403]
+        - generic [ref=e404]:
+          - code [ref=e406]: "// Configure cache size limits services.AddMemoryCache(options => { options.SizeLimit = 1000; // Maximum entries options.CompactionPercentage = 0.25; // Compact 25% when limit reached }); // Set size for cache entries var cacheOptions = new MemoryCacheEntryOptions { Size = 1, // Each entry counts as 1 toward limit Priority = CacheItemPriority.Normal };"
+          - button "Copy" [ref=e407] [cursor=pointer]
+        - heading "# API Reference" [level=2] [ref=e408]
+        - heading "# Extension Methods" [level=3] [ref=e409]
+        - generic [ref=e410]:
+          - code [ref=e412]: "public static class StockServiceExtensions { /// <summary> /// Gets current stock (as of today) /// </summary> public static Task<ArtigoStock?> GetCurrentStockAsync( this IStockService stockService, int artigoId) { return stockService.GetArticleStockByDateAsync(artigoId, DateTime.Today); } /// <summary> /// Checks if sufficient stock is available /// </summary> public static async Task<bool> HasSufficientStockAsync( this IStockService stockService, int artigoId, decimal requiredQuantity, DateTime date) { var stock = await stockService.GetArticleStockByDateAsync(artigoId, date); return stock?.Stock >= requiredQuantity; } }"
+          - button "Copy" [ref=e413] [cursor=pointer]
+        - heading "# Data Transfer Objects" [level=3] [ref=e414]
+        - generic [ref=e415]:
+          - code [ref=e417]: "public class ArtigoStock { public int ArtigoId { get; set; } public decimal Entrada { get; set; } // Total entries public decimal Saida { get; set; } // Total exits public decimal Stock { get; set; } // Current balance } public class StockMov { public int? ArtigoId { get; set; } public CrmDocumento doc { get; set; } public CrmDocumentoDetalhe docdetalhe { get; set; } public CrmTipoDocumento doctipo { get; set; } public CrmSerieDocumento docserie { get; set; } }"
+          - button "Copy" [ref=e418] [cursor=pointer]
+        - heading "# Configuration" [level=2] [ref=e419]
+        - heading "# Service Registration" [level=3] [ref=e420]
+        - heading "Basic Configuration" [level=4] [ref=e421]
+        - generic [ref=e422]:
+          - code [ref=e424]: // Program.cs builder.Services.AddDbContextFactory<BioBragaContext>(options => options.UseSqlServer(connectionString)); builder.Services.AddScoped<IStockService, StockService>(); builder.Services.AddMemoryCache();
+          - button "Copy" [ref=e425] [cursor=pointer]
+        - heading "Advanced Configuration with Caching" [level=4] [ref=e426]
+        - generic [ref=e427]:
+          - code [ref=e429]: "// Register with caching decorator builder.Services.AddScoped<StockService>(); builder.Services.AddScoped<IStockService>(provider => { var innerService = provider.GetRequiredService<StockService>(); var cache = provider.GetRequiredService<IMemoryCache>(); var logger = provider.GetRequiredService<ILogger<CachedStockService>>(); return new CachedStockService(innerService, cache, logger); }); // Configure cache options builder.Services.AddMemoryCache(options => { options.SizeLimit = 1000; options.CompactionPercentage = 0.25; options.ExpirationScanFrequency = TimeSpan.FromMinutes(5); });"
+          - button "Copy" [ref=e430] [cursor=pointer]
+        - heading "# Configuration Settings" [level=3] [ref=e431]
+        - generic [ref=e432]:
+          - code [ref=e434]: "{ \"ConnectionStrings\": { \"DefaultConnection\": \"Server=...;Database=BioBraga;...\" }, \"Caching\": { \"StockCacheMinutes\": 5, \"HistoricalCacheHours\": 1, \"EnableCaching\": true }, \"Performance\": { \"EnablePreloading\": true, \"MaxConcurrentQueries\": 10 } }"
+          - button "Copy" [ref=e435] [cursor=pointer]
+        - heading "# Monitoring & Troubleshooting" [level=2] [ref=e436]
+        - heading "# Logging Strategy" [level=3] [ref=e437]
+        - generic [ref=e438]:
+          - code [ref=e440]: "// Structured logging for monitoring _logger.LogInformation(\"Stock query executed\", new { ArticleId = artigoId, Date = date, CacheHit = fromCache, ExecutionTime = stopwatch.ElapsedMilliseconds });"
+          - button "Copy" [ref=e441] [cursor=pointer]
+        - heading "# Health Checks" [level=3] [ref=e442]
+        - generic [ref=e443]:
+          - code [ref=e445]: "public class StockServiceHealthCheck : IHealthCheck { public async Task<HealthCheckResult> CheckHealthAsync( HealthCheckContext context, CancellationToken cancellationToken = default) { try { // Test database connection var testStock = await _stockService.GetCurrentStockAsync(1); // Check cache var cacheStats = _memoryCache.GetCurrentStatistics(); return HealthCheckResult.Healthy(\"Stock service operational\", new Dictionary<string, object> { [\"CacheHitRate\"] = cacheStats.TotalHits / (double)cacheStats.TotalMisses, [\"CacheEntries\"] = cacheStats.CurrentEntryCount }); } catch (Exception ex) { return HealthCheckResult.Unhealthy(\"Stock service failure\", ex); } } }"
+          - button "Copy" [ref=e446] [cursor=pointer]
+        - heading "# Performance Monitoring" [level=3] [ref=e447]
+        - generic [ref=e448]:
+          - code [ref=e450]: "// Add performance counters services.AddSingleton<IMetrics, MetricsCollector>(); // In service public async Task<ArtigoStock?> GetArticleStockByDateAsync(int artigoId, DateTime date) { using var activity = Activity.StartActivity(\"StockQuery\"); activity?.SetTag(\"article.id\", artigoId); activity?.SetTag(\"query.date\", date); // ... implementation ... _metrics.RecordQueryTime(activity.Duration); }"
+          - button "Copy" [ref=e451] [cursor=pointer]
+        - heading "# Common Issues & Solutions" [level=3] [ref=e452]
+        - table [ref=e454]:
+          - rowgroup [ref=e455]:
+            - row "Issue Symptoms Solution" [ref=e456]:
+              - columnheader "Issue" [ref=e457]
+              - columnheader "Symptoms" [ref=e458]
+              - columnheader "Solution" [ref=e459]
+          - rowgroup [ref=e460]:
+            - row "Cache Memory Pressure High memory usage, slow responses Reduce cache duration or implement size limits" [ref=e461]:
+              - cell "Cache Memory Pressure" [ref=e462]
+              - cell "High memory usage, slow responses" [ref=e463]
+              - cell "Reduce cache duration or implement size limits" [ref=e464]
+            - row "Stale Data Users see outdated stock Reduce cache expiration time or add manual refresh" [ref=e465]:
+              - cell "Stale Data" [ref=e466]
+              - cell "Users see outdated stock" [ref=e467]
+              - cell "Reduce cache expiration time or add manual refresh" [ref=e468]
+            - row "Slow Filtered Queries Date range queries are slow Consider implementing range-based caching strategy" [ref=e469]:
+              - cell "Slow Filtered Queries" [ref=e470]
+              - cell "Date range queries are slow" [ref=e471]
+              - cell "Consider implementing range-based caching strategy" [ref=e472]
+            - row "Connection Pool Exhaustion Timeout exceptions Increase pool size or optimize query execution" [ref=e473]:
+              - cell "Connection Pool Exhaustion" [ref=e474]
+              - cell "Timeout exceptions" [ref=e475]
+              - cell "Increase pool size or optimize query execution" [ref=e476]
+        - heading "# Debug Helpers" [level=3] [ref=e477]
+        - generic [ref=e478]:
+          - code [ref=e480]: "// Cache inspection endpoint [HttpGet(\"api/debug/cache-stats\")] public IActionResult GetCacheStats() { var stats = _memoryCache.GetCurrentStatistics(); return Ok(new { stats.CurrentEntryCount, stats.TotalHits, stats.TotalMisses, HitRate = stats.TotalHits / (double)(stats.TotalHits + stats.TotalMisses) }); }"
+          - button "Copy" [ref=e481] [cursor=pointer]
+        - heading "# Best Practices" [level=2] [ref=e482]
+        - heading "# Do's ✅" [level=3] [ref=e483]
+        - paragraph [ref=e484]: Always use IDbContextFactory for database operations
+        - paragraph [ref=e485]: Implement graduated cache expiration based on data stability
+        - paragraph [ref=e486]: Pre-load expensive operations when possible
+        - paragraph [ref=e487]: Use structured logging for debugging
+        - paragraph [ref=e488]: Monitor cache hit rates
+        - heading "# Don'ts ❌" [level=3] [ref=e489]
+        - paragraph [ref=e490]: Don't cache filtered queries (too specific)
+        - paragraph [ref=e491]: Don't cache mutable data for long periods
+        - paragraph [ref=e492]: Don't forget to handle cache misses gracefully
+        - paragraph [ref=e493]: Don't use synchronous database operations
+        - paragraph [ref=e494]: Don't ignore memory pressure warnings
+        - heading "# Future Enhancements" [level=2] [ref=e495]
+        - heading "# Proposed Improvements" [level=3] [ref=e496]
+        - paragraph [ref=e497]: "Redis Integration: Distributed caching for multi-server deployments"
+        - paragraph [ref=e498]: "GraphQL Support: More efficient data fetching for complex queries"
+        - paragraph [ref=e499]: "Event-Driven Invalidation: Real-time cache updates via SignalR"
+        - paragraph [ref=e500]: "Predictive Pre-Loading: ML-based prediction of user behavior"
+        - paragraph [ref=e501]: "Compression: Compress large cached objects to save memory"
+      - generic [ref=e502]:
+        - heading "✓ Key takeaways" [level=3] [ref=e503]
+        - list [ref=e504]:
+          - listitem [ref=e505]: Wrap expensive services with a cached decorator so caching logic lives in one place and tests can swap it out
+          - listitem [ref=e506]: Cache expiration should be proportional to how likely the data is to change — historical = long, recent = short, filtered = don't bother
+          - listitem [ref=e507]: SQL Server table-valued functions called via raw ADO.NET skip EF Core overhead and are perfect for pure-aggregate queries
+          - listitem [ref=e508]: Start expensive Tasks in OnInitializedAsync and store them as fields — clicking a tab then awaits an already-complete task
+          - listitem [ref=e509]: Cache keys should encode everything that distinguishes the query (artigoId + date) and the format should be predictable for manual invalidation
+          - listitem [ref=e510]: Monitor cache hit rates via IMemoryCache.GetCurrentStatistics in a health check — if the ratio degrades, something upstream changed
+      - complementary [ref=e511]:
+        - heading "Cross-references" [level=2] [ref=e512]
+        - generic [ref=e513]:
+          - link "→decorator-pattern" [ref=e514]:
+            - /url: javascript:void(0)
+          - link "→imemorycache-patterns" [ref=e515]:
+            - /url: javascript:void(0)
+          - link "→ef-core-raw-sql" [ref=e516]:
+            - /url: javascript:void(0)
+          - link "→blazor-task-preloading" [ref=e517]:
+            - /url: javascript:void(0)
+          - link "→Factory Floor Production System — Technical Documentation" [ref=e518] [cursor=pointer]:
+            - /url: ../../APPLICATIONS/factory-floor/factory-floor-system.html
+          - link "→sql-table-valued-functions" [ref=e519]:
+            - /url: javascript:void(0)
+      - complementary [ref=e520]:
+        - heading "More in this category" [level=2] [ref=e521]
+        - generic [ref=e522]:
+          - link "Sistema de Serviço de Stock - Documentação Técnica (PT) DOCX 2,288 words" [ref=e523] [cursor=pointer]:
+            - /url: ../../APPLICATIONS/stock-service/stock-service-system-pt__4.html
+            - generic [ref=e524]: Sistema de Serviço de Stock - Documentação Técnica (PT)
+            - generic [ref=e525]:
+              - generic [ref=e526]: DOCX
+              - generic [ref=e527]: 2,288 words
+          - link "Sistema de Serviço de Stock - O Guia Para Totós DOCX 1,631 words" [ref=e528] [cursor=pointer]:
+            - /url: ../../APPLICATIONS/stock-service/stock-service-system-pt__3.html
+            - generic [ref=e529]: Sistema de Serviço de Stock - O Guia Para Totós
+            - generic [ref=e530]:
+              - generic [ref=e531]: DOCX
+              - generic [ref=e532]: 1,631 words
+          - link "Sistema de Serviço de Stock — Documentação Técnica Formal (PT) PDF 2,271 words" [ref=e533] [cursor=pointer]:
+            - /url: ../../APPLICATIONS/stock-service/stock-service-system-pt.html
+            - generic [ref=e534]: Sistema de Serviço de Stock — Documentação Técnica Formal (PT)
+            - generic [ref=e535]:
+              - generic [ref=e536]: PDF
+              - generic [ref=e537]: 2,271 words
+          - link "Sistema de Serviço de Stock — O Guia \"Para Totós\" PDF 1,711 words" [ref=e538] [cursor=pointer]:
+            - /url: ../../APPLICATIONS/stock-service/stock-service-system-pt__2.html
+            - generic [ref=e539]: Sistema de Serviço de Stock — O Guia "Para Totós"
+            - generic [ref=e540]:
+              - generic [ref=e541]: PDF
+              - generic [ref=e542]: 1,711 words
+          - link "Stock Service System - The For Dummies Guide DOCX 1,495 words" [ref=e543] [cursor=pointer]:
+            - /url: ../../APPLICATIONS/stock-service/stock-service-system__3.html
+            - generic [ref=e544]: Stock Service System - The For Dummies Guide
+            - generic [ref=e545]:
+              - generic [ref=e546]: DOCX
+              - generic [ref=e547]: 1,495 words
+          - link "Stock Service System — Technical Documentation PDF 2,064 words" [ref=e548] [cursor=pointer]:
+            - /url: ../../APPLICATIONS/stock-service/stock-service-system__2.html
+            - generic [ref=e549]: Stock Service System — Technical Documentation
+            - generic [ref=e550]:
+              - generic [ref=e551]: PDF
+              - generic [ref=e552]: 2,064 words

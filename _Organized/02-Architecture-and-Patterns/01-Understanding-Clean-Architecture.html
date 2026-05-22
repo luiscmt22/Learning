@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>01-Understanding-Clean-Architecture</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #16223c;
+  --border: #243352;
+  --text: #e6ecf5;
+  --text-dim: #9aa7c0;
+  --accent: #6aa6ff;
+  --accent-2: #b06aff;
+  --code-bg: #0a1120;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px; margin-bottom: 28px;
+}
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+header.doc-head .meta a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+}
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 10px 16px; margin: 12px 0;
+  color: var(--text-dim);
+  border-radius: 0 6px 6px 0;
+}
+.diagram-box {
+  background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto;
+}
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.img-ref { color: var(--text-dim); font-style: italic; }
+.empty-note { color: var(--text-dim); font-style: italic; padding: 12px; background: var(--surface); border-radius: 6px; border: 1px dashed var(--border); }
+.pdf-page { margin: 22px 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.pdf-page h3 { margin: 0 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.pdf-page pre { background: var(--code-bg); }
+.dup-banner {
+  background: rgba(251, 191, 36, 0.10);
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: var(--warn);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.dup-banner strong { color: var(--warn); }
+.dup-banner a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 02-Architecture-and-Patterns</div>
+  <h1>01-Understanding-Clean-Architecture</h1>
+  <div class="meta">Source: <code>Education/01-Understanding-Clean-Architecture.md</code> &middot; <a href="01-Understanding-Clean-Architecture.md">download original</a> &middot; <a href="../00-Index.html">&larr; back to index</a></div>
+</header>
+<h1 id="understanding-clean-architecture">Understanding Clean Architecture</h1>
+<h2 id="what-is-clean-architecture">What is Clean Architecture?</h2>
+<p>Clean Architecture separates your application into layers, where each layer has a specific responsibility. The key principle is that <strong>dependencies point inward</strong> - outer layers depend on inner layers, never the reverse.</p>
+<h2 id="hrmodule-architecture-layers">HRModule Architecture Layers</h2>
+<div class="diagram-box"><pre>┌─────────────────────────────────────────────────────────┐
+│                    UI LAYER                              │
+│  (Razor Pages, Components)                               │
+│  - Displays data                                         │
+│  - Handles user input                                    │
+│  - Calls services                                        │
+│  - NO business logic                                     │
+└────────────────────────┬────────────────────────────────┘
+                         │ depends on
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│                  SERVICE LAYER                           │
+│  (IEmployeeService, IAuthorizationService, etc.)         │
+│  - ALL business logic                                    │
+│  - Validation                                            │
+│  - Orchestration                                         │
+│  - Returns ServiceResult&lt;T&gt;                              │
+└────────────────────────┬────────────────────────────────┘
+                         │ depends on
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│                   DATA LAYER                             │
+│  (DbContext, Models)                                     │
+│  - Database access                                       │
+│  - Entity definitions                                    │
+│  - EF Core configurations                                │
+└─────────────────────────────────────────────────────────┘</pre></div>
+<h2 id="the-golden-rules">The Golden Rules</h2>
+<h3 id="1-ui-layer-display-only">1. UI Layer: Display Only</h3>
+<pre><code class="lang-razor">&lt;!-- <span class="type">GOOD</span>: <span class="type">UI</span> just displays <span class="kw">and</span> calls service --&gt;
+@inject <span class="type">IEmployeeService</span> <span class="type">EmployeeService</span>
+
+&lt;<span class="type">MudText</span>&gt;@employee.<span class="type">Nome</span>&lt;/<span class="type">MudText</span>&gt;
+&lt;<span class="type">MudButton</span> <span class="type">OnClick</span>=<span class="str">&quot;SaveEmployee&quot;</span>&gt;<span class="type">Guardar</span>&lt;/<span class="type">MudButton</span>&gt;
+
+@code {
+    <span class="kw">private</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">SaveEmployee</span>()
+    {
+        <span class="kw">var</span> result = <span class="kw">await</span> <span class="type">EmployeeService</span>.<span class="type">UpdateEmployeeAsync</span>(employee);
+        <span class="kw">if</span> (!result.<span class="type">Success</span>) <span class="type">Snackbar</span>.<span class="type">Add</span>(result.<span class="type">Message</span>, <span class="type">Severity</span>.<span class="type">Error</span>);
+    }
+}</code></pre>
+<pre><code class="lang-razor">&lt;!-- <span class="type">BAD</span>: <span class="type">Business</span> logic <span class="kw">in</span> <span class="type">UI</span> --&gt;
+@code {
+    <span class="kw">private</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">SaveEmployee</span>()
+    {
+        <span class="cmt">// DON&#x27;T DO THIS - validation belongs in service</span>
+        <span class="kw">if</span> (<span class="kw">string</span>.<span class="type">IsNullOrEmpty</span>(employee.<span class="type">Nome</span>))
+        {
+            <span class="type">Snackbar</span>.<span class="type">Add</span>(<span class="str">&quot;Nome obrigatorio&quot;</span>, <span class="type">Severity</span>.<span class="type">Error</span>);
+            <span class="kw">return</span>;
+        }
+
+        <span class="cmt">// DON&#x27;T DO THIS - DB access belongs in service</span>
+        <span class="kw">await</span> _context.<span class="type">Funcionarios</span>.<span class="type">AddAsync</span>(employee);
+        <span class="kw">await</span> _context.<span class="type">SaveChangesAsync</span>();
+    }
+}</code></pre>
+<h3 id="2-service-layer-all-business-logic">2. Service Layer: All Business Logic</h3>
+<pre><code class="lang-csharp"><span class="cmt">// GOOD: Business logic in service</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">EmployeeService</span> : <span class="type">IEmployeeService</span>
+{
+    <span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="type">ServiceResult</span>&lt;<span class="type">CrmFuncionario</span>&gt;&gt; <span class="type">UpdateEmployeeAsync</span>(
+        <span class="type">EmpresaUserSession</span> session,
+        <span class="type">CrmFuncionario</span> employee)
+    {
+        <span class="cmt">// Validation</span>
+        <span class="kw">if</span> (<span class="kw">string</span>.<span class="type">IsNullOrEmpty</span>(employee.<span class="type">Nome</span>))
+            <span class="kw">return</span> <span class="type">ServiceResult</span>&lt;<span class="type">CrmFuncionario</span>&gt;.<span class="type">Failure</span>(<span class="str">&quot;Nome obrigatorio&quot;</span>);
+
+        <span class="cmt">// Business rules</span>
+        <span class="kw">if</span> (employee.<span class="type">DataNascimento</span> &gt; <span class="type">DateTime</span>.<span class="type">Today</span>)
+            <span class="kw">return</span> <span class="type">ServiceResult</span>&lt;<span class="type">CrmFuncionario</span>&gt;.<span class="type">Failure</span>(<span class="str">&quot;Data invalida&quot;</span>);
+
+        <span class="cmt">// Database operation</span>
+        <span class="kw">await</span> <span class="kw">using</span> <span class="kw">var</span> context = <span class="kw">await</span> _contextFactory.<span class="type">CreateDbContextAsync</span>(session.<span class="type">CompanyDatabase</span>);
+        context.<span class="type">Funcionarios</span>.<span class="type">Update</span>(employee);
+        <span class="kw">await</span> context.<span class="type">SaveChangesAsync</span>();
+
+        <span class="cmt">// Audit</span>
+        <span class="kw">await</span> _auditService.<span class="type">LogAsync</span>(session.<span class="type">User</span>.<span class="type">Id</span>, $<span class="str">&quot;Updated employee {employee.Id}&quot;</span>);
+
+        <span class="kw">return</span> <span class="type">ServiceResult</span>&lt;<span class="type">CrmFuncionario</span>&gt;.<span class="type">Success</span>(employee);
+    }
+}</code></pre>
+<h3 id="3-serviceresult-pattern">3. ServiceResult Pattern</h3>
+<p>Always return results with success/failure status:</p>
+<pre><code class="lang-csharp"><span class="kw">public</span> <span class="kw">class</span> <span class="type">ServiceResult</span>&lt;T&gt;
+{
+    <span class="kw">public</span> <span class="kw">bool</span> <span class="type">Success</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public</span> <span class="kw">string</span> <span class="type">Message</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public</span> T? <span class="type">Data</span> { <span class="kw">get</span>; <span class="kw">set</span>; }
+
+    <span class="kw">public</span> <span class="kw">static</span> <span class="type">ServiceResult</span>&lt;T&gt; <span class="type">Success</span>(T data) =&gt; <span class="kw">new</span>() { <span class="type">Success</span> = <span class="kw">true</span>, <span class="type">Data</span> = data };
+    <span class="kw">public</span> <span class="kw">static</span> <span class="type">ServiceResult</span>&lt;T&gt; <span class="type">Failure</span>(<span class="kw">string</span> message) =&gt; <span class="kw">new</span>() { <span class="type">Success</span> = <span class="kw">false</span>, <span class="type">Message</span> = message };
+}</code></pre>
+<h2 id="why-this-matters">Why This Matters</h2>
+<h3 id="testability">Testability</h3>
+<p>Services can be unit tested without UI:</p>
+<pre><code class="lang-csharp">[<span class="type">Test</span>]
+<span class="kw">public</span> <span class="kw">async</span> <span class="type">Task</span> <span class="type">UpdateEmployee_InvalidName_ReturnsFailure</span>()
+{
+    <span class="kw">var</span> service = <span class="kw">new</span> <span class="type">EmployeeService</span>(mockContext, mockAudit);
+    <span class="kw">var</span> result = <span class="kw">await</span> service.<span class="type">UpdateEmployeeAsync</span>(session, <span class="kw">new</span> <span class="type">CrmFuncionario</span> { <span class="type">Nome</span> = <span class="str">&quot;&quot;</span> });
+    <span class="type">Assert</span>.<span class="type">IsFalse</span>(result.<span class="type">Success</span>);
+}</code></pre>
+<h3 id="maintainability">Maintainability</h3>
+<ul>
+<li>Change business rules in one place (service)</li>
+<li>UI changes don&#x27;t affect logic</li>
+<li>Easy to find where logic lives</li>
+</ul>
+<h3 id="reusability">Reusability</h3>
+<p>Same service can be used by:</p>
+<ul>
+<li>Web UI (Blazor)</li>
+<li>API endpoints</li>
+<li>Background jobs</li>
+<li>Other services</li>
+</ul>
+<h2 id="common-mistakes-to-avoid">Common Mistakes to Avoid</h2>
+<div class="tbl-wrap"><table>
+<thead><tr>
+<th>Mistake</th>
+<th>Problem</th>
+<th>Fix</th>
+</tr></thead><tbody>
+<tr>
+<td>LINQ in Razor</td>
+<td>Logic in UI</td>
+<td>Move to service</td>
+</tr>
+<tr>
+<td>DbContext in component</td>
+<td>Direct DB access</td>
+<td>Inject service</td>
+</tr>
+<tr>
+<td>Validation in UI</td>
+<td>Duplicated logic</td>
+<td>Validate in service</td>
+</tr>
+<tr>
+<td>Complex <code class="il">@code</code> blocks</td>
+<td>Too much UI logic</td>
+<td>Extract to service</td>
+</tr>
+</tbody></table></div>
+</div>
+</body>
+</html>
