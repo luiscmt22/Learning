@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Stampede Protection &mdash; One Task, Many Waiters</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --bg: #0b1220; --surface: #111a2e; --surface-2: #16223c;
+  --border: #243352; --text: #e6ecf5; --text-dim: #9aa7c0;
+  --accent: #6aa6ff; --accent-2: #b06aff; --code-bg: #0a1120;
+  --ok: #4ade80; --warn: #fbbf24; --bad: #f87171;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, "Segoe UI", system-ui, sans-serif; }
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+header.doc-head { border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 28px; }
+header.doc-head .crumbs { color: var(--text-dim); font-size: 13px; }
+header.doc-head h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.2; }
+header.doc-head .meta { color: var(--text-dim); font-size: 13px; }
+header.doc-head .meta a { color: var(--accent); text-decoration: none; }
+h1, h2, h3, h4 { color: var(--text); margin-top: 1.6em; }
+h2 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+a { color: var(--accent); }
+code, pre, code.il { font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace; }
+code.il { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; border: 1px solid var(--border); }
+pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55; }
+pre code { background: transparent; border: 0; padding: 0; }
+blockquote { border-left: 3px solid var(--accent); background: var(--surface);
+  padding: 10px 16px; margin: 12px 0; color: var(--text-dim); border-radius: 0 6px 6px 0; }
+.diagram-box { background: #1e293b; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; overflow-x: auto; }
+.diagram-box pre { background: transparent; border: 0; padding: 0; color: #e6ecf5; }
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); }
+tr:nth-child(even) td { background: var(--surface); }
+.callout { background: var(--surface); border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-2); padding: 12px 16px; margin: 14px 0; border-radius: 0 6px 6px 0; }
+.callout.warn { border-left-color: var(--warn); }
+.callout.bad  { border-left-color: var(--bad); }
+.callout.ok   { border-left-color: var(--ok); }
+.kw   { color: #c792ea; }
+.type { color: #82aaff; }
+.str  { color: #c3e88d; }
+.num  { color: #f78c6c; }
+.cmt  { color: #6c7a96; font-style: italic; }
+.toc { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px 18px; margin: 18px 0 28px; font-size: 14px; }
+.toc ol { margin: 6px 0; padding-left: 22px; }
+.toc li { margin: 2px 0; }
+.toc a { text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+.tag { background: var(--surface-2); border: 1px solid var(--border); padding: 2px 8px;
+  border-radius: 4px; font-size: 12px; color: var(--text-dim); display: inline-block; margin: 2px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="doc-head">
+  <div class="crumbs">Learning &rsaquo; _Organized &rsaquo; 08-Concurrency-and-Async &rsaquo; 31</div>
+  <h1>Stampede protection &mdash; one Task, many waiters</h1>
+  <div class="meta">A practical pattern for de-duplicating expensive async work when many threads hit the same cold cache key at once. Companion to <a href="22-ConcurrentDictionary-Thread-Safe-Caching.html">22-ConcurrentDictionary</a>, <a href="30-SemaphoreSlim-Controlled-Access.html">30-SemaphoreSlim</a>, and <a href="20-IMemoryCache-Dual-Caching-Strategy.html">20-IMemoryCache</a>. Born from the BioBraga &ldquo;Primavera stock&rdquo; refactor.</div>
+</header>
+
+<div class="toc">
+  <strong>On this page</strong>
+  <ol>
+    <li><a href="#why">Why this exists &mdash; the cache stampede</a></li>
+    <li><a href="#whiteboard">The mental model: a whiteboard and a slip of paper</a></li>
+    <li><a href="#building">Building it from scratch</a></li>
+    <li><a href="#lazy">Why <code class="il">Lazy&lt;Task&lt;T&gt;&gt;</code> works</a></li>
+    <li><a href="#dict">The <code class="il">ConcurrentDictionary</code> guarantee</a></li>
+    <li><a href="#cleanup">The cleanup imperative</a></li>
+    <li><a href="#semaphore">When to reach for <code class="il">SemaphoreSlim</code> instead</a></li>
+    <li><a href="#fit">Three places this fits in our apps</a></li>
+    <li><a href="#pitfalls">Pitfalls &amp; gotchas</a></li>
+  </ol>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="why">1 &mdash; Why this exists: the cache stampede</h2>
+
+<p>A &ldquo;cache stampede&rdquo; (sometimes called a <em>thundering herd</em>) is what happens when many threads hit the <strong>same cold cache key</strong> at the same time. Each one finds nothing in the cache, each one starts the expensive fetch, each one writes the same result back. The cache exists to spare the expensive resource &mdash; but at the worst possible moment (cold start, traffic burst, after eviction), it briefly stops doing its job.</p>
+
+<div class="callout warn">
+  <strong>Concrete scenario from BioBraga.</strong> Five users open the same article details page within 10 ms. Each call goes through a decorator that asks Primavera for the article&rsquo;s stock breakdown. Without protection: five SOAP calls in flight at once, ~10 seconds of Primavera CPU wasted on identical work, five cache writes overwriting the same key. With protection: one SOAP call, four waiters, identical result delivered to all five.
+</div>
+
+<p>The fix is not <em>more</em> caching. It&rsquo;s <strong>asking the question once</strong> and <strong>sharing the answer</strong> with everyone who wanted it.</p>
+
+<!-- ============================================================ -->
+<h2 id="whiteboard">2 &mdash; The mental model: a whiteboard and a slip of paper</h2>
+
+<p>Picture a small office with one whiteboard. The whiteboard has a column called &ldquo;currently fetching&rdquo;. When you need data, you check the whiteboard first.</p>
+
+<div class="diagram-box"><pre>
+                  WHITEBOARD (the dictionary)
+   +-------------------+---------------------------+
+   |   article code    |   slip of paper (Lazy)    |
+   +-------------------+---------------------------+
+   |     ABC123        |    [answer arrives here]  |
+   +-------------------+---------------------------+
+
+       ^
+       |
+   You arrive looking for ABC123.
+
+   Case A:  Nothing on the board for ABC123.
+            You pin a fresh slip, you go fetch the answer yourself.
+
+   Case B:  Somebody else already pinned a slip.
+            You DON'T go fetch. You stare at THEIR slip until it fills in.
+</pre></div>
+
+<p>Three properties make this work:</p>
+
+<ul>
+  <li>The act of <strong>checking and pinning</strong> happens in one atomic step &mdash; otherwise two people could both think the board was empty.</li>
+  <li>The slip is the <strong>same object</strong> for everyone &mdash; when the runner fills it in, every waiter sees the same answer.</li>
+  <li>Once the answer is filled in, the slip is <strong>removed</strong> from the whiteboard &mdash; otherwise the board fills with stale slips.</li>
+</ul>
+
+<p>That&rsquo;s the whole pattern. The rest of this document is just C# names for these three properties.</p>
+
+<!-- ============================================================ -->
+<h2 id="building">3 &mdash; Building it from scratch</h2>
+
+<h3>Round 1 &mdash; no protection</h3>
+
+<pre><code><span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">StockRows</span>&gt; GetAsync(<span class="type">string</span> code)
+{
+    <span class="kw">if</span> (_cache.TryGet(code, <span class="kw">out var</span> hit))
+        <span class="kw">return</span> hit;
+
+    <span class="kw">var</span> fresh = <span class="kw">await</span> _primavera.FetchAsync(code);
+    _cache.Set(code, fresh);
+    <span class="kw">return</span> fresh;
+}</code></pre>
+
+<p>Correct in single-threaded land. Catastrophic under load. Every concurrent caller that hits the same cold key fires its own <code class="il">FetchAsync</code>.</p>
+
+<h3>Round 2 &mdash; obvious-but-wrong lock</h3>
+
+<pre><code><span class="kw">private readonly object</span> _lock = <span class="kw">new</span>();
+
+<span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">StockRows</span>&gt; GetAsync(<span class="type">string</span> code)
+{
+    <span class="kw">lock</span> (_lock) <span class="cmt">// ← won't compile across await anyway</span>
+    {
+        <span class="kw">if</span> (_cache.TryGet(code, <span class="kw">out var</span> hit)) <span class="kw">return</span> hit;
+        <span class="kw">var</span> fresh = <span class="kw">await</span> _primavera.FetchAsync(code); <span class="cmt">// ❌ illegal</span>
+        ...
+    }
+}</code></pre>
+
+<p>A C# <code class="il">lock</code> block <strong>cannot contain <code class="il">await</code></strong>. Even if it could, this would serialise every caller for every code &mdash; user A asking for ABC blocks user B asking for XYZ, which is absurd.</p>
+
+<h3>Round 3 &mdash; per-key gate with <code class="il">SemaphoreSlim</code></h3>
+
+<pre><code><span class="kw">private readonly</span> <span class="type">ConcurrentDictionary</span>&lt;<span class="type">string</span>, <span class="type">SemaphoreSlim</span>&gt; _gates = <span class="kw">new</span>();
+
+<span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">StockRows</span>&gt; GetAsync(<span class="type">string</span> code)
+{
+    <span class="kw">if</span> (_cache.TryGet(code, <span class="kw">out var</span> hit)) <span class="kw">return</span> hit;
+
+    <span class="kw">var</span> gate = _gates.GetOrAdd(code, _ =&gt; <span class="kw">new</span> <span class="type">SemaphoreSlim</span>(<span class="num">1</span>, <span class="num">1</span>));
+    <span class="kw">await</span> gate.WaitAsync();
+    <span class="kw">try</span>
+    {
+        <span class="kw">if</span> (_cache.TryGet(code, <span class="kw">out var</span> cached)) <span class="kw">return</span> cached;
+        <span class="kw">var</span> fresh = <span class="kw">await</span> _primavera.FetchAsync(code);
+        _cache.Set(code, fresh);
+        <span class="kw">return</span> fresh;
+    }
+    <span class="kw">finally</span> { gate.Release(); }
+}</code></pre>
+
+<p>This works. It&rsquo;s the textbook double-checked-locking pattern, adapted for async. <em>But</em> read it carefully: <strong>every waiter ends up running the inner logic</strong> &mdash; they re-check the cache, find it populated, and return. The result is shared <em>through</em> the cache. That&rsquo;s fine, but a bit indirect.</p>
+
+<h3>Round 4 &mdash; share the Task itself</h3>
+
+<pre><code><span class="kw">private readonly</span> <span class="type">ConcurrentDictionary</span>&lt;<span class="type">string</span>, <span class="type">Lazy</span>&lt;<span class="type">Task</span>&lt;<span class="type">StockRows</span>&gt;&gt;&gt; _inFlight = <span class="kw">new</span>();
+
+<span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">StockRows</span>&gt; GetAsync(<span class="type">string</span> code)
+{
+    <span class="kw">if</span> (_cache.TryGet(code, <span class="kw">out var</span> hit)) <span class="kw">return</span> hit;
+
+    <span class="kw">var</span> lazy = _inFlight.GetOrAdd(code, c =&gt;
+        <span class="kw">new</span> <span class="type">Lazy</span>&lt;<span class="type">Task</span>&lt;<span class="type">StockRows</span>&gt;&gt;(<span class="kw">async</span> () =&gt;
+        {
+            <span class="kw">try</span>
+            {
+                <span class="kw">var</span> fresh = <span class="kw">await</span> _primavera.FetchAsync(c);
+                _cache.Set(c, fresh);
+                <span class="kw">return</span> fresh;
+            }
+            <span class="kw">finally</span> { _inFlight.TryRemove(c, <span class="kw">out</span> _); }
+        }));
+
+    <span class="kw">return await</span> lazy.Value;
+}</code></pre>
+
+<p>This is the final shape. Three small lines of clever do the work of fifteen lines of lock-juggling. The rest of this page explains why.</p>
+
+<!-- ============================================================ -->
+<h2 id="lazy">4 &mdash; Why <code class="il">Lazy&lt;Task&lt;T&gt;&gt;</code> works</h2>
+
+<p><code class="il">Lazy&lt;T&gt;</code> is the standard library&rsquo;s answer to <em>&ldquo;compute this once, the first time someone asks&rdquo;</em>. You hand it a factory. The first thread that reads <code class="il">.Value</code> runs the factory. Every subsequent thread reads the already-computed value. The first-time-only behaviour is <strong>thread-safe by default</strong> (<code class="il">LazyThreadSafetyMode.ExecutionAndPublication</code>) &mdash; you don&rsquo;t need to wrap it in anything.</p>
+
+<p>Now substitute <code class="il">T = Task&lt;StockRows&gt;</code>. The &ldquo;value&rdquo; the Lazy holds is no longer a finished computation &mdash; it&rsquo;s a <em>promise of one</em>, in the form of a <code class="il">Task</code>. The first thread runs the factory; the factory returns a Task; everybody else reads <code class="il">.Value</code> and gets <strong>the same Task</strong>. They each <code class="il">await</code> it and each wake up with the same result when it completes.</p>
+
+<div class="callout">
+  <strong>The two-jobs trick.</strong> <code class="il">Lazy&lt;Task&lt;T&gt;&gt;</code> is doing two jobs at once: gating who runs the factory (only one), and sharing the result (everyone awaits the same Task). Most other concurrency primitives do one of these &mdash; not both.
+</div>
+
+<h3>Failure semantics</h3>
+
+<p>If the factory&rsquo;s Task <em>faults</em>, every waiter sees the same exception. That&rsquo;s usually what you want &mdash; if Primavera was offline for the runner, it was offline for everyone. <strong>It is NOT what you want if you expected each waiter to retry</strong>. We&rsquo;ll come back to that under <a href="#pitfalls">pitfalls</a>.</p>
+
+<!-- ============================================================ -->
+<h2 id="dict">5 &mdash; The <code class="il">ConcurrentDictionary</code> guarantee</h2>
+
+<p>The other half of the pattern is <code class="il">GetOrAdd(key, factory)</code>. The contract:</p>
+
+<ul>
+  <li>If the key is absent, the factory runs and the result is stored.</li>
+  <li>If the key is present, the factory does <strong>not</strong> run; the existing value is returned.</li>
+  <li>If two threads call <code class="il">GetOrAdd</code> with the same absent key at the exact same instant, <strong>both factories may run</strong> but only one return value wins. Each caller receives the winning value.</li>
+</ul>
+
+<div class="callout warn">
+  <strong>Wait &mdash; both factories may run?</strong> Yes. <code class="il">GetOrAdd</code> is &ldquo;atomic in the answer&rdquo;, not &ldquo;atomic in the factory&rsquo;s side-effects&rdquo;. This is why we wrap the heavy work in <code class="il">Lazy&lt;Task&lt;T&gt;&gt;</code>. Constructing a Lazy is cheap and side-effect-free. The expensive bit (calling Primavera) lives inside the Lazy&rsquo;s factory, which the <code class="il">Lazy</code> itself guarantees runs only once.
+</div>
+
+<p>So the layered guarantee is: <em>ConcurrentDictionary may run two Lazy constructors, but Lazy guarantees only one Primavera call</em>. Belt and suspenders, each cheap.</p>
+
+<!-- ============================================================ -->
+<h2 id="cleanup">6 &mdash; The cleanup imperative</h2>
+
+<p>The <code class="il">finally { _inFlight.TryRemove(c, out _); }</code> in the factory is not optional. Without it, the in-flight dictionary becomes a permanent cache of <em>completed</em> Tasks &mdash; a memory leak that grows with every distinct article code ever requested.</p>
+
+<p>With the cleanup, the dictionary is just a <em>transient</em> &mdash; entries exist only while a fetch is in flight. The cache is the long-term store. The dictionary is the short-term coordination layer.</p>
+
+<div class="callout ok">
+  <strong>Mental shortcut.</strong> Think of <code class="il">_inFlight</code> as <em>a list of work currently happening</em>, not <em>a list of work that has happened</em>. The <code class="il">finally</code> is what keeps that mental model true.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="semaphore">7 &mdash; When to reach for <code class="il">SemaphoreSlim</code> instead</h2>
+
+<div class="tbl-wrap">
+<table>
+<thead><tr><th>Property</th><th>Lazy&lt;Task&lt;T&gt;&gt; map</th><th>SemaphoreSlim map</th></tr></thead>
+<tbody>
+<tr><td>Lines of code</td><td>~8</td><td>~14 (double-check needed)</td></tr>
+<tr><td>How waiters get the result</td><td>Await the same Task</td><td>Re-read the cache after acquiring the gate</td></tr>
+<tr><td>If first call fails</td><td>All waiters see the same exception</td><td>Each waiter re-tries the fetch independently</td></tr>
+<tr><td>Familiarity</td><td>Less common idiom</td><td>Textbook double-checked locking</td></tr>
+<tr><td>Memory cleanup</td><td><code class="il">TryRemove</code> in <code class="il">finally</code></td><td>Manual; or accept leaked semaphores</td></tr>
+<tr><td>Reuse for other goals</td><td>Purpose-built</td><td>Same primitive can rate-limit, gate, throttle</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>Use Lazy</strong> when you want &ldquo;fetch once, share result, all waiters see the same outcome&rdquo;. This is the right default for cache-on-miss patterns.</p>
+
+<p><strong>Use SemaphoreSlim</strong> when (a) you need each waiter to make its own independent attempt if the first fails, (b) the gate has a wider purpose like rate limiting, or (c) the team is more comfortable with a familiar idiom and the extra lines aren&rsquo;t a cost.</p>
+
+<!-- ============================================================ -->
+<h2 id="fit">8 &mdash; Three places this fits in our apps</h2>
+
+<ol>
+  <li><strong>Caching decorator around an expensive read.</strong> The BioBraga Primavera stock decorator is the textbook fit. Any time you have a singleton/long-lived component caching the result of an async call, this pattern earns its keep.</li>
+  <li><strong>One-shot loaders triggered by many UI elements.</strong> Imagine ten dashboard widgets each loading &ldquo;current user&rdquo; on initial render. Wrap the loader in <code class="il">Lazy&lt;Task&lt;User&gt;&gt;</code> at the service level &mdash; one HTTP call, ten widgets satisfied.</li>
+  <li><strong>Per-id resolution work.</strong> Resolving a customer name from a customer id, fetching geofence polygons for a site id, loading a tenant config for a tenant id. Any <em>idempotent per-key async work</em> can be wrapped this way.</li>
+</ol>
+
+<div class="callout">
+  <strong>Where it does NOT fit.</strong> Per-request state. Per-user UI state. Anything where the &ldquo;same key, same answer&rdquo; assumption is wrong. If two callers asking the same question would legitimately get different answers (because the answer depends on who is asking), the pattern is the wrong shape.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="pitfalls">9 &mdash; Pitfalls &amp; gotchas</h2>
+
+<h3>Pitfall 1 &mdash; forgetting <code class="il">TryRemove</code></h3>
+<p>The dictionary grows forever. Process memory climbs. You&rsquo;ll find it because the GC starts gnawing at the working set, not because anything crashes. Add the <code class="il">finally</code>.</p>
+
+<h3>Pitfall 2 &mdash; faulted Task poisons the cache?</h3>
+<p>If <code class="il">_primavera.FetchAsync</code> throws, the Task becomes faulted. With cleanup in place, the entry is removed and the <em>next</em> call after the exception starts fresh. Without cleanup, every future caller sees the same exception forever. <strong>Make sure your <code class="il">finally</code> runs even on exception</strong> &mdash; standard <code class="il">try/finally</code> does this, but if you ever refactor to <code class="il">ContinueWith</code> be careful.</p>
+
+<h3>Pitfall 3 &mdash; double work in batched calls</h3>
+<p>If your API has both <em>single-key</em> and <em>multi-key</em> entry points, you have to think about how a batch reads the in-flight map. The BioBraga decorator partitions a batch into three buckets: cached / in-flight / cold, and only sends the cold ones to Primavera. Two simultaneous batches with overlapping cold keys can still double-fetch &mdash; an acceptable race given the cache TTL closes the window after the first call.</p>
+
+<h3>Pitfall 4 &mdash; <code class="il">Lazy&lt;T&gt;</code> default mode is what you want</h3>
+<p>If you ever see <code class="il">new Lazy&lt;...&gt;(factory, LazyThreadSafetyMode.None)</code> in concurrent code, that&rsquo;s a footgun. <code class="il">PublicationOnly</code> is also wrong here (it lets multiple factory invocations race). The parameterless <code class="il">new Lazy&lt;T&gt;(factory)</code> defaults to <code class="il">ExecutionAndPublication</code> which is exactly what you want.</p>
+
+<h3>Pitfall 5 &mdash; this is in-process only</h3>
+<p>If you ever scale out to multiple app instances, the in-flight map is per-process. Two app servers will each run their own &ldquo;single&rdquo; fetch. You&rsquo;d need a distributed coordination layer (Redis lock, Postgres advisory lock) at that point. For single-instance Blazor Server apps, this pattern is sufficient.</p>
+
+<!-- ============================================================ -->
+<h2 id="recap">Recap in one paragraph</h2>
+
+<p>To stop a cache stampede, you need one fetch and many shared results. <code class="il">ConcurrentDictionary&lt;TKey, Lazy&lt;Task&lt;TValue&gt;&gt;&gt;</code> gives you both: the dictionary picks one winner per key, the <code class="il">Lazy</code> guarantees the winner runs the factory exactly once, the <code class="il">Task</code> is the shared result that every waiter awaits. A <code class="il">finally { TryRemove }</code> keeps the dictionary as a transient. The pattern is small, idiomatic, and reusable anywhere you have idempotent per-key async work in a long-lived service.</p>
+
+<p class="meta" style="margin-top:32px;color:var(--text-dim);font-size:13px">
+  <span class="tag">topic: concurrency</span>
+  <span class="tag">primitives: ConcurrentDictionary, Lazy, Task</span>
+  <span class="tag">case study: BioBraga / CachedPrimaveraIntegrationService</span>
+  <span class="tag">see also: 22-ConcurrentDictionary, 30-SemaphoreSlim, 20-IMemoryCache</span>
+</p>
+
+</div>
+</body>
+</html>
