@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session Variables in Blazor: State That Survives (and State That Doesn't)</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --surface: #16213e;
+            --surface2: #0f3460;
+            --accent: #e94560;
+            --accent2: #533483;
+            --text: #eee;
+            --text-muted: #aab;
+            --success: #4ecca3;
+            --warning: #f0a500;
+            --code-bg: #0d1117;
+            --border: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+
+        h2 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            margin: 2.5rem 0 1rem 0;
+            padding-bottom: 0.3rem;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        h3 {
+            color: var(--success);
+            font-size: 1.2rem;
+            margin: 1.8rem 0 0.8rem 0;
+        }
+
+        h4 {
+            color: var(--warning);
+            font-size: 1.05rem;
+            margin: 1.2rem 0 0.5rem 0;
+        }
+
+        p { margin-bottom: 1rem; }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.2rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        code {
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9rem;
+        }
+
+        p code, li code, td code {
+            background: var(--code-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .keyword { color: #569cd6; }
+        .type { color: #4ec9b0; }
+        .string { color: #ce9178; }
+        .comment { color: #6a9955; }
+        .method { color: #dcdcaa; }
+        .number { color: #b5cea8; }
+        .param { color: #9cdcfe; }
+        .arrow { color: #e94560; font-weight: bold; }
+
+        .callout {
+            border-radius: 8px;
+            padding: 1.2rem 1.5rem;
+            margin: 1.5rem 0;
+            border-left: 4px solid;
+        }
+
+        .callout-metaphor {
+            background: rgba(83, 52, 131, 0.2);
+            border-color: var(--accent2);
+        }
+
+        .callout-metaphor::before {
+            content: "Metaphor";
+            display: block;
+            font-weight: bold;
+            color: var(--accent2);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-english {
+            background: rgba(78, 204, 163, 0.1);
+            border-color: var(--success);
+        }
+
+        .callout-english::before {
+            content: "Read It Like English";
+            display: block;
+            font-weight: bold;
+            color: var(--success);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-warning {
+            background: rgba(240, 165, 0, 0.1);
+            border-color: var(--warning);
+        }
+
+        .callout-warning::before {
+            content: "Common Confusion";
+            display: block;
+            font-weight: bold;
+            color: var(--warning);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-rule {
+            background: rgba(233, 69, 96, 0.1);
+            border-color: var(--accent);
+        }
+
+        .callout-rule::before {
+            content: "Golden Rule";
+            display: block;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .callout-tldr {
+            background: rgba(86, 156, 214, 0.15);
+            border-color: #569cd6;
+        }
+
+        .callout-tldr::before {
+            content: "TL;DR";
+            display: block;
+            font-weight: bold;
+            color: #569cd6;
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .comparison > div {
+            background: var(--surface);
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid var(--border);
+        }
+
+        .comparison h4 {
+            margin-top: 0;
+        }
+
+        .diagram {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'Cascadia Code', 'Fira Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.8;
+            overflow-x: auto;
+            white-space: pre;
+            color: var(--text-muted);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+            background: var(--surface);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 0.8rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+
+        th {
+            background: var(--surface2);
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        tr:last-child td { border-bottom: none; }
+
+        ul, ol {
+            margin: 0.5rem 0 1rem 1.5rem;
+        }
+
+        li {
+            margin-bottom: 0.4rem;
+        }
+
+        .toc {
+            background: var(--surface);
+            border-radius: 8px;
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            border: 1px solid var(--border);
+        }
+
+        .toc h3 {
+            margin-top: 0;
+            color: var(--text);
+        }
+
+        .toc a {
+            color: var(--success);
+            text-decoration: none;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+        }
+
+        .toc ol {
+            margin-bottom: 0;
+        }
+
+        .toc li {
+            margin-bottom: 0.3rem;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(233, 69, 96, 0.1), rgba(83, 52, 131, 0.1));
+            border: 1px solid var(--accent2);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .quiz {
+            background: var(--surface);
+            border: 1px solid var(--accent2);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .quiz h4 {
+            margin-top: 0;
+            color: var(--accent2);
+        }
+
+        .quiz details {
+            margin-top: 0.8rem;
+        }
+
+        .quiz summary {
+            cursor: pointer;
+            color: var(--success);
+            font-weight: bold;
+        }
+
+        .quiz details > p {
+            margin-top: 0.5rem;
+            padding-left: 1rem;
+            border-left: 2px solid var(--success);
+        }
+
+        .related {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.2rem 1.5rem;
+            margin: 2rem 0 0;
+        }
+
+        .related h3 { margin-top: 0; color: var(--text); }
+        .related a { color: var(--success); text-decoration: none; }
+        .related a:hover { text-decoration: underline; }
+
+        hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 3rem 0;
+        }
+
+        @media (max-width: 700px) {
+            .comparison {
+                grid-template-columns: 1fr;
+            }
+            body {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Session Variables<br>in Blazor</h1>
+    <p class="subtitle">State that survives a refresh, state that doesn't, and the one mistake that leaks data between users</p>
+
+    <div class="callout callout-tldr">
+        <p>There is no <code>HttpContext.Session["key"]</code> in interactive Blazor. Once the app is running, there are no more HTTP requests &mdash; everything happens over a persistent <strong>SignalR circuit</strong>. You replace session state with one of three tools, chosen by <strong>one question</strong>: must it survive a browser refresh?</p>
+        <ul>
+            <li><strong>No</strong> &rarr; a <strong>scoped state container</strong> (a class registered with <code>AddScoped</code>) &mdash; lives for the circuit, in memory.</li>
+            <li><strong>Yes</strong> &rarr; <strong>ProtectedSessionStorage / ProtectedLocalStorage</strong> &mdash; encrypted browser storage.</li>
+            <li><strong>Forever / across devices</strong> &rarr; the <strong>database</strong>. (It was never "session" state.)</li>
+        </ul>
+    </div>
+
+    <nav class="toc">
+        <h3>Table of Contents</h3>
+        <ol>
+            <li><a href="#part1">Part 1: Why <code>HttpContext.Session</code> Vanishes</a></li>
+            <li><a href="#part2">Part 2: The Scoped State Container &mdash; Your Everyday "Session Variable"</a></li>
+            <li><a href="#part3">Part 3: Protected Storage &mdash; Surviving a Refresh</a></li>
+            <li><a href="#part4">Part 4: <code>HttpContext.Session</code> &mdash; Why You Still Can't Lean On It</a></li>
+            <li><a href="#part5">Part 5: The Trap &mdash; "Scoped" Doesn't Mean What You Think</a></li>
+            <li><a href="#part6">Part 6: The Decision Guide</a></li>
+            <li><a href="#part7">Part 7: Practice</a></li>
+        </ol>
+    </nav>
+
+    <!-- ============================================================ -->
+    <!-- PART 1: WHY SESSION VANISHES                                 -->
+    <!-- ============================================================ -->
+    <h2 id="part1">Part 1: Why <code>HttpContext.Session</code> Vanishes</h2>
+    <p><em>"In classic ASP.NET I just wrote <code>Session["tenant"] = "acme";</code>. Where did it go?"</em></p>
+
+    <div class="callout callout-metaphor">
+        <p>Classic ASP.NET is like <strong>mailing letters back and forth</strong>. Every request is a fresh envelope. To remember who you are, each envelope carries a <strong>claim-ticket number</strong> (the session cookie), and the server keeps a numbered locker (<code>HttpContext.Session</code>) matching that ticket. Letter arrives &rarr; open the locker &rarr; reply &rarr; close it. The connection lives for one round-trip.</p>
+        <p>Interactive Blazor is like being <strong>on a phone call</strong> with the server. You dial once (the initial page load), and then you just <em>talk</em> &mdash; a live, open line called the <strong>circuit</strong>. There are no more envelopes, so there are no more claim-tickets, so there is no numbered locker to open. The whole mechanism that <code>HttpContext.Session</code> depended on isn't there anymore.</p>
+    </div>
+
+    <h3>What actually happens on load</h3>
+    <p>A Blazor Server app serves <strong>one</strong> real HTTP request: the initial page. After that, the browser opens a WebSocket and every click, keystroke, and render travels over that socket as SignalR messages. No HTTP request means no <code>HttpContext</code> &mdash; the object is gone, or stale, the moment your components go interactive.</p>
+
+    <div class="diagram">CLASSIC ASP.NET (MVC / Razor Pages)
+  Request 1 ──► [HttpContext + Session locker] ──► Response 1
+  Request 2 ──► [HttpContext + Session locker] ──► Response 2
+  Request 3 ──► [HttpContext + Session locker] ──► Response 3
+                  ▲ a fresh HttpContext every time
+
+BLAZOR SERVER (interactive)
+  Request 1 ──► [HttpContext] ──► Response (the page)   ◄── last HttpContext you'll see
+       │
+       └──► WebSocket opens ──► ░░░ THE CIRCUIT ░░░ ──► click, type, render...
+                                  (no HttpContext here)</div>
+
+    <div class="callout callout-warning">
+        <p>"Interactive" is the key word. During <strong>prerendering</strong> and <strong>static SSR</strong> (the very first render, before the circuit connects) you <em>do</em> have an <code>HttpContext</code>. That is exactly why beginners get burned: their code works for a split second during prerender, then breaks the instant the page becomes interactive. State management in Blazor is mostly about respecting that boundary.</p>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- PART 2: SCOPED STATE CONTAINER                               -->
+    <!-- ============================================================ -->
+    <h2 id="part2">Part 2: The Scoped State Container</h2>
+    <p><em>Your everyday "session variable" replacement.</em></p>
+
+    <div class="callout callout-metaphor">
+        <p>A scoped state container is the <strong>whiteboard in your office</strong>. It's yours for as long as you're in the room (the circuit). You and everyone you invite in (all your components) read and write the same board. Walk out and come back &mdash; refresh the page &mdash; and you get a <strong>fresh, blank board</strong>. Nothing is written to disk; it only lives while you're there.</p>
+    </div>
+
+    <p>In Blazor Server, a service registered as <strong>Scoped</strong> lives for the lifetime of the user's circuit. That is the closest thing to "per-user session state" the framework gives you for free. You make a plain class, register it, inject it, and &mdash; because it's a shared object &mdash; let it raise an event so components re-render when it changes.</p>
+
+    <h3>Step 1: The state class (a plain C# class)</h3>
+<pre><code><span class="comment">// Business state lives in a service, never in the component itself.</span>
+<span class="keyword">public class</span> <span class="type">UserState</span>
+{
+    <span class="keyword">public</span> <span class="keyword">string</span>? <span class="param">SelectedTenant</span> { <span class="keyword">get</span>; <span class="keyword">private set</span>; }
+
+    <span class="keyword">public event</span> <span class="type">Action</span>? <span class="param">OnChange</span>;
+
+    <span class="keyword">public void</span> <span class="method">SetTenant</span>(<span class="keyword">string</span> <span class="param">tenant</span>)
+    {
+        <span class="param">SelectedTenant</span> = tenant;
+        <span class="method">NotifyStateChanged</span>();           <span class="comment">// tell every listening component to re-render</span>
+    }
+
+    <span class="keyword">private void</span> <span class="method">NotifyStateChanged</span>() =&gt; <span class="param">OnChange</span>?.<span class="method">Invoke</span>();
+}</code></pre>
+
+    <h3>Step 2: Register it (Program.cs)</h3>
+<pre><code><span class="param">builder</span>.<span class="param">Services</span>.<span class="method">AddScoped</span>&lt;<span class="type">UserState</span>&gt;();   <span class="comment">// Scoped = one instance per circuit</span></code></pre>
+
+    <h3>Step 3: Use it in a component</h3>
+<pre><code><span class="comment">// In any .razor component:</span>
+@<span class="keyword">inject</span> <span class="type">UserState</span> <span class="param">UserState</span>
+@<span class="keyword">implements</span> <span class="type">IDisposable</span>
+
+&lt;<span class="type">MudText</span>&gt;Tenant: @<span class="param">UserState</span>.<span class="param">SelectedTenant</span>&lt;/<span class="type">MudText</span>&gt;
+&lt;<span class="type">MudButton</span> OnClick=<span class="string">"@(() =&gt; UserState.SetTenant("acme"))"</span>&gt;Escolher Acme&lt;/<span class="type">MudButton</span>&gt;
+
+@<span class="keyword">code</span> {
+    <span class="comment">// Subscribe so this component re-renders whenever the shared state changes...</span>
+    <span class="keyword">protected override void</span> <span class="method">OnInitialized</span>() =&gt; <span class="param">UserState</span>.<span class="param">OnChange</span> += <span class="method">StateHasChanged</span>;
+
+    <span class="comment">// ...and ALWAYS unsubscribe, or the component leaks and StateHasChanged fires on a dead component.</span>
+    <span class="keyword">public void</span> <span class="method">Dispose</span>() =&gt; <span class="param">UserState</span>.<span class="param">OnChange</span> -= <span class="method">StateHasChanged</span>;
+}</code></pre>
+
+    <div class="callout callout-english">
+        <p><code>builder.Services.AddScoped&lt;UserState&gt;();</code></p>
+        <p><em>"Give each connected user their own <strong>UserState</strong> whiteboard, and keep it for as long as their tab stays connected."</em></p>
+        <br>
+        <p><code>UserState.OnChange += StateHasChanged;</code></p>
+        <p><em>"Whenever the shared state announces a change, re-render <strong>me</strong>."</em></p>
+    </div>
+
+    <div class="callout callout-rule">
+        <p>If a component subscribes to a state container's event in <code>OnInitialized</code>, it <strong>must</strong> <code>@implements IDisposable</code> and unsubscribe in <code>Dispose</code>. Forgetting this is the #1 cause of "ghost" re-render exceptions and slow memory creep in Blazor Server.</p>
+    </div>
+
+    <h3>The honest limitation</h3>
+    <p>This whiteboard is wiped on a full page refresh, on a navigation that forces a reload, and whenever the circuit drops and reconnects (flaky Wi-Fi, server recycle, laptop sleep). It is <strong>in-memory only</strong>. That is perfectly fine for transient UI state &mdash; the selected tab, a wizard's current step, an in-progress filter &mdash; but the moment you think "this has to still be there after F5," you've outgrown it. That's Part 3.</p>
+
+    <!-- ============================================================ -->
+    <!-- PART 3: PROTECTED STORAGE                                    -->
+    <!-- ============================================================ -->
+    <h2 id="part3">Part 3: Protected Storage &mdash; Surviving a Refresh</h2>
+
+    <div class="callout callout-metaphor">
+        <p>Protected storage is a <strong>sealed lockbox you leave in the user's own browser</strong>. You write a note, lock it (the server encrypts it with ASP.NET Core Data Protection), and hand it to the browser to hold. On refresh, the browser hands the box back and the server unlocks it. The user can <em>see</em> they're holding a box, but they can't read or forge the note inside.</p>
+    </div>
+
+    <p>Built into Blazor Server via <code>Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage</code>, this comes in two flavours that differ only in <strong>how long the box survives</strong>:</p>
+
+    <div class="comparison">
+        <div>
+            <h4>ProtectedSessionStorage</h4>
+            <p>Backed by the browser's <code>sessionStorage</code>.</p>
+            <ul>
+                <li>Survives a refresh / reconnect.</li>
+                <li><strong>Cleared when the tab closes.</strong></li>
+                <li>Not shared between tabs.</li>
+            </ul>
+            <p><em>Good for: the truly per-session stuff &mdash; a wizard you don't want to lose to an accidental F5.</em></p>
+        </div>
+        <div>
+            <h4>ProtectedLocalStorage</h4>
+            <p>Backed by the browser's <code>localStorage</code>.</p>
+            <ul>
+                <li>Survives refresh, tab close, and browser restart.</li>
+                <li><strong>Persists indefinitely</strong> until cleared.</li>
+                <li>Shared across tabs of the same site.</li>
+            </ul>
+            <p><em>Good for: chosen theme, language, last-selected tenant.</em></p>
+        </div>
+    </div>
+
+    <h3>Using it</h3>
+<pre><code>@<span class="keyword">inject</span> <span class="type">ProtectedSessionStorage</span> <span class="param">SessionStorage</span>
+
+@<span class="keyword">code</span> {
+    <span class="keyword">private</span> <span class="keyword">string</span>? <span class="param">_tenant</span>;
+
+    <span class="comment">// MUST be OnAfterRenderAsync, and MUST guard on firstRender — see the warning below.</span>
+    <span class="keyword">protected override async</span> <span class="type">Task</span> <span class="method">OnAfterRenderAsync</span>(<span class="keyword">bool</span> <span class="param">firstRender</span>)
+    {
+        <span class="keyword">if</span> (!<span class="param">firstRender</span>) <span class="keyword">return</span>;
+
+        <span class="keyword">await</span> <span class="param">SessionStorage</span>.<span class="method">SetAsync</span>(<span class="string">"tenant"</span>, <span class="string">"acme"</span>);
+
+        <span class="keyword">var</span> <span class="param">result</span> = <span class="keyword">await</span> <span class="param">SessionStorage</span>.<span class="method">GetAsync</span>&lt;<span class="keyword">string</span>&gt;(<span class="string">"tenant"</span>);
+        <span class="keyword">if</span> (<span class="param">result</span>.<span class="param">Success</span>)
+        {
+            <span class="param">_tenant</span> = <span class="param">result</span>.<span class="param">Value</span>;
+            <span class="method">StateHasChanged</span>();          <span class="comment">// we changed state AFTER render, so ask for another</span>
+        }
+    }
+}</code></pre>
+
+    <div class="callout callout-english">
+        <p><code>var result = await SessionStorage.GetAsync&lt;string&gt;("tenant");</code></p>
+        <p><em>"Go ask the browser for its 'tenant' box. You get back a little envelope with two things: <strong>did it exist</strong> (<code>result.Success</code>) and, if so, <strong>what was in it</strong> (<code>result.Value</code>)."</em></p>
+    </div>
+
+    <div class="callout callout-warning">
+        <p>Protected storage works through <strong>JavaScript interop</strong> &mdash; it has to talk to the browser. During prerendering / static SSR there is no live browser connection yet, so calling it from <code>OnInitializedAsync</code> throws <em>"JavaScript interop calls cannot be issued at this time"</em>. The rule: only touch browser storage in <code>OnAfterRenderAsync(firstRender: true)</code> (or later), never in <code>OnInitialized</code>/<code>OnParametersSet</code>. The side effect &mdash; the value is <code>null</code> on the very first paint and "pops in" a frame later &mdash; is normal; handle it with a loading state.</p>
+    </div>
+
+    <p>Prefer a richer API (typed wrappers, change events, expiry)? The community packages <code>Blazored.LocalStorage</code> and <code>Blazored.SessionStorage</code> are popular and have the same shape &mdash; same prerendering caveat applies.</p>
+
+    <!-- ============================================================ -->
+    <!-- PART 4: HTTPCONTEXT.SESSION                                  -->
+    <!-- ============================================================ -->
+    <h2 id="part4">Part 4: <code>HttpContext.Session</code> &mdash; Why You Still Can't Lean On It</h2>
+
+    <p>"But <code>IHttpContextAccessor</code> exists &mdash; can't I just grab the <code>HttpContext</code> and use its session?" Technically the type is injectable. Practically, it betrays you:</p>
+
+    <ul>
+        <li>It is only meaningful during the <strong>initial request</strong> (prerender / static SSR).</li>
+        <li>Once the circuit is interactive, <code>IHttpContextAccessor.HttpContext</code> is <strong>null or stale</strong> &mdash; it captured a request that finished long ago.</li>
+        <li>Microsoft <strong>explicitly discourages</strong> depending on <code>HttpContext</code> in interactive components.</li>
+    </ul>
+
+    <div class="callout callout-rule">
+        <p>Use <code>IHttpContextAccessor</code> for one job only: reading something that exists <em>at the moment the page is first requested</em> (e.g. the initial user identity), and copy it <strong>once</strong> into a scoped state container. Never treat it as a live, writable session store.</p>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- PART 5: THE SCOPED TRAP                                      -->
+    <!-- ============================================================ -->
+    <h2 id="part5">Part 5: The Trap &mdash; "Scoped" Doesn't Mean What You Think</h2>
+
+    <p>In classic ASP.NET, <strong>Scoped = one per HTTP request</strong>. In Blazor the word is the same but the boundary is completely different, and the difference is a genuine security gotcha.</p>
+
+    <table>
+        <tr>
+            <th>Lifetime</th>
+            <th>Classic ASP.NET</th>
+            <th>Blazor Server</th>
+            <th>Blazor WebAssembly</th>
+        </tr>
+        <tr>
+            <td><code>Singleton</code></td>
+            <td>Whole app, all users</td>
+            <td><strong>Whole app, ALL users</strong> &mdash; shared!</td>
+            <td>Whole app (one user anyway)</td>
+        </tr>
+        <tr>
+            <td><code>Scoped</code></td>
+            <td>One HTTP request</td>
+            <td><strong>One circuit</strong> (≈ one browser tab / user session)</td>
+            <td>Effectively a singleton (one user)</td>
+        </tr>
+        <tr>
+            <td><code>Transient</code></td>
+            <td>Every injection</td>
+            <td>Every injection</td>
+            <td>Every injection</td>
+        </tr>
+    </table>
+
+    <div class="callout callout-warning">
+        <p>On a Blazor <strong>Server</strong>, a <code>Singleton</code> is shared by <em>every connected user at once</em>. Put <code>SelectedTenant</code> in a singleton and User B suddenly sees User A's tenant &mdash; a real cross-user data leak, plus race conditions because multiple circuits hit the same object on different threads. This is the same family of bug as static fields and static events holding per-user state.</p>
+    </div>
+
+    <div class="callout callout-rule">
+        <p>Per-user mutable state &rarr; <strong><code>Scoped</code></strong> (the circuit). Never <code>Singleton</code>. Reserve <code>Singleton</code> for genuinely shared, read-mostly things: configuration, caches, a connection multiplexer.</p>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- PART 6: DECISION GUIDE                                       -->
+    <!-- ============================================================ -->
+    <h2 id="part6">Part 6: The Decision Guide</h2>
+
+    <div class="diagram">What state are you trying to keep?
+│
+├─ Does it need to survive a browser REFRESH (F5)?
+│   │
+│   ├─ NO  ──► Scoped state container  (AddScoped&lt;UserState&gt;)
+│   │          e.g. current wizard step, active filter, selected row
+│   │
+│   └─ YES ──► Does it need to outlive the TAB / browser close?
+│              │
+│              ├─ NO  ──► ProtectedSessionStorage   (cleared on tab close)
+│              │          e.g. don't-lose-this-form-to-an-accidental-F5
+│              │
+│              └─ YES ──► ProtectedLocalStorage     (persists on the device)
+│                         e.g. theme, language, last-selected tenant
+│
+└─ Must it follow the user across DEVICES / be permanent / audited?
+        ──► The DATABASE.  It was never "session" state — persist it per user.</div>
+
+    <table>
+        <tr>
+            <th>Tool</th>
+            <th>Lives for</th>
+            <th>Survives F5?</th>
+            <th>Where it lives</th>
+            <th>Prerender-safe?</th>
+        </tr>
+        <tr>
+            <td>Scoped state container</td>
+            <td>The circuit</td>
+            <td>No</td>
+            <td>Server memory</td>
+            <td>Yes</td>
+        </tr>
+        <tr>
+            <td>ProtectedSessionStorage</td>
+            <td>The tab</td>
+            <td>Yes</td>
+            <td>Browser (encrypted)</td>
+            <td>No (JS interop)</td>
+        </tr>
+        <tr>
+            <td>ProtectedLocalStorage</td>
+            <td>The device</td>
+            <td>Yes</td>
+            <td>Browser (encrypted)</td>
+            <td>No (JS interop)</td>
+        </tr>
+        <tr>
+            <td>Database</td>
+            <td>Forever</td>
+            <td>Yes</td>
+            <td>SQL Server</td>
+            <td>Yes</td>
+        </tr>
+    </table>
+
+    <div class="highlight-box">
+        The whiteboard for now, the lockbox for after-refresh, the database for forever.<br>
+        Pick by lifetime, not by habit.
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- PART 7: PRACTICE                                             -->
+    <!-- ============================================================ -->
+    <h2 id="part7">Part 7: Practice</h2>
+
+    <div class="quiz">
+        <h4>Question 1</h4>
+        <p>A user picks "Dark mode", you store it in an <code>AddScoped</code> service, and it works. They press F5 and the app is light again. Why, and what's the fix?</p>
+        <details>
+            <summary>Show answer</summary>
+            <p>A refresh tears down the old circuit and starts a new one, so the scoped container is reconstructed empty &mdash; it was only ever in server memory. The theme needs to <em>survive</em> a refresh, so it belongs in <code>ProtectedLocalStorage</code> (read it back in <code>OnAfterRenderAsync</code>). The scoped container is still useful as the in-memory cache that components bind to during the session.</p>
+        </details>
+    </div>
+
+    <div class="quiz">
+        <h4>Question 2</h4>
+        <p>You inject <code>ProtectedLocalStorage</code> and read a value in <code>OnInitializedAsync</code>. It throws <em>"JavaScript interop calls cannot be issued at this time."</em> What happened?</p>
+        <details>
+            <summary>Show answer</summary>
+            <p><code>OnInitializedAsync</code> runs during prerendering, before the browser connection is live. Browser storage rides on JS interop, which isn't available yet. Move the read into <code>OnAfterRenderAsync(firstRender)</code> guarded by <code>if (firstRender)</code>, and call <code>StateHasChanged()</code> after you set the value.</p>
+        </details>
+    </div>
+
+    <div class="quiz">
+        <h4>Question 3</h4>
+        <p>To "save a database lookup", a teammate registers <code>UserState</code> (holding the current user's tenant) as <code>AddSingleton</code>. QA reports that logging in as a second user sometimes shows the first user's tenant. Diagnose it.</p>
+        <details>
+            <summary>Show answer</summary>
+            <p>On Blazor Server a singleton is one shared instance across <em>all</em> circuits, so every user reads and writes the same <code>SelectedTenant</code>. That's a cross-user data leak plus a thread-safety hazard. Per-user mutable state must be <code>AddScoped</code> (one per circuit). Singletons are only for shared, read-mostly data.</p>
+        </details>
+    </div>
+
+    <div class="quiz">
+        <h4>Question 4</h4>
+        <p>A component subscribes with <code>UserState.OnChange += StateHasChanged;</code> in <code>OnInitialized</code> but never unsubscribes. What goes wrong over time?</p>
+        <details>
+            <summary>Show answer</summary>
+            <p>The state container keeps a reference to every component that ever subscribed, so disposed components are never garbage-collected (a memory leak), and <code>OnChange</code> tries to <code>StateHasChanged()</code> on dead components, throwing <code>ObjectDisposedException</code>. Fix: <code>@implements IDisposable</code> and unsubscribe in <code>Dispose</code>.</p>
+        </details>
+    </div>
+
+    <hr>
+
+    <div class="related">
+        <h3>Related in your library</h3>
+        <ul>
+            <li><a href="../_Curated/CORE/frontend/blazor-server-fundamentals.html">Blazor Server For Dummies</a> &mdash; the broader patterns (ServiceResult, claims, protected storage) this builds on.</li>
+            <li><a href="../_Curated/CORE/frontend/blazor-static-events-shared-state-bug.html">Static Events &amp; Shared-State Bug</a> &mdash; the same "per-user state in a shared place" trap, via static fields/events.</li>
+            <li><a href="../_Curated/CORE/frontend/blazor-server-fundamentals.html">Prerendering lifecycle</a> &mdash; why JS-interop state can't be touched in <code>OnInitialized</code>.</li>
+        </ul>
+    </div>
+
+</body>
+</html>
