@@ -706,6 +706,18 @@ BLAZOR SERVER (interactive)
     <hr>
 
     <div class="related">
+        <h3>Official documentation</h3>
+        <ul>
+            <li><a href="https://learn.microsoft.com/en-us/aspnet/core/blazor/state-management" target="_blank" rel="noopener">ASP.NET Core Blazor state management</a> &mdash; the canonical conceptual guide; covers in-memory state containers, the <code>OnChange</code> pattern, and protected browser storage (Parts 2&ndash;3).</li>
+            <li><a href="https://learn.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.components.server.protectedbrowserstorage.protectedsessionstorage" target="_blank" rel="noopener"><code>ProtectedSessionStorage</code> API reference</a> &mdash; the exact method signatures (<code>GetAsync</code>, <code>SetAsync</code>) and the <code>ProtectedBrowserStorageResult</code> envelope (Part 3).</li>
+            <li><a href="https://learn.microsoft.com/en-us/aspnet/core/blazor/components/prerender" target="_blank" rel="noopener">Prerender ASP.NET Core Razor components</a> &mdash; why JS-interop (and therefore protected storage) is unavailable until after the first render (Part 3).</li>
+            <li><a href="https://learn.microsoft.com/en-us/aspnet/core/blazor/components/lifecycle" target="_blank" rel="noopener">ASP.NET Core Razor component lifecycle</a> &mdash; <code>OnInitialized</code> vs <code>OnAfterRenderAsync(firstRender)</code>, the hook that makes storage reads safe (Part 3).</li>
+            <li><a href="https://learn.microsoft.com/en-us/aspnet/core/blazor/fundamentals/dependency-injection" target="_blank" rel="noopener">Blazor dependency injection</a> &mdash; service-lifetime semantics; confirms Scoped = per-circuit and the Singleton cross-user warning (Part 5).</li>
+            <li><a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/app-state" target="_blank" rel="noopener">Session and state management in ASP.NET Core</a> &mdash; classic <code>HttpContext.Session</code>, and why it belongs to the request pipeline, not the circuit (Parts 1 &amp; 4).</li>
+        </ul>
+    </div>
+
+    <div class="related">
         <h3>Related in your library</h3>
         <ul>
             <li><a href="../_Curated/CORE/frontend/blazor-server-fundamentals.html">Blazor Server For Dummies</a> &mdash; the broader patterns (ServiceResult, claims, protected storage) this builds on.</li>
