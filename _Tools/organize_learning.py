@@ -62,7 +62,7 @@ import build_webbook as bw
 # CONFIG
 # ════════════════════════════════════════════════════════════════════════════
 
-BASE = Path(r'C:\Users\User\Desktop\AGILE\Learning')
+BASE = Path(__file__).resolve().parent.parent  # Learning root (this script lives in _Tools/)
 OUT = BASE / '_Organized'
 
 IN_SCOPE_DIRS: list[tuple[str, bool]] = [

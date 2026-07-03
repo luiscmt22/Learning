@@ -15,7 +15,7 @@ import sys
 
 sys.stdout.reconfigure(encoding='utf-8')
 
-BASE = r'C:\Users\User\Desktop\AGILE\Learning'
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # Learning root (this script lives in _Tools/)
 OUTPUT = os.path.join(BASE, 'learning-webbook.html')
 
 # ═══════════════════════════════════════════════════════════════════════════════

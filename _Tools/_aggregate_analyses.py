@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.stdout.reconfigure(encoding='utf-8')
 
-BASE = Path(r'C:\Users\User\Desktop\AGILE\Learning')
+BASE = Path(__file__).resolve().parent.parent  # Learning root (this script lives in _Tools/)
 OUT = BASE / '_Curated'
 
 merged: dict[str, dict] = {}

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operators in C# — Conversion Operators &amp; Symbol Overloading</title>
+    <style>
+        :root{--bg:#1a1a2e;--surface:#16213e;--surface2:#0f3460;--accent:#e94560;--accent2:#533483;--text:#eee;--text-muted:#aab;--success:#4ecca3;--warning:#f0a500;--code-bg:#0d1117;--border:#333}*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;padding:2rem;max-width:900px;margin:0 auto}h1{text-align:center;font-size:2.2rem;margin-bottom:.5rem;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}.subtitle{text-align:center;color:var(--text-muted);margin-bottom:3rem;font-size:1.1rem}h2{color:var(--accent);font-size:1.6rem;margin:2.5rem 0 1rem 0;padding-bottom:.3rem;border-bottom:2px solid var(--accent)}h3{color:var(--success);font-size:1.2rem;margin:1.8rem 0 .8rem 0}h4{color:var(--warning);font-size:1.05rem;margin:1.2rem 0 .5rem 0}p{margin-bottom:1rem}pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1.2rem;overflow-x:auto;margin:1rem 0;font-size:.9rem;line-height:1.5}code{font-family:'Cascadia Code','Fira Code','Consolas',monospace;font-size:.9rem}p code,li code,td code{background:var(--code-bg);padding:.15rem .4rem;border-radius:4px;border:1px solid var(--border)}.keyword{color:#569cd6}.type{color:#4ec9b0}.string{color:#ce9178}.comment{color:#6a9955}.method{color:#dcdcaa}.number{color:#b5cea8}.param{color:#9cdcfe}.callout{border-radius:8px;padding:1.2rem 1.5rem;margin:1.5rem 0;border-left:4px solid}.callout-metaphor{background:rgba(83,52,131,.2);border-color:var(--accent2)}.callout-metaphor::before{content:"Metaphor";display:block;font-weight:bold;color:var(--accent2);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}.callout-english{background:rgba(78,204,163,.1);border-color:var(--success)}.callout-english::before{content:"Read It Like English";display:block;font-weight:bold;color:var(--success);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}.callout-warning{background:rgba(240,165,0,.1);border-color:var(--warning)}.callout-warning::before{content:"Common Confusion";display:block;font-weight:bold;color:var(--warning);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}.callout-rule{background:rgba(233,69,96,.1);border-color:var(--accent)}.callout-rule::before{content:"Golden Rule";display:block;font-weight:bold;color:var(--accent);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}ul,ol{margin:.5rem 0 1rem 1.5rem}li{margin-bottom:.3rem}table{width:100%;border-collapse:collapse;margin:1rem 0}th,td{border:1px solid var(--border);padding:.6rem 1rem;text-align:left}th{background:var(--surface2);color:var(--success)}td{background:var(--surface)}.diagram{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1.5rem;margin:1.5rem 0;font-family:'Cascadia Code',monospace;font-size:.85rem;line-height:1.6;white-space:pre;overflow-x:auto}
+    </style>
+</head>
+<body>
+<div style="background:rgba(7,9,15,0.94);border-bottom:1px solid #1f2940;padding:12px 24px;font:13px/1.4 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;position:fixed;top:0;left:0;right:0;z-index:99999;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);display:flex;align-items:center;gap:10px;color:#94a3bf;box-sizing:border-box;min-height:48px;"><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;">Learning</a><span style="color:#5f6b86;">›</span><a href="../_Hub.html" style="color:#94a3bf;text-decoration:none;">CORE</a><span style="color:#5f6b86;">›</span><a href="_Category.html" style="color:#94a3bf;text-decoration:none;">C# Language</a><span style="color:#5f6b86;">›</span><span style="color:#e9eef8;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">Operators in C# - Conversion Operators &amp; Symbol Overloading</span><a href="csharp-operators-and-conversions.html" download style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">↓ Download</a><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">All docs</a></div><div style="height:48px;"></div><div style="background:linear-gradient(135deg,#0a0e1a 0%,#11182a 100%);border:1px solid #1f2940;border-radius:14px;padding:24px 28px;margin:20px;font:15px/1.7 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;color:#e9eef8;box-shadow:0 12px 40px rgba(0,0,0,0.35);"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.6px;color:#6aa6ff;font-weight:600;margin-bottom:8px;">▸ Curated · Concept · Language</div><div style="font-size:24px;font-weight:700;color:#e9eef8;margin-bottom:10px;letter-spacing:-0.02em;line-height:1.2;">Operators in C# - Conversion Operators &amp; Symbol Overloading</div><div style="font-size:16px;color:#94a3bf;margin-bottom:18px;line-height:1.5;">User-defined operators are compile-time sugar over static methods: conversion operators teach the compiler how your type becomes another type, symbol overloads teach existing symbols (+, ==, &lt;) a new meaning for your type.</div><div style="font-style:italic;border-left:3px solid #6aa6ff;padding:6px 0 6px 16px;margin:14px 0;color:#e9eef8;">You wrote <code style="background:#0a1020;padding:1px 6px;border-radius:4px;">public static implicit operator Person(PersonBuilder pb)</code> in your FacetedBuilder, came back weeks later, and couldn't read your own line. This guide makes that line — and every operator declaration — as readable as a property.</div><div style="background:rgba(106,166,255,0.06);border:1px solid rgba(106,166,255,0.20);border-radius:10px;padding:14px 18px;margin:14px 0;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#6aa6ff;margin-bottom:6px;font-weight:600;">Executive summary</div><div style="font-size:14px;color:#e9eef8;line-height:1.6;">C# lets you define two kinds of custom operators. Conversion operators (implicit/explicit) define how one type transforms into another — implicit fires silently at typed targets (assignments, arguments, returns) and must be safe and lossless; explicit requires a visible cast and is for conversions that may lose data or throw. Symbol overloads redefine +, -, ==, &lt; etc. for your type, with strict pairing rules (== with !=, &lt; with &gt;). Both compile to ordinary static methods (op_Implicit, op_Addition) — there is no runtime magic, which is why var, is, and as never trigger conversions. The design bar for both: only use them when the meaning is obvious to a stranger.</div></div><div style="background:rgba(184,106,255,0.06);border:1px solid rgba(184,106,255,0.25);border-radius:10px;padding:14px 18px;margin:14px 0;display:flex;gap:12px;"><div style="font-size:20px;flex-shrink:0;">💡</div><div style="flex:1;font-size:14px;color:#e9eef8;line-height:1.6;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#b86aff;margin-bottom:4px;font-weight:700;">Metaphor</div>A conversion operator is a customs agreement between two countries: implicit is an open border (citizens cross without showing papers — safe, routine, no losses), explicit is a checkpoint (you must present the cast, because crossing might cost you something). Symbol overloads are teaching an old word a new dialect: everyone knows what + means, so your type had better use it the way everyone expects.</div></div><div style="margin-top:14px;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#5f6b86;margin-bottom:8px;font-weight:600;">Key concepts</div><div><span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">implicit operator</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">explicit operator</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">operator overloading</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">pairing rules (== / !=)</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">op_Implicit special names</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">is null vs == null</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">builder terminator pattern</span></div></div><div style="margin-top:18px;padding-top:14px;border-top:1px solid #1f2940;font-size:11px;color:#5f6b86;">↑ Curated overlay (hand-authored) · the document follows below · companion drills: GeneralExercises/Operators_Drills.html</div></div>
+
+<h1>Operators in C#</h1>
+<p class="subtitle">Conversion operators, symbol overloading, and the design bar for both</p>
+
+<!-- ============================================================ -->
+<h2>1. The Line You Couldn't Read</h2>
+
+<p>This came from your own FacetedBuilder (<code>DesignPatterns/Patterns/Creational/Builder/FacetedBuilder/PersonBuilder.cs</code>):</p>
+
+<pre><code><span class="keyword">public static implicit operator</span> <span class="type">Person</span>(<span class="type">PersonBuilder</span> <span class="param">pb</span>)
+{
+    <span class="keyword">return</span> pb.person;
+}</code></pre>
+
+<p>It looks like a method, but the parts are in unfamiliar places: no method name, a type where the name should be, and two keywords (<code>implicit operator</code>) you rarely see. Once you know the grammar, it reads in one pass:</p>
+
+<div class="callout callout-english">
+    <code>implicit operator Person(PersonBuilder pb)</code> = &ldquo;Whenever a <strong>Person</strong> is expected but a <strong>PersonBuilder</strong> is given, call this silently to convert it.&rdquo; The parameter is the <em>from</em> type; the &ldquo;name&rdquo; position holds the <em>to</em> type. There is no separate return type — the target type <strong>is</strong> the return type.
+</div>
+
+<p>That's one of the two species of user-defined operators. Let's map the whole territory.</p>
+
+<!-- ============================================================ -->
+<h2>2. Two Species, One Keyword</h2>
+
+<p>Both use <code>operator</code> and both must be <code>public static</code>, but they do different jobs:</p>
+
+<table>
+    <thead>
+        <tr><th></th><th>Conversion operator</th><th>Symbol overload</th></tr>
+    </thead>
+    <tbody>
+        <tr><td><strong>What it customises</strong></td><td>How your type <em>becomes another type</em></td><td>What an existing symbol (<code>+</code>, <code>==</code>, <code>&lt;</code>…) means for your type</td></tr>
+        <tr><td><strong>Shape</strong></td><td><code>implicit operator Target(Source s)</code></td><td><code>Money operator +(Money a, Money b)</code></td></tr>
+        <tr><td><strong>Return type</strong></td><td>The target type <em>is</em> the name — no separate return type</td><td>Written normally, before <code>operator</code></td></tr>
+        <tr><td><strong>Example in .NET</strong></td><td><code>int → long</code>, <code>string → ReadOnlySpan&lt;char&gt;</code></td><td><code>DateTime - DateTime → TimeSpan</code>, <code>string ==</code></td></tr>
+    </tbody>
+</table>
+
+<pre><code><span class="comment">// Symbol overload: return type + symbol where a name would go</span>
+<span class="keyword">public static</span> <span class="type">Money</span> <span class="keyword">operator</span> +(<span class="type">Money</span> <span class="param">left</span>, <span class="type">Money</span> <span class="param">right</span>) { ... }
+
+<span class="comment">// Conversion: the target type IS the name</span>
+<span class="keyword">public static implicit operator</span> <span class="type">Person</span>(<span class="type">PersonBuilder</span> <span class="param">pb</span>) { ... }</code></pre>
+
+<div class="callout callout-warning">
+    People say &ldquo;operator overloading&rdquo; for both, and informally that's fine. Strictly: your PersonBuilder line is a <strong>user-defined conversion operator</strong>, not an overload of any symbol. If an interviewer asks, make the distinction — it signals you actually know the feature.
+</div>
+
+<!-- ============================================================ -->
+<h2>3. Conversion Operators: When Do They Fire?</h2>
+
+<p>This is the part that trips everyone. An implicit conversion fires only when the compiler sees a <strong>typed target</strong> that doesn't match the expression's type:</p>
+
+<pre><code><span class="type">PersonBuilder</span> builder = <span class="keyword">new</span>();
+
+<span class="type">Person</span> a = builder;          <span class="comment">// ✅ fires — typed variable is a target</span>
+Save(builder);               <span class="comment">// ✅ fires — parameter `Person p` is a target</span>
+<span class="keyword">return</span> builder;              <span class="comment">// ✅ fires — return type `Person` is a target</span>
+
+<span class="keyword">var</span> b = builder;             <span class="comment">// ❌ never fires — b is a PersonBuilder!</span></code></pre>
+
+<div class="callout callout-rule">
+    <code>var</code> never triggers a conversion. It adopts the expression's existing type — there's no &ldquo;expected type&rdquo; for the compiler to convert toward. This is why your FacetedBuilderDemo, which uses <code>var</code>, has to call <code>.Build()</code> explicitly: the implicit operator sits there unused.
+</div>
+
+<h3>is and as don't call your operator either</h3>
+
+<pre><code><span class="keyword">var</span> x = builder <span class="keyword">as</span> <span class="type">Person</span>;   <span class="comment">// ❌ compile error CS0039</span>
+<span class="keyword">bool</span> y = builder <span class="keyword">is</span> <span class="type">Person</span>;  <span class="comment">// ❌ compile error</span>
+<span class="type">Person</span> z = (<span class="type">Person</span>)builder;  <span class="comment">// ✅ works — cast resolves at compile time</span></code></pre>
+
+<p><code>is</code> and <code>as</code> perform <em>runtime type checks on an object that already exists</em>. A conversion operator <em>runs your code</em> and produces a (possibly different) object. Different mechanisms, different moments: casts are wired up at compile time; <code>is</code>/<code>as</code> inspect at runtime and can't see your operators at all.</p>
+
+<!-- ============================================================ -->
+<h2>4. Implicit vs Explicit — The Honesty Contract</h2>
+
+<p>The keyword you pick is a promise to every future caller:</p>
+
+<table>
+    <thead>
+        <tr><th>Keyword</th><th>The promise</th><th>Caller writes</th><th>Built-in twin</th></tr>
+    </thead>
+    <tbody>
+        <tr><td><code>implicit</code></td><td>Always succeeds, loses nothing, cheap</td><td><code>Person p = builder;</code></td><td><code>int → long</code></td></tr>
+        <tr><td><code>explicit</code></td><td>May lose data or throw — opt in visibly</td><td><code>int x = (int)percentage;</code></td><td><code>long → int</code> (truncates)</td></tr>
+    </tbody>
+</table>
+
+<pre><code><span class="comment">// Rounding loses decimals; negatives throw. Must NOT happen silently:</span>
+<span class="keyword">public static explicit operator</span> <span class="keyword">int</span>(<span class="type">Percentage</span> <span class="param">p</span>)
+{
+    <span class="keyword">if</span> (p.Value &lt; <span class="number">0</span>) <span class="keyword">throw new</span> <span class="type">InvalidOperationException</span>(<span class="string">"Negative percentage."</span>);
+    <span class="keyword">return</span> (<span class="keyword">int</span>)<span class="type">Math</span>.<span class="method">Round</span>(p.Value);
+}</code></pre>
+
+<h3>The rules the compiler enforces</h3>
+
+<ul>
+    <li><strong>One operator per type pair.</strong> You can't declare both implicit and explicit for the same pair — and you don't need to: implicit already permits the cast syntax too (<code>(Person)builder</code> works fine with only an implicit operator).</li>
+    <li><strong>You must own one side.</strong> At least one of the two types must be the enclosing type (CS0556). No gluing a <code>string → int</code> conversion into some helper class.</li>
+    <li><strong>No conversions to/from base classes or interfaces.</strong> The runtime already owns those relationships (inheritance, boxing); user conversions can't shadow the type system.</li>
+</ul>
+
+<div class="callout callout-metaphor">
+    Implicit is an open border between two friendly countries — citizens cross without showing papers because nothing bad can happen. Explicit is a border checkpoint — you must present the cast, because the crossing might cost you something (decimals, an exception). And <code>DateTime</code>↔<code>string</code> has no border at all: parsing can fail, so .NET makes you take the official route — <code>Parse</code>/<code>TryParse</code> — where failure is part of the signature.
+</div>
+
+<!-- ============================================================ -->
+<h2>5. Symbol Overloading</h2>
+
+<p>The other species: giving an existing symbol a meaning for your type. The classic worthy example is a value type where the math is obvious:</p>
+
+<pre><code><span class="keyword">public readonly record struct</span> <span class="type">Money</span>(<span class="keyword">decimal</span> Amount, <span class="keyword">string</span> Currency)
+{
+    <span class="keyword">public static</span> <span class="type">Money</span> <span class="keyword">operator</span> +(<span class="type">Money</span> <span class="param">left</span>, <span class="type">Money</span> <span class="param">right</span>)
+    {
+        <span class="keyword">if</span> (left.Currency != right.Currency)
+            <span class="keyword">throw new</span> <span class="type">InvalidOperationException</span>(<span class="string">"Currency mismatch."</span>);
+        <span class="keyword">return</span> left <span class="keyword">with</span> { Amount = left.Amount + right.Amount };
+    }
+
+    <span class="comment">// money * 1.5m  AND  1.5m * money need SEPARATE overloads —</span>
+    <span class="comment">// the compiler matches operand types positionally, never swaps them</span>
+    <span class="keyword">public static</span> <span class="type">Money</span> <span class="keyword">operator</span> *(<span class="type">Money</span> <span class="param">m</span>, <span class="keyword">decimal</span> <span class="param">factor</span>) =&gt; m <span class="keyword">with</span> { Amount = m.Amount * factor };
+    <span class="keyword">public static</span> <span class="type">Money</span> <span class="keyword">operator</span> *(<span class="keyword">decimal</span> <span class="param">factor</span>, <span class="type">Money</span> <span class="param">m</span>) =&gt; m * factor;  <span class="comment">// delegate!</span>
+}</code></pre>
+
+<h3>What you get free, what you can't touch</h3>
+
+<ul>
+    <li><strong>Free:</strong> compound assignment. <code>wallet += price</code> is always rewritten as <code>wallet = wallet + price</code>, reusing your <code>+</code>. You cannot (and need not) overload <code>+=</code> separately.</li>
+    <li><strong>Forbidden:</strong> <code>=</code>, <code>.</code>, <code>?:</code>, <code>new</code>, <code>typeof</code>, and <code>&amp;&amp;</code>/<code>||</code> directly (those come indirectly via overloading <code>&amp;</code>/<code>|</code> plus <code>true</code>/<code>false</code>). C# is deliberately stricter than C++ here.</li>
+    <li><strong>Never mutate an operand.</strong> Operators model value math: take inputs, return a <em>new</em> result. Even <code>++</code> should return a new value — the compiler handles prefix/postfix placement for you.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2>6. Equality — Pairs and the Recursion Trap</h2>
+
+<p>Some operators are legally married: define one and the compiler demands its partner. <code>==</code> pairs with <code>!=</code>, <code>&lt;</code> with <code>&gt;</code>, <code>&lt;=</code> with <code>&gt;=</code>.</p>
+
+<p>The canonical <code>==</code> for a class, with the trap annotated:</p>
+
+<pre><code><span class="keyword">public static bool operator</span> ==(<span class="type">Isbn</span>? <span class="param">left</span>, <span class="type">Isbn</span>? <span class="param">right</span>)
+{
+    <span class="keyword">if</span> (<span class="type">ReferenceEquals</span>(left, right)) <span class="keyword">return true</span>;   <span class="comment">// same object, or both null</span>
+    <span class="keyword">if</span> (left <span class="keyword">is null</span> || right <span class="keyword">is null</span>) <span class="keyword">return false</span>; <span class="comment">// ⚠ `is null`, NOT `== null`</span>
+    <span class="keyword">return</span> left.Value == right.Value;
+}
+<span class="keyword">public static bool operator</span> !=(<span class="type">Isbn</span>? <span class="param">left</span>, <span class="type">Isbn</span>? <span class="param">right</span>) =&gt; !(left == right);</code></pre>
+
+<div class="callout callout-warning">
+    Writing <code>left == null</code> <em>inside</em> your own <code>==</code> overload calls the overload itself — infinite recursion, StackOverflowException. <code>is null</code> is immune because pattern matching bypasses user-defined operators entirely. This bug is a rite of passage; now you've had it here instead of in production.
+</div>
+
+<p>Also override <code>Equals</code> and <code>GetHashCode</code> so dictionaries agree with your <code>==</code> — three views of one truth. Or skip the whole ceremony: <strong>records synthesize value-based <code>==</code>, <code>!=</code>, <code>Equals</code>, and <code>GetHashCode</code> for you.</strong> What records never give you is ordering — <code>&lt;</code> on a record is a compile error until you write it, ideally as four one-liners delegating to a single <code>CompareTo</code>.</p>
+
+<!-- ============================================================ -->
+<h2>7. Under the Hood: No Magic</h2>
+
+<p>Every operator compiles to an ordinary static method with a reserved name:</p>
+
+<pre><code><span class="keyword">foreach</span> (<span class="keyword">var</span> m <span class="keyword">in</span> <span class="keyword">typeof</span>(<span class="type">Money</span>).<span class="method">GetMethods</span>().<span class="method">Where</span>(m =&gt; m.IsSpecialName))
+    <span class="type">Console</span>.<span class="method">WriteLine</span>(m.Name);
+
+<span class="comment">// op_Addition, op_Multiply, op_Equality, op_Inequality ...</span>
+<span class="comment">// and on PersonBuilder: op_Implicit</span></code></pre>
+
+<p>&ldquo;Operator magic&rdquo; is compile-time name resolution over these methods — nothing happens at runtime you couldn't write yourself. That single fact explains every caveat in this guide: <code>var</code> doesn't convert (no target type to resolve against), <code>is</code>/<code>as</code> don't convert (they're runtime checks, and <code>op_Implicit</code> is invisible to them), and casts do convert (the compiler rewrites them into a call).</p>
+
+<!-- ============================================================ -->
+<h2>8. The Design Bar: Obvious to a Stranger</h2>
+
+<p>The feature is easy; the judgment is the skill. Test cases:</p>
+
+<table>
+    <thead>
+        <tr><th>Candidate</th><th>Verdict</th><th>Why</th></tr>
+    </thead>
+    <tbody>
+        <tr><td><code>date1 - date2 → TimeSpan</code></td><td>✅ Operator</td><td>.NET does exactly this; any stranger reads it correctly</td></tr>
+        <tr><td><code>order + orderLine</code></td><td>❌ Method (<code>AddLine</code>)</td><td><code>+</code> implies pure value math; this is a stateful domain action</td></tr>
+        <tr><td><code>implicit CustomerId → string</code></td><td>❌ Don't</td><td>The typed ID exists precisely to NOT silently become a string</td></tr>
+        <tr><td><code>implicit decimal → Money</code></td><td>❌ Don't</td><td>Which currency does <code>Money m = 50m;</code> have? A conversion that guesses is a bug factory</td></tr>
+        <tr><td><code>implicit PersonBuilder → Person</code></td><td>🤝 Defensible</td><td>Safe, lossless, cheap. But when <code>.Build()</code> also exists, the named method wins in practice — it works with <code>var</code> and announces itself</td></tr>
+    </tbody>
+</table>
+
+<div class="callout callout-rule">
+    Operators belong on types that behave like <strong>values</strong> with meanings a stranger already knows: math, units, money, versions, coordinates. Everything else gets a named method. A <code>+</code> that touches the database is a crime scene.
+</div>
+
+<!-- ============================================================ -->
+<h2>9. Key Takeaways</h2>
+
+<ul>
+    <li><strong>Two species:</strong> conversion operators (type → type) and symbol overloads (new meaning for <code>+</code>, <code>==</code>…). Same keyword, different grammar: conversions use the target type as the name; overloads have a return type plus a symbol.</li>
+    <li><strong>Conversions fire at typed targets only</strong> — assignment to a typed variable, argument passing, return statements. Never with <code>var</code>, never via <code>is</code>/<code>as</code>.</li>
+    <li><strong>Implicit = safe, lossless, cheap. Explicit = may lose or throw.</strong> If it can fail, consider a named <code>Parse</code>/<code>TryParse</code>-style method instead of either.</li>
+    <li><strong>Pairing rules:</strong> <code>==</code>/<code>!=</code>, <code>&lt;</code>/<code>&gt;</code>, <code>&lt;=</code>/<code>&gt;=</code> come in mandatory pairs. Inside <code>==</code>, use <code>is null</code> — never <code>== null</code>.</li>
+    <li><strong>No runtime magic:</strong> operators are static methods (<code>op_Implicit</code>, <code>op_Addition</code>) resolved at compile time.</li>
+    <li><strong>The design bar:</strong> obvious to a stranger, or it gets a name.</li>
+</ul>
+
+<p>Practice companion: <code>GeneralExercises/Operators_Drills.html</code> — 14 blank-page drills built on exactly these concepts, starting from rebuilding your own PersonBuilder trick from memory.</p>
+
+</body>
+</html>

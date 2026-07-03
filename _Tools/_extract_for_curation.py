@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 sys.stdout.reconfigure(encoding='utf-8')
-sys.path.insert(0, r'C:\Users\User\Desktop\AGILE\Learning')
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # sibling import (organize_learning)
 
 from organize_learning import (
     discover_files, extract_md_text, extract_docx_md, extract_pdf_pages,

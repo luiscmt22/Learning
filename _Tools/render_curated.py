@@ -46,7 +46,7 @@ from collections import defaultdict
 from pathlib import Path
 
 sys.stdout.reconfigure(encoding='utf-8')
-sys.path.insert(0, r'C:\Users\User\Desktop\AGILE\Learning')
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # sibling imports (build_webbook, organize_learning)
 
 import build_webbook as bw
 from organize_learning import (
@@ -326,7 +326,7 @@ def extract_docx_md(path: Path) -> str:
 # CONFIG
 # ════════════════════════════════════════════════════════════════════════════
 
-BASE = Path(r'C:\Users\User\Desktop\AGILE\Learning')
+BASE = Path(__file__).resolve().parent.parent  # Learning root (this script lives in _Tools/)
 OUT = BASE / '_Curated'
 
 ANALYSES_PATH = OUT / '_analyses_merged.json'
