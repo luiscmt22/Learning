@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nested Collections &amp; Object Identity — Allocation, Aliasing and the Three Writes</title>
+    <style>
+        :root{--bg:#1a1a2e;--surface:#16213e;--surface2:#0f3460;--accent:#e94560;--accent2:#533483;--text:#eee;--text-muted:#aab;--success:#4ecca3;--warning:#f0a500;--code-bg:#0d1117;--border:#333}*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;padding:2rem;max-width:900px;margin:0 auto}h1{text-align:center;font-size:2.2rem;margin-bottom:.5rem;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}.subtitle{text-align:center;color:var(--text-muted);margin-bottom:3rem;font-size:1.1rem}h2{color:var(--accent);font-size:1.6rem;margin:2.5rem 0 1rem 0;padding-bottom:.3rem;border-bottom:2px solid var(--accent)}h3{color:var(--success);font-size:1.2rem;margin:1.8rem 0 .8rem 0}h4{color:var(--warning);font-size:1.05rem;margin:1.2rem 0 .5rem 0}p{margin-bottom:1rem}pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1.2rem;overflow-x:auto;margin:1rem 0;font-size:.9rem;line-height:1.5}code{font-family:'Cascadia Code','Fira Code','Consolas',monospace;font-size:.9rem}p code,li code,td code{background:var(--code-bg);padding:.15rem .4rem;border-radius:4px;border:1px solid var(--border)}.keyword{color:#569cd6}.type{color:#4ec9b0}.string{color:#ce9178}.comment{color:#6a9955}.method{color:#dcdcaa}.number{color:#b5cea8}.param{color:#9cdcfe}.callout{border-radius:8px;padding:1.2rem 1.5rem;margin:1.5rem 0;border-left:4px solid}.callout-metaphor{background:rgba(83,52,131,.2);border-color:var(--accent2)}.callout-metaphor::before{content:"Metaphor";display:block;font-weight:bold;color:var(--accent2);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}.callout-english{background:rgba(78,204,163,.1);border-color:var(--success)}.callout-english::before{content:"Read It Like English";display:block;font-weight:bold;color:var(--success);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}.callout-warning{background:rgba(240,165,0,.1);border-color:var(--warning)}.callout-warning::before{content:"Common Confusion";display:block;font-weight:bold;color:var(--warning);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}.callout-rule{background:rgba(233,69,96,.1);border-color:var(--accent)}.callout-rule::before{content:"Golden Rule";display:block;font-weight:bold;color:var(--accent);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}ul,ol{margin:.5rem 0 1rem 1.5rem}li{margin-bottom:.3rem}table{width:100%;border-collapse:collapse;margin:1rem 0}th,td{border:1px solid var(--border);padding:.6rem 1rem;text-align:left}th{background:var(--surface2);color:var(--success)}td{background:var(--surface)}.diagram{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1.5rem;margin:1.5rem 0;font-family:'Cascadia Code',monospace;font-size:.85rem;line-height:1.6;white-space:pre;overflow-x:auto}
+    </style>
+</head>
+<body>
+<div style="background:rgba(7,9,15,0.94);border-bottom:1px solid #1f2940;padding:12px 24px;font:13px/1.4 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;position:fixed;top:0;left:0;right:0;z-index:99999;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);display:flex;align-items:center;gap:10px;color:#94a3bf;box-sizing:border-box;min-height:48px;"><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;">Learning</a><span style="color:#5f6b86;">›</span><a href="../_Hub.html" style="color:#94a3bf;text-decoration:none;">CORE</a><span style="color:#5f6b86;">›</span><a href="_Category.html" style="color:#94a3bf;text-decoration:none;">C# Language</a><span style="color:#5f6b86;">›</span><span style="color:#e9eef8;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">Nested Collections &amp; Object Identity</span><a href="csharp-nested-collections-and-identity.html" download style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">↓ Download</a><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">All docs</a></div><div style="height:48px;"></div><div style="background:linear-gradient(135deg,#0a0e1a 0%,#11182a 100%);border:1px solid #1f2940;border-radius:14px;padding:24px 28px;margin:20px;font:15px/1.7 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;color:#e9eef8;box-shadow:0 12px 40px rgba(0,0,0,0.35);"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.6px;color:#6aa6ff;font-weight:600;margin-bottom:8px;">▸ Curated · Concept · Language</div><div style="font-size:24px;font-weight:700;color:#e9eef8;margin-bottom:10px;letter-spacing:-0.02em;line-height:1.2;">Nested Collections &amp; Object Identity</div><div style="font-size:16px;color:#94a3bf;margin-bottom:18px;line-height:1.5;">A generic type argument describes a slot, not an object: nesting dictionaries allocates nothing until you write, storing a reference makes two names for one object, and Add / indexer / TryAdd are three different answers to &ldquo;what does a duplicate key mean?&rdquo;</div><div style="font-style:italic;border-left:3px solid #6aa6ff;padding:6px 0 6px 16px;margin:14px 0;color:#e9eef8;">You typed <code style="background:#0a1020;padding:1px 6px;border-radius:4px;">Dictionary&lt;int, Dictionary&lt;int, Dictionary&lt;int, string&gt;&gt;&gt;</code> into SearchController to test a hypothesis, and three things bit you in a row: you couldn't say how many dictionaries existed, two variables silently pointed at the same object, and Add threw on a key you'd forgotten was there. None of those are knowledge gaps — they're identity gaps.</div><div style="background:rgba(106,166,255,0.06);border:1px solid rgba(106,166,255,0.20);border-radius:10px;padding:14px 18px;margin:14px 0;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#6aa6ff;margin-bottom:6px;font-weight:600;">Executive summary</div><div style="font-size:14px;color:#e9eef8;line-height:1.6;">Nested collections concentrate three separate C# ideas into one place. First, allocation: type arguments are compile-time descriptions, so only the <code style="background:#0a1020;padding:1px 4px;border-radius:3px;">new</code> keyword creates objects — a three-level dictionary declaration allocates exactly one. Second, identity: storing a dictionary into another dictionary copies the reference, so mutations through any name are visible through all of them; this is a bug when accidental and the load-bearing mechanism of get-or-create when deliberate. Third, write semantics: the indexer upserts and never throws, Add asserts the key is new and throws ArgumentException if not, TryAdd adds only when absent and returns a bool. Reading a missing key throws KeyNotFoundException, so nested access needs TryGetValue at every level but the last — and <code style="background:#0a1020;padding:1px 4px;border-radius:3px;">out var</code> is the correct form because it inherits the [MaybeNullWhen(false)] annotation that an explicit declaration contradicts.</div></div><div style="background:rgba(184,106,255,0.06);border:1px solid rgba(184,106,255,0.25);border-radius:10px;padding:14px 18px;margin:14px 0;display:flex;gap:12px;"><div style="font-size:20px;flex-shrink:0;">💡</div><div style="flex:1;font-size:14px;color:#e9eef8;line-height:1.6;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#b86aff;margin-bottom:4px;font-weight:700;">Metaphor</div>A reference is a street address, not a house. Writing the address into three notebooks doesn't build three houses — and renovating via any one notebook renovates the single house all three point to. Only <code style="background:#0a1020;padding:1px 6px;border-radius:4px;">new</code> builds a house. Every bug in this guide is someone who thought they had three houses.</div></div><div style="margin-top:14px;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#5f6b86;margin-bottom:8px;font-weight:600;">Key concepts</div><div><span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">reference aliasing</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">Add vs indexer vs TryAdd</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">get-or-create idiom</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">out var scope</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">MaybeNullWhen(false)</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">shallow vs deep copy</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">composite tuple key</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">CollectionsMarshal</span></div></div><div style="margin-top:18px;padding-top:14px;border-top:1px solid #1f2940;font-size:11px;color:#5f6b86;">↑ Curated overlay (hand-authored) · the document follows below · companion drills: GeneralExercises/Nested_Collections_Drills.html</div></div>
+
+<h1>Nested Collections &amp; Object Identity</h1>
+<p class="subtitle">Allocation, aliasing, the three writes, and the get-or-create idiom</p>
+
+<!-- ============================================================ -->
+<h2>1. The Line That Bit You</h2>
+
+<p>This went into <code>Driveway/src/SearchService/Controllers/SearchController.cs</code> as a hypothesis test:</p>
+
+<pre><code><span class="type">Dictionary</span>&lt;<span class="keyword">int</span>, <span class="type">Dictionary</span>&lt;<span class="keyword">int</span>, <span class="type">Dictionary</span>&lt;<span class="keyword">int</span>, <span class="keyword">string</span>&gt;&gt;&gt; <span class="param">yearMakeModelMap</span>
+    = <span class="keyword">new</span> <span class="type">Dictionary</span>&lt;<span class="keyword">int</span>, <span class="type">Dictionary</span>&lt;<span class="keyword">int</span>, <span class="type">Dictionary</span>&lt;<span class="keyword">int</span>, <span class="keyword">string</span>&gt;&gt;&gt;();</code></pre>
+
+<p>The natural question was &ldquo;did I just create three dictionaries?&rdquo; The answer is <strong>one</strong> — and the reason why is the foundation of everything else here.</p>
+
+<div class="callout callout-english">
+    <code>Dictionary&lt;int, Dictionary&lt;int, string&gt;&gt;</code> = &ldquo;a dictionary whose keys are ints and whose values <strong>will be</strong> dictionaries.&rdquo; The nested type argument is a <em>description of a slot</em>, checked by the compiler. It is not an instruction to build anything. Nothing exists inside until you put it there.
+</div>
+
+<p>Three separate ideas collapse into this one declaration: how many objects exist, who else can reach them, and what happens when you write a key that's already taken. This guide takes them in that order.</p>
+
+<!-- ============================================================ -->
+<h2>2. Type Arguments Are Not Allocations</h2>
+
+<p>The rule is mechanical: <strong>count the <code>new</code> keywords, not the angle brackets.</strong></p>
+
+<pre><code><span class="comment">// 1 object. Count == 0. No inner dictionaries exist.</span>
+<span class="keyword">var</span> a = <span class="keyword">new</span> <span class="type">Dictionary</span>&lt;<span class="keyword">int</span>, <span class="type">Dictionary</span>&lt;<span class="keyword">int</span>, <span class="keyword">string</span>&gt;&gt;();
+
+<span class="comment">// 3 objects: the outer, plus one inner per entry.</span>
+<span class="keyword">var</span> b = <span class="keyword">new</span> <span class="type">Dictionary</span>&lt;<span class="keyword">int</span>, <span class="type">Dictionary</span>&lt;<span class="keyword">int</span>, <span class="keyword">string</span>&gt;&gt;
+{
+    { <span class="number">1</span>, <span class="keyword">new</span>() { { <span class="number">1</span>, <span class="string">"x"</span> } } },
+    { <span class="number">2</span>, <span class="keyword">new</span>() { { <span class="number">2</span>, <span class="string">"y"</span> } } }
+};</code></pre>
+
+<p>A collection initializer isn't special syntax — it's sugar for repeated <code>.Add(...)</code> calls, so every <code>new</code> inside it allocates too. The original three-level literal in SearchController allocated <strong>seven</strong> dictionaries (one outer, two mid-level, four leaves), and the full experiment eleven — on every HTTP request, since it sat inside the action method.</p>
+
+<div class="callout callout-warning">
+    &ldquo;Declaring&rdquo; a nested dictionary is often mistaken for building its shape, the way a fixed-size 2D array does. It doesn't. <code>new int[3,3]</code> really does reserve nine slots; <code>new Dictionary&lt;int, Dictionary&lt;int, int&gt;&gt;()</code> reserves nothing. Every level below the first has to be created explicitly, which is why section 7 exists.
+</div>
+
+<!-- ============================================================ -->
+<h2>3. Aliasing: One Object, Many Names</h2>
+
+<p>Dictionaries are reference types, so storing one <em>copies the reference, not the object</em>:</p>
+
+<pre><code><span class="keyword">var</span> makes = <span class="keyword">new</span> <span class="type">Dictionary</span>&lt;<span class="keyword">int</span>, <span class="keyword">string</span>&gt; { { <span class="number">1</span>, <span class="string">"Toyota"</span> } };
+<span class="keyword">var</span> byYear = <span class="keyword">new</span> <span class="type">Dictionary</span>&lt;<span class="keyword">int</span>, <span class="type">Dictionary</span>&lt;<span class="keyword">int</span>, <span class="keyword">string</span>&gt;&gt;();
+
+byYear.<span class="method">Add</span>(<span class="number">1990</span>, makes);
+byYear.<span class="method">Add</span>(<span class="number">2000</span>, makes);
+
+byYear[<span class="number">1990</span>].<span class="method">Add</span>(<span class="number">2</span>, <span class="string">"Honda"</span>);
+
+<span class="type">Console</span>.<span class="method">WriteLine</span>(byYear[<span class="number">2000</span>].Count);   <span class="comment">// 2  — the "other" year changed</span>
+<span class="type">Console</span>.<span class="method">WriteLine</span>(makes.Count);           <span class="comment">// 2  — the local changed too</span></code></pre>
+
+<div class="diagram">   makes ─────────┐
+                  ▼
+   byYear[1990] ─▶ ┌──────────────────────┐
+                  │ { 1:"Toyota",        │  ONE object
+   byYear[2000] ─▶ │   2:"Honda" }        │  THREE names
+                  └──────────────────────┘</div>
+
+<p>Two dictionary entries, one dictionary object, three ways to reach it. Now the part that separates people who understand references from people who've merely read about them:</p>
+
+<pre><code>makes = <span class="keyword">new</span> <span class="type">Dictionary</span>&lt;<span class="keyword">int</span>, <span class="keyword">string</span>&gt;();   <span class="comment">// reassign the VARIABLE</span>
+<span class="type">Console</span>.<span class="method">WriteLine</span>(byYear[<span class="number">1990</span>].Count);      <span class="comment">// still 2 — untouched</span></code></pre>
+
+<div class="callout callout-rule">
+    Reassigning a variable repoints a <em>label</em>; mutating an object changes the <em>thing</em>. <code>makes = new(...)</code> makes the local point somewhere else and does nothing to the dictionary <code>byYear</code> is still holding. <code>makes.Add(...)</code> changes the shared object and everyone sees it.
+</div>
+
+<h3>Shallow vs deep copy</h3>
+
+<p>The same rule explains why the copy constructor doesn't isolate you:</p>
+
+<pre><code><span class="keyword">var</span> shallow = <span class="keyword">new</span> <span class="type">Dictionary</span>&lt;<span class="keyword">int</span>, <span class="type">Dictionary</span>&lt;<span class="keyword">int</span>, <span class="keyword">string</span>&gt;&gt;(original);
+shallow[<span class="number">1990</span>].<span class="method">Add</span>(<span class="number">99</span>, <span class="string">"New"</span>);
+original[<span class="number">1990</span>].<span class="method">ContainsKey</span>(<span class="number">99</span>);   <span class="comment">// true! the inner maps are shared</span></code></pre>
+
+<p>It copies the outer structure and every <em>reference</em> inside it. To isolate, rebuild each level:</p>
+
+<pre><code><span class="keyword">var</span> deep = <span class="keyword">new</span> <span class="type">Dictionary</span>&lt;<span class="keyword">int</span>, <span class="type">Dictionary</span>&lt;<span class="keyword">int</span>, <span class="keyword">string</span>&gt;&gt;();
+<span class="keyword">foreach</span> (<span class="keyword">var</span> (year, inner) <span class="keyword">in</span> original)
+    deep[year] = <span class="keyword">new</span> <span class="type">Dictionary</span>&lt;<span class="keyword">int</span>, <span class="keyword">string</span>&gt;(inner);   <span class="comment">// shallow here is FINE</span></code></pre>
+
+<p>You stop deep-copying at the first <strong>immutable</strong> layer. The values are <code>string</code>, which nobody can mutate out from under you, so sharing them is safe. Were they <code>List&lt;T&gt;</code>, you'd have to keep going.</p>
+
+<!-- ============================================================ -->
+<h2>4. The Three Writes</h2>
+
+<p>Three ways to put a key in a dictionary. They differ only when the key is <em>already present</em>, and choosing between them is a design decision about what a duplicate <em>means</em> in your domain.</p>
+
+<table>
+    <thead>
+        <tr><th>Write</th><th>Key absent</th><th>Key present</th><th>The intent it expresses</th></tr>
+    </thead>
+    <tbody>
+        <tr><td><code>d[k] = v</code></td><td>Adds</td><td>Overwrites silently</td><td>&ldquo;Upsert — later data wins.&rdquo;</td></tr>
+        <tr><td><code>d.Add(k, v)</code></td><td>Adds</td><td>Throws <code>ArgumentException</code></td><td>&ldquo;A duplicate is a bug in <em>my</em> logic — fail loudly.&rdquo;</td></tr>
+        <tr><td><code>d.TryAdd(k, v)</code></td><td>Adds, returns <code>true</code></td><td>No-op, returns <code>false</code></td><td>&ldquo;First write wins — tell me which happened.&rdquo;</td></tr>
+    </tbody>
+</table>
+
+<div class="callout callout-warning">
+    <code>Add</code> does not mean &ldquo;don't overwrite&rdquo; — it means &ldquo;<em>crash</em> if this would overwrite.&rdquo; It's a runtime assertion, not a protection. If your goal is &ldquo;leave the existing value alone&rdquo;, the answer is <code>TryAdd</code>. This is the exact mistake that made SearchController throw: swapping an indexer assignment for <code>Add</code> on a key that already existed turned a wrong value into an unhandled exception.
+</div>
+
+<p>Pick by what a collision means, not by which feels safest:</p>
+
+<table>
+    <thead><tr><th>Situation</th><th>Use</th></tr></thead>
+    <tbody>
+        <tr><td>Cache or lookup where later data supersedes</td><td><code>[k] = v</code></td></tr>
+        <tr><td>Config load where a duplicate key means malformed input</td><td><code>Add</code> — let it blow up</td></tr>
+        <tr><td>Merging layered sources where the first source wins</td><td><code>TryAdd</code></td></tr>
+        <tr><td>Keys originating from user input</td><td>Never <code>Add</code> — you're handing users a DoS</td></tr>
+    </tbody>
+</table>
+
+<h3>The initializer trap</h3>
+
+<p>The two initializer syntaxes inherit these semantics, which surprises people:</p>
+
+<pre><code><span class="keyword">var</span> a = <span class="keyword">new</span> <span class="type">Dictionary</span>&lt;<span class="keyword">int</span>, <span class="keyword">string</span>&gt; { { <span class="number">1</span>, <span class="string">"A"</span> }, { <span class="number">1</span>, <span class="string">"B"</span> } };  <span class="comment">// THROWS at runtime</span>
+<span class="keyword">var</span> b = <span class="keyword">new</span> <span class="type">Dictionary</span>&lt;<span class="keyword">int</span>, <span class="keyword">string</span>&gt; { [<span class="number">1</span>] = <span class="string">"A"</span>, [<span class="number">1</span>] = <span class="string">"B"</span> };      <span class="comment">// fine, b[1] == "B"</span></code></pre>
+
+<p>Collection-initializer braces compile to <code>Add</code>; indexer syntax compiles to indexer assignment. Both forms compile cleanly — the compiler doesn't constant-fold keys to detect duplicates — so form <code>a</code> fails at runtime. LINQ's <code>ToDictionary()</code> has the same <code>Add</code> semantics and throws on duplicate keys rather than picking a winner.</p>
+
+<h3>Reads have their own rule</h3>
+
+<p>The indexer is asymmetric: writing a missing key <em>adds</em> it, reading a missing key <strong>throws <code>KeyNotFoundException</code></strong>. In <code>map[2010][3] = x</code>, the first bracket is a read and the second is a write — so that line throws if 2010 is absent but happily creates key 3.</p>
+
+<!-- ============================================================ -->
+<h2>5. <code>out var</code>: Scope and Definite Assignment</h2>
+
+<p>Because reads throw, safe nested access runs through <code>TryGetValue</code>. Two rules govern the variable it produces.</p>
+
+<p><strong>Scope.</strong> An <code>out var</code> declaration is scoped to the <em>enclosing block</em> — exactly as if declared on the line above. Not to the <code>if</code> body, and not beyond the block:</p>
+
+<pre><code><span class="keyword">if</span> (map.<span class="method">TryGetValue</span>(<span class="number">1</span>, <span class="keyword">out var</span> found))
+    <span class="type">Console</span>.<span class="method">WriteLine</span>(found);   <span class="comment">// ✅</span>
+<span class="type">Console</span>.<span class="method">WriteLine</span>(found);       <span class="comment">// ✅ still in scope after the if</span>
+
+<span class="keyword">if</span> (<span class="keyword">true</span>)
+{
+    <span class="keyword">if</span> (map.<span class="method">TryGetValue</span>(<span class="number">2</span>, <span class="keyword">out var</span> inner)) { }
+}
+<span class="type">Console</span>.<span class="method">WriteLine</span>(inner);       <span class="comment">// ❌ CS0103 — its block has closed</span></code></pre>
+
+<p><strong>Definite assignment.</strong> The <code>out</code> contract requires the method to assign the parameter on <em>every</em> exit path (miss one when writing your own and you get CS0177). That's what makes the variable usable immediately after the call with no initialization — and on a <code>false</code> return it holds <code>default</code>, which for a reference type is <code>null</code>.</p>
+
+<!-- ============================================================ -->
+<h2>6. Why <code>out var</code> Beats an Explicit Declaration</h2>
+
+<p><code>TryGetValue</code> poses a problem the type system can't express. Is the out parameter null after the call? It depends on the <em>return value</em> — and a parameter gets one type, not two. The gap is filled with an attribute:</p>
+
+<pre><code><span class="keyword">public bool</span> <span class="method">TryGetValue</span>(<span class="type">TKey</span> <span class="param">key</span>, [<span class="type">MaybeNullWhen</span>(<span class="keyword">false</span>)] <span class="keyword">out</span> <span class="type">TValue</span> <span class="param">value</span>)</code></pre>
+
+<div class="callout callout-english">
+    <code>[MaybeNullWhen(false)]</code> = &ldquo;<strong>value</strong> may be <strong>null</strong> when this method returns <strong>false</strong>.&rdquo; It isn't a type — it's metadata the compiler reads to give the variable <em>different nullability in different branches</em>: guaranteed non-null in the <code>true</code> branch, possibly null in the <code>false</code> branch.
+</div>
+
+<p>Now the payoff. <code>var</code> adopts the type <em>together with its nullability</em>, so it stays honest for free. Writing the type yourself makes a promise that can contradict the method's:</p>
+
+<pre><code><span class="comment">// ✅ no warning — var inherits the null-aware type</span>
+<span class="keyword">if</span> (!map.<span class="method">TryGetValue</span>(<span class="number">2010</span>, <span class="keyword">out var</span> makesA))
+    makesA = map[<span class="number">2010</span>] = <span class="keyword">new</span>();
+
+<span class="comment">// ⚠ warning CS8600 — you declared "never null"; the method may write null</span>
+<span class="type">Dictionary</span>&lt;<span class="keyword">int</span>, <span class="keyword">string</span>&gt; makesB;
+<span class="keyword">if</span> (!map.<span class="method">TryGetValue</span>(<span class="number">2020</span>, <span class="keyword">out</span> makesB))
+    makesB = map[<span class="number">2020</span>] = <span class="keyword">new</span>();</code></pre>
+
+<p>The fix for the second form is one character — declare it <code>Dictionary&lt;int, string&gt;?</code> — but you have to remember it, <em>and</em> retype the whole generic type. CS8600 is only a warning and the code runs identically; what you lose is the compiler's null tracking from that point on, so genuine null bugs downstream stop being reported.</p>
+
+<div class="callout callout-rule">
+    Prefer <code>out var</code>. Not because it's shorter — because it inherits the annotation, so the nullable analysis is right by default instead of right only if you remember a <code>?</code>.
+</div>
+
+<!-- ============================================================ -->
+<h2>7. The Get-or-Create Idiom</h2>
+
+<p>Everything above assembles into the one pattern you'll write for the rest of your career: reach a nested level, creating it if it doesn't exist, without ever throwing.</p>
+
+<pre><code><span class="comment">// get-or-create at each level, then write the leaf</span>
+<span class="keyword">if</span> (!byYear.<span class="method">TryGetValue</span>(year, <span class="keyword">out var</span> makes))
+    makes = byYear[year] = <span class="keyword">new</span> <span class="type">Dictionary</span>&lt;<span class="keyword">int</span>, <span class="type">Dictionary</span>&lt;<span class="keyword">int</span>, <span class="keyword">string</span>&gt;&gt;();
+
+<span class="keyword">if</span> (!makes.<span class="method">TryGetValue</span>(makeId, <span class="keyword">out var</span> models))
+    models = makes[makeId] = <span class="keyword">new</span> <span class="type">Dictionary</span>&lt;<span class="keyword">int</span>, <span class="keyword">string</span>&gt;();
+
+models[modelId] = modelName;</code></pre>
+
+<p>Read it as: <em>if there's no makes-map for this year, create one and file it under the year; the same for the make; then write the leaf.</em> After each <code>if</code>, the variable is guaranteed non-null on both paths — that guarantee is what lets the next block dereference it safely.</p>
+
+<h3>Why the chained assignment isn't two objects</h3>
+
+<p>Assignment in C# is an <em>expression</em> that evaluates to the value assigned, and it is right-associative:</p>
+
+<pre><code>makes = ( byYear[year] = <span class="keyword">new</span> <span class="type">Dictionary</span>&lt;...&gt;() );
+<span class="comment">//        └─ stores the new dict, then evaluates to that same reference ─┘</span></code></pre>
+
+<p>One allocation, two references to it. Writes through <code>makes</code> land inside <code>byYear[year]</code> <strong>because it is the same object</strong>. Section 3's aliasing — accidental there — is the load-bearing mechanism here. Note also that the writes use the indexer, never <code>Add</code>: you only reach that line when the key is known absent, and the indexer cannot throw.</p>
+
+<h3>Three implementations, three costs</h3>
+
+<table>
+    <thead><tr><th>Form</th><th>Lookups (hit / miss)</th><th>Verdict</th></tr></thead>
+    <tbody>
+        <tr><td><code>ContainsKey</code> then indexer</td><td>2 / 3</td><td>Avoid — hashes the key repeatedly, and is racy on shared state</td></tr>
+        <tr><td><code>TryGetValue</code> + indexer</td><td>1 / 2</td><td><strong>The default.</strong> Readable, one obvious meaning</td></tr>
+        <tr><td><code>CollectionsMarshal.GetValueRefOrAddDefault</code></td><td>1 / 1</td><td>Measured hot paths only</td></tr>
+    </tbody>
+</table>
+
+<pre><code><span class="comment">// .NET 6+: a ref straight into the dictionary's bucket — no second lookup</span>
+<span class="keyword">ref var</span> slot = <span class="keyword">ref</span> <span class="type">CollectionsMarshal</span>.<span class="method">GetValueRefOrAddDefault</span>(map, key, <span class="keyword">out bool</span> existed);
+slot ??= <span class="keyword">new</span>();</code></pre>
+
+<div class="callout callout-warning">
+    That <code>ref</code> points into the dictionary's internal array, and <em>any</em> insert that triggers a resize invalidates it. You must not touch <code>map</code> while <code>slot</code> is alive. One extra hash lookup is nothing next to code your team can read without a comment — use <code>TryGetValue</code> unless a profiler sent you here.
+</div>
+
+<!-- ============================================================ -->
+<h2>8. Should You Nest At All?</h2>
+
+<p>Having made nesting work, the honest question is whether it was the right shape. Three designs for the same year/make/model lookup:</p>
+
+<table>
+    <thead><tr><th>Design</th><th>Good at</th><th>Bad at</th></tr></thead>
+    <tbody>
+        <tr><td><code>Dictionary&lt;int, Dictionary&lt;int, Dictionary&lt;int, string&gt;&gt;&gt;</code></td><td>&ldquo;All makes in 1990&rdquo; is one indexer call</td><td>Get-or-create ladders, aliasing, partially-built levels, unreadable in the debugger</td></tr>
+        <tr><td><code>Dictionary&lt;(int Year, int Make, int Model), string&gt;</code></td><td>Exact lookups; one flat map, no ladder, no aliasing</td><td>&ldquo;All makes in 1990&rdquo; needs a full scan</td></tr>
+        <tr><td><code>List&lt;Vehicle&gt;</code> of records</td><td>Querying by many shapes — name, range, sorted</td><td>Point lookups are O(n)</td></tr>
+    </tbody>
+</table>
+
+<div class="callout callout-rule">
+    The deciding question is not performance — it's <strong>&ldquo;do I ever need a whole level on its own?&rdquo;</strong> If &ldquo;every make in 1990&rdquo; is a real operation, nesting earns its complexity. If you only ever do exact three-part lookups, the composite key is dramatically simpler and you should take it.
+</div>
+
+<p>The tuple key works for free because <code>ValueTuple</code> implements structural <code>Equals</code> and <code>GetHashCode</code> over its fields — the same contract covered in <code>csharp-equality-guide</code> and <code>csharp-named-tuples</code>. A <code>record</code> key behaves identically.</p>
+
+<!-- ============================================================ -->
+<h2>9. Key Takeaways</h2>
+
+<ul>
+    <li><strong>Count <code>new</code>, not angle brackets.</strong> A three-level declaration allocates one dictionary; type arguments describe slots, they don't build them.</li>
+    <li><strong>Storing a collection copies the reference.</strong> One object, many names — mutations are visible through all of them. Reassigning a variable repoints a label and changes nothing.</li>
+    <li><strong>Three writes, three intents:</strong> indexer = upsert, <code>Add</code> = assert-and-throw, <code>TryAdd</code> = first-write-wins. <code>Add</code> is not a guard against overwriting; it's a crash when you would have.</li>
+    <li><strong>The indexer is asymmetric:</strong> writing a missing key adds it, reading one throws <code>KeyNotFoundException</code>.</li>
+    <li><strong>Prefer <code>out var</code>:</strong> it's scoped to the enclosing block, definitely assigned on all paths, and inherits <code>[MaybeNullWhen(false)]</code> so nullable analysis is correct without a manual <code>?</code>.</li>
+    <li><strong>Get-or-create is deliberate aliasing:</strong> <code>child = parent[k] = new()</code> allocates once and shares the reference on purpose.</li>
+    <li><strong>Nest only if you need a level on its own.</strong> Otherwise a composite tuple key is the same lookup with none of the ceremony.</li>
+</ul>
+
+<p>Practice companion: <code>GeneralExercises/Nested_Collections_Drills.html</code> — 15 blank-page drills built on exactly these concepts, starting from counting the allocations in your own SearchController experiment.</p>
+
+</body>
+</html>

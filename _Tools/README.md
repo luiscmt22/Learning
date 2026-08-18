@@ -40,6 +40,10 @@ imported by the curation scripts below. Imports `build_webbook` itself — they 
 - `_Curated/CORE/language/csharp-operators-and-conversions.html` — hand-authored 03/07/2026;
   its card was hand-added to `_Category.html` (doc count bumped 10 → 11). If you re-run
   `render_curated.py`, check it doesn't overwrite `_Category.html` and drop that card.
+- `_Curated/CORE/language/csharp-nested-collections-and-identity.html` — hand-authored
+  18/08/2026; same deal: card hand-added to `_Category.html` (doc count 11 → 12, words
+  31,950 → 34,227, reading 159 → 170 min). Companion drills live in
+  `CSharpProjects/GeneralExercises/Nested_Collections_Drills.html`.
 
 ## screenshots/
 
