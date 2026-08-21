@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Action, Func &amp; Task — Delegates, Return Types and async void</title>
+    <style>
+        :root{--bg:#1a1a2e;--surface:#16213e;--surface2:#0f3460;--accent:#e94560;--accent2:#533483;--text:#eee;--text-muted:#aab;--success:#4ecca3;--warning:#f0a500;--code-bg:#0d1117;--border:#333}*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;padding:2rem;max-width:900px;margin:0 auto}h1{text-align:center;font-size:2.2rem;margin-bottom:.5rem;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}.subtitle{text-align:center;color:var(--text-muted);margin-bottom:3rem;font-size:1.1rem}h2{color:var(--accent);font-size:1.6rem;margin:2.5rem 0 1rem 0;padding-bottom:.3rem;border-bottom:2px solid var(--accent)}h3{color:var(--success);font-size:1.2rem;margin:1.8rem 0 .8rem 0}h4{color:var(--warning);font-size:1.05rem;margin:1.2rem 0 .5rem 0}p{margin-bottom:1rem}pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1.2rem;overflow-x:auto;margin:1rem 0;font-size:.9rem;line-height:1.5}code{font-family:'Cascadia Code','Fira Code','Consolas',monospace;font-size:.9rem}p code,li code,td code{background:var(--code-bg);padding:.15rem .4rem;border-radius:4px;border:1px solid var(--border)}.keyword{color:#569cd6}.type{color:#4ec9b0}.string{color:#ce9178}.comment{color:#6a9955}.method{color:#dcdcaa}.number{color:#b5cea8}.param{color:#9cdcfe}.callout{border-radius:8px;padding:1.2rem 1.5rem;margin:1.5rem 0;border-left:4px solid}.callout-metaphor{background:rgba(83,52,131,.2);border-color:var(--accent2)}.callout-metaphor::before{content:"Metaphor";display:block;font-weight:bold;color:var(--accent2);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}.callout-english{background:rgba(78,204,163,.1);border-color:var(--success)}.callout-english::before{content:"Read It Like English";display:block;font-weight:bold;color:var(--success);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}.callout-warning{background:rgba(240,165,0,.1);border-color:var(--warning)}.callout-warning::before{content:"Common Confusion";display:block;font-weight:bold;color:var(--warning);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}.callout-rule{background:rgba(233,69,96,.1);border-color:var(--accent)}.callout-rule::before{content:"Golden Rule";display:block;font-weight:bold;color:var(--accent);margin-bottom:.3rem;font-size:.85rem;text-transform:uppercase;letter-spacing:1px}ul,ol{margin:.5rem 0 1rem 1.5rem}li{margin-bottom:.3rem}table{width:100%;border-collapse:collapse;margin:1rem 0}th,td{border:1px solid var(--border);padding:.6rem 1rem;text-align:left}th{background:var(--surface2);color:var(--success)}td{background:var(--surface)}.diagram{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1.5rem;margin:1.5rem 0;font-family:'Cascadia Code',monospace;font-size:.85rem;line-height:1.6;white-space:pre;overflow-x:auto}
+
+        @media print {
+            @page { margin: 16mm 14mm; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .no-print { display: none !important; }
+            body { background:#fff; color:#16181d; padding:0; max-width:none; font-size:10.5pt; line-height:1.55; }
+            h1 { background:none; -webkit-text-fill-color:#0f3460; color:#0f3460; font-size:22pt; margin-bottom:.2rem; }
+            .subtitle { color:#555; margin-bottom:1.4rem; font-size:11pt; }
+            h2 { color:#0f3460; border-bottom:1.5px solid #0f3460; font-size:14pt; margin:1.4rem 0 .6rem; page-break-after:avoid; }
+            h3 { color:#1b7a5a; font-size:11.5pt; margin:1rem 0 .4rem; page-break-after:avoid; }
+            pre { background:#f6f8fa; border:1px solid #d7dde5; color:#16181d; font-size:8.8pt; padding:.7rem .9rem; page-break-inside:avoid; }
+            p code, li code, td code { background:#f0f3f7; border:1px solid #dde3ea; color:#16181d; }
+            .keyword{color:#0033b3}.type{color:#0b7285}.string{color:#a31515}.comment{color:#5a7a5a}.method{color:#795e26}.number{color:#116644}.param{color:#0f5a8a}
+            table { font-size:9.5pt; page-break-inside:avoid; }
+            th { background:#e8edf3; color:#0f3460; }
+            td { background:#fff; }
+            th, td { border:1px solid #c8d2de; padding:.35rem .6rem; }
+            .callout { page-break-inside:avoid; padding:.7rem 1rem; margin:.9rem 0; font-size:10pt; }
+            .callout-metaphor { background:#f3effa; border-color:#533483; }
+            .callout-metaphor::before { color:#533483; }
+            .callout-english  { background:#eefaf5; border-color:#1b7a5a; }
+            .callout-english::before  { color:#1b7a5a; }
+            .callout-warning  { background:#fff7e6; border-color:#b57e00; }
+            .callout-warning::before  { color:#b57e00; }
+            .callout-rule     { background:#fdeef1; border-color:#c0304a; }
+            .callout-rule::before     { color:#c0304a; }
+            .diagram { background:#f6f8fa; border:1px solid #d7dde5; color:#16181d; font-size:8.8pt; page-break-inside:avoid; }
+            ul, ol { margin-bottom:.7rem; }
+            li { margin-bottom:.15rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="no-print" style="background:rgba(7,9,15,0.94);border-bottom:1px solid #1f2940;padding:12px 24px;font:13px/1.4 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;position:fixed;top:0;left:0;right:0;z-index:99999;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);display:flex;align-items:center;gap:10px;color:#94a3bf;box-sizing:border-box;min-height:48px;"><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;">Learning</a><span style="color:#5f6b86;">›</span><a href="../_Hub.html" style="color:#94a3bf;text-decoration:none;">CORE</a><span style="color:#5f6b86;">›</span><a href="_Category.html" style="color:#94a3bf;text-decoration:none;">C# Language</a><span style="color:#5f6b86;">›</span><span style="color:#e9eef8;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">Action, Func &amp; Task</span><a href="csharp-action-func-task.pdf" download style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">↓ PDF</a><a href="../../00-Index.html" style="color:#94a3bf;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid #1f2940;background:#11182a;flex-shrink:0;font-size:12px;">All docs</a></div><div class="no-print" style="height:48px;"></div><div class="no-print" style="background:linear-gradient(135deg,#0a0e1a 0%,#11182a 100%);border:1px solid #1f2940;border-radius:14px;padding:24px 28px;margin:20px;font:15px/1.7 -apple-system,Inter,'Segoe UI',system-ui,sans-serif;color:#e9eef8;box-shadow:0 12px 40px rgba(0,0,0,0.35);"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.6px;color:#6aa6ff;font-weight:600;margin-bottom:8px;">▸ Curated · Concept · Language</div><div style="font-size:24px;font-weight:700;color:#e9eef8;margin-bottom:10px;letter-spacing:-0.02em;line-height:1.2;">Action, Func &amp; Task</div><div style="font-size:16px;color:#94a3bf;margin-bottom:18px;line-height:1.5;">Action and Func are delegate types — shapes of a method. Task is a return type — a handle to work in progress. Because "async" means "returns a Task", there is no async Action, and forcing one produces async void.</div><div style="background:rgba(106,166,255,0.06);border:1px solid rgba(106,166,255,0.20);border-radius:10px;padding:14px 18px;margin:14px 0;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#6aa6ff;margin-bottom:6px;font-weight:600;">Executive summary</div><div style="font-size:14px;color:#e9eef8;line-height:1.6;">Delegates and return types are different categories that beginners conflate. Action and Func describe a method's shape: Action returns nothing, Func&lt;T&gt; returns T. Task is not a third delegate — it is a class representing an operation in flight, and it is the asynchronous counterpart of void exactly as Task&lt;T&gt; is of T. Substituting those pairs gives the whole async delegate table: Action becomes Func&lt;Task&gt;, Func&lt;T&gt; becomes Func&lt;Task&lt;T&gt;&gt;. It also explains why no AsyncAction can exist — an async method always returns its Task, so it can never return nothing. When an API accepts only an Action and you hand it an async lambda, the compiler produces async void: genuinely asynchronous, but with no Task handed back, so the work cannot be awaited, cancelled, or observed when it throws.</div></div><div style="margin-top:14px;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#5f6b86;margin-bottom:8px;font-weight:600;">Key concepts</div><div><span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">Action</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">Func&lt;T&gt;</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">Task / Task&lt;T&gt;</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">Func&lt;Task&gt;</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">async void</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">unobserved exceptions</span> <span style="display:inline-block;background:#1a2238;border:1px solid #2a3551;color:#38bdf8;padding:3px 10px;border-radius:12px;font-size:11px;margin:2px;">CancellationToken.Register</span></div></div><div style="margin-top:18px;padding-top:14px;border-top:1px solid #1f2940;font-size:11px;color:#5f6b86;">↑ Curated overlay (hand-authored) · the document follows below</div></div>
+
+<h1>Action, Func &amp; Task</h1>
+<p class="subtitle">Delegate types, return types, and why <code>async void</code> exists at all</p>
+
+<!-- ============================================================ -->
+<h2>1. Two Different Categories</h2>
+
+<p>The confusion behind most async questions is treating these three as siblings. They aren't:</p>
+
+<table>
+    <thead><tr><th></th><th>What it is</th><th>Answers the question</th></tr></thead>
+    <tbody>
+        <tr><td><code>Action</code></td><td>A <strong>delegate type</strong></td><td>&ldquo;What shape of method do you want?&rdquo;</td></tr>
+        <tr><td><code>Func&lt;T&gt;</code></td><td>A <strong>delegate type</strong></td><td>&ldquo;What shape of method do you want?&rdquo;</td></tr>
+        <tr><td><code>Task</code></td><td>A <strong>class</strong> (a return type)</td><td>&ldquo;What does that method hand back?&rdquo;</td></tr>
+    </tbody>
+</table>
+
+<p>A delegate is a variable that holds a method. <code>Action</code> holds a method returning nothing; <code>Func&lt;T&gt;</code> holds one returning <code>T</code>.</p>
+
+<pre><code><span class="type">Action</span> greet = () =&gt; <span class="type">Console</span>.<span class="method">WriteLine</span>(<span class="string">"hi"</span>);   <span class="comment">// returns nothing</span>
+<span class="type">Func</span>&lt;<span class="keyword">int</span>&gt; answer = () =&gt; <span class="number">42</span>;                    <span class="comment">// returns an int</span>
+<span class="type">Func</span>&lt;<span class="keyword">int</span>, <span class="keyword">string</span>&gt; name = id =&gt; <span class="string">$"user-{id}"</span>;    <span class="comment">// int in, string out</span></code></pre>
+
+<div class="callout callout-english">
+    In <code>Func&lt;A, B, C&gt;</code> the <strong>last</strong> type argument is always the return type; everything before it is a parameter. So <code>Func&lt;int, string&gt;</code> reads &ldquo;takes an int, returns a string.&rdquo; <code>Action&lt;int, string&gt;</code> has no return type at the end — every argument is a parameter.
+</div>
+
+<p><code>Task</code> is not in that family at all. It's an object representing <em>work that is under way</em> — a handle you hold so you can later ask &ldquo;finished yet?&rdquo;, &ldquo;did it throw?&rdquo;, or &ldquo;wait for it&rdquo;.</p>
+
+<!-- ============================================================ -->
+<h2>2. Task Is the Async Version of void</h2>
+
+<p>One substitution unlocks everything else:</p>
+
+<div class="diagram">     synchronous          asynchronous
+     ───────────          ────────────
+        void        →        Task
+         T          →      Task&lt;T&gt;</div>
+
+<p>A synchronous method that returns nothing becomes an async method returning <code>Task</code>. One returning <code>int</code> becomes one returning <code>Task&lt;int&gt;</code>.</p>
+
+<pre><code><span class="keyword">void</span> <span class="method">Save</span>() { }                              <span class="comment">// nothing</span>
+<span class="keyword">async</span> <span class="type">Task</span> <span class="method">SaveAsync</span>() { }                   <span class="comment">// nothing, eventually</span>
+
+<span class="keyword">int</span> <span class="method">Count</span>() =&gt; <span class="number">42</span>;                          <span class="comment">// an int</span>
+<span class="keyword">async</span> <span class="type">Task</span>&lt;<span class="keyword">int</span>&gt; <span class="method">CountAsync</span>() =&gt; <span class="number">42</span>;           <span class="comment">// an int, eventually</span></code></pre>
+
+<div class="callout callout-metaphor">
+    A <code>Task</code> is the cloakroom ticket. You hand over your coat (start the work) and get a ticket back immediately — you don't stand there holding the coat. Later you present the ticket to collect the result, or to learn that something went wrong. <code>Task&lt;T&gt;</code> is a ticket for a coat; plain <code>Task</code> is a ticket for &ldquo;the job is done&rdquo; with nothing to collect.
+</div>
+
+<!-- ============================================================ -->
+<h2>3. The Async Delegate Table</h2>
+
+<p>Apply that substitution to the delegate shapes and the whole table falls out:</p>
+
+<table>
+    <thead><tr><th>Synchronous</th><th>Asynchronous</th><th>Reads as</th></tr></thead>
+    <tbody>
+        <tr><td><code>Action</code></td><td><code>Func&lt;Task&gt;</code></td><td>no args, returns a Task</td></tr>
+        <tr><td><code>Action&lt;int&gt;</code></td><td><code>Func&lt;int, Task&gt;</code></td><td>int in, returns a Task</td></tr>
+        <tr><td><code>Func&lt;int&gt;</code></td><td><code>Func&lt;Task&lt;int&gt;&gt;</code></td><td>no args, returns a Task of int</td></tr>
+        <tr><td><code>Func&lt;int, string&gt;</code></td><td><code>Func&lt;int, Task&lt;string&gt;&gt;</code></td><td>int in, returns a Task of string</td></tr>
+    </tbody>
+</table>
+
+<pre><code><span class="type">Action</span>         sync  = ()       =&gt; <span class="type">Console</span>.<span class="method">WriteLine</span>(<span class="string">"hi"</span>);
+<span class="type">Func</span>&lt;<span class="type">Task</span>&gt;     async = <span class="keyword">async</span> ()  =&gt; <span class="keyword">await</span> <span class="type">Task</span>.<span class="method">Delay</span>(<span class="number">100</span>);
+
+<span class="type">Func</span>&lt;<span class="keyword">int</span>&gt;       syncValue  = ()       =&gt; <span class="number">42</span>;
+<span class="type">Func</span>&lt;<span class="type">Task</span>&lt;<span class="keyword">int</span>&gt;&gt; asyncValue = <span class="keyword">async</span> ()  =&gt; { <span class="keyword">await</span> <span class="type">Task</span>.<span class="method">Delay</span>(<span class="number">1</span>); <span class="keyword">return</span> <span class="number">42</span>; };</code></pre>
+
+<!-- ============================================================ -->
+<h2>4. Why There Is No AsyncAction</h2>
+
+<p>People look for <code>AsyncAction</code> and can't find it. It cannot exist.</p>
+
+<div class="callout callout-rule">
+    <strong>&ldquo;Async&rdquo; means &ldquo;returns a Task.&rdquo;</strong> So an asynchronous method that &ldquo;returns nothing&rdquo; still returns something — the <code>Task</code> itself. That makes it a <code>Func&lt;Task&gt;</code>, never an <code>Action</code>. <code>Action</code> is defined by returning nothing at all, which an async method never does.
+</div>
+
+<p>This is why the async counterpart of the <em>void</em>-shaped delegate is a <em>Func</em>-shaped one. The asymmetry looks odd until you see that <code>Task</code> occupies the return slot that <code>Action</code> leaves empty.</p>
+
+<!-- ============================================================ -->
+<h2>5. async void: What You Get When You Force It</h2>
+
+<p>C# does let you write an async lambda where an <code>Action</code> is expected. The compiler obliges by producing <strong><code>async void</code></strong> — a method that really is asynchronous but hands nothing back.</p>
+
+<pre><code><span class="comment">// The API only accepts Action:</span>
+token.<span class="method">Register</span>(<span class="keyword">async</span> () =&gt; <span class="keyword">await</span> <span class="method">SeedDatabaseAsync</span>());   <span class="comment">// ⚠ async void</span></code></pre>
+
+<p>Three things follow, and all of them are bad:</p>
+
+<ul>
+    <li><strong>Nobody can await it.</strong> There is no <code>Task</code>, so the caller cannot wait for completion. Execution continues at the first <code>await</code> inside your lambda.</li>
+    <li><strong>Exceptions are unobserved.</strong> In an <code>async Task</code> method, a thrown exception is captured <em>into the Task</em> for the awaiter to see. With no Task, it is raised on the thread pool instead — which by default <strong>crashes the process</strong>.</li>
+    <li><strong>It cannot be cancelled or tracked.</strong> No handle means no cancellation, no continuation, no &ldquo;is it done?&rdquo;</li>
+</ul>
+
+<div class="callout callout-warning">
+    <code>async void</code> is not &ldquo;async that returns nothing&rdquo; — it is <strong>async that returns no handle</strong>. The work still happens; you have simply thrown away the only means of observing it. That is why the compiler warns, and why <code>try/catch</code> <em>inside</em> the lambda is the only thing standing between you and an unhandled crash.
+</div>
+
+<h3>The one legitimate use</h3>
+
+<p>Event handlers, where the framework's contract genuinely is fire-and-forget and the signature is fixed:</p>
+
+<pre><code>button.Click += <span class="keyword">async</span> (sender, e) =&gt; <span class="keyword">await</span> <span class="method">SaveAsync</span>();   <span class="comment">// ✅ acceptable</span></code></pre>
+
+<p>Even here, wrap the body in <code>try/catch</code> — there is nowhere else for a failure to surface.</p>
+
+<!-- ============================================================ -->
+<h2>6. Reading an API's Intent From Its Signature</h2>
+
+<p>The delegate type an API accepts tells you whether async work is welcome, before you write a line:</p>
+
+<table>
+    <thead><tr><th>Signature</th><th>What the API is promising</th></tr></thead>
+    <tbody>
+        <tr><td><code>void Register(Action callback)</code></td><td>&ldquo;I'll call you and move on.&rdquo; No async work — it can't wait for you.</td></tr>
+        <tr><td><code>void Use(Func&lt;Task&gt; handler)</code></td><td>&ldquo;I'll await your work.&rdquo; Async is expected.</td></tr>
+        <tr><td><code>Task RunAsync(Func&lt;CancellationToken, Task&gt; work)</code></td><td>&ldquo;I'll await it and can cancel it.&rdquo;</td></tr>
+    </tbody>
+</table>
+
+<h3>Case study: CancellationToken.Register</h3>
+
+<p><code>IHostApplicationLifetime.ApplicationStarted</code> is a <code>CancellationToken</code>, so registering a callback goes through <code>CancellationToken.Register</code>. Every overload is <code>Action</code>-shaped:</p>
+
+<pre><code><span class="method">Register</span>(<span class="type">Action</span>)
+<span class="method">Register</span>(<span class="type">Action</span>&lt;<span class="keyword">object</span>?&gt;, <span class="keyword">object</span>?)
+<span class="method">Register</span>(<span class="type">Action</span>&lt;<span class="keyword">object</span>?, <span class="type">CancellationToken</span>&gt;, <span class="keyword">object</span>?)
+<span class="comment">// Func&lt;Task&gt; — does not exist, deliberately</span></code></pre>
+
+<p>Token callbacks are meant to be short and synchronous, and nothing awaits them, so there is nowhere for a <code>Task</code> to go. Passing an async lambda gives you <code>async void</code> and a race between your startup work and incoming traffic.</p>
+
+<p>The answer is not to find a workaround but to move the async work somewhere designed to hold it:</p>
+
+<pre><code><span class="comment">// A: await it before the host starts serving</span>
+<span class="keyword">await</span> <span class="type">DbInitializer</span>.<span class="method">InitDb</span>(app);
+app.<span class="method">Run</span>();
+
+<span class="comment">// B: IHostedService — the framework's slot for async startup work</span>
+<span class="keyword">public class</span> <span class="type">DbSeeder</span>(<span class="type">IServiceProvider</span> sp) : <span class="type">IHostedService</span>
+{
+    <span class="keyword">public</span> <span class="type">Task</span> <span class="method">StartAsync</span>(<span class="type">CancellationToken</span> ct) =&gt; <span class="type">DbInitializer</span>.<span class="method">InitDb</span>(sp);
+    <span class="keyword">public</span> <span class="type">Task</span> <span class="method">StopAsync</span>(<span class="type">CancellationToken</span> ct) =&gt; <span class="type">Task</span>.<span class="type">CompletedTask</span>;
+}</code></pre>
+
+<p>Both are awaited, so failures stop startup instead of vanishing.</p>
+
+<!-- ============================================================ -->
+<h2>7. Key Takeaways</h2>
+
+<ul>
+    <li><strong>Different categories.</strong> <code>Action</code> and <code>Func</code> are delegate types (a method's shape); <code>Task</code> is a return type (a handle to work in flight).</li>
+    <li><strong>One substitution.</strong> <code>void</code> → <code>Task</code>, <code>T</code> → <code>Task&lt;T&gt;</code>. Everything else follows.</li>
+    <li><strong><code>Action</code> → <code>Func&lt;Task&gt;</code>.</strong> The async counterpart of a void-shaped delegate is Func-shaped, because the Task fills the empty return slot.</li>
+    <li><strong>No <code>AsyncAction</code> is possible.</strong> Async means returning a Task; returning nothing and returning a Task are contradictory.</li>
+    <li><strong><code>async void</code> returns no handle</strong> — unawaitable, uncancellable, and its exceptions crash the process rather than landing in a Task. Acceptable only for event handlers, and even then wrap it in try/catch.</li>
+    <li><strong>Read the signature.</strong> <code>Action</code> means &ldquo;I won't wait for you&rdquo;; <code>Func&lt;Task&gt;</code> means &ldquo;I will.&rdquo; If an API only takes <code>Action</code>, your async work belongs elsewhere.</li>
+</ul>
+
+</body>
+</html>

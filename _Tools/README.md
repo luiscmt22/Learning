@@ -44,6 +44,12 @@ imported by the curation scripts below. Imports `build_webbook` itself — they 
   18/08/2026; same deal: card hand-added to `_Category.html` (doc count 11 → 12, words
   31,950 → 34,227, reading 159 → 170 min). Companion drills live in
   `CSharpProjects/GeneralExercises/Nested_Collections_Drills.html`.
+- `_Curated/CORE/language/csharp-action-func-task.html` (+ `.pdf`) — hand-authored
+  21/08/2026; card hand-added to `_Category.html` (doc count 12 → 13, words 34,227 →
+  35,441, reading 170 → 176 min). The `.pdf` is generated from the `.html` via headless
+  Chrome — the HTML carries an `@media print` block (light theme, `.no-print` hides the
+  fixed topbar and curated overlay). To regenerate after editing the HTML:
+  `chrome --headless --disable-gpu --no-pdf-header-footer --print-to-pdf=<out.pdf> file:///<abs-path>.html`
 
 ## screenshots/
 
