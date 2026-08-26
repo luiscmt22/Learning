@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Android WebView APK — any web app, packaged</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm; }
+  * { box-sizing: border-box; }
+  body { font-family: 'Segoe UI', 'DejaVu Sans', sans-serif; color: #1c1e2e; font-size: 10.5px; line-height: 1.55; margin: 0; }
+  h1 { color: #2d2f9e; font-size: 25px; margin: 0 0 2px; }
+  .subtitle { color: #6b7280; font-size: 11px; margin: 0 0 14px; }
+  .callout { background: #e9eef9; border-left: 4px solid #2d2f9e; padding: 10px 14px; margin: 12px 0 18px; color: #1f2440; }
+  .callout b { color: #10122b; }
+  .callout.warn { background: #fdf1e2; border-left-color: #d97706; }
+  h2 { color: #2d2f9e; font-size: 14.5px; margin: 24px 0 8px; padding-bottom: 4px; border-bottom: 2px solid #c9cdf0; page-break-after: avoid; }
+  h3 { color: #2d2f9e; font-size: 11.5px; margin: 14px 0 4px; page-break-after: avoid; }
+  p { margin: 6px 0; }
+  ul { margin: 4px 0 8px; padding-left: 18px; }
+  li { margin: 3px 0; }
+  pre { background: #14162b; color: #e6e6f0; border-radius: 6px; padding: 12px 14px; font-family: Consolas, 'DejaVu Sans Mono', monospace; font-size: 8.5px; line-height: 1.5; white-space: pre-wrap; word-break: break-all; page-break-inside: avoid; margin: 8px 0 12px; }
+  code { font-family: Consolas, monospace; font-size: 9.5px; background: #eef0f8; color: #2d2f9e; padding: 0 3px; border-radius: 3px; }
+  pre code { background: none; color: inherit; padding: 0; }
+  .k { color: #ff7b72; } .t { color: #7ee787; } .s { color: #a5d6ff; } .c { color: #94a0ad; } .a { color: #d2a8ff; }
+  table { border-collapse: collapse; width: 100%; font-size: 10px; margin: 8px 0 12px; page-break-inside: avoid; }
+  th { background: #e9eef9; color: #2d2f9e; text-align: left; padding: 6px 8px; border: 1px solid #c9cdf0; }
+  td { border: 1px solid #d9dce6; padding: 6px 8px; vertical-align: top; }
+  tr:nth-child(even) td { background: #f6f7fb; }
+  .step { margin: 5px 0; } .step .num { color: #2d2f9e; font-weight: 700; margin-right: 6px; }
+</style>
+</head>
+<body>
+
+<h1>Android WebView APK — any web app, packaged</h1>
+<p class="subtitle">Turn any HTTPS web app into an installable Android app with .NET — no Java, no Android Studio · for Luís</p>
+
+<div class="callout">
+  The recipe: a <b>.NET for Android</b> project (~180 lines of C#) whose only screen is a full-screen
+  <b>WebView</b> — Chrome's engine, embeddable in any Android app — pinned to your web app's URL. The real
+  application keeps running on the server; the phone just renders it. Deploy to the server and every phone
+  updates <b>instantly</b> — the APK is only rebuilt when the wrapper itself changes (URL, icon, native behavior).
+  Worked example: the <i>Ramil Técnico</i> app at <code>SRamil\Mobile\RamilTecnico\</code>.
+</div>
+
+<h2>1. When this is the right tool</h2>
+<ul>
+  <li>The web app is already <b>mobile-friendly</b> (responsive layout, touch-sized targets).</li>
+  <li>You want a launcher icon, camera access, and a "real app" feel — without maintaining a native codebase.</li>
+  <li>Users are a known group who can <b>sideload</b> (no Play Store review, no store account).</li>
+  <li>Connectivity is assumed — a WebView wrapper has no offline mode (Blazor Server especially).</li>
+</ul>
+
+<h2>2. Prerequisites (one-time, per machine)</h2>
+<div class="step"><span class="num">1.</span>The .NET for Android workload — Visual Studio's mobile option installs it; otherwise:</div>
+<pre><code>dotnet workload install android</code></pre>
+<div class="step"><span class="num">2.</span>An Android SDK. Visual Studio puts one at <code>C:\Program Files (x86)\Android\android-sdk</code>. If missing, one command downloads SDK + JDK into a folder you choose:</div>
+<pre><code>dotnet build -t:InstallAndroidDependencies -f net10.0-android <span class="c">`</span>
+  -p:AndroidSdkDirectory=<span class="s">"%LOCALAPPDATA%\Android\sdk"</span> -p:AcceptAndroidSDKLicenses=True</code></pre>
+<p>That's all. No Android Studio, no Google account — the output is an .apk file installed directly.</p>
+
+<h2>3. The project — four files, copy and adapt</h2>
+<p>Create a folder (outside your web project's build globs — see the warning in §4) with these files.
+The three placeholders to change: <code>YOUR_HOST</code>, <code>com.yourcompany.yourapp</code>, and the app name.</p>
+
+<h3>3.1 &nbsp;MyApp.csproj</h3>
+<pre><code>&lt;<span class="t">Project</span> <span class="a">Sdk</span>=<span class="s">"Microsoft.NET.Sdk"</span>&gt;
+  &lt;<span class="t">PropertyGroup</span>&gt;
+    &lt;<span class="t">TargetFramework</span>&gt;net10.0-android&lt;/<span class="t">TargetFramework</span>&gt;
+    &lt;<span class="t">SupportedOSPlatformVersion</span>&gt;24.0&lt;/<span class="t">SupportedOSPlatformVersion</span>&gt;
+    &lt;<span class="t">OutputType</span>&gt;Exe&lt;/<span class="t">OutputType</span>&gt;
+    &lt;<span class="t">Nullable</span>&gt;enable&lt;/<span class="t">Nullable</span>&gt;
+    &lt;<span class="t">ImplicitUsings</span>&gt;enable&lt;/<span class="t">ImplicitUsings</span>&gt;
+    &lt;<span class="t">ApplicationId</span>&gt;com.yourcompany.yourapp&lt;/<span class="t">ApplicationId</span>&gt;
+    &lt;<span class="t">ApplicationVersion</span>&gt;1&lt;/<span class="t">ApplicationVersion</span>&gt;
+    &lt;<span class="t">ApplicationDisplayVersion</span>&gt;1.0&lt;/<span class="t">ApplicationDisplayVersion</span>&gt;
+    <span class="c">&lt;!-- Sideload distribution: a plain APK, not an AAB. --&gt;</span>
+    &lt;<span class="t">AndroidPackageFormat</span>&gt;apk&lt;/<span class="t">AndroidPackageFormat</span>&gt;
+  &lt;/<span class="t">PropertyGroup</span>&gt;
+  <span class="c">&lt;!-- Release signing lives in a gitignored file (see §8). --&gt;</span>
+  &lt;<span class="t">Import</span> <span class="a">Project</span>=<span class="s">"signing.props"</span> <span class="a">Condition</span>=<span class="s">"Exists('signing.props')"</span> /&gt;
+&lt;/<span class="t">Project</span>&gt;</code></pre>
+
+<h3>3.2 &nbsp;Properties\AndroidManifest.xml</h3>
+<pre><code>&lt;?xml version=<span class="s">"1.0"</span> encoding=<span class="s">"utf-8"</span>?&gt;
+&lt;<span class="t">manifest</span> <span class="a">xmlns:android</span>=<span class="s">"http://schemas.android.com/apk/res/android"</span>&gt;
+  &lt;<span class="t">uses-permission</span> <span class="a">android:name</span>=<span class="s">"android.permission.INTERNET"</span> /&gt;
+  <span class="c">&lt;!-- Only if the page uses the camera (QR scanning etc.) --&gt;</span>
+  &lt;<span class="t">uses-permission</span> <span class="a">android:name</span>=<span class="s">"android.permission.CAMERA"</span> /&gt;
+  &lt;<span class="t">uses-feature</span> <span class="a">android:name</span>=<span class="s">"android.hardware.camera"</span> <span class="a">android:required</span>=<span class="s">"false"</span> /&gt;
+  &lt;<span class="t">application</span> <span class="a">android:label</span>=<span class="s">"My App"</span> <span class="a">android:icon</span>=<span class="s">"@mipmap/ic_launcher"</span>
+               <span class="a">android:usesCleartextTraffic</span>=<span class="s">"false"</span> /&gt;
+&lt;/<span class="t">manifest</span>&gt;</code></pre>
+<p><code>usesCleartextTraffic="true"</code> only for temporary HTTP testing — and remember the camera never works over HTTP (§9).</p>
+
+<h3>3.3 &nbsp;Resources\values\styles.xml</h3>
+<pre><code>&lt;?xml version=<span class="s">"1.0"</span> encoding=<span class="s">"utf-8"</span>?&gt;
+&lt;<span class="t">resources</span>&gt;
+  <span class="c">&lt;!-- No action bar: the web app draws its own header. --&gt;</span>
+  &lt;<span class="t">style</span> <span class="a">name</span>=<span class="s">"AppTheme"</span> <span class="a">parent</span>=<span class="s">"@android:style/Theme.Material.Light.NoActionBar"</span>&gt;
+    &lt;<span class="t">item</span> <span class="a">name</span>=<span class="s">"android:statusBarColor"</span>&gt;#1F7A3D&lt;/<span class="t">item</span>&gt;  <span class="c">&lt;!-- your brand color --&gt;</span>
+    &lt;<span class="t">item</span> <span class="a">name</span>=<span class="s">"android:windowBackground"</span>&gt;@android:color/white&lt;/<span class="t">item</span>&gt;
+  &lt;/<span class="t">style</span>&gt;
+&lt;/<span class="t">resources</span>&gt;</code></pre>
+
+<h3>3.4 &nbsp;MainActivity.cs — the whole app</h3>
+<p>This is the complete file. Each region solves one thing a plain browser tab can't; delete what you don't need (e.g. the camera bridge if the page never uses it).</p>
+<pre><code><span class="k">using</span> Android;
+<span class="k">using</span> Android.App;
+<span class="k">using</span> Android.Content;
+<span class="k">using</span> Android.Content.PM;
+<span class="k">using</span> Android.Graphics;
+<span class="k">using</span> Android.OS;
+<span class="k">using</span> Android.Views;
+<span class="k">using</span> Android.Webkit;
+<span class="k">using</span> Android.Widget;
+
+<span class="k">namespace</span> MyApp;
+
+[<span class="t">Activity</span>(Label = <span class="s">"My App"</span>, MainLauncher = <span class="k">true</span>, Exported = <span class="k">true</span>,
+    Theme = <span class="s">"@style/AppTheme"</span>,
+    WindowSoftInputMode = SoftInput.AdjustResize,
+    ConfigurationChanges = ConfigChanges.Orientation | ConfigChanges.ScreenSize | ConfigChanges.KeyboardHidden)]
+<span class="k">public class</span> <span class="t">MainActivity</span> : Activity
+{
+    <span class="c">// THE deployment knob. HTTPS is mandatory for camera/mic (getUserMedia).</span>
+    <span class="k">internal const string</span> BaseHost = <span class="s">"YOUR_HOST"</span>;              <span class="c">// e.g. app.ramil.pt</span>
+    <span class="k">private const string</span>  StartUrl = $<span class="s">"https://{BaseHost}/"</span>;   <span class="c">// + entry path if any</span>
+
+    <span class="k">private const int</span> CameraPermissionRequestCode = 1001;
+    <span class="k">private</span> WebView? _web;
+    <span class="k">private</span> PermissionRequest? _pendingWebPermission;
+
+    <span class="k">protected override void</span> OnCreate(Bundle? savedInstanceState)
+    {
+        <span class="k">base</span>.OnCreate(savedInstanceState);
+        _web = <span class="k">new</span> WebView(<span class="k">this</span>);
+        _web.SetBackgroundColor(Color.White);
+
+        <span class="c">// Android 15+ draws apps EDGE-TO-EDGE (behind status/navigation bars) — pad for</span>
+        <span class="c">// them ourselves. Top strip = brand color (merges with the web app's header),</span>
+        <span class="c">// bottom = white; the keyboard inset keeps inputs visible.</span>
+        <span class="k">var</span> root = <span class="k">new</span> FrameLayout(<span class="k">this</span>);
+        root.SetBackgroundColor(Color.ParseColor(<span class="s">"#1F7A3D"</span>));  <span class="c">// your brand color</span>
+        root.AddView(_web);
+        SetContentView(root);
+
+        <span class="k">if</span> (Build.VERSION.SdkInt &gt;= BuildVersionCodes.R)
+        {
+            root.SetOnApplyWindowInsetsListener(<span class="k">new</span> SystemBarInsetsListener(_web));
+            Window?.InsetsController?.SetSystemBarsAppearance(
+                (<span class="k">int</span>)WindowInsetsControllerAppearance.LightNavigationBars,
+                (<span class="k">int</span>)WindowInsetsControllerAppearance.LightNavigationBars);
+        }
+
+        <span class="k">var</span> s = _web.Settings;
+        s.JavaScriptEnabled = <span class="k">true</span>;
+        s.DomStorageEnabled = <span class="k">true</span>;
+        s.MediaPlaybackRequiresUserGesture = <span class="k">false</span>;
+        s.MixedContentMode = MixedContentHandling.NeverAllow;
+
+        CookieManager.Instance!.SetAcceptCookie(<span class="k">true</span>);   <span class="c">// login survives restarts</span>
+        CookieManager.Instance.SetAcceptThirdPartyCookies(_web, <span class="k">false</span>);
+
+        _web.SetWebViewClient(<span class="k">new</span> AppWebViewClient(<span class="k">this</span>));
+        _web.SetWebChromeClient(<span class="k">new</span> AppChromeClient(<span class="k">this</span>));
+
+        <span class="k">if</span> (savedInstanceState <span class="k">is null</span>) _web.LoadUrl(StartUrl);
+        <span class="k">else</span> _web.RestoreState(savedInstanceState);
+    }
+
+    <span class="k">protected override void</span> OnSaveInstanceState(Bundle outState)
+    { <span class="k">base</span>.OnSaveInstanceState(outState); _web?.SaveState(outState); }
+
+    <span class="k">protected override void</span> OnPause()
+    {
+        <span class="k">base</span>.OnPause();
+        <span class="c">// Cookie changes are persisted LAZILY — an app killed right after a LOGOUT would</span>
+        <span class="c">// lose the cookie deletion and resurrect the session on relaunch. Flush on pause.</span>
+        CookieManager.Instance?.Flush();
+    }
+
+    <span class="k">public override void</span> OnBackPressed()
+    { <span class="k">if</span> (_web?.CanGoBack() == <span class="k">true</span>) _web.GoBack(); <span class="k">else base</span>.OnBackPressed(); }
+
+    <span class="c">// ── Camera bridge: page asks WebView → WebView asks app → app asks Android ──</span>
+    <span class="k">internal void</span> OnWebPermissionRequest(PermissionRequest request)
+    {
+        <span class="k">var</span> wantsCamera = request.GetResources()?.Contains(PermissionRequest.ResourceVideoCapture) == <span class="k">true</span>;
+        <span class="k">var</span> origin = request.Origin?.Host;
+        <span class="k">if</span> (!wantsCamera || !<span class="k">string</span>.Equals(origin, BaseHost, StringComparison.OrdinalIgnoreCase))
+        { request.Deny(); <span class="k">return</span>; }
+
+        <span class="k">if</span> (CheckSelfPermission(Manifest.Permission.Camera) == Permission.Granted)
+        { request.Grant(<span class="k">new</span>[] { PermissionRequest.ResourceVideoCapture }); <span class="k">return</span>; }
+
+        _pendingWebPermission = request;
+        RequestPermissions(<span class="k">new</span>[] { Manifest.Permission.Camera }, CameraPermissionRequestCode);
+    }
+
+    <span class="k">public override void</span> OnRequestPermissionsResult(<span class="k">int</span> requestCode, <span class="k">string</span>[] permissions, Permission[] grantResults)
+    {
+        <span class="k">base</span>.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+        <span class="k">if</span> (requestCode != CameraPermissionRequestCode || _pendingWebPermission <span class="k">is null</span>) <span class="k">return</span>;
+        <span class="k">if</span> (grantResults.FirstOrDefault() == Permission.Granted)
+            _pendingWebPermission.Grant(<span class="k">new</span>[] { PermissionRequest.ResourceVideoCapture });
+        <span class="k">else</span> _pendingWebPermission.Deny();
+        _pendingWebPermission = <span class="k">null</span>;
+    }
+}
+
+<span class="c">// Edge-to-edge insets: status bar padded on the (brand-colored) container, navigation</span>
+<span class="c">// bar or keyboard — whichever is taller — padded on the (white) WebView.</span>
+<span class="k">internal sealed class</span> <span class="t">SystemBarInsetsListener</span> : Java.Lang.Object, View.IOnApplyWindowInsetsListener
+{
+    <span class="k">private readonly</span> WebView _web;
+    <span class="k">public</span> SystemBarInsetsListener(WebView web) =&gt; _web = web;
+    <span class="k">public</span> WindowInsets OnApplyWindowInsets(View v, WindowInsets insets)
+    {
+        <span class="k">var</span> bars = insets.GetInsets(WindowInsets.Type.SystemBars());
+        <span class="k">var</span> ime = insets.GetInsets(WindowInsets.Type.Ime());
+        v.SetPadding(bars.Left, bars.Top, bars.Right, 0);
+        _web.SetPadding(0, 0, 0, Math.Max(bars.Bottom, ime.Bottom));
+        <span class="k">return</span> insets;
+    }
+}
+
+<span class="c">// Relays the page's permission requests (camera) onto the UI thread.</span>
+<span class="k">internal sealed class</span> <span class="t">AppChromeClient</span> : WebChromeClient
+{
+    <span class="k">private readonly</span> MainActivity _activity;
+    <span class="k">public</span> AppChromeClient(MainActivity activity) =&gt; _activity = activity;
+    <span class="k">public override void</span> OnPermissionRequest(PermissionRequest? request)
+    { <span class="k">if</span> (request <span class="k">is null</span>) <span class="k">return</span>; _activity.RunOnUiThread(() =&gt; _activity.OnWebPermissionRequest(request)); }
+}
+
+<span class="c">// Our host stays in-app; everything else (mailto:, tel:, other sites) → the system.</span>
+<span class="k">internal sealed class</span> <span class="t">AppWebViewClient</span> : WebViewClient
+{
+    <span class="k">private readonly</span> MainActivity _activity;
+    <span class="k">public</span> AppWebViewClient(MainActivity activity) =&gt; _activity = activity;
+    <span class="k">public override bool</span> ShouldOverrideUrlLoading(WebView? view, IWebResourceRequest? request)
+    {
+        <span class="k">var</span> uri = request?.Url;
+        <span class="k">if</span> (uri <span class="k">is null</span>) <span class="k">return false</span>;
+        <span class="k">var</span> isHttp = uri.Scheme <span class="k">is</span> <span class="s">"http"</span> <span class="k">or</span> <span class="s">"https"</span>;
+        <span class="k">if</span> (isHttp &amp;&amp; <span class="k">string</span>.Equals(uri.Host, MainActivity.BaseHost, StringComparison.OrdinalIgnoreCase))
+            <span class="k">return false</span>;
+        <span class="k">try</span> { _activity.StartActivity(<span class="k">new</span> Intent(Intent.ActionView, uri)); }
+        <span class="k">catch</span> (ActivityNotFoundException) { }
+        <span class="k">return true</span>;
+    }
+}</code></pre>
+
+<div class="callout warn">
+  <b>If the folder lives inside a web project</b> (like <code>SRamil\Mobile\</code>), exclude it from that
+  project's default globs or the site build breaks with duplicate-attribute errors:
+  <code>&lt;Compile Remove="Mobile\**" /&gt;</code> (+ Content/EmbeddedResource/None) in the web .csproj.
+</div>
+
+<h2>4. Build the APK</h2>
+<pre><code>cd &lt;project folder&gt;
+dotnet publish -c Release -p:AndroidSdkDirectory=<span class="s">"C:\Program Files (x86)\Android\android-sdk"</span>
+<span class="c"># output:</span>
+bin\Release\net10.0-android\&lt;ApplicationId&gt;-Signed.apk   <span class="c">(~7 MB)</span></code></pre>
+<p>The <b>-Signed.apk</b> is the distributable. First build takes minutes; subsequent ones ~20 seconds.</p>
+
+<h2>5. Install on a phone (sideload)</h2>
+<div class="step"><span class="num">1.</span>Send the .apk (WhatsApp, e-mail, Drive, USB).</div>
+<div class="step"><span class="num">2.</span>Tap it; allow "install unknown apps" for that source (asked once).</div>
+<div class="step"><span class="num">3.</span>On the first camera use, Android prompts for the permission — accept.</div>
+
+<h2>6. Icon</h2>
+<div class="step"><span class="num">1.</span>A square source image (512×512, white or full-bleed — launchers crop to a circle).</div>
+<div class="step"><span class="num">2.</span>Resize into <code>Resources\mipmap-*\ic_launcher.png</code>: 48 (mdpi), 72 (hdpi), 96 (xhdpi), 144 (xxhdpi), 192 px (xxxhdpi).</div>
+<div class="step"><span class="num">3.</span>Rebuild. Some launchers only refresh the icon after uninstall/reinstall.</div>
+
+<h2>7. Signing — before real distribution</h2>
+<p>Unconfigured builds sign with a machine-local <b>debug</b> key. Rule: <b>updates only install over the old
+version if signed with the SAME key</b> — lose it and everyone reinstalls from scratch. Create a release
+keystore once, keep it safe and out of git, reference it in <code>signing.props</code> (auto-imported):</p>
+<pre><code><span class="c">&lt;!-- signing.props — NEVER enters git --&gt;</span>
+&lt;<span class="t">Project</span>&gt;&lt;<span class="t">PropertyGroup</span>&gt;
+  &lt;<span class="t">AndroidKeyStore</span>&gt;true&lt;/<span class="t">AndroidKeyStore</span>&gt;
+  &lt;<span class="t">AndroidSigningKeyStore</span>&gt;myapp.keystore&lt;/<span class="t">AndroidSigningKeyStore</span>&gt;
+  &lt;<span class="t">AndroidSigningKeyAlias</span>&gt;myapp&lt;/<span class="t">AndroidSigningKeyAlias</span>&gt;
+  &lt;<span class="t">AndroidSigningKeyPass</span>&gt;A_PASSWORD&lt;/<span class="t">AndroidSigningKeyPass</span>&gt;
+  &lt;<span class="t">AndroidSigningStorePass</span>&gt;A_PASSWORD&lt;/<span class="t">AndroidSigningStorePass</span>&gt;
+&lt;/<span class="t">PropertyGroup</span>&gt;&lt;/<span class="t">Project</span>&gt;
+<span class="c"># create the keystore (keytool ships with any JDK):</span>
+keytool -genkeypair -v -keystore myapp.keystore -alias myapp -keyalg RSA -keysize 2048 -validity 10000</code></pre>
+
+<h2>8. The worked example — Ramil Técnico</h2>
+<table>
+  <tr><th>Knob</th><th>Value</th></tr>
+  <tr><td>Project</td><td><code>SRamil\Mobile\RamilTecnico\</code></td></tr>
+  <tr><td>ApplicationId</td><td><code>pt.agileincloud.ramil.tecnico</code></td></tr>
+  <tr><td>BaseHost / StartUrl</td><td><code>app.ramil.pt</code> → <code>https://app.ramil.pt/tecnico</code></td></tr>
+  <tr><td>Brand color (status bar)</td><td><code>#1F7A3D</code></td></tr>
+  <tr><td>Camera</td><td>Yes — the QR scanner uses getUserMedia</td></tr>
+</table>
+
+<h2>9. Troubleshooting</h2>
+<table>
+  <tr><th style="width:40%">Symptom</th><th>Cause &amp; fix</th></tr>
+  <tr><td>Camera won't open / black screen</td><td>The URL is HTTP. getUserMedia only works on HTTPS — a Chrome/Android security rule, not a bug.</td></tr>
+  <tr><td>Logged out, reopened the app, logged in again</td><td>Cookie deletions are persisted lazily; without <code>CookieManager.Flush()</code> in <code>OnPause</code>, killing the app resurrects the session cookie. The template handles it.</td></tr>
+  <tr><td>Content under the clock/battery bar</td><td>Android 15+ edge-to-edge; the insets listener in the template pads for the system bars.</td></tr>
+  <tr><td>Keyboard covers the input</td><td>The IME inset (template) + <code>WindowSoftInputMode.AdjustResize</code> handle it.</td></tr>
+  <tr><td>Blank page / connection error</td><td>The phone can't reach the server — test the URL in the phone's own Chrome first.</td></tr>
+  <tr><td>Update won't install</td><td>Different signing key (§7): uninstall first, or rebuild with the right keystore.</td></tr>
+  <tr><td>Web app changed — new APK?</td><td><b>No.</b> Only wrapper changes (URL, icon, native behavior) need a rebuild.</td></tr>
+</table>
+
+</body>
+</html>

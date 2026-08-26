@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Crystal Reports in SRamil</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm; }
+  * { box-sizing: border-box; }
+  body { font-family: 'Segoe UI', 'DejaVu Sans', sans-serif; color: #1c1e2e; font-size: 10.5px; line-height: 1.55; margin: 0; }
+  h1 { color: #2d2f9e; font-size: 25px; margin: 0 0 2px; }
+  .subtitle { color: #6b7280; font-size: 11px; margin: 0 0 14px; }
+  .callout { background: #e9eef9; border-left: 4px solid #2d2f9e; padding: 10px 14px; margin: 12px 0 18px; color: #1f2440; }
+  .callout b { color: #10122b; }
+  h2 { color: #2d2f9e; font-size: 14.5px; margin: 24px 0 8px; padding-bottom: 4px; border-bottom: 2px solid #c9cdf0; page-break-after: avoid; }
+  p { margin: 6px 0; }
+  ul { margin: 4px 0 8px; padding-left: 18px; }
+  li { margin: 3px 0; }
+  pre { background: #14162b; color: #e6e6f0; border-radius: 6px; padding: 12px 14px; font-family: Consolas, 'DejaVu Sans Mono', monospace; font-size: 9px; line-height: 1.55; white-space: pre-wrap; word-break: break-all; page-break-inside: avoid; margin: 8px 0 12px; }
+  code { font-family: Consolas, monospace; font-size: 9.5px; background: #eef0f8; color: #2d2f9e; padding: 0 3px; border-radius: 3px; }
+  pre code { background: none; color: inherit; padding: 0; }
+  .k { color: #ff7b72; } .t { color: #7ee787; } .s { color: #a5d6ff; } .c { color: #94a0ad; } .a { color: #d2a8ff; }
+  .panel-h { color: #fff; padding: 6px 12px; border-radius: 6px 6px 0 0; font-weight: 600; font-size: 11px; margin-top: 10px; page-break-after: avoid; }
+  .panel-h.good { background: #1a7f37; } .panel-h.bad { background: #c93c4c; } .panel-h.warn { background: #d97706; } .panel-h.info { background: #2d6cdf; }
+  .panel-h + pre, .panel-h + .panel-b { border-radius: 0 0 6px 6px; margin-top: 0; }
+  .panel-b { border: 1px solid #d9dce6; border-top: 0; padding: 8px 12px; page-break-inside: avoid; }
+  table { border-collapse: collapse; width: 100%; font-size: 10px; margin: 8px 0 12px; page-break-inside: avoid; }
+  th { background: #e9eef9; color: #2d2f9e; text-align: left; padding: 6px 8px; border: 1px solid #c9cdf0; }
+  td { border: 1px solid #d9dce6; padding: 6px 8px; vertical-align: top; }
+  tr:nth-child(even) td { background: #f6f7fb; }
+  .step { margin: 5px 0; } .step .num { color: #2d2f9e; font-weight: 700; margin-right: 6px; }
+</style>
+</head>
+<body>
+
+<h1>Crystal Reports in SRamil</h1>
+<p class="subtitle">How the Crystal reports work and how to build a new one, from design to the button on the page · for Luís</p>
+
+<div class="callout">
+  Crystal Reports is SAP's classic report designer: an <b>.rpt file</b> holds the layout and the data binding.
+  SRamil does <b>not</b> run the Crystal runtime — the .rpt files live on the AgileInCloud server and are rendered
+  by a shared service (the same one GivingCare uses). The app just asks <i>"render this report against this
+  database"</i> and receives the finished PDF.
+</div>
+
+<h2>1. The flow, end to end</h2>
+<div class="step"><span class="num">1.</span>The user clicks a report button on a page — the shared component <code>GerarRelatorioCrystalButton</code> (in <code>Shared/Components</code>).</div>
+<div class="step"><span class="num">2.</span>The component reads the .rpt path from <code>appsettings.json</code> and, when the report is record-filtered, the selection formula — replacing the placeholder (e.g. <code>{equipment_id}</code>) with the real Id.</div>
+<div class="step"><span class="num">3.</span><code>CrystalReportApiService</code> (<code>Services/CrystalReports</code>) sends a SOAP <code>GeneratePDF</code> request to <code>https://support.agileincloud.com/Online/AgilePDFgenerator.asmx</code> with: the service key (WsKey), the .rpt path, the selection formula, the SQL server, credentials and the company database name.</div>
+<div class="step"><span class="num">4.</span>The remote service opens the .rpt, binds it to the given database, applies the formula and returns the file as Base64. The app decodes it and hands the download to the browser.</div>
+<div class="callout">Important: the report is executed by the <b>AgileInCloud server</b>. The .rpt must be there (not on your PC), and the database must be reachable from there.</div>
+
+<h2>2. Configuration (appsettings.json)</h2>
+<p>Everything lives under <code>CrystalReportsService</code>. Each new report adds a path key and, if record-filtered, a formula key. SQL credentials are not configured here — the component reuses <code>Client:Database</code>, and the database is always the session company's (multi-tenant for free).</p>
+<pre><code><span class="s">"CrystalReportsService"</span>: {
+  <span class="s">"BaseUrl"</span>:  <span class="s">"https://support.agileincloud.com/Online/AgilePDFgenerator.asmx"</span>,
+  <span class="s">"WsKey"</span>:    <span class="s">"(service key — do not share)"</span>,
+  <span class="s">"EquipamentosReportPath"</span>:        <span class="s">"C:\\AGILE_REPORTS\\SRAMIL\\Relatorio_equipamentos.rpt"</span>,
+  <span class="s">"EquipamentosSelectionFormula"</span>:  <span class="s">"{Command.Id} = {equipment_id}"</span>,
+  <span class="s">"ManutencaoReportPath"</span>:          <span class="s">"C:\\AGILE_REPORTS\\SRAMIL\\...rpt"</span>
+}</code></pre>
+
+<h2>3. Designing a report in the Crystal Reports Designer</h2>
+<div class="step"><span class="num">1.</span>Open SAP Crystal Reports and create a <b>Blank Report</b>.</div>
+<div class="step"><span class="num">2.</span>In <b>Database Expert</b>, create an OLE DB (ADO) connection → "Microsoft OLE DB Driver for SQL Server" → server, user, database (use the test one; in production the service swaps the connection for the right database).</div>
+<div class="step"><span class="num">3.</span>Prefer a <b>Command</b> (a SQL query) over dragging tables: write the SELECT with the joins and final column names. Fields appear as <code>{Command.ColumnName}</code> — which is why selection formulas use <code>{Command.Id}</code>.</div>
+<div class="step"><span class="num">4.</span>Layout by sections: <b>Report Header</b> (logo + title), <b>Page Header</b> (column headers), <b>Details</b> (one row per record), <b>Report Footer</b> (totals), <b>Page Footer</b> (page numbers). Drag fields from the Field Explorer into Details.</div>
+<div class="step"><span class="num">5.</span>Totals: right-click a field → <b>Insert Summary</b> (Sum/Count) into the Report Footer.</div>
+<div class="step"><span class="num">6.</span>Save <b>without data</b>: File → uncheck "Save Data with Report" (otherwise the .rpt ships with a snapshot of the test database embedded).</div>
+
+<h2>4. Selection formulas and placeholders</h2>
+<p>The selection formula is Crystal's WHERE — its own syntax, fields in braces. In SRamil the dynamic value arrives by text substitution: the appsettings key holds a token and the button component swaps it for the real value before sending.</p>
+<pre><code><span class="c">// appsettings.json</span>
+<span class="s">"EquipamentosSelectionFormula"</span>: <span class="s">"{Command.Id} = {equipment_id}"</span>
+
+<span class="c">// On the page, the button declares the token and the value:</span>
+PlaceholderToken=<span class="s">"{equipment_id}"</span>  PlaceholderValue=<span class="s">"@EquipmentId.ToString()"</span>
+
+<span class="c">// What reaches Crystal:</span>  {Command.Id} = 42</code></pre>
+<ul>
+  <li>Aggregate reports (no per-record filter, like the Maintenance one) simply omit the formula — don't set <code>SelectionFormulaConfigKey</code> on the button.</li>
+  <li>Crystal syntax worth knowing: strings in single quotes (<code>'ABC'</code>), dates as <code>Date(2026,08,24)</code>, boolean operators spelled <code>and</code>/<code>or</code> — e.g. <code>{Command.StatusId} = 1 and {Command.Date} &gt;= Date(2026,01,01)</code>.</li>
+</ul>
+
+<h2>5. Publish and wire it into the app</h2>
+<div class="step"><span class="num">1.</span>Upload the .rpt to <code>C:\AGILE_REPORTS\SRAMIL\</code> on the AgileInCloud server (ask support for access/the exact folder). Avoid accents and spaces in the file name — accented paths have caused encoding trouble before.</div>
+<div class="step"><span class="num">2.</span>Add the keys under <code>CrystalReportsService</code> in appsettings.json (path + formula).</div>
+<div class="step"><span class="num">3.</span>Drop the button on the page — it handles the "Generating…" state, errors (Snackbar) and the download; no extra page code needed:</div>
+<pre><code>&lt;<span class="t">GerarRelatorioCrystalButton</span> <span class="a">ReportPathConfigKey</span>=<span class="s">"MeuReportPath"</span>
+                             <span class="a">SelectionFormulaConfigKey</span>=<span class="s">"MeuReportFormula"</span>
+                             <span class="a">PlaceholderToken</span>=<span class="s">"{order_id}"</span>
+                             <span class="a">PlaceholderValue</span>=<span class="s">"@OrderId.ToString()"</span>
+                             <span class="a">CompanyDatabase</span>=<span class="s">"@CompanyDatabase"</span>
+                             <span class="a">DownloadFileNamePrefix</span>=<span class="s">"Relatorio_XYZ"</span>
+                             <span class="a">ButtonText</span>=<span class="s">"Relatório PDF"</span> /&gt;</code></pre>
+
+<h2>6. Troubleshooting</h2>
+<table>
+  <tr><th style="width:38%">Symptom</th><th>Cause &amp; fix</th></tr>
+  <tr><td>"Não foi possível comunicar com o serviço"</td><td>SOAP endpoint down or no network — check <code>BaseUrl</code> and open it in a browser (it should show the .asmx page).</td></tr>
+  <tr><td>SOAP fault: "Load Report Failed"</td><td>Wrong .rpt path or the file isn't on the server — verify the appsettings key character by character.</td></tr>
+  <tr><td>"Logon failed"</td><td>Invalid SQL credentials OR the company database isn't visible from the reports server.</td></tr>
+  <tr><td>Formula error</td><td>Test the formula in the Designer first (Report → Selection Formulas → Record) with a fixed value, before moving it to appsettings with a placeholder.</td></tr>
+  <tr><td>PDF renders but is empty</td><td>Usually the formula filters everything out (nonexistent Id) or the Command points at the wrong database — run the Command's SELECT by hand against the company database.</td></tr>
+  <tr><td>"Old" data in the PDF</td><td>The .rpt was saved with "Save Data with Report" enabled — resave without data and republish.</td></tr>
+</table>
+
+<h2>7. Visual guides — the QuestPDF reports</h2>
+<p>The reports the app generates itself follow the Ramil identity and are the model to replicate in Crystal: logo on the left over a green rule (<code>#1B6B3C</code>), KPI cards in light green (<code>#E8F2EC</code>), green table headers with white text, zebra rows (<code>#F4F7F5</code>) and a "Página X de Y" footer. Code in <code>Services/*/Export</code> and <code>Services/Reports/ReportTheme.cs</code>:</p>
+<ul>
+  <li><b>Mapa de Equipamento</b> — <code>EquipmentReportPdfBuilder</code> ("Relatório PDF" button on the equipment detail).</li>
+  <li><b>Relatório de Intervenções</b> — <code>InterventionReportPdfBuilder</code> (Tickets page).</li>
+  <li><b>Relatório de Manutenção</b> — <code>MaintenanceReportPdfBuilder</code> (Maintenance page).</li>
+</ul>
+<p>Generate each one in the app, put the PDF next to the Designer, and replicate it section by section.</p>
+
+</body>
+</html>
