@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<title>OAuth no AsNet — o mapa do fluxo</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: true, theme: 'neutral', sequence: { mirrorActors: false } });</script>
+<style>
+  :root {
+    --paper: #ffffff; --panel: #faf9f6; --ink: #232a35; --muted: #6d7482;
+    --line: #ddd8ce; --accent: #fa7335; --accent-ink: #c24f14; --code-bg: #f0ece4;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font: 15px/1.6 "Segoe UI", -apple-system, system-ui, sans-serif;
+    color: var(--ink); background: var(--paper);
+    max-width: 800px; margin: 0 auto; padding: 2.2rem 1.5rem 4rem;
+  }
+  h1 { font-size: 1.8rem; line-height: 1.2; margin: 0 0 .4rem; letter-spacing: -.015em; }
+  .lede { color: var(--muted); font-size: 1.02rem; margin: 0 0 2rem; max-width: 62ch; }
+  h2 { font-size: 1.12rem; margin: 2.4rem 0 .8rem; }
+  h2 .k { color: var(--accent-ink); margin-right: .45rem; }
+  p { max-width: 68ch; margin: 0 0 .9rem; }
+  code, .file { font: .84em Consolas, "Cascadia Mono", monospace; background: var(--code-bg); border-radius: 4px; padding: .08em .35em; }
+  .file { color: var(--accent-ink); }
+  .actors { display: grid; grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); gap: .7rem; margin: 1.1rem 0; }
+  .actor { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: .75rem .85rem; break-inside: avoid; }
+  .actor b { display: block; font-size: .95rem; }
+  .actor span { color: var(--muted); font-size: .8rem; line-height: 1.4; display: block; margin-top: .25rem; }
+  .diagram { border: 1px solid var(--line); border-radius: 10px; background: var(--panel); padding: .8rem; overflow-x: auto; margin: 1.2rem 0 1.6rem; break-inside: avoid; }
+  ol.steps { padding-left: 0; margin: 1.2rem 0; counter-reset: passo; list-style: none; }
+  ol.steps > li { counter-increment: passo; position: relative; padding: 0 0 1.2rem 3rem; border-left: 2px solid var(--line); margin-left: 1rem; break-inside: avoid; }
+  ol.steps > li:last-child { border-left-color: transparent; padding-bottom: 0; }
+  ol.steps > li::before {
+    content: counter(passo); position: absolute; left: -1rem; top: -.1rem;
+    width: 1.9rem; height: 1.9rem; border-radius: 50%; display: grid; place-items: center;
+    background: #fff; border: 2px solid var(--accent); color: var(--accent-ink); font-weight: 600; font-size: .88rem;
+  }
+  ol.steps b { display: block; margin-bottom: .1rem; }
+  ol.steps .where { display: block; color: var(--muted); font-size: .82rem; margin-top: .3rem; }
+  .callout { border: 1.5px solid var(--accent); border-radius: 10px; background: var(--panel); padding: 1rem 1.2rem; margin: 1.6rem 0; break-inside: avoid; }
+  .callout .tag { display: inline-block; text-transform: uppercase; letter-spacing: .08em; font-size: .7rem; font-weight: 700; color: var(--accent-ink); margin-bottom: .35rem; }
+  .quiet { color: var(--muted); font-size: .88rem; }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; margin: .8rem 0 1.2rem; }
+  th { text-align: left; text-transform: uppercase; letter-spacing: .06em; font-size: .7rem; color: var(--muted); font-weight: 600; padding: .4rem .55rem; border-bottom: 2px solid var(--line); }
+  td { padding: .45rem .55rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+  @page { margin: 14mm 12mm; }
+  @media print { body { padding: 0; max-width: none; } .diagram { overflow: visible; } }
+</style>
+</head>
+<body>
+
+<h1>OAuth no AsNet — o mapa do fluxo</h1>
+<p class="lede">A tese em uma frase: o OAuth responde exatamente a <em>uma</em> pergunta — «quem é esta pessoa?» — e termina no callback. Tudo o que acontece a seguir (empresa, subscritor, cookie, gate de domínios) é código nosso, e é lá que o T-0036 vai viver. <span class="quiet">Companheiro deste documento: <b>OAuth_From_Scratch_Guide.pdf</b> (como construir isto de raiz).</span></p>
+
+<h2><span class="k">1.</span>O elenco</h2>
+<div class="actors">
+  <div class="actor"><b>A pessoa</b><span>Dona da identidade. A password dela nunca passa pelo AsNet.</span></div>
+  <div class="actor"><b>O browser</b><span>O estafeta — transporta redirects e o «voucher», nunca segredos.</span></div>
+  <div class="actor"><b>AsNet (a app)</b><span>O «cliente» OAuth. Tem um <code>ClientId</code> público e um <code>ClientSecret</code> que só o servidor conhece.</span></div>
+  <div class="actor"><b>Google / Microsoft</b><span>O fornecedor de identidade. Verifica a pessoa e emite provas assinadas.</span></div>
+</div>
+
+<h2><span class="k">2.</span>A dança (authorization code flow)</h2>
+<div class="diagram">
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant P as Pessoa (browser)
+    participant A as AsNet
+    participant G as Google
+
+    P->>A: GET /auth/mobile-login?provider=google
+    A->>P: Redirect para accounts.google.com (client_id, scope, state)
+    P->>G: Autentica-se NO Google (password/2FA — AsNet nunca vê)
+    G->>P: Redirect para /signin-google?code=...&state=...
+    P->>A: Entrega o code (voucher de uso único)
+    A->>G: Troca code + ClientSecret por tokens (servidor↔servidor)
+    G->>A: id_token / access_token (quem é a pessoa)
+    Note over A: ── OAuth ACABA aqui ──
+    A->>A: OnCreatingTicket: resolver empresa → provisionar Subscriber → claims
+    A->>P: Cookie AsNet.AppMobile (7 dias) + redirect
+</pre>
+</div>
+
+<ol class="steps">
+  <li><b>O empurrão</b> A app pede um <code>Challenge</code> ao esquema Google.
+    <span class="where"><span class="file">AppMobileLoginController.cs:74</span> — GET /auth/mobile-login</span></li>
+  <li><b>O convite</b> O handler do ASP.NET constrói o URL de autorização: quem pergunta (<code>client_id</code>), o que quer saber (<code>scope: openid email profile</code>), para onde voltar (<code>redirect_uri</code>) e um <code>state</code> anti-forja.
+    <span class="where">Handler registado em <span class="file">Program.cs:573</span> (AddGoogle) / <span class="file">:665</span> (AddOpenIdConnect)</span></li>
+  <li><b>A prova</b> A pessoa autentica-se <em>no Google</em>. É este o truque todo: a password nunca toca no AsNet.</li>
+  <li><b>O voucher</b> O Google devolve o browser com um <code>code</code> — um talão de uso único, inútil para quem o apanhar: sem o <code>ClientSecret</code> não compra nada.
+    <span class="where">CallbackPath <code>/signin-google</code> — intercetado pelo middleware ANTES de qualquer controller</span></li>
+  <li><b>A troca</b> Canal servidor↔servidor: <code>code + ClientSecret → tokens</code>. O browser nunca vê tokens.</li>
+  <li><b>A identidade</b> O handler valida e constrói o <code>ClaimsPrincipal</code>: email, nome, id externo. <b>O OAuth termina aqui.</b></li>
+  <li><b>A nossa parte</b> Os eventos de enriquecimento correm código AsNet: resolver a empresa a partir do domínio do email, provisionar o <code>Subscriber</code>, juntar claims próprias (<code>UserType</code>, <code>SubscriberId</code>, <code>CompanyDatabase</code>) e assinar o cookie <code>AsNet.AppMobile</code>.
+    <span class="where"><span class="file">Program.cs:595</span> OnCreatingTicket (Google) · <span class="file">:695</span> OnTokenValidated (Microsoft) · <span class="file">AppMobileCompanyResolver.cs</span> · <span class="file">MobileSubscriberProvisioningService.cs</span></span></li>
+</ol>
+
+<div class="callout">
+  <span class="tag">Onde entra o T-0036</span>
+  <p style="margin:0 0 .6rem">O gate de domínios <b>já existe</b> — em <span class="file">AppMobileCompanyResolver.ResolveForExternalEmailAsync</span>: domínio fora de <code>AppMobile:EmailDomainMappings</code> → login recusado. O problema é a fonte: é <em>configuração no servidor</em>, não a tabela <code>EntitySiteDomain</code> que a ficha da entidade gere — e hoje o mapeamento inclui <code>gmail.com → TestCompany</code>, ou seja, qualquer Gmail do planeta entra.</p>
+  <p style="margin:0" class="quiet">A mudança: o resolver passa a perguntar à <code>EntitySiteDomain</code> (por empresa) em vez de/além do config. O OAuth não é tocado — mudamos a resposta a «esta identidade é bem-vinda?», nunca a «quem é?».</p>
+</div>
+
+<h2><span class="k">3.</span>Utilizadores internos — sem OAuth</h2>
+<p>Username + password contra a nossa BD (BCrypt), as mesmas claims com <code>UserType=User</code>, o mesmo cookie. Técnicos saltam para <code>/tecnico</code> via a ponte de sessão. <span class="quiet">(<span class="file">AppMobileLoginController.cs:86</span> · <span class="file">TechnicianSessionController.cs</span>)</span></p>
+
+<h2><span class="k">4.</span>Achado da visita guiada — código morto</h2>
+<table>
+  <tr><th>No controller</th><th>Estado</th></tr>
+  <tr><td><code>BuildGoogleAuthorizationUrl</code> / <code>BuildMicrosoftAuthorizationUrl</code> / <code>CreateState</code></td><td>Sem chamadores — geração anterior, morta</td></tr>
+  <tr><td><code>GoogleCallback</code> / <code>MicrosoftCallback</code> / <code>HandleCallbackAsync</code> / <code>SaveSubscriberAsync</code></td><td>Sombreados: o middleware consome os CallbackPaths antes do routing — nunca correm</td></tr>
+  <tr><td><code>AppMobileEmailAuthorizationService.IsEmailAllowed</code></td><td>Registado, nunca invocado — <code>AllowedEmailDomains</code> só afina mensagens de erro</td></tr>
+</table>
+<p class="quiet">Limpeza natural dentro do T-0036 — remover a geração morta torna o fluxo real óbvio para o próximo leitor. · Documento gerado a 2026-09-04 a partir do código em AsNet2.0 master.</p>
+
+</body>
+</html>

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<title>OAuth de raiz — guia completo para as nossas apps</title>
+<style>
+  :root {
+    --paper: #ffffff; --panel: #faf9f6; --ink: #232a35; --muted: #6d7482;
+    --line: #ddd8ce; --accent: #fa7335; --accent-ink: #c24f14; --code-bg: #f0ece4;
+    --code-ink: #35404f; --warn-bg: #fdf3ec;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font: 15px/1.62 "Segoe UI", -apple-system, system-ui, sans-serif;
+    color: var(--ink); background: var(--paper);
+    max-width: 820px; margin: 0 auto; padding: 2.2rem 1.5rem 4rem;
+  }
+  h1 { font-size: 1.85rem; line-height: 1.2; margin: 0 0 .4rem; letter-spacing: -.015em; }
+  .lede { color: var(--muted); font-size: 1.02rem; margin: 0 0 1.6rem; max-width: 64ch; }
+  h2 { font-size: 1.25rem; margin: 2.6rem 0 .8rem; padding-top: .6rem; border-top: 2px solid var(--line); }
+  h2 .k { color: var(--accent-ink); margin-right: .5rem; }
+  h3 { font-size: 1rem; margin: 1.6rem 0 .5rem; }
+  p, li { max-width: 70ch; }
+  p { margin: 0 0 .9rem; }
+  ul, ol { margin: 0 0 1rem; padding-left: 1.4rem; }
+  li { margin-bottom: .35rem; }
+  code { font: .84em Consolas, "Cascadia Mono", monospace; background: var(--code-bg); border-radius: 4px; padding: .08em .35em; }
+  pre {
+    background: var(--code-bg); color: var(--code-ink); border: 1px solid var(--line); border-radius: 8px;
+    padding: .9rem 1.1rem; overflow-x: auto; font: .8rem/1.55 Consolas, "Cascadia Mono", monospace;
+    margin: .6rem 0 1.2rem; break-inside: avoid;
+  }
+  pre code { background: none; padding: 0; }
+  .box { border: 1.5px solid var(--accent); border-radius: 10px; background: var(--warn-bg); padding: .9rem 1.1rem; margin: 1.2rem 0; break-inside: avoid; }
+  .box .tag { display: inline-block; text-transform: uppercase; letter-spacing: .08em; font-size: .68rem; font-weight: 700; color: var(--accent-ink); margin-bottom: .3rem; }
+  .box p:last-child { margin-bottom: 0; }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; margin: .8rem 0 1.4rem; }
+  th { text-align: left; text-transform: uppercase; letter-spacing: .06em; font-size: .7rem; color: var(--muted); font-weight: 600; padding: .4rem .55rem; border-bottom: 2px solid var(--line); }
+  td { padding: .45rem .55rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td code { white-space: nowrap; }
+  .quiet { color: var(--muted); font-size: .88rem; }
+  .toc { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 1rem 1.3rem; margin: 0 0 1.5rem; }
+  .toc ol { margin: .3rem 0 0; columns: 2; column-gap: 2rem; }
+  .toc li { font-size: .9rem; break-inside: avoid; }
+  @page { margin: 14mm 12mm; }
+  @media print { body { padding: 0; max-width: none; } h2 { break-after: avoid; } }
+</style>
+</head>
+<body>
+
+<h1>OAuth de raiz</h1>
+<p class="lede">Como acrescentar «Entrar com Google / Microsoft» a uma app ASP.NET Core (Blazor Server) partindo do zero: o que precisas de arranjar, o que escreves, o que a framework faz por ti, e onde é que as pessoas normalmente se magoam. Companheiro: <b>OAuth_Flow_AsNet.pdf</b> (o fluxo concreto do AsNet).</p>
+
+<div class="toc">
+  <b>Índice</b>
+  <ol>
+    <li>O modelo mental em 60 segundos</li>
+    <li>A lista de compras (antes de qualquer código)</li>
+    <li>Registar a app no Google e na Microsoft</li>
+    <li>Guardar os segredos como deve ser</li>
+    <li>A implementação recomendada (a via da framework)</li>
+    <li>O que a framework está a fazer por ti</li>
+    <li>Checklist de segurança</li>
+    <li>Erros clássicos e como diagnosticá-los</li>
+    <li>Mapa para o AsNet</li>
+    <li>Glossário</li>
+  </ol>
+</div>
+
+<h2><span class="k">1.</span>O modelo mental em 60 segundos</h2>
+<p>O problema: queres que a pessoa entre na tua app sem lhe pedires a password do Google — porque pedir passwords alheias é inaceitável para todos os envolvidos. A solução: a tua app <em>delega a verificação de identidade</em> ao Google e recebe de volta uma prova assinada de quem a pessoa é.</p>
+<p>A analogia do hotel: a receção (Google) verifica o cartão de cidadão e entrega um cartão-chave; a porta do quarto (a tua app) só alguma vez vê o cartão-chave. E o ponto que resolve 90% da confusão: <b>o OAuth só responde a «quem é?»</b>. «Pode entrar?», «a que empresa pertence?», «o que pode ver?» — isso é autorização, é problema teu, e acontece <em>depois</em> do OAuth terminar.</p>
+<ul>
+  <li><b>OAuth 2.0</b> — o protocolo de delegação (o mecanismo do «voucher»).</li>
+  <li><b>OpenID Connect (OIDC)</b> — uma camada em cima do OAuth 2.0 que o especializa em identidade: acrescenta o <code>id_token</code> (um JWT assinado que descreve a pessoa) e o scope <code>openid</code>. Quando fazes «login social», estás quase sempre a usar OIDC.</li>
+</ul>
+
+<h2><span class="k">2.</span>A lista de compras (antes de qualquer código)</h2>
+<ol>
+  <li><b>Um registo de aplicação em cada fornecedor</b> — dá-te o par <code>ClientId</code> (público, identifica a app) + <code>ClientSecret</code> (privado, prova que o pedido vem mesmo do teu servidor).</li>
+  <li><b>Os redirect URIs exatos</b> — o(s) endereço(s) para onde o fornecedor pode devolver o browser. Têm de estar registados <em>caráter a caráter</em> (esquema, host, porta, path): <code>https://localhost:5001/signin-google</code> para dev e <code>https://app.cliente.com/signin-google</code> para produção são DOIS registos.</li>
+  <li><b>Decidir os scopes</b> — para login chegam <code>openid email profile</code>. Não peças mais do que precisas: cada scope extra é um pedido de consentimento e uma responsabilidade.</li>
+  <li><b>Pacotes NuGet</b>:
+<pre><code>dotnet add package Microsoft.AspNetCore.Authentication.Google
+dotnet add package Microsoft.AspNetCore.Authentication.OpenIdConnect</code></pre>
+      O da Google traz o handler específico; o OpenIdConnect genérico serve a Microsoft (Entra ID) e qualquer outro fornecedor OIDC.</li>
+  <li><b>Um sítio seguro para os segredos</b> — secção 4.</li>
+</ol>
+
+<h2><span class="k">3.</span>Registar a app no Google e na Microsoft</h2>
+<h3>Google (console.cloud.google.com)</h3>
+<ol>
+  <li>Cria (ou escolhe) um projeto → <b>APIs &amp; Services → OAuth consent screen</b>: tipo <i>External</i>, nome da app, email de suporte. Para login básico não precisas de verificação da Google.</li>
+  <li><b>Credentials → Create credentials → OAuth client ID</b> → tipo <i>Web application</i>.</li>
+  <li>Em <b>Authorized redirect URIs</b> adiciona os teus callbacks (dev e prod). O default do handler ASP.NET é <code>/signin-google</code>.</li>
+  <li>Guarda o <code>Client ID</code> e o <code>Client secret</code> que a consola te mostra.</li>
+</ol>
+<h3>Microsoft (portal.azure.com → Microsoft Entra ID)</h3>
+<ol>
+  <li><b>App registrations → New registration</b>. «Supported account types» é a decisão importante:
+    <ul>
+      <li><i>Accounts in any organizational directory</i> = <code>TenantId: organizations</code> — qualquer conta de trabalho (é o que o AsNet usa);</li>
+      <li>+ contas pessoais = <code>common</code>; só o teu tenant = o GUID do tenant.</li>
+    </ul></li>
+  <li>Em <b>Redirect URIs</b> (plataforma <i>Web</i>) adiciona os callbacks (no AsNet: <code>/auth/mobile-login-callback</code>).</li>
+  <li><b>Certificates &amp; secrets → New client secret</b> — copia o <em>Value</em> na hora (nunca mais volta a aparecer) e aponta a validade: os secrets da Microsoft <b>expiram</b> (6–24 meses) e o login morre silenciosamente no dia em que expiram. Põe um lembrete.</li>
+</ol>
+
+<h2><span class="k">4.</span>Guardar os segredos como deve ser</h2>
+<p>O <code>ClientSecret</code> é uma password da tua app. A regra: <b>nunca no git</b>.</p>
+<pre><code># Em desenvolvimento — user-secrets (fora da pasta do repo):
+dotnet user-secrets init
+dotnet user-secrets set "Authentication:Google:ClientSecret" "GOCSPX-..."
+dotnet user-secrets set "Authentication:AzureAd:ClientSecret" "vY0..."
+
+# Em produção — variáveis de ambiente no servidor (o : vira __):
+setx Authentication__Google__ClientSecret "GOCSPX-..." /M</code></pre>
+<p>A configuração do ASP.NET funde tudo — o código lê <code>Configuration["Authentication:Google:ClientSecret"]</code> e não sabe de onde veio.</p>
+<div class="box"><span class="tag">Honestidade sobre a nossa casa</span>
+<p>Hoje o AsNet (e clones) têm os secrets no <code>appsettings.json</code>, commitados. Funciona, mas é dívida: qualquer pessoa com acesso ao repo consegue fazer-se passar pela app. Quando houver oportunidade, migrar para user-secrets/env vars e <b>rodar</b> os secrets expostos (gerar novos na consola, apagar os antigos).</p></div>
+
+<h2><span class="k">5.</span>A implementação recomendada (a via da framework)</h2>
+<p>Não construas o protocolo à mão — o ASP.NET traz handlers que fazem a dança toda. A tua parte são três blocos:</p>
+<h3>5.1 — Registar os esquemas (Program.cs)</h3>
+<pre><code>builder.Services
+    .AddAuthentication(options =>
+    {
+        // Quem lê a sessão em cada pedido, e onde os logins externos depositam o resultado:
+        options.DefaultAuthenticateScheme = "AppCookie";
+        options.DefaultSignInScheme      = "AppCookie";
+    })
+    .AddCookie("AppCookie", options =>
+    {
+        options.Cookie.Name = "MinhaApp.Auth";
+        options.LoginPath = "/login";                    // para onde mandar anónimos
+        options.ExpireTimeSpan = TimeSpan.FromDays(7);
+        options.SlidingExpiration = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;  // só HTTPS
+        options.Cookie.SameSite = SameSiteMode.Lax;      // Lax: sobrevive ao redirect do OAuth
+    })
+    .AddGoogle("Google", options =>
+    {
+        options.SignInScheme = "AppCookie";              // o resultado vira ESTE cookie
+        options.ClientId     = builder.Configuration["Authentication:Google:ClientId"]!;
+        options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
+        options.CallbackPath = "/signin-google";         // o handler É dono deste path
+
+        options.Events.OnCreatingTicket = async context =>
+        {
+            // ── O OAuth acabou; isto já é a TUA app. ──
+            var email = context.Principal?.FindFirst(ClaimTypes.Email)?.Value;
+            if (string.IsNullOrWhiteSpace(email))
+            { context.Fail("Não foi possível obter o email."); return; }
+
+            // Autorização é problema TEU: é AQUI que decides se a identidade é bem-vinda.
+            var gate = context.HttpContext.RequestServices.GetRequiredService<IMeuGate>();
+            if (!await gate.EmailPodeEntrarAsync(email))
+            { context.Fail("Este email não tem acesso à aplicação."); return; }
+
+            // Claims próprias — tudo o que a app precisa por sessão, sem ir à BD a cada pedido.
+            var identity = (ClaimsIdentity)context.Principal!.Identity!;
+            identity.AddClaim(new Claim("app:user-type", "Subscriber"));
+        };
+
+        options.Events.OnRemoteFailure = context =>
+        {
+            context.HandleResponse();                    // sem stack trace para o utilizador
+            context.Response.Redirect("/login?erro=" +
+                Uri.EscapeDataString(context.Failure?.Message ?? "Falha na autenticação."));
+            return Task.CompletedTask;
+        };
+    })
+    .AddOpenIdConnect("Microsoft", options =>
+    {
+        options.SignInScheme = "AppCookie";
+        options.Authority = "https://login.microsoftonline.com/organizations/v2.0";
+        options.ClientId     = builder.Configuration["Authentication:AzureAd:ClientId"]!;
+        options.ClientSecret = builder.Configuration["Authentication:AzureAd:ClientSecret"]!;
+        options.CallbackPath = "/signin-microsoft";
+        options.ResponseType = OpenIdConnectResponseType.Code;   // authorization code flow
+        options.Scope.Clear();
+        options.Scope.Add("openid"); options.Scope.Add("profile"); options.Scope.Add("email");
+        // multi-tenant ("organizations"): o issuer varia por tenant — valida à mão ou desliga
+        options.TokenValidationParameters.ValidateIssuer = false;
+        options.Events.OnTokenValidated = context => { /* mesmo papel do OnCreatingTicket */ return Task.CompletedTask; };
+    });
+
+// E no pipeline — ORDEM OBRIGATÓRIA, antes de MapControllers/MapBlazorHub:
+app.UseAuthentication();
+app.UseAuthorization();</code></pre>
+
+<h3>5.2 — Arrancar o login e o logout</h3>
+<pre><code>[Route("auth")]
+public class LoginController : ControllerBase
+{
+    [HttpGet("entrar")]
+    public IActionResult Entrar([FromQuery] string provider, [FromQuery] string returnUrl = "/")
+    {
+        if (!Url.IsLocalUrl(returnUrl)) returnUrl = "/";     // anti open-redirect
+        var scheme = provider == "microsoft" ? "Microsoft" : "Google";
+        // Challenge = "trata-me do login com este fornecedor e volta para aqui"
+        return Challenge(new AuthenticationProperties { RedirectUri = returnUrl }, scheme);
+    }
+
+    [HttpGet("sair")]
+    public async Task<IActionResult> Sair()
+    {
+        await HttpContext.SignOutAsync("AppCookie");         // mata a NOSSA sessão
+        return Redirect("/");                                // a do Google continua viva — e não é problema nosso
+    }
+}</code></pre>
+
+<h3>5.3 — Ler o utilizador no Blazor</h3>
+<pre><code>&lt;CascadingAuthenticationState&gt;  @* no router *@
+
+@* numa página: *@
+[CascadingParameter] private Task&lt;AuthenticationState&gt; AuthState { get; set; } = default!;
+var user = (await AuthState).User;          // ClaimsPrincipal — email, nome, as tuas claims</code></pre>
+<p class="quiet">Nas nossas apps existe uma camada própria (AuthenticatedComponentBase + sessão AES) por cima disto; o princípio é o mesmo — as claims do cookie são a fonte.</p>
+
+<h2><span class="k">6.</span>O que a framework está a fazer por ti</h2>
+<p>Vale a pena saber, porque é o que terias de escrever «à mão» (e é o que a implementação morta no AppMobileLoginController tentou fazer):</p>
+<table>
+  <tr><th>Passo</th><th>O que o handler faz</th><th>Se fosse à mão…</th></tr>
+  <tr><td>Convite</td><td>Constrói o URL de autorização com <code>client_id</code>, <code>redirect_uri</code>, <code>scope</code>, <code>response_type=code</code>, <code>state</code> e <code>nonce</code></td><td><code>QueryHelpers.AddQueryString("https://accounts.google.com/o/oauth2/v2/auth", ...)</code></td></tr>
+  <tr><td>Anti-forja</td><td>Gera o <code>state</code>, guarda-o num <em>correlation cookie</em> e confere no regresso — o callback só é aceite se responder a um pedido NOSSO</td><td>Gerar valor aleatório, cifrar (DataProtection), guardar, comparar, expirar</td></tr>
+  <tr><td>Callback</td><td>É dono do <code>CallbackPath</code> no middleware — qualquer controller no mesmo path nunca corre</td><td>Uma action a ler <code>?code=&amp;state=</code></td></tr>
+  <tr><td>Troca</td><td><code>POST</code> servidor↔servidor ao token endpoint: <code>code + client_secret → tokens</code></td><td><code>HttpClient.PostAsync(tokenEndpoint, form)</code></td></tr>
+  <tr><td>Validação</td><td>Valida o <code>id_token</code>: assinatura (chaves públicas JWKS do fornecedor), emissor (<code>iss</code>), audiência (<code>aud</code> = o teu ClientId), validade (<code>exp</code>), <code>nonce</code></td><td>É aqui que as versões manuais falham — a do AsNet lia o JWT <b>sem validar a assinatura</b></td></tr>
+  <tr><td>Identidade</td><td>Mapeia claims para <code>ClaimsPrincipal</code> e dispara os teus eventos</td><td>Chamar o userinfo endpoint com o access_token e montar claims</td></tr>
+</table>
+<div class="box"><span class="tag">Regra prática</span>
+<p>Implementação manual só para <em>aprender</em>. Em produção, handlers da framework — menos código, e os erros de validação que tu nem sabias que existiam já estão tratados.</p></div>
+
+<h2><span class="k">7.</span>Checklist de segurança</h2>
+<ul>
+  <li><b>Redirect URIs de correspondência exata</b> registados no fornecedor — nunca wildcards.</li>
+  <li><b>State sempre</b> (a framework trata) — sem ele, um atacante consegue «colar» a sessão dele na vítima (login CSRF).</li>
+  <li><b>Secrets fora do git</b>, rodados se expostos, com lembrete de expiração (Microsoft expira!).</li>
+  <li><b>Validar o id_token</b> — assinatura, iss, aud, exp. De borla com os handlers; mortal se esquecido à mão.</li>
+  <li><b>Cookies</b>: <code>Secure</code> + <code>HttpOnly</code> (default) + <code>SameSite=Lax</code> (Strict parte o regresso do OAuth; None só com razão).</li>
+  <li><b>Anti open-redirect</b>: valida <code>returnUrl</code> com <code>Url.IsLocalUrl</code> antes de redirecionar.</li>
+  <li><b>PKCE</b>: obrigatório em clientes públicos (mobile nativo, SPA — não guardam segredos); os handlers ASP.NET já o usam por default no fluxo code.</li>
+  <li><b>Autenticação ≠ autorização</b>: o Google diz quem é; QUEM PODE ENTRAR decides tu, no evento, contra os TEUS dados (o gate de domínios do T-0036 é exatamente isto).</li>
+  <li><b>Não peças scopes a mais</b>; não guardes tokens que não vais usar (<code>SaveTokens = false</code> se só precisas do login).</li>
+</ul>
+
+<h2><span class="k">8.</span>Erros clássicos e como diagnosticá-los</h2>
+<table>
+  <tr><th>Sintoma</th><th>Causa típica</th><th>Correção</th></tr>
+  <tr><td><code>redirect_uri_mismatch</code> (Google) / <code>AADSTS50011</code> (MS)</td><td>O redirect URI do pedido não bate certo com o registado — porta, http vs https, barra final, path</td><td>Compara caráter a caráter; regista dev E prod</td></tr>
+  <tr><td><code>invalid_client</code> na troca do code</td><td>Secret errado, expirado, ou com espaços/aspas apanhados no copy-paste</td><td>Gerar novo secret e substituir</td></tr>
+  <tr><td><code>Correlation failed</code></td><td>O correlation cookie perdeu-se: SameSite=Strict, site em http, ou o utilizador demorou &gt;15 min na página do Google</td><td>SameSite=Lax + HTTPS sempre (mesmo em dev)</td></tr>
+  <tr><td>Login funciona em dev, morre em produção</td><td>Redirect URI de prod não registado; secret de prod diferente; app atrás de proxy sem <code>ForwardedHeaders</code> (o handler constrói o redirect com http://)</td><td>Registar URI de prod; configurar UseForwardedHeaders</td></tr>
+  <tr><td>Email vem vazio (Microsoft)</td><td>Contas sem <code>mail</code> preenchido</td><td>Fallback: <code>preferred_username</code> / <code>upn</code> (o AsNet já faz)</td></tr>
+  <tr><td>Login «morreu sozinho» num dia qualquer</td><td>Client secret da Microsoft expirou</td><td>Novo secret; pôr lembrete no calendário desta vez</td></tr>
+</table>
+
+<h2><span class="k">9.</span>Mapa para o AsNet</h2>
+<table>
+  <tr><th>Conceito deste guia</th><th>No AsNet2.0</th></tr>
+  <tr><td>Registo dos esquemas (5.1)</td><td><code>Program.cs:555-663</code> — cookie <code>AsNet.AppMobile</code> + AddGoogle + AddOpenIdConnect</td></tr>
+  <tr><td>Arrancar o login (5.2)</td><td><code>AppMobileLoginController.cs:54</code> — <code>/auth/mobile-login</code> → Challenge</td></tr>
+  <tr><td>O teu código no evento (5.1)</td><td><code>OnCreatingTicket</code>/<code>OnTokenValidated</code> — resolver empresa, provisionar Subscriber, claims</td></tr>
+  <tr><td>O gate de autorização (7)</td><td><code>AppMobileCompanyResolver.ResolveForExternalEmailAsync</code> — hoje lê config; T-0036 muda a fonte para <code>EntitySiteDomain</code></td></tr>
+  <tr><td>A versão manual (6)</td><td>A metade morta do controller — builders/callbacks/SaveSubscriberAsync sem chamadores</td></tr>
+  <tr><td>Login sem OAuth</td><td><code>/auth/mobile-internal-login</code> — BCrypt contra a nossa BD, mesmo cookie</td></tr>
+</table>
+
+<h2><span class="k">10.</span>Glossário</h2>
+<table>
+  <tr><td><b>id_token</b></td><td>JWT assinado que descreve a pessoa (OIDC). Serve para LOGIN.</td></tr>
+  <tr><td><b>access_token</b></td><td>Chave para chamar APIs do fornecedor em nome da pessoa (ex.: Graph). Não é prova de login.</td></tr>
+  <tr><td><b>refresh_token</b></td><td>Troca-se por novos access_tokens sem incomodar a pessoa. Para login puro, dispensável.</td></tr>
+  <tr><td><b>scope</b></td><td>O que a app pede para saber/fazer. <code>openid email profile</code> = identidade básica.</td></tr>
+  <tr><td><b>claim</b></td><td>Um facto sobre a pessoa (email, nome, ou os teus próprios: empresa, tipo de utilizador).</td></tr>
+  <tr><td><b>state / nonce</b></td><td>Valores anti-forja: state amarra o callback ao pedido; nonce amarra o id_token ao pedido.</td></tr>
+  <tr><td><b>Challenge</b></td><td>«Framework, trata do login com este esquema.» O ponto de partida de tudo.</td></tr>
+  <tr><td><b>SignInScheme</b></td><td>Onde o resultado do login externo é depositado — tipicamente o teu cookie.</td></tr>
+</table>
+
+<p class="quiet">Guia escrito a 2026-09-04, verificado contra o código real do AsNet2.0 (master) e a configuração de produção. Par: OAuth_Flow_AsNet.pdf.</p>
+
+</body>
+</html>
