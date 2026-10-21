@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>JS / TS Syntax Cheatsheet</title>
+<style>
+  :root {
+    --paper: #ffffff; --panel: #faf9f6; --ink: #232a35; --muted: #6d7482;
+    --line: #ddd8ce; --accent: #fa7335; --accent-ink: #c24f14; --code-bg: #f4f1ea;
+    --d0: #c24f14; --d1: #1f6fb2; --d2: #2e8b57; --d3: #8e44ad;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font: 13.5px/1.5 "Segoe UI", -apple-system, system-ui, sans-serif;
+    color: var(--ink); background: var(--paper);
+    max-width: 820px; margin: 0 auto; padding: 1.8rem 1.4rem 3rem;
+  }
+  h1 { font-size: 1.7rem; line-height: 1.2; margin: 0 0 .3rem; letter-spacing: -.015em; }
+  .lede { color: var(--muted); margin: 0 0 1.4rem; max-width: 70ch; }
+  h2 { font-size: 1.08rem; margin: 1.7rem 0 .6rem; padding-bottom: .25rem; border-bottom: 2px solid var(--line); break-after: avoid; }
+  h2 .k { color: var(--accent-ink); margin-right: .4rem; }
+  h3 { font-size: .95rem; margin: 1.1rem 0 .4rem; break-after: avoid; }
+  p { margin: 0 0 .6rem; max-width: 74ch; }
+  code { font: .86em Consolas, "Cascadia Mono", monospace; background: var(--code-bg); border-radius: 3px; padding: .05em .3em; }
+  pre {
+    font: 12px/1.55 Consolas, "Cascadia Mono", monospace; background: var(--code-bg);
+    border: 1px solid var(--line); border-radius: 7px; padding: .7rem .9rem; margin: .5rem 0 .9rem;
+    white-space: pre; overflow-x: auto; break-inside: avoid;
+  }
+  pre .c { color: var(--muted); }
+  .b0 { color: var(--d0); font-weight: 700; }
+  .b1 { color: var(--d1); font-weight: 700; }
+  .b2 { color: var(--d2); font-weight: 700; }
+  .b3 { color: var(--d3); font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; margin: .4rem 0 1rem; font-size: 12.5px; break-inside: avoid; }
+  th, td { text-align: left; vertical-align: top; padding: .32rem .5rem; border-bottom: 1px solid var(--line); }
+  th { background: var(--panel); font-weight: 600; }
+  td code, th code { white-space: nowrap; }
+  .rule {
+    background: #fff4ec; border-left: 4px solid var(--accent); border-radius: 0 6px 6px 0;
+    padding: .55rem .8rem; margin: .6rem 0 1rem; break-inside: avoid;
+  }
+  .rule b { color: var(--accent-ink); }
+  .trap {
+    background: #fdf0f0; border-left: 4px solid #c0392b; border-radius: 0 6px 6px 0;
+    padding: .55rem .8rem; margin: .6rem 0 1rem; break-inside: avoid;
+  }
+  .trap b { color: #a0281c; }
+  ol.routine { margin: .3rem 0 1rem; padding-left: 1.3rem; }
+  ol.routine li { margin-bottom: .3rem; }
+  .legend span { margin-right: 1rem; font-family: Consolas, monospace; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+  .grid2 > div { break-inside: avoid; }
+  .page-break { break-before: page; }
+  @page { size: A4; margin: 13mm 12mm; }
+  @media print { body { padding: 0; max-width: none; } pre { white-space: pre-wrap; overflow: visible; } }
+</style>
+</head>
+<body>
+
+<h1>JS / TS Syntax Cheatsheet</h1>
+<p class="lede">Braces, commas, colons and dots, for a C# developer reading React + TypeScript. The examples come from Driveway (and the course author's code). Start with section 1: most lines that look scary are just objects nested inside objects.</p>
+
+<h2><span class="k">1</span>Reading a scary line: the routine</h2>
+<ol class="routine">
+  <li><b>Find the outermost bracket pair.</b> <code>( )</code> = arguments or parameters. <code>[ ]</code> = an array (or a by-position pattern). <code>{ }</code> = it depends on <i>where</i> it is; see section 2.</li>
+  <li><b>Commas only split items at the current level.</b> A comma inside an inner <code>{ }</code> belongs to that inner object, not to the outer one.</li>
+  <li><b>Read each item on its own.</b> It's one of: <code>key: value</code>, <code>...spread</code>, or a shorthand <code>name</code>.</li>
+</ol>
+<p class="legend">Bracket colours by depth:&nbsp; <span class="b0">level 0</span><span class="b1">level 1</span><span class="b2">level 2</span><span class="b3">level 3</span></p>
+
+<h3>Example A: building an object as the only argument (author's <code>AuctionForm</code>)</h3>
+<pre>const newAuction = await createListing<span class="b0">(</span>        <span class="c">// ( = argument list. It has ONE argument:</span>
+    <span class="b1">{</span>                                           <span class="c">// { in a value position = build an object</span>
+        ...data,                                <span class="c">// item 1: copy every property of data</span>
+        reservePrice: data.reservePrice || 0,   <span class="c">// item 2: overwrite reservePrice ("" becomes 0)</span>
+        <span class="c">// item 3: overwrite auctionEnd (local time from the input → UTC string)</span>
+        auctionEnd: new Date<span class="b2">(</span>data.auctionEnd<span class="b2">)</span>.toISOString<span class="b2">()</span>
+    <span class="b1">}</span>
+<span class="b0">)</span>;</pre>
+<p>Result: the same object as <code>data</code>, with two properties replaced. In C# this is a record <code>with</code> expression: <code>data with { ReservePrice = ..., AuctionEnd = ... }</code>.</p>
+
+<h3>Example B: an object whose values are objects (<code>features/session/actions.ts</code>)</h3>
+<pre><span class="c">// left of = : a PATTERN (take accessToken out).   right of = : a call with ONE object argument</span>
+const <span class="b0">{</span>accessToken<span class="b0">}</span> = await auth.api.getAccessToken<span class="b0">(</span><span class="b1">{</span>
+    body: <span class="b2">{</span>useAccountCookie: true<span class="b2">}</span>,       <span class="c">// item 1: key "body", value = ANOTHER object</span>
+    headers: await headers<span class="b2">()</span>               <span class="c">// item 2: key "headers", value = the awaited result</span>
+<span class="b1">}</span><span class="b0">)</span>;</pre>
+
+<h3>Example C: a nested pattern (<code>AuctionForm</code> with React Hook Form)</h3>
+<pre>const <span class="b0">{</span>control, handleSubmit, setFocus, formState: <span class="b1">{</span>isSubmitting<span class="b1">}</span><span class="b0">}</span> = useForm<span class="b0">()</span>;
+<span class="c">//      item 1   item 2        item 3    item 4: go INSIDE formState and take isSubmitting</span>
+<span class="c">// Variables created: control, handleSubmit, setFocus, isSubmitting. NOT formState.</span></pre>
+
+<h3>Example D: JSX props holding an object holding objects (<code>AuctionForm</code>)</h3>
+<pre><span class="c">// 1st { = "JS goes here".   2nd { = an object literal.</span>
+rules=<span class="b0">{</span><span class="b1">{</span>
+    required: "Auction end date/time is required",   <span class="c">// item 1</span>
+    validate: value =&gt;                               <span class="c">// item 2: the value is a function (lambda)</span>
+        new Date<span class="b2">(</span>value<span class="b2">)</span> &gt; new Date<span class="b2">()</span> || "Auction end date must be in the future"
+<span class="b1">}</span><span class="b0">}</span></pre>
+
+<h2><span class="k">2</span>What does this <code>{</code> mean? Look at where it is</h2>
+<table>
+  <tr><th>Position</th><th>Example</th><th>Meaning</th></tr>
+  <tr><td>Left of <code>=</code>, or in parameters</td><td><code>const {id} = await props.params</code></td><td><b>Pattern</b>: take properties <i>out</i> of an object</td></tr>
+  <tr><td>Right of <code>=</code>, or as an argument</td><td><code>{...data, reservePrice: 0}</code></td><td><b>Object literal</b>: <i>build</i> an object</td></tr>
+  <tr><td>After <code>type X =</code>, or after <code>:</code> in a type</td><td><code>type Props = {label?: string}</code></td><td><b>Type shape</b>: describes an object</td></tr>
+  <tr><td>JSX attribute or child</td><td><code>disabled={isPending}</code></td><td><b>Expression slot</b>: "JavaScript goes here"</td></tr>
+  <tr><td>JSX, doubled</td><td><code>rules={{required: "..."}}</code></td><td>Expression slot <b>+</b> object literal inside it</td></tr>
+  <tr><td>After <code>=&gt;</code></td><td><code>() =&gt; { doThing(); }</code></td><td><b>Function body</b> (a block, as in C#)</td></tr>
+  <tr><td>After <code>=&gt;</code>, wrapped in <code>( )</code></td><td><code>() =&gt; ({a: 1})</code></td><td><b>Returns an object</b>. The parentheses stop it being read as a body</td></tr>
+  <tr><td>After <code>import</code> / <code>export</code></td><td><code>import {useEffect} from "react"</code></td><td><b>Named imports</b>: which exports to bring in</td></tr>
+  <tr><td>After <code>if</code>, <code>for</code>, <code>function</code></td><td><code>if (x) { ... }</code></td><td><b>Block</b>, same as C#</td></tr>
+</table>
+
+<h2><span class="k">3</span>Commas</h2>
+<p>A comma <b>separates items in a list</b>. Lists appear in: object literals, arrays, arguments, parameters, patterns, imports, generic parameters. In a type shape you may use <code>,</code> or <code>;</code>.</p>
+<table>
+  <tr><th>List</th><th>Example</th></tr>
+  <tr><td>Object literal</td><td><code>{ method: "POST", body: json, headers: h }</code></td></tr>
+  <tr><td>Array</td><td><code>["openid", "profile", "auctionApp"]</code></td></tr>
+  <tr><td>Arguments</td><td><code>new URL("/", request.url)</code></td></tr>
+  <tr><td>Parameters</td><td><code>(key: "seller" | "winner", value: string) =&gt; ...</code></td></tr>
+  <tr><td>Pattern (object)</td><td><code>const {pageNumber, pageSize, searchTerm} = params</code></td></tr>
+  <tr><td>Pattern (array, by position)</td><td><code>const [isPending, startTransition] = useTransition()</code></td></tr>
+  <tr><td>Imports</td><td><code>import {useEffect, useTransition} from "react"</code></td></tr>
+</table>
+<div class="rule"><b>A comma never ends a statement.</b> That's <code>;</code> (or a new line). If you see a comma, you're inside a list: find which bracket opened it.</div>
+<div class="rule"><b>Trailing commas are allowed</b>: <code>{a, b,}</code>, <code>[1, 2,]</code>, <code>import {useEffect,}</code>. They're harmless, and they make diffs cleaner when you add an item later.</div>
+
+<h2><span class="k">4</span>The colon <code>:</code></h2>
+<table>
+  <tr><th>Context</th><th>Example</th><th>Meaning</th></tr>
+  <tr><td>Object literal</td><td><code>{ seller: "bob" }</code></td><td>key <b>:</b> value</td></tr>
+  <tr><td>Pattern, then a <b>name</b></td><td><code>const {accessToken: token} = r</code></td><td><b>Rename</b>. Only <code>token</code> exists afterwards</td></tr>
+  <tr><td>Pattern, then <b><code>{</code></b></td><td><code>const {formState: {errors}} = form</code></td><td><b>Go inside</b>. Only <code>errors</code> exists afterwards</td></tr>
+  <tr><td>Type shape</td><td><code>label?: string</code></td><td>name <b>:</b> type (<code>?</code> = optional)</td></tr>
+  <tr><td>Parameter</td><td><code>(data: FieldValues) =&gt; ...</code></td><td>parameter type</td></tr>
+  <tr><td>Return type</td><td><code>async function f(): Promise&lt;Auction&gt;</code></td><td>what the function returns</td></tr>
+  <tr><td>Ternary</td><td><code>isPending ? "Submitting..." : "Submit"</code></td><td>"else"</td></tr>
+</table>
+<div class="rule"><b>In a pattern, the colon is never followed by a type.</b> It's followed by a new name (rename) or another pattern (go inside). To type a pattern, put the type <i>after the whole pattern</i>:<br><code>const {accessToken: token}: {accessToken: string} = result;</code></div>
+
+<h2><span class="k">5</span>Three dots <code>...</code></h2>
+<table>
+  <tr><th>Where</th><th>Name</th><th>What it does</th><th>Example</th></tr>
+  <tr><td>Pattern</td><td>rest</td><td><b>Collects</b> everything not named</td><td><code>const {label, ...controllerProps} = props</code></td></tr>
+  <tr><td>Object literal</td><td>spread</td><td><b>Copies</b> every property in</td><td><code>{...controllerProps, defaultValue: ""}</code></td></tr>
+  <tr><td>Array literal</td><td>spread</td><td>Copies every item in</td><td><code>[...items, newItem]</code></td></tr>
+  <tr><td>JSX props</td><td>spread</td><td>Passes each property as a prop</td><td><code>&lt;Input {...field} /&gt;</code></td></tr>
+  <tr><td>Parameters</td><td>rest parameter</td><td>Collects the arguments into an array</td><td><code>(...args) =&gt; ...</code></td></tr>
+</table>
+<div class="rule"><b>With spread, later wins.</b> <code>{...data, reservePrice: 0}</code> → <code>0</code> wins. <code>{reservePrice: 0, ...data}</code> → <code>data</code>'s value wins. So put the <i>overrides after</i> the spread.</div>
+
+<h2><span class="k">6</span>Shorthands and defaults</h2>
+<table>
+  <tr><th>You see</th><th>It means</th></tr>
+  <tr><td><code>{ make, model }</code> (value)</td><td><code>{ make: make, model: model }</code>: key and variable share a name</td></tr>
+  <tr><td><code>const { make } = obj</code> (pattern)</td><td><code>const make = obj.make</code></td></tr>
+  <tr><td><code>({callbackUrl = "/"}: Props)</code></td><td>Default in a pattern: used when <code>callbackUrl</code> is <code>undefined</code> (<code>LoginButton</code>)</td></tr>
+  <tr><td><code>const {control = formControl} = props</code></td><td>Same idea: use the prop, or else <code>formControl</code> (React Hook Form internals)</td></tr>
+  <tr><td><code>function f(x = 1)</code></td><td>Default parameter, as in C#</td></tr>
+</table>
+
+<h2><span class="k">7</span>Operators, with C# next to them</h2>
+<table>
+  <tr><th>JS / TS</th><th>Does</th><th>C#</th></tr>
+  <tr><td><code>a?.b</code></td><td><code>undefined</code> if <code>a</code> is null/undefined, instead of throwing</td><td><code>a?.b</code></td></tr>
+  <tr><td><code>a ?? b</code></td><td><code>b</code> only if <code>a</code> is null/undefined</td><td><code>a ?? b</code></td></tr>
+  <tr><td><code>a || b</code></td><td><code>a</code> if truthy, else <code>b</code>. <b>Returns an operand, not a bool</b></td><td>no equivalent (C# <code>||</code> gives a bool)</td></tr>
+  <tr><td><code>a &amp;&amp; b</code></td><td><code>a</code> if falsy, else <code>b</code></td><td>no equivalent</td></tr>
+  <tr><td><code>{cond &amp;&amp; &lt;X/&gt;}</code></td><td>Render <code>X</code> or nothing</td><td><code>@if (cond) { &lt;X/&gt; }</code></td></tr>
+  <tr><td><code>!!a</code></td><td>Turn anything into <code>true</code>/<code>false</code></td><td>roughly <code>a is not null</code></td></tr>
+  <tr><td><code>===</code> / <code>!==</code></td><td>Equal, no type conversion (use these, not <code>==</code>)</td><td><code>==</code> / <code>!=</code></td></tr>
+  <tr><td><code>`Bearer ${token}`</code></td><td>Template string</td><td><code>$"Bearer {token}"</code></td></tr>
+  <tr><td><code>c ? a : b</code></td><td>Ternary</td><td>same</td></tr>
+</table>
+<p><b>Falsy values:</b> <code>false</code> <code>0</code> <code>""</code> <code>null</code> <code>undefined</code> <code>NaN</code>. Everything else is truthy, including <code>"undefined"</code>, <code>"0"</code>, <code>[]</code> and <code>{}</code>.</p>
+<div class="trap"><b>Traps you've already hit:</b><br>
+<code>String(undefined) || "/"</code> → <code>"undefined"</code> (a non-empty string is truthy).<br>
+<code>{count &amp;&amp; &lt;Badge/&gt;}</code> with <code>count = 0</code> → shows a <code>0</code> on the page. Use <code>count &gt; 0 &amp;&amp;</code>.<br>
+An object or function inside a string → <code>"[object Object]"</code> or <code>"function search() {...}"</code>.</div>
+
+<h2><span class="k">8</span>Arrow functions</h2>
+<table>
+  <tr><th>JS / TS</th><th>C#</th></tr>
+  <tr><td><code>x =&gt; x * 2</code></td><td><code>x =&gt; x * 2</code></td></tr>
+  <tr><td><code>(a, b) =&gt; a + b</code></td><td><code>(a, b) =&gt; a + b</code></td></tr>
+  <tr><td><code>() =&gt; { doThing(); }</code></td><td><code>() =&gt; { DoThing(); }</code></td></tr>
+  <tr><td><code>async () =&gt; { await f(); }</code></td><td><code>async () =&gt; await FAsync()</code></td></tr>
+  <tr><td><code>() =&gt; ({ a: 1 })</code></td><td><code>() =&gt; new { A = 1 }</code></td></tr>
+</table>
+<div class="rule"><b>An <code>await</code> pauses only the function it's written in.</b> An async arrow handed to something else (<code>startTransition</code>, <code>setTimeout</code>, <code>.forEach</code>) is <i>not</i> awaited by the outer function. It's like C#'s <code>_ = Task.Run(async () =&gt; ...)</code>.</div>
+
+<h2><span class="k">9</span>Types</h2>
+<table>
+  <tr><th>TS</th><th>Meaning</th><th>Closest C#</th></tr>
+  <tr><td><code>A &amp; B</code></td><td><b>Intersection</b>: values that are both, so they have <i>all</i> properties of A and B</td><td>interface inheritance <code>: IA, IB</code></td></tr>
+  <tr><td><code>A | B</code></td><td><b>Union</b>: either one. Narrow (<code>if</code>) before using what isn't shared</td><td>base type + pattern matching</td></tr>
+  <tr><td><code>"seller" | "winner"</code></td><td>Only these exact strings</td><td>an <code>enum</code>, roughly</td></tr>
+  <tr><td><code>label?: string</code></td><td>Optional property (may be <code>undefined</code>)</td><td><code>string? Label</code></td></tr>
+  <tr><td><code>useState&lt;Result | null&gt;(null)</code></td><td>Generic type argument</td><td><code>new List&lt;T&gt;()</code></td></tr>
+  <tr><td><code>typeof auth.$Infer.Session.user</code></td><td>A type taken <i>from a value</i></td><td>none</td></tr>
+</table>
+
+<h2><span class="k">10</span>C# ↔ JS/TS quick map</h2>
+<table>
+  <tr><th>C#</th><th>JS / TS</th></tr>
+  <tr><td><code>DateTime.Now</code></td><td><code>new Date()</code> (always date <i>and</i> time; there's no <code>Today</code>)</td></tr>
+  <tr><td><code>DateTime.Parse("2026-10-25T18:00")</code></td><td><code>new Date("2026-10-25T18:00")</code> (no zone → read as <b>local</b> time)</td></tr>
+  <tr><td><code>d.ToUniversalTime().ToString("o")</code></td><td><code>d.toISOString()</code> (always UTC, ends in <code>Z</code>)</td></tr>
+  <tr><td><code>s[17..]</code> / <code>s.Substring(17)</code></td><td><code>s.slice(17)</code></td></tr>
+  <tr><td><code>s[..5]</code></td><td><code>s.slice(0, 5)</code></td></tr>
+  <tr><td><code>if (x is { } v)</code></td><td><code>if (x)</code>: TS narrows <code>T | undefined</code> to <code>T</code> inside</td></tr>
+  <tr><td><code>record with { A = 1 }</code></td><td><code>{ ...obj, a: 1 }</code></td></tr>
+  <tr><td><code>var (a, b) = tuple;</code></td><td><code>const [a, b] = array;</code> (by position)</td></tr>
+  <tr><td><code>$"Hi {name}"</code></td><td><code>`Hi ${name}`</code></td></tr>
+  <tr><td><code>_ = Task.Run(async () =&gt; ...)</code></td><td><code>startTransition(async () =&gt; ...)</code> (nobody awaits it)</td></tr>
+</table>
+
+</body>
+</html>
