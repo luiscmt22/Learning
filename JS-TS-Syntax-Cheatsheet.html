@@ -136,11 +136,14 @@ rules=<span class="b0">{</span><span class="b1">{</span>
   <tr><td>Pattern, then a <b>name</b></td><td><code>const {accessToken: token} = r</code></td><td><b>Rename</b>. Only <code>token</code> exists afterwards</td></tr>
   <tr><td>Pattern, then <b><code>{</code></b></td><td><code>const {formState: {errors}} = form</code></td><td><b>Go inside</b>. Only <code>errors</code> exists afterwards</td></tr>
   <tr><td>Type shape</td><td><code>label?: string</code></td><td>name <b>:</b> type (<code>?</code> = optional)</td></tr>
+  <tr><td>Type shape, <b>literal</b> after the colon</td><td><code>{ ok: false; error: string }</code></td><td>name <b>:</b> <i>literal type</i>. <code>ok</code> must be exactly <code>false</code>. Still a type, even though it looks like a value (section 9.5)</td></tr>
   <tr><td>Parameter</td><td><code>(data: FieldValues) =&gt; ...</code></td><td>parameter type</td></tr>
   <tr><td>Return type</td><td><code>async function f(): Promise&lt;Auction&gt;</code></td><td>what the function returns</td></tr>
   <tr><td>Ternary</td><td><code>isPending ? "Submitting..." : "Submit"</code></td><td>"else"</td></tr>
 </table>
 <div class="rule"><b>In a pattern, the colon is never followed by a type.</b> It's followed by a new name (rename) or another pattern (go inside). To type a pattern, put the type <i>after the whole pattern</i>:<br><code>const {accessToken: token}: {accessToken: string} = result;</code></div>
+<div class="rule"><b>Which world am I in?</b> In the <b>type world</b>, everything right of a colon is a type: after <code>type X =</code>, after <code>:</code> on a variable, parameter or return, and inside <code>&lt; &gt;</code>. In the <b>value world</b> (right of <code>=</code> in <code>const</code>/<code>let</code>, arguments, JSX), a colon pairs a key with a value.<br>
+<code>{ ok: false; status: number }</code> (type: <code>ok</code> must be <code>false</code>, <code>status</code> must be a number) vs <code>{ ok: false, status: 404 }</code> (value: one real object).</div>
 
 <h2><span class="k">5</span>Three dots <code>...</code></h2>
 <table>
@@ -194,11 +197,111 @@ An object or function inside a string → <code>"[object Object]"</code> or <cod
 <div class="rule"><b>An <code>await</code> pauses only the function it's written in.</b> An async arrow handed to something else (<code>startTransition</code>, <code>setTimeout</code>, <code>.forEach</code>) is <i>not</i> awaited by the outer function. It's like C#'s <code>_ = Task.Run(async () =&gt; ...)</code>.</div>
 
 <h2><span class="k">9</span>Types</h2>
+<p>Everything here lives in the <b>type world</b>. Types are checked by the compiler and your editor, then <b>erased</b>: at run time only plain JavaScript is left. So a type can't <i>do</i> anything; it only describes what's allowed.</p>
+
+<h3>9.1 A type is a set of values</h3>
+<pre>type Make  = string;                  <span class="c">// every possible string</span>
+type Side  = "seller" | "winner";     <span class="c">// only these two strings</span>
+type Flag  = false;                   <span class="c">// only the value false</span>
+type Props = { label?: string };      <span class="c">// every object whose label is a string or missing</span></pre>
+<p>Thinking in <b>sets of values</b> explains <code>&amp;</code> and <code>|</code>. <code>A &amp; B</code> is the <b>overlap</b>: fewer values fit, but each one guarantees <i>more</i> properties. <code>A | B</code> is <b>either</b>: more values fit, but you can only rely on what they <i>share</i>.</p>
+
+<h3>9.2 Intersection <code>&amp;</code>: combine two shapes (<code>components/ui/app-text-input.tsx</code>)</h3>
+<pre>type Props = <span class="b0">{</span>
+    label?: string;
+    placeholder?: string;
+    multiline?: boolean;
+<span class="b0">}</span> &amp; UseControllerProps;     <span class="c">// from react-hook-form: name, rules, control, defaultValue, ...</span>
+
+<span class="c">// A Props value must satisfy BOTH sides:</span>
+const p: Props = <span class="b0">{</span>
+    label: "Make of car",       <span class="c">// ← from your side</span>
+    name: "make",               <span class="c">// ← from UseControllerProps (required there)</span>
+    control,                    <span class="c">// ← from UseControllerProps (shorthand for control: control)</span>
+<span class="b0">}</span>;
+<span class="c">// Leave out name → error: Property 'name' is missing in type ...</span></pre>
+<p>C#: <code>interface IProps : IUseControllerProps { string? Label { get; } ... }</code>. One difference: TS can merge <i>any</i> two shapes, even ones nobody designed to fit together, because TS only checks the shape (it's <b>structural</b>). C# needs the class to <i>declare</i> the interface (<b>nominal</b>).</p>
+
+<h3>9.3 Union <code>|</code>: one of several (<code>features/listings/actions.ts</code>)</h3>
+<pre>type ListingSearchParams = <span class="b0">{</span>
+    searchTerm?: string | string[];   <span class="c">// ?searchTerm=bmw → string; repeated → array</span>
+<span class="b0">}</span>;
+
+let searchTerm: string | string[] = ...;
+
+searchTerm.toUpperCase();   <span class="c">// ❌ arrays don't have toUpperCase</span>
+searchTerm.toString();      <span class="c">// ✅ both have toString (why your actions.ts compiles)</span>
+
+if (Array.isArray(searchTerm)) <span class="b0">{</span>
+    searchTerm.join(",");         <span class="c">// TS narrowed: here it's string[]</span>
+<span class="b0">}</span> else <span class="b0">{</span>
+    searchTerm.toUpperCase();     <span class="c">// TS narrowed: here it's string</span>
+<span class="b0">}</span></pre>
+<p><b>Narrowing</b> means a check that TypeScript understands, after which it knows which member you have: <code>typeof x === "string"</code>, <code>Array.isArray(x)</code>, <code>if (x)</code>, <code>x === null</code>, or checking a tag (9.5). Until you narrow, you may only use what <i>every</i> member has.</p>
+
+<h3>9.4 <code>| null</code>: "maybe nothing yet" (<code>features/session/AuthTestButton.tsx</code>)</h3>
+<pre>const [result, setResult] = useState&lt;<span class="b0">{</span>status: number, body: string<span class="b0">}</span> | null&gt;(null);
+
+result.status;                                    <span class="c">// ❌ 'result' is possibly 'null'</span>
+result?.status;                                   <span class="c">// ✅ type: number | undefined</span>
+<span class="b0">{</span>result &amp;&amp; &lt;div&gt;HTTP <span class="b1">{</span>result.status<span class="b1">}</span>&lt;/div&gt;<span class="b0">}</span>      <span class="c">// ✅ inside the &amp;&amp;, result isn't null</span></pre>
+<p>C#: <code>Result? result = null;</code> with nullable reference types on. Same warning, same fix (<code>?.</code> or a null check).</p>
+
+<h3>9.5 Literal types and tagged unions (<code>lib/fetch-wrapper.ts</code>)</h3>
+<pre>export type FetchResult&lt;T&gt; =
+      <span class="b0">{</span> ok: true;  data: T <span class="b0">}</span>                            <span class="c">// success shape</span>
+    | <span class="b0">{</span> ok: false; status: number; error: string <span class="b0">}</span>;     <span class="c">// failure shape</span>
+<span class="c">//      ↑ ok's TYPE is the literal true or false. That literal is the "tag"</span>
+
+const result: FetchResult&lt;Auction&gt; = await createListing(values);
+
+result.data;                                    <span class="c">// ❌ TS doesn't know which shape yet</span>
+
+if (!result.ok) <span class="b0">{</span>
+    toast(result.status, result.error);         <span class="c">// ✅ narrowed to the failure shape</span>
+    return;
+<span class="b0">}</span>
+router.push(`/listings/<span class="b1">${</span>result.data.id<span class="b1">}</span>`);       <span class="c">// ✅ only the success shape is left here</span></pre>
+<p><code>true</code> and <code>false</code> are also <b>types</b>, each allowing exactly one value (like <code>"seller"</code> in <code>"seller" | "winner"</code>). Because the two shapes have <i>different</i> literals in <code>ok</code>, checking <code>ok</code> tells TS which shape you're holding. If the tag were <code>ok: boolean</code>, it couldn't tell them apart. The author's <code>AuctionForm</code> uses exactly this <code>if (!result.ok)</code> check.</p>
+<pre><span class="c">// The same idea in C#: a small record hierarchy + pattern matching</span>
+abstract record FetchResult&lt;T&gt;;
+record Ok&lt;T&gt;(T Data) : FetchResult&lt;T&gt;;
+record Fail&lt;T&gt;(int Status, string Error) : FetchResult&lt;T&gt;;
+
+var message = result switch <span class="b0">{</span>
+    Ok&lt;Auction&gt; ok    =&gt; $"Created <span class="b1">{</span>ok.Data.Id<span class="b1">}</span>",
+    Fail&lt;Auction&gt; f   =&gt; $"<span class="b1">{</span>f.Status<span class="b1">}</span>: <span class="b1">{</span>f.Error<span class="b1">}</span>",
+<span class="b0">}</span>;</pre>
+
+<h3>9.6 Generics <code>&lt;T&gt;</code>: a type placeholder</h3>
+<pre>async function fetchWrapper&lt;T&gt;(url: string, init: RequestInit = <span class="b0">{}</span>): Promise&lt;FetchResult&lt;T&gt;&gt;
+<span class="c">//                          ↑ T is filled in by whoever calls it</span>
+
+const res = await fetchWrapper&lt;Auction&gt;(`/auctions/<span class="b0">${</span>id<span class="b0">}</span>`);
+<span class="c">// T = Auction → res is FetchResult&lt;Auction&gt; → after narrowing, res.data is an Auction</span>
+
+const [result, setResult] = useState&lt;Result | null&gt;(null);   <span class="c">// T = Result | null</span>
+const [count, setCount]   = useState(0);                     <span class="c">// T inferred from 0 → number</span></pre>
+<p>Same as C#'s <code>Task&lt;FetchResult&lt;T&gt;&gt; FetchWrapperAsync&lt;T&gt;(string url)</code>. TS often <b>infers</b> <code>T</code> from the arguments, so you only write <code>&lt;...&gt;</code> when it can't guess (like <code>null</code>, which says nothing about what will come later).</p>
+
+<h3>9.7 Optional <code>?:</code> and types taken from values</h3>
+<pre>type Props = <span class="b0">{</span> label?: string <span class="b0">}</span>;     <span class="c">// reading label gives string | undefined</span>
+
+<span class="c">// lib/auth.ts: build a type FROM a value</span>
+export type SessionUser = typeof auth.$Infer.Session.user;
+
+<span class="c">// Same keyword, two different things:</span>
+type T = typeof someValue;             <span class="c">// TYPE position: the type of this value</span>
+if (typeof x === "string") <span class="b0">{</span> ... <span class="b0">}</span>     <span class="c">// VALUE position: a run-time check</span></pre>
+<p>Because <code>SessionUser</code> is computed from your <code>auth</code> config, adding a user field in <code>auth.ts</code> adds it to the type automatically. Nothing else needs editing.</p>
+
+<h3>9.8 Summary</h3>
 <table>
   <tr><th>TS</th><th>Meaning</th><th>Closest C#</th></tr>
   <tr><td><code>A &amp; B</code></td><td><b>Intersection</b>: values that are both, so they have <i>all</i> properties of A and B</td><td>interface inheritance <code>: IA, IB</code></td></tr>
   <tr><td><code>A | B</code></td><td><b>Union</b>: either one. Narrow (<code>if</code>) before using what isn't shared</td><td>base type + pattern matching</td></tr>
   <tr><td><code>"seller" | "winner"</code></td><td>Only these exact strings</td><td>an <code>enum</code>, roughly</td></tr>
+  <tr><td><code>{ok: true; data: T} | {ok: false; ...}</code></td><td><b>Tagged union</b>: check the literal tag to narrow</td><td>record hierarchy + <code>switch</code></td></tr>
   <tr><td><code>label?: string</code></td><td>Optional property (may be <code>undefined</code>)</td><td><code>string? Label</code></td></tr>
   <tr><td><code>useState&lt;Result | null&gt;(null)</code></td><td>Generic type argument</td><td><code>new List&lt;T&gt;()</code></td></tr>
   <tr><td><code>typeof auth.$Infer.Session.user</code></td><td>A type taken <i>from a value</i></td><td>none</td></tr>
