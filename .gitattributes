@@ -1,0 +1,32 @@
+# Binary files are never converted on checkout. Without this, git guesses from the content, and a
+# small PDF with no zero byte in its first 8 000 bytes is taken for text: Git for Windows would then
+# rewrite its line endings on a fresh clone and the PDF would come out damaged.
+
+# Documents
+*.pdf   binary
+*.doc   binary
+*.docx  binary
+*.xls   binary
+*.xlsx  binary
+*.ppt   binary
+*.pptx  binary
+*.odt   binary
+
+# Images
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.bmp   binary
+*.ico   binary
+*.tif   binary
+*.tiff  binary
+
+# Fonts and other binaries
+*.ttf   binary
+*.otf   binary
+*.woff  binary
+*.woff2 binary
+*.dll   binary
+*.exe   binary
