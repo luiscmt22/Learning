@@ -1,0 +1,1295 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Front-end Field Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a masthead, then a sticky contents rail beside a long two-part manual; one column on phones.
+   Part 1 is a grid of reference cards with dense tables; Part 2 is running text with live demos. */
+:root {
+  --bg: #f5f7f3;
+  --surface: #ffffff;
+  --surface-2: #eceff0;
+  --line: #d6ddd7;
+  --fg: #1a231f;
+  --muted: #5c6862;
+  --accent: #1d6b58;
+  --accent-ink: #e0f0ea;
+  --tw: #b4560b;
+  --tw-ink: #fdf0e1;
+  --aria: #5a4ab3;
+  --aria-ink: #ebe8fa;
+  --warn: #a13c2a;
+  --warn-ink: #fbe9e4;
+  --code-bg: #1d2925;
+  --code-fg: #e6eee9;
+  --code-accent: #8fd3bb;
+  --demo-a: #cfe8dd;
+  --demo-b: #f7dcb9;
+  --demo-c: #d8d3f3;
+  --font-body: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', Consolas, 'Courier New', monospace;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111816; --surface: #19211e; --surface-2: #222c28; --line: #2f3b36; --fg: #e7ede9; --muted: #9ca8a1;
+    --accent: #63c3a6; --accent-ink: #173a30; --tw: #f1a456; --tw-ink: #3a2812; --aria: #ab9ff2; --aria-ink: #2a2454;
+    --warn: #f08c78; --warn-ink: #46211a; --code-bg: #0d1412; --code-fg: #dfe8e2; --code-accent: #8fd3bb;
+    --demo-a: #214a3d; --demo-b: #5a3d1a; --demo-c: #3a3368; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111816; --surface: #19211e; --surface-2: #222c28; --line: #2f3b36; --fg: #e7ede9; --muted: #9ca8a1;
+  --accent: #63c3a6; --accent-ink: #173a30; --tw: #f1a456; --tw-ink: #3a2812; --aria: #ab9ff2; --aria-ink: #2a2454;
+  --warn: #f08c78; --warn-ink: #46211a; --code-bg: #0d1412; --code-fg: #dfe8e2; --code-accent: #8fd3bb;
+  --demo-a: #214a3d; --demo-b: #5a3d1a; --demo-c: #3a3368; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55; margin: 0; padding-inline: 16px; padding-block: 0 48px; }
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3, h4 { line-height: 1.2; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(26px, 2.2vw + 16px, 36px); font-weight: 700; letter-spacing: -.01em; }
+h2 { font-size: clamp(20px, 1.2vw + 14px, 26px); font-weight: 700; letter-spacing: -.01em; }
+h3 { font-size: 16px; font-weight: 600; }
+h4 { font-size: 14px; font-weight: 600; margin-top: 18px; }
+p { margin: 0 0 12px; max-width: 72ch; }
+ul, ol { margin: 0 0 12px; padding-left: 22px; max-width: 72ch; }
+li { margin-bottom: 4px; }
+code { font-family: var(--font-mono); font-size: .9em; background: var(--surface-2); padding: 1px 5px; border-radius: 5px; overflow-wrap: anywhere; }
+pre { background: var(--code-bg); color: var(--code-fg); font-family: var(--font-mono); font-size: 12.5px; line-height: 1.5; padding: 12px 14px; border-radius: var(--radius); overflow-x: auto; margin: 10px 0 14px; max-width: 100%; }
+pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+pre b { color: var(--code-accent); font-weight: 500; }
+.eyebrow { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+
+/* masthead */
+.masthead { padding-block: 28px 18px; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: flex-end; justify-content: space-between; max-width: 1180px; margin: 0 auto; }
+.masthead p { margin: 6px 0 0; color: var(--muted); max-width: 60ch; }
+.parts { display: flex; gap: 8px; flex-wrap: wrap; }
+.parts a { text-decoration: none; font-weight: 600; font-size: 14px; padding: 9px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); min-height: 42px; display: inline-flex; align-items: center; }
+.parts a.one { border-color: var(--accent); color: var(--accent); }
+
+/* shell with rail */
+.shell { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; padding-top: 22px; }
+@media (min-width: 960px) { .shell { grid-template-columns: 220px minmax(0, 1fr); } }
+.rail { font-size: 13.5px; }
+@media (min-width: 960px) { .rail { position: sticky; top: env(safe-area-inset-top, 0px); align-self: start; max-height: 100vh; overflow-y: auto; padding-bottom: 20px; } }
+.rail .eyebrow { margin: 14px 0 6px; }
+.rail ol { list-style: none; padding: 0; margin: 0 0 6px; }
+.rail li { margin: 0; }
+.rail a { display: block; padding: 5px 8px; border-radius: 6px; color: var(--fg); text-decoration: none; }
+.rail a:hover { background: var(--surface-2); }
+.rail details { border-top: 1px solid var(--line); padding-top: 8px; }
+.rail summary { cursor: pointer; font-weight: 600; padding: 6px 8px; }
+main { min-width: 0; }
+
+/* sections and cards */
+.part { padding-top: 6px; margin-bottom: 44px; }
+.part-head { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: baseline; margin-bottom: 8px; }
+.part-head p { color: var(--muted); margin: 0; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; margin-top: 14px; }
+@media (max-width: 420px) { .cards { grid-template-columns: minmax(0, 1fr); } }
+.cheat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px 10px; min-width: 0; scroll-margin-top: 12px; }
+.cheat.wide { grid-column: 1 / -1; }
+.cheat h3 { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.tag { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; }
+.tag.html { background: var(--accent-ink); color: var(--accent); }
+.tag.css { background: var(--surface-2); color: var(--fg); }
+.tag.tw { background: var(--tw-ink); color: var(--tw); }
+.tag.aria { background: var(--aria-ink); color: var(--aria); }
+.tag.blazor { background: var(--warn-ink); color: var(--warn); }
+.tw-col { color: var(--tw); }
+.scroll { overflow-x: auto; margin: 0 -4px; padding: 0 4px; }
+table.t { border-collapse: collapse; width: 100%; font-size: 13px; }
+table.t th { text-align: left; font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: 4px 8px 6px 0; border-bottom: 1px solid var(--line); white-space: nowrap; }
+table.t td { padding: 6px 8px 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.t tr:last-child td { border-bottom: 0; }
+/* Cells wrap; a chip moves to the next line whole and only breaks inside itself when it alone is wider than the column. */
+table.t code { display: inline-block; max-width: 100%; vertical-align: top; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+table.t td.wrap { white-space: normal; }
+.note { font-size: 13px; color: var(--muted); margin: 8px 0 6px; }
+.callout { border-left: 3px solid var(--accent); background: var(--accent-ink); padding: 10px 14px; border-radius: 0 var(--radius) var(--radius) 0; margin: 12px 0 16px; max-width: 76ch; }
+.callout.warn { border-color: var(--warn); background: var(--warn-ink); }
+.callout.tw { border-color: var(--tw); background: var(--tw-ink); }
+.callout.aria { border-color: var(--aria); background: var(--aria-ink); }
+.callout p:last-child { margin-bottom: 0; }
+
+/* details part */
+.chapter { padding: 22px 0 10px; border-top: 1px solid var(--line); scroll-margin-top: 12px; }
+.chapter h2 { margin-bottom: 12px; }
+.chapter .lead { font-size: 16px; color: var(--muted); max-width: 70ch; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px 28px; align-items: start; }
+.cols > * { min-width: 0; }
+
+/* live demos */
+.demo { background: var(--surface); border: 1px dashed var(--line); border-radius: var(--radius); padding: 12px; margin: 10px 0 16px; max-width: 100%; }
+.demo-label { font-size: 11.5px; color: var(--muted); font-family: var(--font-mono); margin-bottom: 8px; }
+.box { background: var(--demo-a); border: 1px solid var(--accent); border-radius: 6px; padding: 8px 10px; font-size: 12.5px; font-family: var(--font-mono); min-width: 0; }
+.box.b { background: var(--demo-b); border-color: var(--tw); }
+.box.c { background: var(--demo-c); border-color: var(--aria); }
+.flexrow { display: flex; gap: 8px; margin-bottom: 8px; min-height: 48px; }
+.flexrow.between { justify-content: space-between; }
+.flexrow.center { justify-content: center; }
+.flexrow.end { justify-content: flex-end; }
+.flexrow.around { justify-content: space-around; }
+.flexrow.items-center { align-items: center; }
+.flexrow.items-end { align-items: flex-end; }
+.flexrow.tall { min-height: 70px; }
+.flexrow .push { margin-left: auto; }
+.flexrow .grow { flex: 1; }
+.gridfill { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; margin-bottom: 8px; }
+.gridfit { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-bottom: 8px; }
+.grid3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.grid3 .span2 { grid-column: span 2; }
+.bm { background: var(--demo-b); padding: 18px; font-family: var(--font-mono); font-size: 12px; text-align: center; }
+.bm-border { background: var(--demo-c); padding: 10px; }
+.bm-padding { background: var(--demo-a); padding: 14px; }
+.bm-content { background: var(--surface); border: 1px solid var(--line); padding: 10px; }
+.stickybox { height: 160px; overflow-y: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-2); }
+.stickybox .sticky { position: sticky; top: 0; background: var(--accent); color: #fff; padding: 6px 10px; font-size: 12.5px; }
+.stickybox p { padding: 0 10px; max-width: none; }
+.truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.narrow { width: 180px; }
+.spec { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: 13px; align-items: baseline; }
+.spec code { white-space: nowrap; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 4px 11px; background: var(--accent-ink); color: var(--accent); }
+.a11y-tree { font-family: var(--font-mono); font-size: 12.5px; line-height: 1.7; background: var(--surface-2); border-radius: var(--radius); padding: 10px 14px; }
+.a11y-tree span { color: var(--aria); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.kbd { font-family: var(--font-mono); font-size: 12px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; background: var(--surface); }
+.check { list-style: none; padding: 0; }
+.check li { padding-left: 24px; position: relative; }
+.check li::before { content: "☐"; position: absolute; left: 0; color: var(--accent); }
+.glossary { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 4px 26px; }
+.glossary h4 { margin: 10px 0 6px; color: var(--accent); }
+.glossary dl { margin: 0; }
+.glossary dt { font-weight: 600; font-size: 13.5px; }
+.glossary dd { margin: 0 0 7px; color: var(--muted); font-size: 13px; }
+.glossary dd code { font-size: .88em; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+@media print { .rail, .parts { display: none; } .shell { display: block; } .cheat { break-inside: avoid; } pre { white-space: pre-wrap; } body { padding-inline: 0; } }
+</style>
+
+<header class="masthead">
+  <div>
+    <div class="eyebrow">HTML · CSS · ARIA · Tailwind · Blazor</div>
+    <h1>Front-end Field Guide</h1>
+    <p>Part 1 opens with the vocabulary, then the cheatsheet: tables to glance at while you code. Part 2 explains why each thing works the way it does, with live examples. Every CSS entry carries its Tailwind spelling in orange, and the examples come from Jolefilo's own screens. When a word in a table is new, it is defined in the vocabulary card first.</p>
+  </div>
+  <nav class="parts" aria-label="Parts">
+    <a class="one" href="#cheatsheet">Part 1 · Cheatsheet</a>
+    <a href="#details">Part 2 · Details</a>
+  </nav>
+</header>
+
+<div class="shell">
+<nav class="rail" aria-label="Contents">
+  <div class="eyebrow">Part 1 · Cheatsheet</div>
+  <ol>
+    <li><a href="#c-words">Vocabulary</a></li>
+    <li><a href="#c-skeleton">Document skeleton</a></li>
+    <li><a href="#c-elements">Elements by job</a></li>
+    <li><a href="#c-attributes">Attributes and booleans</a></li>
+    <li><a href="#c-selectors">Selectors</a></li>
+    <li><a href="#c-specificity">Specificity and cascade</a></li>
+    <li><a href="#c-box">Box model and sizing</a></li>
+    <li><a href="#c-display">Display, position, overflow</a></li>
+    <li><a href="#c-flex">Flexbox</a></li>
+    <li><a href="#c-grid">Grid</a></li>
+    <li><a href="#c-units">Units and functions</a></li>
+    <li><a href="#c-type">Typography</a></li>
+    <li><a href="#c-color">Colour, borders, shadows</a></li>
+    <li><a href="#c-responsive">Responsive</a></li>
+    <li><a href="#c-motion">Transitions and transforms</a></li>
+    <li><a href="#c-recipes">Recipes</a></li>
+    <li><a href="#c-tailwind">Tailwind map and scales</a></li>
+    <li><a href="#c-aria">ARIA</a></li>
+    <li><a href="#c-blazor">Blazor and MudBlazor gotchas</a></li>
+    <li><a href="#c-devtools">DevTools</a></li>
+    <li><a href="#c-practice">Practice: games and playgrounds</a></li>
+  </ol>
+  <div class="eyebrow">Part 2 · Details</div>
+  <ol>
+    <li><a href="#d-browser">How a page is built</a></li>
+    <li><a href="#d-cascade">The cascade and inheritance</a></li>
+    <li><a href="#d-box">The box model</a></li>
+    <li><a href="#d-flow">Flow: block and inline</a></li>
+    <li><a href="#d-flex">Flexbox in depth</a></li>
+    <li><a href="#d-grid">Grid in depth</a></li>
+    <li><a href="#d-position">Positioning and stacking</a></li>
+    <li><a href="#d-responsive">Responsive design</a></li>
+    <li><a href="#d-type">Typography on screen</a></li>
+    <li><a href="#d-color">Colour and theming</a></li>
+    <li><a href="#d-forms">Forms</a></li>
+    <li><a href="#d-aria">ARIA and accessibility</a></li>
+    <li><a href="#d-tailwind">Tailwind for CSS people</a></li>
+    <li><a href="#d-blazor">Styling Blazor and MudBlazor</a></li>
+    <li><a href="#d-debug">A debugging routine</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<!-- ===================================================== PART 1 ===================================================== -->
+<section class="part" id="cheatsheet">
+  <div class="part-head">
+    <h1>Part 1 · Cheatsheet</h1>
+    <p>Glance, copy, move on. The orange column is Tailwind.</p>
+  </div>
+
+  <div class="cards">
+
+  <article class="cheat wide" id="c-words">
+    <h3><span class="tag html">Words</span> Vocabulary, before anything else</h3>
+    <p class="note">Every table below uses these words. Each gets one plain sentence and, where it helps, an example from Jolefilo.</p>
+    <div class="glossary">
+      <div>
+        <h4>HTML</h4>
+        <dl>
+          <dt>Element</dt><dd>One piece of the page: an opening tag, its content, a closing tag. <code>&lt;p&gt;Olá&lt;/p&gt;</code> is an element; <code>&lt;p&gt;</code> alone is its tag.</dd>
+          <dt>Attribute</dt><dd>A setting written inside the opening tag as <code>name="value"</code>: <code>&lt;a href="/Clientes"&gt;</code>.</dd>
+          <dt>Boolean attribute</dt><dd>An attribute that is on when present and off when absent, whatever its value: <code>disabled</code>, <code>checked</code>.</dd>
+          <dt>Semantic</dt><dd>A tag chosen for its meaning (<code>nav</code>, <code>main</code>, <code>button</code>) instead of its look. A <code>div</code> has no meaning.</dd>
+          <dt>Void element</dt><dd>A tag with no content and no closing tag: <code>img</code>, <code>input</code>, <code>br</code>.</dd>
+          <dt>Markup</dt><dd>The HTML text itself, as opposed to the styles or the code.</dd>
+          <dt>DOM</dt><dd>The tree the browser builds from the markup. CSS and JavaScript act on the tree, not on the text.</dd>
+        </dl>
+        <h4>CSS basics</h4>
+        <dl>
+          <dt>Rule</dt><dd>A selector plus a block of declarations: <code>.jf-card { padding: 14px; }</code>.</dd>
+          <dt>Selector</dt><dd>The part that says which elements the rule hits: <code>.jf-card</code>, <code>a:hover</code>.</dd>
+          <dt>Declaration</dt><dd>One <code>property: value;</code> pair inside the block.</dd>
+          <dt>Property</dt><dd>The thing being set: <code>padding</code>, <code>color</code>, <code>display</code>.</dd>
+          <dt>Class</dt><dd>A label you put on elements (<code>class="jf-card"</code>) so a selector can find them. Many elements may share one; one element may have many.</dd>
+          <dt>Id</dt><dd>A label that must be unique on the page (<code>id="login"</code>).</dd>
+          <dt>Pseudo-class</dt><dd>A selector suffix for a state or a position: <code>:hover</code>, <code>:focus-visible</code>, <code>:first-child</code>.</dd>
+          <dt>Shorthand</dt><dd>One property that sets several at once: <code>margin</code> sets four sides, <code>font</code> sets size, weight, line height and family.</dd>
+          <dt>Cascade</dt><dd>The procedure that decides which rule wins when several set the same property on the same element.</dd>
+          <dt>Specificity</dt><dd>The weight of a selector in that decision: an id beats any number of classes, a class beats any number of tags.</dd>
+          <dt>Inheritance</dt><dd>Some values (colour, font) flow from an element to everything inside it unless something inside sets its own.</dd>
+        </dl>
+      </div>
+      <div>
+        <h4>Colour words</h4>
+        <dl>
+          <dt>Token / custom property</dt><dd>A value stored once under a name (<code>--jf-primary: #1f6b3b</code>) and reused with <code>var(--jf-primary)</code>, so a change in one place changes every use.</dd>
+          <dt>Tint</dt><dd>A pale version of a colour, used as a background: the mint behind a "Faturada" chip.</dd>
+          <dt>Tone / strong</dt><dd>The deep version of the same colour, used for text or icons on that tint.</dd>
+          <dt>Palette</dt><dd>The whole set of colours a design allows itself.</dd>
+          <dt>Contrast ratio</dt><dd>How different the text colour is from the background, as a ratio; 4.5:1 is the minimum for body text.</dd>
+        </dl>
+        <h4>Layout words</h4>
+        <dl>
+          <dt>Box</dt><dd>Every element is a rectangle made of four layers: content, padding, border, margin.</dd>
+          <dt>Padding / margin</dt><dd>Space inside the border (padding) and outside it (margin).</dd>
+          <dt>Block / inline</dt><dd>A block starts on a new line and takes the full width (a paragraph). An inline sits inside a line of text (a link).</dd>
+          <dt>Flow</dt><dd>The default arrangement: blocks top to bottom, inline left to right. Flex and grid replace it for one element's children.</dd>
+          <dt>Container / item</dt><dd>The element you give <code>display: flex</code> or <code>grid</code> to, and its direct children.</dd>
+          <dt>Main axis / cross axis</dt><dd>In flex, the direction items are laid in (horizontal for a row) and the one at right angles to it.</dd>
+          <dt>Track</dt><dd>One column or one row of a grid.</dd>
+          <dt>Gap</dt><dd>Space between items, set once on the container instead of margins on each item.</dd>
+          <dt>Overflow</dt><dd>Content larger than its box. The <code>overflow</code> property says whether it spills, is clipped, or scrolls.</dd>
+          <dt>Viewport</dt><dd>The visible area of the browser window; on a phone, the screen.</dd>
+          <dt>Breakpoint</dt><dd>A width at which the layout changes, written as a media query.</dd>
+          <dt>Media query</dt><dd><code>@media (min-width: 600px) { … }</code>: rules that apply only while the condition holds.</dd>
+          <dt>Stacking context</dt><dd>A group of elements whose front-to-back order is settled among themselves before the whole group is placed against the rest of the page.</dd>
+          <dt>Safe area</dt><dd>The parts of a phone screen under the notch or the home bar, where nothing should be drawn.</dd>
+          <dt>DPR</dt><dd>Device pixel ratio: a phone 412 CSS pixels wide may draw 1080 real pixels.</dd>
+        </dl>
+      </div>
+      <div>
+        <h4>Type words</h4>
+        <dl>
+          <dt>Face / family</dt><dd>The font itself (Plus Jakarta Sans). A stack lists fallbacks in case it is missing.</dd>
+          <dt>Weight</dt><dd>How bold: 400 normal, 600 semibold, 700 bold.</dd>
+          <dt>Scale</dt><dd>The short list of sizes a design allows itself.</dd>
+          <dt>Line height / leading</dt><dd>The distance from one line of text to the next.</dd>
+          <dt>Letter-spacing / tracking</dt><dd>Extra space between letters; uppercase labels get a little.</dd>
+          <dt>Measure</dt><dd>How many characters fit on one line; about 65 reads best.</dd>
+          <dt>Ellipsis</dt><dd>The "…" that replaces cut-off text.</dd>
+        </dl>
+        <h4>Tailwind words</h4>
+        <dl>
+          <dt>Utility</dt><dd>A class that sets exactly one declaration: <code>p-4</code> is <code>padding: 1rem</code>.</dd>
+          <dt>Variant</dt><dd>A prefix that adds a condition to a utility: <code>hover:</code>, <code>md:</code>, <code>dark:</code>.</dd>
+          <dt>Scale</dt><dd>Tailwind's fixed set of allowed values; the spacing scale steps by 4px, so <code>4</code> is 16px.</dd>
+          <dt>Theme / config</dt><dd>Where the scales and the colour palette are defined for the project.</dd>
+          <dt>Arbitrary value</dt><dd>Square brackets to use any value outside the scale: <code>w-[760px]</code>.</dd>
+          <dt>Scanner</dt><dd>The build step that reads your files for class names and generates only those; a name built at runtime is never generated.</dd>
+          <dt>@apply</dt><dd>A stylesheet directive that bundles utilities under a normal class name.</dd>
+        </dl>
+        <h4>Accessibility words</h4>
+        <dl>
+          <dt>Screen reader</dt><dd>Software that reads the screen aloud: TalkBack on Android, VoiceOver on iPhone.</dd>
+          <dt>Accessibility tree</dt><dd>The browser's list of what is on the page as roles, names and states; what the reader actually reads.</dd>
+          <dt>Role / name / state</dt><dd>What an element is (button), what it is called (Faturas), how it currently is (pressed).</dd>
+          <dt>Landmark</dt><dd>A region a reader can jump to: main, navigation, header.</dd>
+          <dt>Live region</dt><dd>An area whose changes are read aloud without moving focus.</dd>
+          <dt>Focus</dt><dd>The one element that receives the keyboard right now; Tab moves it.</dd>
+          <dt>Hit area / touch target</dt><dd>The tappable size of a control, which may be larger than what is drawn.</dd>
+        </dl>
+        <h4>Blazor words</h4>
+        <dl>
+          <dt>Component</dt><dd>A <code>.razor</code> file: markup plus code, rendered to HTML.</dd>
+          <dt>Circuit</dt><dd>The live connection between a Blazor Server page and the server; when it drops, the page stops responding.</dd>
+          <dt>Diff</dt><dd>The server works out what changed in the markup and sends only that to the browser.</dd>
+          <dt>Splat</dt><dd>Attributes a component does not declare are passed through to its root element.</dd>
+          <dt>CSS isolation</dt><dd>A <code>.razor.css</code> whose rules only hit that one component.</dd>
+          <dt>Ripple</dt><dd>MudBlazor's spreading-circle effect on tap.</dd>
+          <dt>Hot reload</dt><dd>Applying a code change to a running app without restarting it; changes to a component's structure need a restart.</dd>
+        </dl>
+      </div>
+    </div>
+  </article>
+
+  <article class="cheat wide" id="c-skeleton">
+    <h3><span class="tag html">HTML</span> Document skeleton</h3>
+    <div class="cols">
+      <div>
+<pre><code>&lt;!doctype html&gt;
+&lt;html lang="pt-PT"&gt;
+&lt;head&gt;
+  &lt;meta charset="utf-8"&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+  &lt;title&gt;Jolefilo · Clientes&lt;/title&gt;
+  &lt;link rel="stylesheet" href="css/site.css"&gt;
+  &lt;script src="app.js" <b>defer</b>&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;header&gt;…&lt;/header&gt;
+  &lt;main&gt;…&lt;/main&gt;
+  &lt;footer&gt;…&lt;/footer&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+      </div>
+      <div>
+        <table class="t">
+          <tr><td><code>lang</code></td><td class="wrap">Tells screen readers and spell-checkers the language. Jolefilo's UI is PT-PT.</td></tr>
+          <tr><td><code>viewport</code></td><td class="wrap">Without it a phone renders the page at 980px and zooms out. Mandatory for mobile.</td></tr>
+          <tr><td><code>defer</code></td><td class="wrap">Loads the script without blocking and runs it after the HTML is parsed.</td></tr>
+          <tr><td><code>&lt;head&gt;</code></td><td class="wrap">Metadata only, nothing visible. Blazor Server writes most of it in <code>App.razor</code>.</td></tr>
+        </table>
+        <p class="note">Void elements never close: <code>&lt;meta&gt;</code>, <code>&lt;link&gt;</code>, <code>&lt;img&gt;</code>, <code>&lt;input&gt;</code>, <code>&lt;br&gt;</code>, <code>&lt;hr&gt;</code>. Everything else does.</p>
+      </div>
+    </div>
+  </article>
+
+  <article class="cheat wide" id="c-elements">
+    <h3><span class="tag html">HTML</span> Elements by job</h3>
+    <div class="scroll">
+    <table class="t">
+      <tr><th>You need</th><th>Use</th><th>Notes</th></tr>
+      <tr><td>Page regions</td><td><code>header</code> <code>nav</code> <code>main</code> <code>section</code> <code>article</code> <code>aside</code> <code>footer</code></td><td class="wrap">One <code>main</code> per page. These create landmarks a screen reader can jump between.</td></tr>
+      <tr><td>Headings</td><td><code>h1</code>…<code>h6</code></td><td class="wrap">One <code>h1</code>, then an outline without skipping levels. Size with CSS, never pick a level for its size.</td></tr>
+      <tr><td>Text</td><td><code>p</code> <code>strong</code> <code>em</code> <code>small</code> <code>br</code> <code>blockquote</code></td><td class="wrap"><code>strong</code> means important, <code>b</code> is only bold. <code>br</code> is a line break inside text, never spacing.</td></tr>
+      <tr><td>Lists</td><td><code>ul</code>/<code>ol</code> + <code>li</code>, <code>dl</code> + <code>dt</code>/<code>dd</code></td><td class="wrap"><code>dl</code> is a label/value list ("Contacto: Ana Pereira"). A reader announces "list, 8 items".</td></tr>
+      <tr><td>Go somewhere</td><td><code>a href="…"</code></td><td class="wrap">Navigation. Gets Enter, focus, long-press, middle-click for free. The Clientes row is one.</td></tr>
+      <tr><td>Do something</td><td><code>button type="button"</code></td><td class="wrap">Actions and toggles. Gets Enter and Space. Inside a form, the default type is <code>submit</code>.</td></tr>
+      <tr><td>Image</td><td><code>img src alt</code>, <code>figure</code>/<code>figcaption</code>, inline <code>svg</code></td><td class="wrap"><code>alt=""</code> for decoration, a real description otherwise. <code>width</code>/<code>height</code> attributes stop layout jumps.</td></tr>
+      <tr><td>Table of data</td><td><code>table</code> <code>thead</code> <code>tbody</code> <code>tr</code> <code>th</code> <code>td</code></td><td class="wrap">Only for tabular data. <code>th scope="col"</code> ties a header to its column for readers.</td></tr>
+      <tr><td>Form</td><td><code>form</code> <code>label for</code> <code>input</code> <code>select</code>/<code>option</code> <code>textarea</code> <code>fieldset</code>/<code>legend</code></td><td class="wrap">Every input gets a label. <code>fieldset</code> groups radios and checkboxes under a <code>legend</code>.</td></tr>
+      <tr><td>Input kinds</td><td><code>type=</code> text email tel number date time password search checkbox radio file</td><td class="wrap">The type picks the phone keyboard and the validation. <code>inputmode="decimal"</code> gives a number pad on a text field.</td></tr>
+      <tr><td>Generic box</td><td><code>div</code> (block) <code>span</code> (inline)</td><td class="wrap">No meaning. Fine as layout wrappers; wrong as buttons or links.</td></tr>
+      <tr><td>Disclosure</td><td><code>details</code>/<code>summary</code>, <code>dialog</code></td><td class="wrap">Native collapsible and native modal, both keyboard-ready without script.</td></tr>
+    </table>
+    </div>
+  </article>
+
+  <article class="cheat" id="c-attributes">
+    <h3><span class="tag html">HTML</span> Attributes and booleans</h3>
+    <table class="t">
+      <tr><th>Attribute</th><th>What it does</th></tr>
+      <tr><td><code>id</code></td><td class="wrap">Unique on the page. Anchors (<code>#id</code>), <code>label for</code>, <code>aria-labelledby</code>.</td></tr>
+      <tr><td><code>class</code></td><td class="wrap">Space-separated hooks for CSS. Repeat freely.</td></tr>
+      <tr><td><code>style</code></td><td class="wrap">Inline CSS. Beats every stylesheet rule except <code>!important</code>. Avoid.</td></tr>
+      <tr><td><code>hidden</code></td><td class="wrap">Removes from layout and from the accessibility tree.</td></tr>
+      <tr><td><code>tabindex</code></td><td class="wrap"><code>0</code> joins the Tab order, <code>-1</code> focusable by script only. Never positive values.</td></tr>
+      <tr><td><code>data-*</code></td><td class="wrap">Your own data on an element, read with <code>el.dataset.x</code>.</td></tr>
+      <tr><td><code>title</code></td><td class="wrap">Hover tooltip. Not reliable on touch; not a label.</td></tr>
+      <tr><td><code>name</code> <code>value</code></td><td class="wrap">What a form posts. Jolefilo's login posts <code>Username</code>/<code>Password</code> natively.</td></tr>
+      <tr><td><code>placeholder</code></td><td class="wrap">A hint, not a label. It disappears when typing starts.</td></tr>
+      <tr><td><code>autocomplete</code></td><td class="wrap"><code>username</code>, <code>current-password</code>, <code>off</code>. Password managers read it.</td></tr>
+    </table>
+    <div class="callout warn">
+      <p><strong>Boolean attributes</strong> (<code>disabled</code>, <code>checked</code>, <code>readonly</code>, <code>required</code>, <code>hidden</code>, <code>open</code>) are on when present, off when absent. <code>disabled="false"</code> is still disabled. ARIA state attributes are <em>not</em> boolean: they need the words <code>"true"</code> or <code>"false"</code>.</p>
+    </div>
+  </article>
+
+  <article class="cheat" id="c-selectors">
+    <h3><span class="tag css">CSS</span> Selectors</h3>
+    <table class="t">
+      <tr><th>Selector</th><th>Matches</th></tr>
+      <tr><td><code>p</code></td><td class="wrap">Every <code>&lt;p&gt;</code> (type).</td></tr>
+      <tr><td><code>.jf-card</code></td><td class="wrap">Elements with that class.</td></tr>
+      <tr><td><code>#login</code></td><td class="wrap">The one element with that id.</td></tr>
+      <tr><td><code>[aria-pressed="true"]</code></td><td class="wrap">By attribute value. <code>[href]</code> by presence.</td></tr>
+      <tr><td><code>a b</code></td><td class="wrap">b anywhere inside a (descendant).</td></tr>
+      <tr><td><code>a &gt; b</code></td><td class="wrap">b directly inside a (child).</td></tr>
+      <tr><td><code>a + b</code></td><td class="wrap">b right after a (adjacent sibling).</td></tr>
+      <tr><td><code>a ~ b</code></td><td class="wrap">Any b after a, same parent.</td></tr>
+      <tr><td><code>.x.y</code></td><td class="wrap">Both classes on the same element. The MudBlazor override trick.</td></tr>
+      <tr><td><code>:hover</code> <code>:active</code></td><td class="wrap">Pointer over / pressed. Hover sticks after a tap on Android.</td></tr>
+      <tr><td><code>:focus-visible</code></td><td class="wrap">Keyboard focus only. Style this, not bare <code>:focus</code>.</td></tr>
+      <tr><td><code>:first-child</code> <code>:last-child</code> <code>:nth-child(2n)</code></td><td class="wrap">Position among siblings. <code>:first-of-type</code> counts only the same tag.</td></tr>
+      <tr><td><code>:not(.active)</code></td><td class="wrap">Exclusion.</td></tr>
+      <tr><td><code>:is(h1, h2)</code> <code>:where(…)</code></td><td class="wrap">Grouping. <code>:where</code> adds zero specificity.</td></tr>
+      <tr><td><code>.card:has(img)</code></td><td class="wrap">A parent that contains something.</td></tr>
+      <tr><td><code>::before</code> <code>::after</code></td><td class="wrap">Generated content; needs <code>content: ""</code>.</td></tr>
+    </table>
+  </article>
+
+  <article class="cheat" id="c-specificity">
+    <h3><span class="tag css">CSS</span> Specificity and cascade</h3>
+    <p class="note">When two rules set the same property on the same element, the most specific wins; on a tie, the later one in the file wins.</p>
+    <div class="spec">
+      <code>style="…"</code><span>Inline, beats all selectors</span>
+      <code>#id</code><span>1-0-0</span>
+      <code>.class [attr] :hover</code><span>0-1-0 each</span>
+      <code>div ::before</code><span>0-0-1 each</span>
+      <code>*  :where()</code><span>0-0-0</span>
+      <code>!important</code><span>Wins over everything above; the last resort</span>
+    </div>
+    <pre><code>/* 0-2-0 beats MudBlazor's 0-1-0 and 0-2-0 by order */
+.jf-client-doc-card<b>.mud-button-root</b> { padding: 15px; }
+
+/* 0-3-0 plus a state */
+.jf-client-doc-card.active.mud-button-root<b>:hover</b> { background: #f3f9f5; }</code></pre>
+    <p class="note">Inherited by children: <code>color</code>, <code>font-*</code>, <code>line-height</code>, <code>letter-spacing</code>, <code>text-align</code>, <code>cursor</code>. Not inherited: <code>margin</code>, <code>padding</code>, <code>border</code>, <code>background</code>, <code>width</code>, <code>display</code>. Force with <code>inherit</code>; reset with <code>initial</code> or <code>unset</code>.</p>
+  </article>
+
+  <article class="cheat" id="c-box">
+    <h3><span class="tag css">CSS</span> Box model and sizing <span class="tag tw">TW</span></h3>
+    <table class="t">
+      <tr><th>CSS</th><th>Meaning</th><th class="tw-col">Tailwind</th></tr>
+      <tr><td><code>box-sizing: border-box</code></td><td class="wrap">Width includes padding and border. Set on <code>*</code> once.</td><td class="tw-col">default</td></tr>
+      <tr><td><code>padding: 12px 16px</code></td><td class="wrap">Inside the border: top/bottom, left/right. Four values go clockwise from top.</td><td class="tw-col"><code>py-3 px-4</code></td></tr>
+      <tr><td><code>margin: 0 auto</code></td><td class="wrap">Outside the border. <code>auto</code> left/right centres a block of known width.</td><td class="tw-col"><code>mx-auto</code></td></tr>
+      <tr><td><code>border: 1px solid #ebefec</code></td><td class="wrap">Width style colour. <code>border-top</code> for one side.</td><td class="tw-col"><code>border border-gray-200</code></td></tr>
+      <tr><td><code>width: 100%</code> / <code>max-width: 760px</code></td><td class="wrap">Fluid with a cap. Prefer <code>max-width</code> to fixed widths.</td><td class="tw-col"><code>w-full max-w-3xl</code></td></tr>
+      <tr><td><code>min-width: 0</code></td><td class="wrap">Lets a flex or grid child shrink below its content. Fixes most overflow.</td><td class="tw-col"><code>min-w-0</code></td></tr>
+      <tr><td><code>height: auto</code></td><td class="wrap">Content decides. Avoid fixed heights on text.</td><td class="tw-col"><code>h-auto</code></td></tr>
+      <tr><td><code>aspect-ratio: 1</code></td><td class="wrap">Square box that keeps its ratio when the width changes.</td><td class="tw-col"><code>aspect-square</code></td></tr>
+    </table>
+    <p class="note">Vertical margins between blocks collapse into the larger one. Flex and grid children do not collapse, which is one reason to space with <code>gap</code>.</p>
+  </article>
+
+  <article class="cheat" id="c-display">
+    <h3><span class="tag css">CSS</span> Display, position, overflow <span class="tag tw">TW</span></h3>
+    <table class="t">
+      <tr><th>CSS</th><th>Meaning</th><th class="tw-col">Tailwind</th></tr>
+      <tr><td><code>display: block</code></td><td class="wrap">Full width, new line. <code>div</code>, <code>p</code>, headings.</td><td class="tw-col"><code>block</code></td></tr>
+      <tr><td><code>display: inline</code></td><td class="wrap">Flows in text; width/height ignored. <code>span</code>, <code>a</code>.</td><td class="tw-col"><code>inline</code></td></tr>
+      <tr><td><code>display: inline-block</code></td><td class="wrap">In the text flow but sized like a box.</td><td class="tw-col"><code>inline-block</code></td></tr>
+      <tr><td><code>display: flex</code> / <code>grid</code></td><td class="wrap">Layout containers; see the two cards below.</td><td class="tw-col"><code>flex</code> / <code>grid</code></td></tr>
+      <tr><td><code>display: none</code></td><td class="wrap">Gone from layout and from screen readers.</td><td class="tw-col"><code>hidden</code></td></tr>
+      <tr><td><code>position: relative</code></td><td class="wrap">Stays in flow; becomes the anchor for absolute children.</td><td class="tw-col"><code>relative</code></td></tr>
+      <tr><td><code>position: absolute; inset: 0</code></td><td class="wrap">Out of flow, placed against the nearest positioned ancestor.</td><td class="tw-col"><code>absolute inset-0</code></td></tr>
+      <tr><td><code>position: fixed</code></td><td class="wrap">Against the viewport. Headers, toasts.</td><td class="tw-col"><code>fixed</code></td></tr>
+      <tr><td><code>position: sticky; top: 0</code></td><td class="wrap">Scrolls, then sticks at the threshold inside its parent.</td><td class="tw-col"><code>sticky top-0</code></td></tr>
+      <tr><td><code>z-index: 10</code></td><td class="wrap">Stacking order among positioned siblings in the same context.</td><td class="tw-col"><code>z-10</code></td></tr>
+      <tr><td><code>overflow: hidden</code> / <code>auto</code></td><td class="wrap">Clip, or scroll when needed. <code>overflow-x: auto</code> for wide tables.</td><td class="tw-col"><code>overflow-hidden</code> <code>overflow-x-auto</code></td></tr>
+    </table>
+  </article>
+
+  <article class="cheat" id="c-flex">
+    <h3><span class="tag css">CSS</span> Flexbox <span class="tag tw">TW</span></h3>
+    <table class="t">
+      <tr><th>Container</th><th>Values</th><th class="tw-col">Tailwind</th></tr>
+      <tr><td><code>display: flex</code></td><td class="wrap">One row by default.</td><td class="tw-col"><code>flex</code></td></tr>
+      <tr><td><code>flex-direction</code></td><td class="wrap"><code>row</code> | <code>column</code></td><td class="tw-col"><code>flex-row</code> <code>flex-col</code></td></tr>
+      <tr><td><code>justify-content</code></td><td class="wrap">Main axis: <code>flex-start</code> <code>center</code> <code>flex-end</code> <code>space-between</code> <code>space-around</code></td><td class="tw-col"><code>justify-start/center/end/between/around</code></td></tr>
+      <tr><td><code>align-items</code></td><td class="wrap">Cross axis: <code>stretch</code> (default) <code>center</code> <code>flex-start</code> <code>flex-end</code> <code>baseline</code></td><td class="tw-col"><code>items-stretch/center/start/end/baseline</code></td></tr>
+      <tr><td><code>gap: 12px</code></td><td class="wrap">Space between items only.</td><td class="tw-col"><code>gap-3</code></td></tr>
+      <tr><td><code>flex-wrap: wrap</code></td><td class="wrap">Let items drop to a new line.</td><td class="tw-col"><code>flex-wrap</code></td></tr>
+      <tr><th>Item</th><th></th><th></th></tr>
+      <tr><td><code>flex: 1</code></td><td class="wrap">Grow to fill; equals <code>1 1 0%</code>.</td><td class="tw-col"><code>flex-1</code></td></tr>
+      <tr><td><code>flex-shrink: 0</code></td><td class="wrap">Never shrink (buttons, tiles, amounts).</td><td class="tw-col"><code>shrink-0</code></td></tr>
+      <tr><td><code>min-width: 0</code></td><td class="wrap">Allow the text column to shrink and ellipsise.</td><td class="tw-col"><code>min-w-0</code></td></tr>
+      <tr><td><code>margin-left: auto</code></td><td class="wrap">Push this item (and the rest) to the far end.</td><td class="tw-col"><code>ml-auto</code></td></tr>
+      <tr><td><code>align-self: center</code></td><td class="wrap">Override the cross alignment for one item.</td><td class="tw-col"><code>self-center</code></td></tr>
+      <tr><td><code>order: -1</code></td><td class="wrap">Visual order only; the DOM and readers keep the source order.</td><td class="tw-col"><code>-order-1</code></td></tr>
+    </table>
+  </article>
+
+  <article class="cheat" id="c-grid">
+    <h3><span class="tag css">CSS</span> Grid <span class="tag tw">TW</span></h3>
+    <table class="t">
+      <tr><th>CSS</th><th>Meaning</th><th class="tw-col">Tailwind</th></tr>
+      <tr><td><code>display: grid</code></td><td class="wrap">Rows and columns at once.</td><td class="tw-col"><code>grid</code></td></tr>
+      <tr><td><code>grid-template-columns: repeat(2, minmax(0, 1fr))</code></td><td class="wrap">Two equal columns that can shrink. The dashboard cards.</td><td class="tw-col"><code>grid-cols-2</code></td></tr>
+      <tr><td><code>repeat(auto-fill, minmax(150px, 1fr))</code></td><td class="wrap">As many 150px+ columns as fit; empty tracks kept.</td><td class="tw-col"><code>grid-cols-[repeat(auto-fill,minmax(150px,1fr))]</code></td></tr>
+      <tr><td><code>repeat(auto-fit, …)</code></td><td class="wrap">Same, but empty tracks collapse so items stretch.</td><td class="tw-col">arbitrary, as above</td></tr>
+      <tr><td><code>2fr 1fr</code></td><td class="wrap">Fractions of the free space.</td><td class="tw-col"><code>grid-cols-[2fr_1fr]</code></td></tr>
+      <tr><td><code>gap: 14px</code> / <code>row-gap</code> <code>column-gap</code></td><td class="wrap">Gutters.</td><td class="tw-col"><code>gap-3.5</code> <code>gap-y-2</code></td></tr>
+      <tr><td><code>grid-column: span 2</code></td><td class="wrap">Item takes two columns. <code>1 / -1</code> spans all.</td><td class="tw-col"><code>col-span-2</code> <code>col-span-full</code></td></tr>
+      <tr><td><code>grid-template-areas</code></td><td class="wrap">Named layout drawn as strings; items pick <code>grid-area: name</code>.</td><td class="tw-col">plain CSS</td></tr>
+      <tr><td><code>place-items: center</code></td><td class="wrap">Centre both axes in every cell.</td><td class="tw-col"><code>place-items-center</code></td></tr>
+      <tr><td><code>align-items</code> / <code>justify-items</code></td><td class="wrap">Cross / inline alignment of items in cells.</td><td class="tw-col"><code>items-*</code> <code>justify-items-*</code></td></tr>
+    </table>
+    <p class="note">Flex for a line of things that share one axis (a row of chips). Grid for a layout that needs both axes to line up (cards, forms, dashboards).</p>
+  </article>
+
+  <article class="cheat" id="c-units">
+    <h3><span class="tag css">CSS</span> Units and functions <span class="tag tw">TW</span></h3>
+    <table class="t">
+      <tr><th>Unit</th><th>Relative to</th><th class="tw-col">Tailwind</th></tr>
+      <tr><td><code>px</code></td><td class="wrap">A CSS pixel. Borders, radii, shadows, breakpoints.</td><td class="tw-col"><code>[13px]</code> arbitrary</td></tr>
+      <tr><td><code>rem</code></td><td class="wrap">The root font size, 16px unless changed. Type, spacing.</td><td class="tw-col">the scale: <code>4</code> = 1rem</td></tr>
+      <tr><td><code>em</code></td><td class="wrap">The element's own font size. Compounds when nested; use for padding that follows type.</td><td class="tw-col"><code>[1.2em]</code></td></tr>
+      <tr><td><code>%</code></td><td class="wrap">The parent's size on that axis.</td><td class="tw-col"><code>w-1/2</code> <code>w-full</code></td></tr>
+      <tr><td><code>vw</code> <code>vh</code> <code>dvh</code></td><td class="wrap">Viewport width/height. <code>dvh</code> follows the phone's shrinking browser bar.</td><td class="tw-col"><code>w-screen</code> <code>h-dvh</code></td></tr>
+      <tr><td><code>fr</code></td><td class="wrap">A share of free space in a grid track.</td><td class="tw-col">inside <code>grid-cols-*</code></td></tr>
+      <tr><td><code>ch</code></td><td class="wrap">Width of the "0" glyph. <code>max-width: 65ch</code> for readable lines.</td><td class="tw-col"><code>max-w-prose</code></td></tr>
+      <tr><th>Function</th><th></th><th></th></tr>
+      <tr><td><code>calc(100% - 32px)</code></td><td class="wrap">Mix units.</td><td class="tw-col"><code>w-[calc(100%-2rem)]</code></td></tr>
+      <tr><td><code>clamp(18px, 5vw, 24px)</code></td><td class="wrap">Fluid value with a floor and a ceiling. Fluid type.</td><td class="tw-col"><code>text-[clamp(…)]</code></td></tr>
+      <tr><td><code>min()</code> <code>max()</code></td><td class="wrap"><code>width: min(100%, 760px)</code>.</td><td class="tw-col">arbitrary</td></tr>
+      <tr><td><code>var(--jf-primary, #1f6b3b)</code></td><td class="wrap">Custom property with a fallback.</td><td class="tw-col">theme tokens</td></tr>
+    </table>
+  </article>
+
+  <article class="cheat" id="c-type">
+    <h3><span class="tag css">CSS</span> Typography <span class="tag tw">TW</span></h3>
+    <table class="t">
+      <tr><th>CSS</th><th>Meaning</th><th class="tw-col">Tailwind</th></tr>
+      <tr><td><code>font-family: 'Plus Jakarta Sans', system-ui, sans-serif</code></td><td class="wrap">A stack: first available wins. Always end with a generic.</td><td class="tw-col"><code>font-sans</code></td></tr>
+      <tr><td><code>font: 700 15px/1.3 'Bricolage Grotesque', sans-serif</code></td><td class="wrap">Shorthand: weight size/line-height family. Resets the other font properties.</td><td class="tw-col">compose utilities</td></tr>
+      <tr><td><code>font-size: 14px</code></td><td class="wrap">Never below 11px on a phone.</td><td class="tw-col"><code>text-sm</code> (14/20)</td></tr>
+      <tr><td><code>font-weight: 600</code></td><td class="wrap">400 normal, 500 medium, 600 semibold, 700 bold, 800 extrabold. The face must ship that weight.</td><td class="tw-col"><code>font-semibold</code></td></tr>
+      <tr><td><code>line-height: 1.5</code></td><td class="wrap">Unitless multiplies the font size; 1.2 for headings, 1.5 for body.</td><td class="tw-col"><code>leading-normal</code></td></tr>
+      <tr><td><code>letter-spacing: .04em</code></td><td class="wrap">Open up uppercase labels; tighten big headings with negatives.</td><td class="tw-col"><code>tracking-wide</code> <code>tracking-tight</code></td></tr>
+      <tr><td><code>text-transform: uppercase</code></td><td class="wrap">Visual only; readers get the original text.</td><td class="tw-col"><code>uppercase</code></td></tr>
+      <tr><td><code>text-align: right</code></td><td class="wrap">Amounts right, text left.</td><td class="tw-col"><code>text-right</code></td></tr>
+      <tr><td><code>white-space: nowrap</code></td><td class="wrap">Never wrap: amounts, dates, chips.</td><td class="tw-col"><code>whitespace-nowrap</code></td></tr>
+      <tr><td><code>overflow-wrap: anywhere</code></td><td class="wrap">Break a long word rather than overflow. Long names, codes.</td><td class="tw-col"><code>break-words</code> / <code>[overflow-wrap:anywhere]</code></td></tr>
+      <tr><td>nowrap + <code>overflow: hidden</code> + <code>text-overflow: ellipsis</code></td><td class="wrap">The ellipsis trio. Needs a constrained width.</td><td class="tw-col"><code>truncate</code></td></tr>
+      <tr><td><code>-webkit-line-clamp: 2</code> (+ box)</td><td class="wrap">Cut after two lines with an ellipsis.</td><td class="tw-col"><code>line-clamp-2</code></td></tr>
+      <tr><td><code>text-wrap: balance</code></td><td class="wrap">Even line lengths in headings.</td><td class="tw-col"><code>text-balance</code></td></tr>
+      <tr><td><code>font-variant-numeric: tabular-nums</code></td><td class="wrap">Digits of equal width, so columns of amounts line up.</td><td class="tw-col"><code>tabular-nums</code></td></tr>
+    </table>
+  </article>
+
+  <article class="cheat" id="c-color">
+    <h3><span class="tag css">CSS</span> Colour, borders, shadows <span class="tag tw">TW</span></h3>
+    <table class="t">
+      <tr><th>CSS</th><th>Meaning</th><th class="tw-col">Tailwind</th></tr>
+      <tr><td><code>#1f6b3b</code> <code>rgb(31 107 59)</code> <code>hsl(146 55% 27%)</code></td><td class="wrap">Same colour three ways. <code>rgb(31 107 59 / .5)</code> adds alpha.</td><td class="tw-col"><code>bg-emerald-800</code> <code>bg-emerald-800/50</code></td></tr>
+      <tr><td><code>--jf-primary: #1f6b3b</code> on <code>:root</code></td><td class="wrap">A token. Read with <code>var(--jf-primary)</code>. Redefine inside a dark-mode block.</td><td class="tw-col">theme colours</td></tr>
+      <tr><td><code>color</code> / <code>background</code></td><td class="wrap">Text / box. <code>background</code> shorthand also resets images.</td><td class="tw-col"><code>text-*</code> / <code>bg-*</code></td></tr>
+      <tr><td><code>linear-gradient(150deg, #1f6b3b, #17542e)</code></td><td class="wrap">Angle, then stops. The KPI hero.</td><td class="tw-col"><code>bg-gradient-to-br from-… to-…</code></td></tr>
+      <tr><td><code>border-radius: 18px</code></td><td class="wrap">Corners. <code>999px</code> makes a pill.</td><td class="tw-col"><code>rounded-2xl</code> <code>rounded-full</code></td></tr>
+      <tr><td><code>box-shadow: 0 1px 3px rgba(20,45,30,.05)</code></td><td class="wrap">x y blur colour. Several, comma-separated. Keep them faint.</td><td class="tw-col"><code>shadow-sm</code></td></tr>
+      <tr><td><code>opacity: .55</code></td><td class="wrap">Whole element, children included. Creates a stacking context.</td><td class="tw-col"><code>opacity-55</code></td></tr>
+      <tr><td><code>outline: 2px solid …; outline-offset: 2px</code></td><td class="wrap">Focus ring that does not move layout.</td><td class="tw-col"><code>outline outline-2 outline-offset-2</code></td></tr>
+    </table>
+    <p class="note">Contrast: body text needs 4.5:1 against its background, large text 3:1. Hint grey on white (#9aa39d) is for secondary text only.</p>
+  </article>
+
+  <article class="cheat" id="c-responsive">
+    <h3><span class="tag css">CSS</span> Responsive <span class="tag tw">TW</span></h3>
+    <pre><code>/* mobile first: base rules are the phone, then widen */
+.jf-action-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 600px) {
+  .jf-action-grid { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+}
+@media (prefers-color-scheme: dark) { … }
+@media (prefers-reduced-motion: reduce) { * { transition: none; } }</code></pre>
+    <table class="t">
+      <tr><th>Width</th><th>Device</th><th class="tw-col">Tailwind</th></tr>
+      <tr><td>360 · 375 · 412</td><td class="wrap">Small Android, iPhone SE, Galaxy S20. Jolefilo's test widths.</td><td class="tw-col">base (no prefix)</td></tr>
+      <tr><td>≥ 640</td><td class="wrap">Large phones landscape, small tablets.</td><td class="tw-col"><code>sm:</code></td></tr>
+      <tr><td>≥ 768</td><td class="wrap">Tablets.</td><td class="tw-col"><code>md:</code></td></tr>
+      <tr><td>≥ 1024</td><td class="wrap">Laptops.</td><td class="tw-col"><code>lg:</code></td></tr>
+      <tr><td>≥ 1280 · 1536</td><td class="wrap">Desktops.</td><td class="tw-col"><code>xl:</code> <code>2xl:</code></td></tr>
+    </table>
+    <p class="note">Rules of thumb: no fixed widths wider than 320px; touch targets at least 42px; the page body never scrolls sideways; <code>100dvh</code> instead of <code>100vh</code>; test in a real mobile emulation, not a narrow desktop window.</p>
+  </article>
+
+  <article class="cheat" id="c-motion">
+    <h3><span class="tag css">CSS</span> Transitions and transforms <span class="tag tw">TW</span></h3>
+    <table class="t">
+      <tr><th>CSS</th><th>Meaning</th><th class="tw-col">Tailwind</th></tr>
+      <tr><td><code>transition: transform .13s, box-shadow .13s</code></td><td class="wrap">Animate changes of those properties over that time. Never <code>all</code> on big elements.</td><td class="tw-col"><code>transition-transform duration-150</code></td></tr>
+      <tr><td><code>transform: translateY(1px)</code></td><td class="wrap">Move without affecting layout. Also <code>scale(.98)</code>, <code>rotate(45deg)</code>.</td><td class="tw-col"><code>translate-y-px</code> <code>scale-95</code></td></tr>
+      <tr><td><code>@keyframes jf-fade { from { opacity: 0 } }</code> + <code>animation: jf-fade .28s</code></td><td class="wrap">Multi-step motion. Keep under 300ms for UI.</td><td class="tw-col"><code>animate-*</code> (custom)</td></tr>
+      <tr><td><code>will-change: transform</code></td><td class="wrap">Hint for smoothness; use sparingly, it creates a stacking context.</td><td class="tw-col"><code>will-change-transform</code></td></tr>
+    </table>
+    <p class="note">Animate only <code>transform</code> and <code>opacity</code> for smooth 60fps. Animating width, height or top triggers layout every frame.</p>
+  </article>
+
+  <article class="cheat wide" id="c-recipes">
+    <h3><span class="tag css">CSS</span> Recipes <span class="tag tw">TW</span></h3>
+    <div class="cols">
+      <div>
+<pre><code>/* centre anything */
+.centre { display: grid; place-items: center; }
+/* <span class="tw-col">grid place-items-center</span> */
+
+/* row: text on the left, amount pushed right, never wraps */
+.row { display: flex; align-items: center; gap: 12px; }
+.row .text { flex: 1; min-width: 0; }
+.row .amount { white-space: nowrap; flex-shrink: 0; }
+/* <span class="tw-col">flex items-center gap-3 / flex-1 min-w-0 / whitespace-nowrap shrink-0</span> */
+
+/* truncate one line */
+.one-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* <span class="tw-col">truncate</span> */
+
+/* card */
+.card { background: #fff; border: 1px solid #ebefec; border-radius: 18px;
+        box-shadow: 0 1px 3px rgba(20,45,30,.05); }
+/* <span class="tw-col">bg-white border border-gray-200 rounded-2xl shadow-sm</span> */
+
+/* pill chip */
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px;
+        border-radius: 999px; font-size: 12px; font-weight: 700; }
+/* <span class="tw-col">inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold</span> */</code></pre>
+      </div>
+      <div>
+<pre><code>/* two columns that stack on phones */
+.form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 360px) { .form { grid-template-columns: minmax(0, 1fr); } }
+/* <span class="tw-col">grid grid-cols-1 sm:grid-cols-2 gap-3</span> */
+
+/* sticky header */
+.header { position: sticky; top: 0; z-index: 10; background: #fff; }
+/* <span class="tw-col">sticky top-0 z-10 bg-white</span> */
+
+/* visually hidden, still read by screen readers */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+           overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+/* <span class="tw-col">sr-only</span> */
+
+/* wide table that scrolls inside its box, not the page */
+.table-scroll { overflow-x: auto; }
+.table-scroll table { min-width: 760px; }
+/* <span class="tw-col">overflow-x-auto / min-w-[760px]</span> */
+
+/* a scrolling body inside a fixed-height column (drawer) */
+.body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.body &gt; * { flex-shrink: 0; }
+/* <span class="tw-col">flex-1 min-h-0 overflow-y-auto overscroll-contain</span> */
+
+/* image that fills its box */
+.cover { width: 100%; height: 100%; object-fit: cover; }
+/* <span class="tw-col">w-full h-full object-cover</span> */</code></pre>
+      </div>
+    </div>
+  </article>
+
+  <article class="cheat wide" id="c-tailwind">
+    <h3><span class="tag tw">TW</span> Tailwind map and scales</h3>
+    <div class="cols">
+      <div>
+        <h4 style="margin-top:0">Spacing scale (padding, margin, gap, width, height)</h4>
+        <div class="scroll">
+        <table class="t">
+          <tr><th>Class</th><th>rem</th><th>px</th><th>Class</th><th>rem</th><th>px</th></tr>
+          <tr><td><code>0.5</code></td><td>0.125</td><td>2</td><td><code>6</code></td><td>1.5</td><td>24</td></tr>
+          <tr><td><code>1</code></td><td>0.25</td><td>4</td><td><code>8</code></td><td>2</td><td>32</td></tr>
+          <tr><td><code>2</code></td><td>0.5</td><td>8</td><td><code>10</code></td><td>2.5</td><td>40</td></tr>
+          <tr><td><code>3</code></td><td>0.75</td><td>12</td><td><code>12</code></td><td>3</td><td>48</td></tr>
+          <tr><td><code>4</code></td><td>1</td><td>16</td><td><code>16</code></td><td>4</td><td>64</td></tr>
+          <tr><td><code>5</code></td><td>1.25</td><td>20</td><td><code>px</code></td><td>-</td><td>1</td></tr>
+        </table>
+        </div>
+        <p class="note">So <code>p-4</code> is 16px all round, <code>px-4 py-3</code> is 16/12, <code>gap-3</code> is 12px, <code>w-10 h-10</code> is a 40px square, <code>mt-0.5</code> is 2px. One step is 4px.</p>
+        <h4>Type scale</h4>
+        <table class="t">
+          <tr><th>Class</th><th>Size / line</th><th>Class</th><th>Size / line</th></tr>
+          <tr><td><code>text-xs</code></td><td>12 / 16</td><td><code>text-xl</code></td><td>20 / 28</td></tr>
+          <tr><td><code>text-sm</code></td><td>14 / 20</td><td><code>text-2xl</code></td><td>24 / 32</td></tr>
+          <tr><td><code>text-base</code></td><td>16 / 24</td><td><code>text-3xl</code></td><td>30 / 36</td></tr>
+          <tr><td><code>text-lg</code></td><td>18 / 28</td><td><code>text-[13.5px]</code></td><td>any value</td></tr>
+        </table>
+        <h4>Radius and shadow</h4>
+        <table class="t">
+          <tr><td><code>rounded</code> 4 · <code>rounded-md</code> 6 · <code>rounded-lg</code> 8 · <code>rounded-xl</code> 12 · <code>rounded-2xl</code> 16 · <code>rounded-3xl</code> 24 · <code>rounded-full</code></td></tr>
+          <tr><td><code>shadow-sm</code> · <code>shadow</code> · <code>shadow-md</code> · <code>shadow-lg</code> · <code>shadow-none</code></td></tr>
+        </table>
+      </div>
+      <div>
+        <h4 style="margin-top:0">Variants (prefixes)</h4>
+        <table class="t">
+          <tr><td><code>hover:</code> <code>focus-visible:</code> <code>active:</code> <code>disabled:</code></td><td class="wrap">State of the element itself.</td></tr>
+          <tr><td><code>sm:</code> <code>md:</code> <code>lg:</code></td><td class="wrap">Min-width breakpoints, mobile first. <code>md:grid-cols-3</code>.</td></tr>
+          <tr><td><code>dark:</code></td><td class="wrap">Dark scheme (OS setting, or a class on <code>html</code> when configured).</td></tr>
+          <tr><td><code>group-hover:</code> / <code>group</code></td><td class="wrap">Style a child when its parent (marked <code>group</code>) is hovered.</td></tr>
+          <tr><td><code>peer-checked:</code> / <code>peer</code></td><td class="wrap">Style a sibling after a checked input.</td></tr>
+          <tr><td><code>first:</code> <code>last:</code> <code>odd:</code></td><td class="wrap">Position among siblings.</td></tr>
+          <tr><td><code>motion-reduce:</code> <code>print:</code></td><td class="wrap">Media features.</td></tr>
+          <tr><td><code>[&amp;_p]:mb-2</code></td><td class="wrap">Arbitrary selector for descendants.</td></tr>
+        </table>
+        <h4>Everyday classes</h4>
+        <table class="t">
+          <tr><td><code>flex items-center justify-between gap-3</code></td><td class="wrap">The row.</td></tr>
+          <tr><td><code>grid grid-cols-2 gap-4</code></td><td class="wrap">The card grid.</td></tr>
+          <tr><td><code>flex-1 min-w-0 truncate</code></td><td class="wrap">The text column that must not push the row.</td></tr>
+          <tr><td><code>w-full max-w-md mx-auto</code></td><td class="wrap">Centred, capped width.</td></tr>
+          <tr><td><code>text-sm text-gray-500 uppercase tracking-wide</code></td><td class="wrap">A label.</td></tr>
+          <tr><td><code>space-y-4</code> / <code>divide-y</code></td><td class="wrap">Vertical gaps / lines between children without flex.</td></tr>
+          <tr><td><code>sr-only</code></td><td class="wrap">Screen-reader only text.</td></tr>
+          <tr><td><code>!mt-0</code> (v3) / <code>mt-0!</code> (v4)</td><td class="wrap">Force with <code>!important</code>.</td></tr>
+        </table>
+        <div class="callout tw">
+          <p><strong>Three traps.</strong> Classes built at runtime (<code>"text-" + colour</code>) are not generated: the scanner needs the full literal in the source. Utilities all have the same specificity, so a later utility in Tailwind's output wins, not the later one in your <code>class=""</code>. Use <code>@apply</code> in a stylesheet for a repeated pattern, or a component; mixing both for the same thing creates two sources of truth.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <article class="cheat wide" id="c-aria">
+    <h3><span class="tag aria">ARIA</span> Roles, states, properties</h3>
+    <div class="cols">
+      <div>
+        <table class="t">
+          <tr><th>Roles (what it is)</th><th>Use</th></tr>
+          <tr><td><code>button</code> <code>link</code></td><td class="wrap">Only on an element that is not already one. Prefer the real tag.</td></tr>
+          <tr><td><code>dialog</code> + <code>aria-modal="true"</code></td><td class="wrap">A modal. Needs a label and focus trapped inside. MudDialog does this.</td></tr>
+          <tr><td><code>status</code></td><td class="wrap">Polite live region: "Caixa fechada", counts, titles that change.</td></tr>
+          <tr><td><code>alert</code></td><td class="wrap">Assertive live region: errors. Interrupts the reader.</td></tr>
+          <tr><td><code>group</code> + a label</td><td class="wrap">Related controls: the five filter cards.</td></tr>
+          <tr><td><code>tablist</code> <code>tab</code> <code>tabpanel</code></td><td class="wrap">Tabs. <code>aria-selected</code> on the active tab.</td></tr>
+          <tr><td><code>listbox</code> <code>option</code>, <code>menu</code> <code>menuitem</code></td><td class="wrap">Custom selects and menus. MudSelect and MudMenu render them.</td></tr>
+          <tr><td><code>presentation</code> / <code>none</code></td><td class="wrap">Strip semantics (a layout table). Never on focusable elements.</td></tr>
+          <tr><td>Landmarks</td><td class="wrap"><code>header</code>, <code>nav</code>, <code>main</code>, <code>footer</code> already are landmarks; add <code>aria-label</code> when there are two of a kind.</td></tr>
+        </table>
+      </div>
+      <div>
+        <table class="t">
+          <tr><th>States (change at runtime)</th><th>Values</th></tr>
+          <tr><td><code>aria-pressed</code></td><td class="wrap"><code>"true"</code> | <code>"false"</code>. Toggle buttons (the filter cards).</td></tr>
+          <tr><td><code>aria-expanded</code></td><td class="wrap">Disclosure open or closed; the drawer trigger.</td></tr>
+          <tr><td><code>aria-checked</code> <code>aria-selected</code></td><td class="wrap">Custom checkbox / selected tab or option.</td></tr>
+          <tr><td><code>aria-disabled</code></td><td class="wrap">Announced as disabled but still focusable (the dimmed "Brevemente" card).</td></tr>
+          <tr><td><code>aria-current="page"</code></td><td class="wrap">The current item in a nav or breadcrumb.</td></tr>
+          <tr><td><code>aria-invalid</code> <code>aria-busy</code> <code>aria-hidden</code></td><td class="wrap">Bad field / loading / removed from the tree.</td></tr>
+          <tr><th>Properties (describe)</th><th></th></tr>
+          <tr><td><code>aria-label="Imprimir FT 2026/318"</code></td><td class="wrap">A name for an element without text. Replaces its content as the name.</td></tr>
+          <tr><td><code>aria-labelledby="id"</code></td><td class="wrap">Name taken from another element's text. Wins over everything.</td></tr>
+          <tr><td><code>aria-describedby="id"</code></td><td class="wrap">Extra description read after the name (hints, errors).</td></tr>
+          <tr><td><code>aria-live="polite|assertive"</code></td><td class="wrap">Announce changes inside this element.</td></tr>
+          <tr><td><code>aria-controls</code> <code>aria-haspopup</code></td><td class="wrap">What a control opens.</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="callout aria">
+      <p><strong>Name order:</strong> <code>aria-labelledby</code> → <code>aria-label</code> → native (label for inputs, <code>alt</code> for images, text content for buttons and links) → <code>title</code>. <strong>The five rules:</strong> use native HTML first; do not change native semantics unless you must; every ARIA control must work with the keyboard; never hide a focusable element with <code>aria-hidden</code> or <code>role="presentation"</code>; every interactive element needs an accessible name.</p>
+    </div>
+  </article>
+
+  <article class="cheat wide" id="c-blazor">
+    <h3><span class="tag blazor">Blazor</span> Blazor and MudBlazor gotchas</h3>
+    <div class="scroll">
+    <table class="t">
+      <tr><th>Situation</th><th>What happens</th><th>Do this</th></tr>
+      <tr><td>Bool in an attribute</td><td class="wrap"><code>aria-pressed="@Active"</code> renders <code>aria-pressed=""</code> when true and nothing when false.</td><td class="wrap">Fine for <code>disabled</code>/<code>checked</code>. For <code>aria-*</code> write <code>@(Active ? "true" : "false")</code>.</td></tr>
+      <tr><td>Duplicate <code>@key</code></td><td class="wrap">Two siblings with the same key throw during render; in Blazor Server the circuit dies.</td><td class="wrap">Key on something unique, or combine: <code>@key="@($"{kind}:{number}")"</code>.</td></tr>
+      <tr><td>Missing <code>@key</code> on a filtered list</td><td class="wrap">Rows are patched by position; inputs keep the wrong values after a filter.</td><td class="wrap">Always <code>@key="item.Id"</code> on a user-filterable <code>@foreach</code>.</td></tr>
+      <tr><td>Styling a MudBlazor component</td><td class="wrap">Its own classes (<code>.mud-button-root</code>) come later and often win.</td><td class="wrap">Pass <code>Class="jf-x"</code> and write <code>.jf-x.mud-button-root { }</code>. Add the state: <code>.jf-x.mud-button-root:hover</code>.</td></tr>
+      <tr><td>Palette text classes</td><td class="wrap"><code>MudLink</code>'s <code>mud-primary-text</code> beats a plain <code>color</code> override.</td><td class="wrap"><code>Color="Color.Inherit"</code>, then colour the wrapper.</td></tr>
+      <tr><td>Grey tint stuck on a button after a tap</td><td class="wrap">Hover and ripple styles; Android keeps <code>:hover</code> after a tap.</td><td class="wrap"><code>Ripple="false"</code> and override <code>:hover</code>/<code>:focus</code> backgrounds with enough specificity.</td></tr>
+      <tr><td>Popover off the right edge</td><td class="wrap">Mobile Chrome widens the layout viewport, media queries flip, screen flickers.</td><td class="wrap"><code>AnchorOrigin</code>/<code>TransformOrigin</code> on every <code>MudSelect</code>/<code>MudMenu</code>, <code>html { overflow-x: clip }</code>.</td></tr>
+      <tr><td>Nothing scrolls inside a drawer</td><td class="wrap">Flex children shrink to fit instead of overflowing.</td><td class="wrap"><code>min-height: 0; overflow-y: auto</code> on the body and <code>flex-shrink: 0</code> on its children.</td></tr>
+      <tr><td>Clicking a link inside a clickable card</td><td class="wrap">Both handlers fire.</td><td class="wrap"><code>@onclick:stopPropagation</code> on the inner one; <code>@onclick:preventDefault</code> to cancel navigation.</td></tr>
+      <tr><td>Where CSS lives</td><td class="wrap">A global <code>site.css</code> or a <code>Component.razor.css</code> (isolation).</td><td class="wrap">Isolation scopes by attribute; reach children of child components with <code>::deep</code>.</td></tr>
+      <tr><td>Extra attributes</td><td class="wrap">Unknown attributes on a MudBlazor component are splatted to its root element.</td><td class="wrap">So <code>role</code>, <code>aria-*</code>, <code>data-*</code> on <code>MudButton</code> land on the <code>&lt;button&gt;</code>.</td></tr>
+    </table>
+    </div>
+  </article>
+
+  <article class="cheat wide" id="c-devtools">
+    <h3><span class="tag css">Tools</span> DevTools</h3>
+    <div class="cols">
+      <div>
+        <table class="t">
+          <tr><td><span class="kbd">F12</span> / <span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">C</span></td><td class="wrap">Open, pick an element on the page.</td></tr>
+          <tr><td>Elements → Styles</td><td class="wrap">Every rule hitting the element, most specific first. Struck-through means overridden; the winning rule is the one not struck. Click a value to edit live.</td></tr>
+          <tr><td>Styles → <code>:hov</code></td><td class="wrap">Force <code>:hover</code>, <code>:focus</code>, <code>:active</code> to inspect those states.</td></tr>
+          <tr><td>Styles → <code>.cls</code></td><td class="wrap">Toggle classes on and off.</td></tr>
+          <tr><td>Computed</td><td class="wrap">The final value of each property and the box-model diagram with margin/border/padding numbers.</td></tr>
+          <tr><td>Layout</td><td class="wrap">Overlays for grid and flex containers; the "grid"/"flex" badge next to an element turns them on.</td></tr>
+          <tr><td>Accessibility pane</td><td class="wrap">Role, name and states of the selected node, as a screen reader sees it.</td></tr>
+          <tr><td><span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">M</span></td><td class="wrap">Device toolbar: phone widths, touch, DPR. Pick a real device, not just a narrow window.</td></tr>
+        </table>
+      </div>
+      <div>
+<pre><code>// Console: $0 is the selected element
+getComputedStyle($0).color
+$0.getBoundingClientRect()
+
+// who pushes the page wider than the screen?
+[...document.querySelectorAll('body *')]
+  .filter(e =&gt; e.getBoundingClientRect().right &gt; innerWidth + 1)
+  .map(e =&gt; [e.className, Math.round(e.getBoundingClientRect().right)])
+
+// does this box actually scroll?
+$0.scrollHeight &gt; $0.clientHeight
+
+// Playwright: same accessibility tree
+page.getByRole('button', { name: 'Faturas', pressed: true })</code></pre>
+      </div>
+    </div>
+  </article>
+
+    <article class="cheat wide" id="c-practice">
+    <h3><span class="tag css">Practice</span> Games and playgrounds</h3>
+    <p class="note">A few minutes a level, all in the browser. Play them in this order; the Tailwind one repeats flex in the spelling Driveway uses.</p>
+    <div class="cols">
+      <div>
+        <table class="t">
+          <tr><th>Flexbox</th><th>What it is</th></tr>
+          <tr><td><a href="https://flexboxfroggy.com/">Flexbox Froggy</a></td><td class="wrap">24 levels. Type one or two declarations so the frogs land on their pads: <code>justify-content</code>, <code>align-items</code>, <code>flex-direction</code>, <code>order</code>, <code>flex-wrap</code>. The paid Pro tier adds endless generated levels.</td></tr>
+          <tr><td><a href="https://knightsoftheflexboxtable.com/">Knights of the Flexbox Table</a></td><td class="wrap">18 levels of the same idea, answered in Tailwind classes. The one to play for Driveway.</td></tr>
+          <tr><td><a href="https://mastery.games/flexboxzombies/">Flexbox Zombies</a></td><td class="wrap">12 chapters, free with an account. A story introduces one concept per chapter, then drills it.</td></tr>
+          <tr><td><a href="http://www.flexboxdefense.com/">Flexbox Defense</a></td><td class="wrap">12 tower-defence challenges: place the turrets with flex properties.</td></tr>
+          <tr><td><a href="https://codingfantasy.com/games/flexboxadventure">Flex Box Adventure</a></td><td class="wrap">24 levels with hints and a choice of difficulty.</td></tr>
+        </table>
+      </div>
+      <div>
+        <table class="t">
+          <tr><th>Grid, selectors, more</th><th>What it is</th></tr>
+          <tr><td><a href="https://cssgridgarden.com/">Grid Garden</a></td><td class="wrap">28 levels of CSS Grid by Froggy's maker: water the carrots with <code>grid-column</code>, <code>grid-template-columns</code> and <code>fr</code>.</td></tr>
+          <tr><td><a href="https://codingfantasy.com/games/css-grid-attack">Grid Attack</a></td><td class="wrap">80 grid levels, pick a difficulty.</td></tr>
+          <tr><td><a href="https://flukeout.github.io/">CSS Diner</a></td><td class="wrap">32 levels of selectors: pick the plates with <code>&gt;</code>, <code>:nth-child</code>, <code>[attr]</code>. The fastest way to make specificity concrete.</td></tr>
+          <tr><td><a href="https://cssbattle.dev/">CSS Battle</a></td><td class="wrap">Recreate a target image with the least CSS. For when the basics are automatic.</td></tr>
+          <tr><td><a href="https://anchoreum.com/">Anchoreum</a></td><td class="wrap">Codepip's game for anchor positioning, the new way to pin a popover to its button. Chrome and Edge.</td></tr>
+          <tr><td><a href="https://play.tailwindcss.com/">Tailwind Play</a></td><td class="wrap">Not a game: a scratch page with Tailwind loaded. Paste a Jolefilo row and redo it in classes.</td></tr>
+        </table>
+      </div>
+    </div>
+    <p class="note">Roundups these came from: <a href="https://smashingmagazine.com/2021/09/interactive-learning-tools-front-end-developers">Smashing Magazine</a>, <a href="https://www.techloy.com/5-fun-games-to-learn-modern-css-for-frontend-development/">Techloy</a>, <a href="https://www.lireo.com/fun-online-games-to-learn-flexbox-and-css/">Lireo</a>, <a href="https://codepip.com/">Codepip</a>. Level counts as of October 2026.</p>
+  </article>
+</div>
+</section>
+
+<!-- ===================================================== PART 2 ===================================================== -->
+<section class="part" id="details">
+  <div class="part-head">
+    <h1>Part 2 · Details</h1>
+    <p>Why each thing works. Read a chapter when a cheat row is not enough.</p>
+  </div>
+
+  <div class="chapter" id="d-browser">
+    <h2>How a page is built</h2>
+    <p class="lead">Three trees, built in order. Most layout surprises come from forgetting which tree a rule touches.</p>
+    <p>The browser reads the HTML into the <strong>DOM</strong>, a tree of elements. It reads the stylesheets into the <strong>CSSOM</strong>, every rule with its selector. It then walks the DOM, finds the rules that match each element, computes the final value of every property (the cascade), and builds the <strong>render tree</strong> of boxes. Layout gives each box a position and size, paint draws them, and compositing stacks the layers. Change a class and the browser repeats from the cascade step for the affected elements; animate <code>width</code> and it repeats layout every frame, which is why only <code>transform</code> and <code>opacity</code> animate smoothly.</p>
+    <p>A fourth tree matters for people who do not see the screen: the <strong>accessibility tree</strong>, derived from the DOM. A <code>&lt;button&gt;</code> becomes a node with the role button and the name of its text. A <code>&lt;div&gt;</code> with a click handler becomes nothing a screen reader can act on. This is the whole argument for semantic HTML: the tag you choose decides what three of the four trees contain, before any CSS.</p>
+    <p>Blazor Server builds the DOM differently from a static site. The component renders on the server, a diff travels over the SignalR circuit, and a small script patches the browser's DOM. Browser extensions that rewrite the DOM before the circuit attaches are why Jolefilo runs without prerendering. For CSS and ARIA nothing changes: the result in the browser is ordinary HTML, and DevTools shows it.</p>
+  </div>
+
+  <div class="chapter" id="d-cascade">
+    <h2>The cascade and inheritance</h2>
+    <p class="lead">Which rule wins, and which values flow down to children on their own.</p>
+    <div class="cols">
+      <div>
+        <h4>Three questions, in order</h4>
+        <ol>
+          <li><strong>Importance and origin.</strong> Author styles beat the browser's defaults. <code>!important</code> flips the order and should be a last resort, which is why MudBlazor's palette text classes using it are so hard to override.</li>
+          <li><strong>Specificity.</strong> Count ids, then classes (attributes and pseudo-classes count as classes), then types. <code>#a</code> beats any number of classes; <code>.a.b</code> beats <code>.a</code>; <code>div.a</code> beats <code>.a</code>. Inline <code>style</code> beats every selector.</li>
+          <li><strong>Order.</strong> Equal specificity: the rule that appears later wins. Tailwind's whole model rests on this: utilities are emitted in a fixed order, so <code>p-4 p-2</code> gives whichever the generated file lists last, not the last in your attribute.</li>
+        </ol>
+        <p>The practical rule for a MudBlazor app: when your class loses, add one of the component's own classes to your selector. <code>.jf-cash-close.mud-button-root</code> has two classes and is written after MudBlazor's stylesheet, so it wins on both counts. Add the state when the component styles its states: <code>.jf-x.mud-button-root:hover</code>.</p>
+      </div>
+      <div>
+        <h4>Inheritance</h4>
+        <p>Some properties pass to children when the child does not set them: colour, every <code>font-*</code>, <code>line-height</code>, <code>letter-spacing</code>, <code>text-align</code>, <code>visibility</code>, <code>cursor</code>. Set <code>font-family</code> once on <code>body</code> and every element uses it. Box properties never inherit: <code>margin</code>, <code>padding</code>, <code>border</code>, <code>background</code>, <code>width</code>, <code>display</code>, <code>position</code>.</p>
+        <p>Two consequences you will meet. A <code>&lt;button&gt;</code> and an <code>&lt;input&gt;</code> do not inherit the font by default; the browser gives them their own, so resets add <code>font: inherit</code> to form controls. And the Clientes row turned green when it became a link because <code>color</code> inherits: the link's colour flowed into the name span that set none of its own. <code>Color="Color.Inherit"</code> stopped the link from forcing one.</p>
+        <pre><code>button, input, select, textarea { font: inherit; color: inherit; }
+.jf-client-row.mud-link { color: var(--jf-text); } /* flows into the name */</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="chapter" id="d-box">
+    <h2>The box model</h2>
+    <p class="lead">Every element is a rectangle with four layers. Sizing goes wrong when you forget which layers a width includes.</p>
+    <div class="cols">
+      <div>
+        <div class="demo">
+          <div class="demo-label">margin → border → padding → content</div>
+          <div class="bm">margin
+            <div class="bm-border">border
+              <div class="bm-padding">padding
+                <div class="bm-content">content: width × height</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p>With the default <code>box-sizing: content-box</code>, <code>width: 200px</code> plus 16px padding each side plus a 1px border renders 234px wide. With <code>border-box</code>, the 200px includes padding and border, which is what everyone expects. Set it once for everything and forget it:</p>
+        <pre><code>*, *::before, *::after { box-sizing: border-box; }</code></pre>
+      </div>
+      <div>
+        <h4>Margins collapse, padding does not</h4>
+        <p>Two block siblings with <code>margin-bottom: 20px</code> and <code>margin-top: 30px</code> sit 30px apart, not 50. A first child's top margin leaks through its parent unless the parent has padding, a border, or is a flex or grid container. This is why the project rule says to space siblings with <code>gap</code> on a flex or grid parent: gaps never collapse, never double, and never leak.</p>
+        <h4>Sizing vocabulary</h4>
+        <ul>
+          <li><code>width: auto</code> on a block means "fill the parent"; on a flex item it means "as wide as my content".</li>
+          <li><code>min-width</code> and <code>max-width</code> clamp any width, including <code>auto</code>. A fluid card is <code>width: 100%; max-width: 760px</code>.</li>
+          <li>Percent heights only work when the parent has a definite height; prefer <code>min-height</code> or flex.</li>
+          <li><code>margin: 0 auto</code> centres a block only when it has a width smaller than its parent.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="chapter" id="d-flow">
+    <h2>Flow: block and inline</h2>
+    <p class="lead">Before flex and grid there is normal flow, and every element starts there.</p>
+    <p>A <strong>block</strong> element starts on a new line and takes the full width of its parent: <code>div</code>, <code>p</code>, <code>section</code>, headings, lists. An <strong>inline</strong> element sits in the line of text and is as wide as its content: <code>span</code>, <code>a</code>, <code>strong</code>, <code>code</code>. Width, height and vertical margins are ignored on inline elements, which is the usual reason a padded <code>span</code> looks wrong. <code>inline-block</code> keeps the element in the line but lets it have a box; <code>inline-flex</code> does the same for a flex container, which is what a chip is.</p>
+    <p>An image is inline by default, so it sits on the text baseline and leaves a few pixels of space below it for descenders. <code>display: block</code> or <code>vertical-align: middle</code> removes that gap. <code>display: contents</code> makes an element disappear from layout while its children stay, useful when a wrapper breaks a grid; it has accessibility bugs on some elements, so avoid it on buttons and lists.</p>
+    <p>Flex and grid change how the children of one element are laid out, and only those children. The children themselves become flex or grid items, their own <code>display</code> notwithstanding, and their descendants go back to normal flow. Layout is decided one level at a time.</p>
+  </div>
+
+  <div class="chapter" id="d-flex">
+    <h2>Flexbox in depth</h2>
+    <p class="lead">One axis at a time. The container chooses the axis; the items share the space along it.</p>
+    <div class="cols">
+      <div>
+        <h4>justify-content distributes along the main axis</h4>
+        <div class="demo">
+          <div class="demo-label">flex-start (default)</div>
+          <div class="flexrow"><div class="box">tile</div><div class="box b">name</div><div class="box c">amount</div></div>
+          <div class="demo-label">space-between</div>
+          <div class="flexrow between"><div class="box">tile</div><div class="box b">name</div><div class="box c">amount</div></div>
+          <div class="demo-label">center</div>
+          <div class="flexrow center"><div class="box">tile</div><div class="box b">name</div><div class="box c">amount</div></div>
+          <div class="demo-label">flex-end</div>
+          <div class="flexrow end"><div class="box">tile</div><div class="box b">name</div><div class="box c">amount</div></div>
+          <div class="demo-label">flex-start, last item with margin-left: auto</div>
+          <div class="flexrow"><div class="box">tile</div><div class="box b">name</div><div class="box c push">amount</div></div>
+          <div class="demo-label">middle item flex: 1</div>
+          <div class="flexrow"><div class="box">tile</div><div class="box b grow">name grows to fill</div><div class="box c">amount</div></div>
+        </div>
+      </div>
+      <div>
+        <h4>align-items places on the cross axis</h4>
+        <div class="demo">
+          <div class="demo-label">stretch (default): equal heights</div>
+          <div class="flexrow tall"><div class="box">one line</div><div class="box b">two<br>lines</div><div class="box c">one</div></div>
+          <div class="demo-label">center</div>
+          <div class="flexrow tall items-center"><div class="box">one line</div><div class="box b">two<br>lines</div><div class="box c">one</div></div>
+          <div class="demo-label">flex-end</div>
+          <div class="flexrow tall items-end"><div class="box">one line</div><div class="box b">two<br>lines</div><div class="box c">one</div></div>
+        </div>
+        <div class="callout warn">
+          <p><strong>The first version of this demo was broken, and the bug is a cascade lesson.</strong> The rule that gives these rows their height was written as <code>.flexrow.tall { min-height: 70px; align-items: stretch; }</code> and sat <em>after</em> <code>.flexrow.items-center</code> in the stylesheet. Both selectors score the same (two classes), so when they disagree on <code>align-items</code> the one written last wins, and every row stretched. The fix was to delete <code>align-items: stretch</code>: it is the default, so it never needed saying. Two rules to keep: a tie on specificity goes to the later rule, and a property that is already the default should not be restated, because one day it will win a tie you did not expect.</p>
+        </div>
+        <h4>Grow, shrink, basis</h4>
+        <p><code>flex: grow shrink basis</code>. <code>basis</code> is the starting size (<code>auto</code> = the content), <code>grow</code> says how much of the leftover space the item takes, <code>shrink</code> how much it gives up when space is short. <code>flex: 1</code> means <code>1 1 0%</code>: start from nothing and share equally. <code>flex: none</code> freezes an item at its content size.</p>
+        <div class="callout warn">
+          <p><strong>The min-width trap.</strong> A flex item refuses to shrink below its content's minimum width, because its default is <code>min-width: auto</code>. A long client name then pushes the amount and the chevron off the screen. <code>min-width: 0</code> on the text column lets it shrink and ellipsise. Every row in Jolefilo has it; every overflow bug you will meet in Tailwind is a missing <code>min-w-0</code>.</p>
+        </div>
+      </div>
+    </div>
+    <p>Wrapping: <code>flex-wrap: wrap</code> lets items drop to new lines; <code>align-content</code> then spaces the lines. A column flex (<code>flex-direction: column</code>) swaps the axes: <code>justify-content</code> is vertical, <code>align-items</code> horizontal. The drawer is a column flex with a sticky footer: header, a body with <code>flex: 1; min-height: 0; overflow-y: auto</code>, footer.</p>
+  </div>
+
+  <div class="chapter" id="d-grid">
+    <h2>Grid in depth</h2>
+    <p class="lead">Both axes at once. You declare tracks; items fall into cells or are placed on lines.</p>
+    <div class="cols">
+      <div>
+        <h4>Tracks and fr</h4>
+        <p><code>grid-template-columns: 2fr 1fr 1fr</code> makes three columns; the first takes half the free space. <code>minmax(0, 1fr)</code> instead of bare <code>1fr</code> lets a column shrink below its content, the grid version of <code>min-width: 0</code>. Rows are created automatically as items arrive (the implicit grid); size them with <code>grid-auto-rows</code>.</p>
+        <div class="demo">
+          <div class="demo-label">grid-template-columns: 2fr 1fr 1fr; one item spans 2</div>
+          <div class="grid3"><div class="box">2fr</div><div class="box b">1fr</div><div class="box c">1fr</div><div class="box span2">grid-column: span 2</div><div class="box b">1fr</div></div>
+        </div>
+        <h4>Lines, spans, areas</h4>
+        <p>Columns are numbered from 1 at the left to -1 at the right. <code>grid-column: 1 / -1</code> stretches an item across every column, however many there are; <code>span 2</code> takes two from wherever it lands. For a whole layout, <code>grid-template-areas</code> draws it as strings and each item names its area:</p>
+        <pre><code>.page { display: grid; grid-template-columns: 220px 1fr;
+        grid-template-areas: "rail main"; }
+.rail { grid-area: rail; } .main { grid-area: main; }
+@media (max-width: 959px) { .page { grid-template-columns: 1fr; grid-template-areas: "main"; }
+  .rail { display: none; } }</code></pre>
+      </div>
+      <div>
+        <h4>auto-fill versus auto-fit</h4>
+        <p>Both create as many columns of at least the given width as fit. <code>auto-fill</code> keeps the empty columns, so a few items stay small and leave space; <code>auto-fit</code> collapses the empty columns, so a few items stretch to fill. Resize the window and watch both:</p>
+        <div class="demo">
+          <div class="demo-label">repeat(auto-fill, minmax(110px, 1fr)) · 3 items</div>
+          <div class="gridfill"><div class="box">fill</div><div class="box b">fill</div><div class="box c">fill</div></div>
+          <div class="demo-label">repeat(auto-fit, minmax(110px, 1fr)) · 3 items</div>
+          <div class="gridfit"><div class="box">fit</div><div class="box b">fit</div><div class="box c">fit</div></div>
+        </div>
+        <p>The dashboard's action grid uses a fixed two columns on phones and <code>auto-fill</code> from 600px up, so a tablet shows three or four across without a second breakpoint. Correction C4 in the mock spec exists because the mock's <code>minmax(190px, 1fr)</code> yields a single column on a 358px content width: 2 × 190 = 380 does not fit.</p>
+        <h4>When to pick which</h4>
+        <ul>
+          <li>A row of things that wrap when needed, each sized by its content: flex.</li>
+          <li>Cards or fields that must align in both directions: grid.</li>
+          <li>Label/value pairs: a two-column grid with <code>auto 1fr</code>, so labels share one width.</li>
+          <li>Centring one thing: <code>display: grid; place-items: center</code>.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="chapter" id="d-position">
+    <h2>Positioning and stacking</h2>
+    <p class="lead">Taking an element out of flow, and deciding what paints over what.</p>
+    <div class="cols">
+      <div>
+        <p><code>static</code> is the default: the element sits where flow puts it and <code>top</code>/<code>left</code> do nothing. <code>relative</code> keeps its place in flow but can be nudged, and, more usefully, becomes the <strong>containing block</strong> for absolutely positioned children. <code>absolute</code> leaves the flow entirely and is placed against the nearest positioned ancestor; <code>inset: 0</code> stretches it over that ancestor. <code>fixed</code> is placed against the viewport and ignores scrolling: headers, toasts, the drawer backdrop. <code>sticky</code> is the hybrid: it scrolls with its parent until it reaches the threshold you set, then holds there until the parent scrolls away.</p>
+        <div class="demo">
+          <div class="demo-label">position: sticky; top: 0 inside a scrolling box</div>
+          <div class="stickybox">
+            <div class="sticky">Pendentes em conta corrente · sticky head</div>
+            <p>FT 2026/318 · 1.740,45 €</p><p>FT 2026/301 · 361,00 €</p><p>FT 2026/320 · 494,00 €</p><p>FT 2026/287 · 271,58 €</p><p>FT 2026/270 · 0,00 €</p><p>NC 2026/044 · -86,00 €</p><p>NC 2026/043 · -120,00 €</p>
+          </div>
+        </div>
+        <p>Sticky fails silently in two cases: an ancestor between the element and the scroller has <code>overflow: hidden</code>, or the parent is exactly as tall as the sticky element so there is nowhere to stick.</p>
+      </div>
+      <div>
+        <h4>z-index and stacking contexts</h4>
+        <p><code>z-index</code> only orders siblings inside the same <strong>stacking context</strong>, and only on positioned elements (or flex and grid items). A new context is created by <code>position</code> with a <code>z-index</code>, <code>opacity</code> below 1, <code>transform</code>, <code>filter</code>, <code>will-change</code>, <code>position: fixed</code> or <code>sticky</code>, and <code>isolation: isolate</code>. Inside a context, a child's <code>z-index: 9999</code> cannot escape over a sibling of the context's parent. The usual symptom: a dropdown stuck under a card with a shadow and a transform.</p>
+        <p>MudBlazor places popovers and dialogs in a provider at the end of <code>body</code> precisely to escape every stacking context in the page. The popover that stuck out past the right edge in Jolefilo was not a z-index problem but a viewport one: anything positioned beyond the right edge makes mobile Chrome widen the layout viewport. <code>html { overflow-x: clip }</code> is the safety net; anchoring the popover is the fix.</p>
+        <pre><code>.jf-drawer { position: fixed; inset: 0 0 0 auto; width: min(100%, 480px); z-index: 1300; }
+.jf-header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; }</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="chapter" id="d-responsive">
+    <h2>Responsive design</h2>
+    <p class="lead">Design for the narrowest screen first; every breakpoint then adds room, never removes it.</p>
+    <div class="cols">
+      <div>
+        <p>The viewport meta tag makes the phone report its real width instead of pretending to be a 980px desktop. From there the base CSS is the phone layout and each <code>@media (min-width: …)</code> widens it. Writing it the other way round, desktop first with <code>max-width</code> queries, means every phone rule has to undo a desktop rule, and the undo is forgotten more often than the rule.</p>
+        <p>Three habits remove most responsive bugs. Use relative sizes (<code>%</code>, <code>rem</code>, <code>fr</code>, <code>minmax</code>) and cap them with <code>max-width</code>. Let rows wrap or stack: <code>flex-wrap</code>, or a grid that goes to one column below a width. Give anything with text inside a flex or grid cell <code>min-width: 0</code>, so a long word wraps or ellipsises inside its cell instead of pushing the page wider.</p>
+        <p>Fluid type: <code>font-size: clamp(18px, 5vw, 24px)</code> grows with the viewport between a floor and a ceiling, so one rule replaces three breakpoints. Prefer it for display sizes; body text stays fixed.</p>
+      </div>
+      <div>
+        <h4>Phone specifics</h4>
+        <ul>
+          <li>Touch targets at least 42px; the visual can be smaller if the hit area is not.</li>
+          <li><code>100vh</code> is taller than the visible area while the browser bar shows; <code>100dvh</code> tracks it.</li>
+          <li>Safe areas on phones with a notch: <code>padding-top: env(safe-area-inset-top)</code> on fixed bars.</li>
+          <li>Hover does not exist on touch; Android keeps <code>:hover</code> on after a tap, so a hover tint looks like a stuck state. Style <code>:active</code> and <code>:focus-visible</code> instead.</li>
+          <li>Wide content (tables, code) scrolls inside its own <code>overflow-x: auto</code> box. The page body never scrolls sideways; the Console snippet in the DevTools card finds the offender.</li>
+          <li>Test in a mobile emulation with a mobile user agent and touch, at 360, 375 and 412 wide. A narrow desktop window does not reproduce the viewport-expansion behaviour.</li>
+        </ul>
+        <h4>Container queries</h4>
+        <p>A media query asks about the viewport; a container query asks about the parent: <code>container-type: inline-size</code> on the card list, then <code>@container (min-width: 400px) { … }</code> inside. The same card component then adapts whether it sits in a sidebar or a full page.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="chapter" id="d-type">
+    <h2>Typography on screen</h2>
+    <p class="lead">Most of what makes a screen look designed is type: a scale, a measure, and a line height.</p>
+    <div class="cols">
+      <div>
+        <p>A <strong>font stack</strong> lists faces in order of preference and ends with a generic family. Web fonts are loaded with a <code>&lt;link&gt;</code> to Google Fonts and <code>display=swap</code>, so text shows in the fallback at once and swaps when the font arrives. Jolefilo pairs a display face for titles and amounts with a text face for everything else; the display face is only used at 15px and above, where its character reads.</p>
+        <p>A <strong>scale</strong> is a short list of sizes you never leave: Jolefilo's runs 11, 11.5, 12, 12.5, 13, 13.5, 14.5, 15, 17, 22, 26, 27. The consistency matters more than the exact numbers. Pair each size with a weight and a line height: headings tight (1.2) and heavier, body open (1.5), labels small, uppercase and letter-spaced (<code>.04em</code>) so the caps do not clump.</p>
+        <p>The <strong>measure</strong> is the line length. Running text reads best around 65 characters; <code>max-width: 65ch</code> gives it. Cards and rows hold short strings, where the opposite rule applies: never let an amount or a date wrap.</p>
+      </div>
+      <div>
+        <h4>Controlling overflow in text</h4>
+        <div class="demo">
+          <div class="demo-label">.truncate in a 180px box</div>
+          <div class="box narrow truncate">Restaurante O Fogão · 1001 · CL001 · Aveiro</div>
+          <div class="demo-label" style="margin-top:8px">.clamp (two lines) in a 180px box</div>
+          <div class="box narrow clamp">Nota de crédito · Devolução parcial · 28 Jun 2026 · 86,00 € · sem fatura associada</div>
+        </div>
+        <ul>
+          <li>The ellipsis trio only works on a block with a constrained width and <code>white-space: nowrap</code>; in a flex row that means the parent cell needs <code>min-width: 0</code>.</li>
+          <li><code>overflow-wrap: anywhere</code> breaks a word that does not fit; <code>word-break: break-all</code> breaks every word at the edge, which looks wrong in prose.</li>
+          <li><code>white-space: nowrap</code> on amounts, dates, chips and anything that must stay one token.</li>
+          <li>Clipping text with <code>overflow: hidden</code> and no ellipsis is a bug: digits of an amount disappear. The ficha KPIs lost their ellipsis for that reason and use a smaller size on narrow phones instead.</li>
+          <li><code>text-wrap: balance</code> evens the lines of a heading; <code>text-wrap: pretty</code> avoids a lone last word in paragraphs.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="chapter" id="d-color">
+    <h2>Colour and theming</h2>
+    <p class="lead">Name colours once as tokens, then build every rule from the names.</p>
+    <div class="cols">
+      <div>
+        <p>A <strong>custom property</strong> is a variable in CSS: declare <code>--jf-primary: #1f6b3b</code> on <code>:root</code> and read it anywhere with <code>var(--jf-primary)</code>. Custom properties inherit, so redefining one on a section recolours everything inside. They are the only sane way to keep a palette consistent across hundreds of rules, and the only way to theme: redefine the same names in a dark block and nothing else changes.</p>
+        <pre><code>:root { --bg: #eef2ef; --fg: #16241d; --primary: #1f6b3b; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #111816; --fg: #e7ede9; --primary: #63c3a6; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #111816; --fg: #e7ede9; --primary: #63c3a6; color-scheme: dark; }
+body { background: var(--bg); color: var(--fg); }</code></pre>
+        <p>The pattern above is the one this page uses: a full light palette on <code>:root</code>, the dark values under the OS preference unless the user chose light, and again under an explicit dark choice. Component rules never contain a literal colour, so they are correct in both themes by construction.</p>
+      </div>
+      <div>
+        <h4>Semantic colour</h4>
+        <p>Keep two families apart. <strong>Brand</strong> colours (Jolefilo's primary green, the amber accent) identify the product. <strong>Semantic</strong> colours carry meaning: success, info, warning, error, each with a strong tone for text and a tint for backgrounds. The data model's states map onto them: Faturada and Pago are success, Guia emitida is info, Pendente is the accent, Diferença and Anular are error. A chip's colour is then a fact, not decoration, and the same fact reads the same on every screen.</p>
+        <h4>Contrast</h4>
+        <p>Text needs a contrast ratio of 4.5:1 against its background, large text 3:1. Light grey hints on white often fail; use them only for secondary text and never for the one sentence the user must read. DevTools shows the ratio when you click the colour swatch in the Styles pane.</p>
+        <h4>Three ways to write one colour</h4>
+        <p><code>#1f6b3b</code>, <code>rgb(31 107 59)</code> and <code>hsl(146 55% 27%)</code> are the same green. HSL is the easiest to adjust by hand: keep the hue, lower the saturation for a muted variant, raise the lightness for a tint. The modern syntax uses spaces and a slash for alpha: <code>rgb(31 107 59 / .5)</code>.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="chapter" id="d-forms">
+    <h2>Forms</h2>
+    <p class="lead">A field is a label, a control and a message, tied together so both eyes and readers connect them.</p>
+    <div class="cols">
+      <div>
+        <pre><code>&lt;div class="field"&gt;
+  &lt;label for="amount"&gt;Valor&lt;/label&gt;
+  &lt;input id="amount" name="amount" type="text" inputmode="decimal"
+         required aria-describedby="amount-hint amount-error"&gt;
+  &lt;small id="amount-hint"&gt;Em euros, com vírgula.&lt;/small&gt;
+  &lt;small id="amount-error" role="alert"&gt;O valor tem de ser superior a zero.&lt;/small&gt;
+&lt;/div&gt;</code></pre>
+        <ul>
+          <li><code>label for</code> + <code>id</code>: tapping the label focuses the field, and the reader names the field by it. A placeholder is not a label.</li>
+          <li>The <code>type</code> and <code>inputmode</code> pick the phone keyboard: <code>email</code>, <code>tel</code>, <code>decimal</code>, <code>numeric</code>.</li>
+          <li><code>aria-describedby</code> attaches the hint and the error; <code>role="alert"</code> on the error announces it when it appears.</li>
+          <li><code>autocomplete</code> values let password managers fill the right fields.</li>
+        </ul>
+      </div>
+      <div>
+        <h4>In Jolefilo</h4>
+        <p>MudBlazor components render the label, the input, the helper text and the error with the right associations, so most of this is done for you: <code>MudTextField</code> with <code>Label</code> and <code>HelperText</code>, <code>MudSelect</code> with its popover anchored on phones. Two things remain yours. The login form posts natively with <code>name</code> attributes while <code>@bind-Value</code> keeps the labels floating, because a cookie needs a real HTTP response. And every form on a phone stacks to one column below 360px and keeps two above, with the date and time pickers instead of free text.</p>
+        <h4>Focus</h4>
+        <p>Every control must show where keyboard focus is. Browsers draw a ring on <code>:focus-visible</code>; if a reset removes outlines, add your own ring with <code>outline</code> and <code>outline-offset</code>, which does not move layout. Focus order follows the DOM, so a visually reordered flex item (<code>order</code>) is tabbed in source order, which confuses everyone. Reorder the markup instead.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="chapter" id="d-aria">
+    <h2>ARIA and accessibility</h2>
+    <p class="lead">What assistive technology reads, the three kinds of attributes, and the rules, each with the place in Jolefilo where it showed up.</p>
+    <div class="cols">
+      <div>
+        <h4>The accessibility tree</h4>
+        <p>A screen reader does not read pixels or HTML. The browser builds a second tree next to the DOM in which every node has a <strong>role</strong> (what it is), a <strong>name</strong> (what to call it) and, where it applies, a <strong>state</strong>. TalkBack walks it and speaks "Faturas, button, pressed". Native HTML fills the tree for free; ARIA corrects or completes it when HTML alone cannot say what the screen shows.</p>
+        <div class="a11y-tree">
+          <div>main</div>
+          <div>&nbsp;&nbsp;heading <span>"Ficha de cliente"</span></div>
+          <div>&nbsp;&nbsp;link <span>"Voltar a clientes"</span></div>
+          <div>&nbsp;&nbsp;group <span>"Filtrar documentos"</span></div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;button <span>"2 Faturas"</span> pressed=true</div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;button <span>"0 Faturas-recibo"</span> pressed=false</div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;link <span>"Conta corrente"</span></div>
+          <div>&nbsp;&nbsp;status <span>"Faturas"</span> (live, polite)</div>
+          <div>&nbsp;&nbsp;button <span>"Ver FT 2026/318"</span></div>
+          <div>&nbsp;&nbsp;button <span>"Imprimir FT 2026/318"</span></div>
+        </div>
+        <p class="note">What TalkBack has to work with on the ficha after the review. DevTools' Accessibility pane shows the same node for any element you select.</p>
+        <h4>Roles, states, properties</h4>
+        <p><strong>Roles</strong> say what an element is and change nothing else: a <code>div</code> with <code>role="button"</code> is still a div with no keyboard behaviour. <strong>States</strong> change at runtime and take the words "true" and "false". <strong>Properties</strong> describe: a name, a description, a live region, a relation.</p>
+      </div>
+      <div>
+        <h4>The rules, with our own code</h4>
+        <ul>
+          <li><strong>Native first.</strong> The client row began as a div with <code>role="button"</code>, <code>tabindex</code> and a key handler. As an <code>&lt;a href&gt;</code> it got the role, Enter, focus and long-press for free. The filter cards became real buttons for the same reason.</li>
+          <li><strong>Every control needs a specific name.</strong> Icon buttons carry <code>aria-label="Imprimir FT 2026/318"</code>, so six print buttons are not six "button"s. The trap: <code>aria-label</code> replaces the content. The row's "Abrir ficha de…" label silently hid the amounts from the reader until it was removed.</li>
+          <li><strong>States are strings and track the visual.</strong> The green border came from a class and was right; <code>aria-pressed</code> came from a bool and was wrong. Drive both from the same <code>if</code>.</li>
+          <li><strong>Announce changes away from focus.</strong> The list title changes when a card is tapped while focus stays on the card: <code>aria-live="polite"</code> speaks it. <code>role="status"</code> is a built-in polite region; <code>role="alert"</code> interrupts and is for errors.</li>
+          <li><strong>Group what belongs together</strong>: <code>role="group" aria-label="Filtrar documentos"</code> around the cards, real headings for sections so a reader can jump.</li>
+          <li><strong>Hide decoration</strong> with <code>aria-hidden="true"</code>, never anything focusable.</li>
+          <li><strong>Keep focus visible and somewhere.</strong> A ring on <code>:focus-visible</code>; when the focused element disappears ("Ver todos"), move focus to a sensible neighbour.</li>
+        </ul>
+        <div class="callout aria">
+          <p><strong>The Blazor bool trap, once more.</strong> Blazor renders a C# <code>bool</code> as an HTML boolean attribute: present and empty when true, absent when false. ARIA states need "true"/"false" as text, and an empty value reads as "no state". Write <code>aria-pressed="@(Active ? "true" : "false")"</code>. Same for <code>aria-expanded</code>, <code>aria-checked</code>, <code>aria-disabled</code>, <code>aria-selected</code>.</p>
+        </div>
+        <h4>Seeing it</h4>
+        <p>DevTools → Elements → Accessibility pane shows role, name and states for the selected node. Playwright queries the same tree: <code>getByRole('button', { name: 'Faturas', pressed: true })</code> only matches when all three are right, so a locator written that way is a test and an accessibility check at once. TalkBack on a real phone is the final word.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="chapter" id="d-tailwind">
+    <h2>Tailwind for CSS people</h2>
+    <p class="lead">A utility is one declaration with a short name. Everything else is the cascade you already know.</p>
+    <div class="cols">
+      <div>
+        <p><code>p-4</code> is <code>padding: 1rem</code>. <code>flex</code> is <code>display: flex</code>. <code>text-sm</code> is <code>font-size: .875rem; line-height: 1.25rem</code>. Tailwind scans your source files for class names, generates exactly those rules, and ships them in one stylesheet. The design lives in the <strong>theme</strong>: the spacing scale (one step is 4px), the colour palette with eleven shades per hue, the type scale, radii and shadows. In v3 you configure it in <code>tailwind.config.js</code>; in v4 in CSS with <code>@theme</code>.</p>
+        <p><strong>Variants</strong> are prefixes that wrap a utility in a condition: <code>hover:bg-gray-100</code>, <code>md:grid-cols-3</code> (a <code>min-width: 768px</code> media query), <code>dark:text-white</code>, <code>focus-visible:ring-2</code>. They stack: <code>md:hover:underline</code>. <code>group</code> and <code>peer</code> let a child or a sibling react to the parent or previous element's state.</p>
+        <p><strong>Arbitrary values</strong> in square brackets escape the scale when a design needs an exact number: <code>w-[760px]</code>, <code>text-[13.5px]</code>, <code>grid-cols-[repeat(auto-fill,minmax(150px,1fr))]</code>. Jolefilo's mock would use these often, because its sizes are not on a 4px grid.</p>
+        <h4>Translating a Jolefilo row</h4>
+        <pre><code>/* site.css */
+.jf-client-row { display: flex; align-items: center; gap: 11px; padding: 13px 16px;
+                 border-top: 1px solid var(--jf-divider); }
+.jf-client-texts { flex: 1; min-width: 0; }
+.jf-client-name  { font-weight: 700; font-size: 13.5px; white-space: nowrap;
+                   overflow: hidden; text-overflow: ellipsis; }
+.jf-client-orders { font-weight: 700; white-space: nowrap; }
+
+&lt;!-- Tailwind --&gt;
+&lt;a class="flex items-center gap-[11px] px-4 py-[13px] border-t border-gray-100"&gt;
+  &lt;span class="flex-1 min-w-0"&gt;
+    &lt;span class="block font-bold text-[13.5px] truncate"&gt;…&lt;/span&gt;
+  &lt;/span&gt;
+  &lt;span class="font-bold whitespace-nowrap"&gt;1.740,45 €&lt;/span&gt;
+&lt;/a&gt;</code></pre>
+      </div>
+      <div>
+        <h4>What changes in your head</h4>
+        <ul>
+          <li>You stop naming things. The class attribute describes the box; a repeated box becomes a component (a Razor component, a React component) rather than a CSS class.</li>
+          <li>Specificity disappears from daily life: every utility is one class. Two utilities for the same property on one element: the one later in Tailwind's generated order wins, and the order is fixed by property, not by your attribute. Reach for <code>!</code> only when fighting a library.</li>
+          <li>Responsive is mobile first by default, exactly like the handwritten <code>min-width</code> pattern.</li>
+          <li>The scanner needs full literal class names in the source. <code>"bg-" + tone</code> produces a class Tailwind never generates. Map to full strings: <code>tone == "error" ? "bg-red-100" : "bg-green-100"</code>.</li>
+        </ul>
+        <h4>Composing repeated patterns</h4>
+        <p>Three options, pick one per pattern: a component that carries the classes (best for anything with behaviour); <code>@apply</code> in a stylesheet to bundle utilities under a class (<code>.jf-chip { @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold; }</code>); or plain CSS when the pattern needs selectors Tailwind cannot express. Do not do two of them for the same pattern.</p>
+        <h4>Why Jolefilo does not use it</h4>
+        <p>MudBlazor ships its own stylesheet and class names, and the mock's sizes are specific. A token file in <code>:root</code> plus <code>jf-*</code> classes keeps the overrides in one file with the specificity under control. Tailwind next to MudBlazor is possible but you would spend the time on conflicts. Driveway, without a component library, is the right place to learn it.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="chapter" id="d-blazor">
+    <h2>Styling Blazor and MudBlazor</h2>
+    <p class="lead">Where the CSS goes, how to win against the library, and the rendering details that bite.</p>
+    <div class="cols">
+      <div>
+        <h4>Where CSS lives</h4>
+        <p>Two choices. A global stylesheet (<code>wwwroot/css/site.css</code>) with tokens on <code>:root</code> and prefixed classes (<code>jf-*</code>), which is what Jolefilo does: one file, one place to search, no scoping surprises. Or <strong>CSS isolation</strong>: a <code>Component.razor.css</code> next to the component, whose rules are rewritten at build time to match only that component's elements (an attribute like <code>b-x1y2</code> is added to both). Isolation cannot reach into child components unless you write <code>::deep .mud-button-root</code>, and it cannot style MudBlazor's popovers, which render elsewhere. For a design-system app the global file wins.</p>
+        <h4>Winning against MudBlazor</h4>
+        <p>Every MudBlazor component accepts <code>Class</code> and merges it with its own classes on the root element. Your rule then competes with MudBlazor's, which is loaded first and usually has one or two classes of specificity. The reliable pattern: your class and one of theirs on the same element, <code>.jf-cash-close.mud-button-root</code>, plus the state when they style it, <code>:hover</code>, <code>:focus-visible</code>, <code>.mud-disabled</code>. For text colour MudBlazor's palette classes carry <code>!important</code>; set <code>Color="Color.Inherit"</code> and colour the wrapper instead of fighting them. Inline <code>Style</code> works but hides the rule from the stylesheet; use it only for values computed at runtime.</p>
+      </div>
+      <div>
+        <h4>Rendering details</h4>
+        <ul>
+          <li><strong>Bool attributes</strong>: true renders the bare attribute, false removes it. Right for <code>disabled</code>, wrong for ARIA.</li>
+          <li><strong>Unmatched attributes</strong> on a MudBlazor component are splatted onto its root element: <code>role</code>, <code>aria-*</code>, <code>data-*</code> land where you expect.</li>
+          <li><strong><code>@key</code></strong> tells the diff which rendered row belongs to which item; without it a filtered list patches rows by position and inputs keep stale values. Keys must be unique among siblings or rendering throws, and in Blazor Server that kills the circuit.</li>
+          <li><strong><code>@onclick:preventDefault</code></strong> and <strong><code>:stopPropagation</code></strong> are attribute modifiers; they apply to every event of that kind on the element, so do not put <code>@onkeydown:preventDefault</code> on something the user must Tab through.</li>
+          <li><strong>Ripple and hover</strong>: MudButton paints hover, focus and ripple backgrounds. On Android the hover tint sticks after a tap; override the state selectors with enough specificity and set <code>Ripple="false"</code> where a card should keep its own colours.</li>
+          <li><strong>No prerendering</strong> in Jolefilo means the DOM is built only by the circuit, so JS interop is always available and lifecycle methods run once; it also means the first paint waits for the connection.</li>
+        </ul>
+        <pre><code>&lt;MudButton Variant="Variant.Text" Ripple="false"
+           Class="@($"jf-action-card jf-client-doc-card{(Active ? " active" : "")}")"
+           aria-pressed="@(Active ? "true" : "false")" OnClick="OnClick"&gt;…&lt;/MudButton&gt;
+
+.jf-client-doc-card.mud-button-root.mud-button-text,
+.jf-client-doc-card.mud-button-root.mud-button-text:hover { background-color: var(--jf-surface); }
+.jf-client-doc-card.active.mud-button-root.mud-button-text { border-color: var(--jf-primary); }</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="chapter" id="d-debug">
+    <h2>A debugging routine</h2>
+    <p class="lead">When a screen looks wrong, work through this in order; most problems fall out by step four.</p>
+    <ul class="check">
+      <li><strong>Select the element</strong> in DevTools and read Computed: is the property what you think, and which rule set it? A struck-through rule lost the cascade; find the winner above it.</li>
+      <li><strong>Check the box</strong> in the Computed diagram: margin, border, padding, content. A collapsed margin or a content-box width explains most "it's 20px off" cases.</li>
+      <li><strong>Check the container</strong>: is the parent flex or grid, and does the child have <code>min-width: 0</code>? Turn on the Layout overlay to see the tracks.</li>
+      <li><strong>Check overflow</strong>: run the Console snippet to find what reaches past the right edge; check <code>scrollHeight &gt; clientHeight</code> where something should scroll.</li>
+      <li><strong>Check the state</strong>: force <code>:hov</code> states, toggle classes with <code>.cls</code>, and read the Accessibility pane for role, name and state.</li>
+      <li><strong>Check the width</strong>: repeat at 360, 375 and 412 in the device toolbar with a mobile user agent, and in both themes.</li>
+      <li><strong>Fix in the stylesheet</strong>, not in the Styles pane; then reload and confirm the rule you added is the one that wins.</li>
+    </ul>
+    <p>Keep this page open next to the project rules. The cheatsheet answers "how do I write it"; this part answers "why did it do that". When neither does, the DevTools card has the three lines of Console that answer most of the rest.</p>
+  </div>
+
+</section>
+</main>
+</div>
+
+</body></html>

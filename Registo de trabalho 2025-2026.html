@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Registo de Trabalho 2025–2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: uma coluna de leitura (max 1040px); números-chave em grelha, depois o gráfico mensal,
+     a divisão por repositório e o Atlas lado a lado, e as fontes no fim. */
+  :root {
+    --bg: #f2f5f8;
+    --surface: #ffffff;
+    --fg: #15212e;
+    --muted: #5b6b7c;
+    --line: #d9e1e9;
+    --accent: #1d6a86;
+    --accent-soft: #d5e8ef;
+    --warm: #b5651d;
+    --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e151d; --surface: #152029; --fg: #e4ebf2; --muted: #93a4b5;
+      --line: #263543; --accent: #5cb2d1; --accent-soft: #1b3a48; --warm: #e0a060;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e151d; --surface: #152029; --fg: #e4ebf2; --muted: #93a4b5;
+    --line: #263543; --accent: #5cb2d1; --accent-soft: #1b3a48; --warm: #e0a060;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font: 15px/1.6 var(--body);
+    padding-inline: 16px;
+    padding-block: 40px 56px;
+  }
+  .page { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+
+  header { display: flex; flex-direction: column; gap: 10px; }
+  .eyebrow { font: 500 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  h1 { font: 700 clamp(30px, 5vw, 48px)/1.08 var(--display); margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+  .lede { max-width: 62ch; color: var(--muted); margin: 0; font-size: 16px; }
+
+  h2 { font: 700 20px/1.2 var(--display); margin: 0; text-wrap: balance; }
+  .section { display: flex; flex-direction: column; gap: 16px; }
+  .note { color: var(--muted); font-size: 13px; margin: 0; max-width: 70ch; }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+  .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 18px 16px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .tile .value { font: 700 34px/1 var(--display); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+  .tile .value small { font: 500 15px/1 var(--body); color: var(--muted); letter-spacing: 0; }
+  .tile .label { font-weight: 600; font-size: 14px; }
+  .tile .sub { color: var(--muted); font-size: 13px; }
+  .tile.lead { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+  .tile.lead .sub, .tile.lead .value small { color: var(--surface); opacity: .82; }
+
+  .share { display: flex; flex-direction: column; gap: 10px; }
+  .share-bar { display: flex; height: 18px; border-radius: 4px; overflow: hidden; background: var(--line); }
+  .share-bar span { display: block; height: 100%; }
+  .share-legend { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 13px; color: var(--muted); }
+  .share-legend b { color: var(--fg); font-variant-numeric: tabular-nums; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+
+  .chart-box { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 12px 8px; overflow-x: auto; }
+  .chart-box svg { display: block; width: 100%; min-width: 560px; height: auto; }
+  .chart-box text { font-family: var(--mono); fill: var(--muted); font-size: 11px; }
+  .chart-box .val { fill: var(--fg); font-weight: 500; }
+  .chart-box .year { fill: var(--accent); font-weight: 500; }
+
+  .split { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; align-items: start; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font: 500 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 0 0 8px; border-bottom: 1px solid var(--line); }
+  td { padding: 7px 0; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  tr:last-child td { border-bottom: 0; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--mono); }
+  td.barcell { width: 38%; padding-left: 12px; }
+  .minibar { height: 6px; border-radius: 3px; background: var(--accent); }
+
+  .status { display: flex; flex-direction: column; gap: 8px; }
+  .status-row { display: grid; grid-template-columns: 110px 1fr 40px; gap: 10px; align-items: center; font-size: 14px; }
+  .status-row .track { height: 8px; border-radius: 4px; background: var(--accent-soft); overflow: hidden; }
+  .status-row .fill { height: 100%; background: var(--accent); }
+  .status-row.done .fill { background: var(--accent); }
+  .status-row.open .fill { background: var(--warm); }
+  .status-row .n { text-align: right; font: 500 13px var(--mono); font-variant-numeric: tabular-nums; }
+
+  footer { border-top: 1px solid var(--line); padding-top: 16px; display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 13px; }
+  code { font: 12px var(--mono); background: var(--accent-soft); color: var(--fg); padding: 1px 6px; border-radius: 4px; overflow-wrap: anywhere; }
+
+  @media (max-width: 480px) {
+    body { padding-block: 24px 40px; }
+    .status-row { grid-template-columns: 92px 1fr 36px; }
+  }
+</style>
+</head>
+<body>
+<main class="page">
+
+  <header>
+    <span class="eyebrow">Registo de trabalho · junho 2025 → outubro 2026</span>
+    <h1>Dezasseis meses, quase metade dos commits da equipa</h1>
+    <p class="lede">Do primeiro commit, a 4 de junho de 2025, até 15 de outubro de 2026: o que o histórico git, o GitHub e o Atlas registam, contado sem duplicados.</p>
+  </header>
+
+  <section class="section" aria-label="Números-chave">
+    <div class="tiles">
+      <div class="tile lead">
+        <span class="label">Commits meus</span>
+        <span class="value">2&#8239;097</span>
+        <span class="sub">42% dos 5&#8239;013 commits da equipa</span>
+      </div>
+      <div class="tile">
+        <span class="label">Dias com commits</span>
+        <span class="value">263</span>
+        <span class="sub">cerca de 3 em cada 4 dias úteis</span>
+      </div>
+      <div class="tile">
+        <span class="label">Repositórios</span>
+        <span class="value">27</span>
+        <span class="sub">projetos de clientes e ferramentas internas</span>
+      </div>
+      <div class="tile">
+        <span class="label">Contribuições no GitHub</span>
+        <span class="value">5&#8239;303</span>
+        <span class="sub">conta de trabalho, repositórios privados</span>
+      </div>
+      <div class="tile">
+        <span class="label">Tarefas concluídas no Atlas</span>
+        <span class="value">179 <small>de 240</small></span>
+        <span class="sub">desde abril de 2026, em 15 projetos</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="share-h">
+    <h2 id="share-h">A minha parte nos commits da equipa</h2>
+    <div class="share">
+      <div class="share-bar" role="img" aria-label="Eu 2097 commits, segundo mais ativo 465, restantes 2451">
+        <span style="width:41.83%; background: var(--accent);"></span>
+        <span style="width:9.28%; background: var(--warm);"></span>
+      </div>
+      <div class="share-legend">
+        <span><i class="dot" style="background: var(--accent);"></i>Eu <b>2&#8239;097</b></span>
+        <span><i class="dot" style="background: var(--warm);"></i>Segundo mais ativo <b>465</b></span>
+        <span><i class="dot" style="background: var(--line);"></i>Todos os outros juntos <b>2&#8239;451</b></span>
+      </div>
+      <p class="note">Mais de quatro vezes os commits do segundo mais ativo, em 5&#8239;013 commits únicos de todos os autores no mesmo período.</p>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="month-h">
+    <h2 id="month-h">Commits por mês</h2>
+    <div class="chart-box">
+      <svg viewBox="0 0 760 300" role="img" aria-label="Commits por mês, de junho de 2025 a outubro de 2026">
+        <g id="grid"></g>
+        <g id="bars"></g>
+      </svg>
+    </div>
+    <p class="note">Outubro de 2026 conta só até dia 15. Setembro de 2026, com 430 commits, é o mês mais intenso.</p>
+  </section>
+
+  <section class="split">
+    <div class="panel" aria-labelledby="repo-h">
+      <h2 id="repo-h">Onde estão os commits</h2>
+      <table>
+        <thead><tr><th>Repositório</th><th class="num">Commits</th><th></th></tr></thead>
+        <tbody id="repos"></tbody>
+      </table>
+      <p class="note">Aproximado: alguns repositórios nasceram como cópia de outros e partilham histórico; cada commit conta uma vez só, no primeiro repositório onde aparece.</p>
+    </div>
+
+    <div class="panel" aria-labelledby="atlas-h">
+      <h2 id="atlas-h">Atlas</h2>
+      <p class="note">O gestor de tarefas que construí e uso para organizar o trabalho, desde abril de 2026: 240 tarefas em 15 projetos e 1&#8239;769 atividades registadas.</p>
+      <div class="status" id="status"></div>
+      <table>
+        <thead><tr><th>Projeto</th><th class="num">Tarefas</th></tr></thead>
+        <tbody>
+          <tr><td>AsNet 2.0</td><td class="num">86</td></tr>
+          <tr><td>SRamil</td><td class="num">47</td></tr>
+          <tr><td>Jolefilo</td><td class="num">25</td></tr>
+          <tr><td>AgileInCloud</td><td class="num">19</td></tr>
+          <tr><td>HR Module</td><td class="num">17</td></tr>
+          <tr><td>BioBraga</td><td class="num">10</td></tr>
+          <tr><td>Link2IT</td><td class="num">8</td></tr>
+          <tr><td>Ballet Rosa ERP</td><td class="num">8</td></tr>
+          <tr><td>Outros 7 projetos</td><td class="num">20</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <span>Fontes: histórico git local de todos os repositórios (commits únicos desde 1 de maio de 2025, <code>git log --all --since=2025-05-01</code>), calendário de contribuições do GitHub e base de dados do Atlas. Dados recolhidos a 15/10/2026.</span>
+    <span>A conta pessoal no GitHub soma mais 1&#8239;264 contribuições no último ano, não incluídas acima.</span>
+  </footer>
+</main>
+
+<script>
+  (function () {
+    var months = [
+      ["Jun", 10], ["Jul", 31], ["Ago", 25], ["Set", 42], ["Out", 47], ["Nov", 48], ["Dez", 67],
+      ["Jan", 31], ["Fev", 49], ["Mar", 98], ["Abr", 293], ["Mai", 169], ["Jun", 300],
+      ["Jul", 167], ["Ago", 171], ["Set", 430], ["Out*", 119]
+    ];
+    var ns = "http://www.w3.org/2000/svg";
+    var left = 44, right = 748, top = 22, bottom = 248, max = 450;
+    var grid = document.getElementById("grid"), bars = document.getElementById("bars");
+    function el(name, attrs, text) {
+      var n = document.createElementNS(ns, name);
+      for (var k in attrs) n.setAttribute(k, attrs[k]);
+      if (text != null) n.textContent = text;
+      return n;
+    }
+    function y(v) { return bottom - (v / max) * (bottom - top); }
+    [0, 100, 200, 300, 400].forEach(function (t) {
+      grid.appendChild(el("line", { x1: left, x2: right, y1: y(t), y2: y(t), stroke: "var(--line)", "stroke-width": 1 }));
+      grid.appendChild(el("text", { x: left - 8, y: y(t) + 4, "text-anchor": "end" }, t));
+    });
+    var step = (right - left) / months.length, w = step * 0.62;
+    months.forEach(function (m, i) {
+      var x = left + i * step + (step - w) / 2, v = m[1];
+      var peak = v === 430;
+      bars.appendChild(el("rect", { x: x, y: y(v), width: w, height: bottom - y(v), rx: 2, fill: peak ? "var(--warm)" : "var(--accent)" }));
+      bars.appendChild(el("text", { x: x + w / 2, y: y(v) - 6, "text-anchor": "middle", "class": "val" }, v));
+      bars.appendChild(el("text", { x: x + w / 2, y: bottom + 16, "text-anchor": "middle" }, m[0]));
+    });
+    // Separador e rótulos de ano: 7 meses em 2025, 10 em 2026.
+    var split = left + 7 * step;
+    grid.appendChild(el("line", { x1: split, x2: split, y1: top - 6, y2: bottom + 34, stroke: "var(--muted)", "stroke-width": 1, "stroke-dasharray": "3 4" }));
+    bars.appendChild(el("text", { x: left + 3.5 * step, y: bottom + 36, "text-anchor": "middle", "class": "year" }, "2025"));
+    bars.appendChild(el("text", { x: split + 5 * step, y: bottom + 36, "text-anchor": "middle", "class": "year" }, "2026"));
+
+    var repos = [
+      ["AsNet 2.0", 687], ["HR Module", 270], ["Link2IT 3.0", 226], ["SRamil", 198],
+      ["AgileInCloud", 166], ["BioBraga", 143], ["Atlas", 86], ["Release Manager", 43],
+      ["Priority Season", 38], ["AsNet (versão anterior)", 32], ["Indústrias Pais", 31],
+      ["Link2IT 2.0", 28], ["SAmbiental 2.0", 27], ["Jolefilo", 22], ["Outros 13 repositórios", 100]
+    ];
+    var tbody = document.getElementById("repos"), top1 = repos[0][1];
+    repos.forEach(function (r) {
+      var tr = document.createElement("tr");
+      var pct = Math.max(2, Math.round(r[1] / top1 * 100));
+      tr.innerHTML = "<td></td><td class=\"num\"></td><td class=\"barcell\"><div class=\"minibar\" style=\"width:" + pct + "%\"></div></td>";
+      tr.children[0].textContent = r[0];
+      tr.children[1].textContent = r[1];
+      tbody.appendChild(tr);
+    });
+
+    var statuses = [["Concluídas", 179, "done"], ["Por fazer", 36, "open"], ["Em curso", 16, "open"], ["Em revisão", 5, "open"], ["Bloqueadas", 4, "open"]];
+    var box = document.getElementById("status");
+    statuses.forEach(function (s) {
+      var row = document.createElement("div");
+      row.className = "status-row " + s[2];
+      row.innerHTML = "<span></span><div class=\"track\"><div class=\"fill\" style=\"width:" + (s[1] / 240 * 100).toFixed(1) + "%\"></div></div><span class=\"n\"></span>";
+      row.children[0].textContent = s[0];
+      row.children[2].textContent = s[1];
+      box.appendChild(row);
+    });
+  })();
+</script>
+</body>
+</html>
